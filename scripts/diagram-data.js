@@ -149,6 +149,42 @@ const NODE_ID_MAPPING = {
     'C2_STORE': 'C2ComponentStore',
     'C2_PARAM': 'C2Params',
 
+    // media-playback.html - Media Playback Pipeline
+    // ExoPlayer/Media3 Components
+    'AUDIO_DEC': 'Audio Decoder',
+    'AUDIO_REN': 'Audio Renderer',
+    'AUDIO_RENDERER': 'Audio Renderer',
+    'VIDEO_DEC': 'Video Decoder',
+    'VIDEO_REN': 'Video Renderer',
+    'VIDEO_RENDERER': 'Video Renderer',
+    'GENERIC_SRC': 'Generic Media Source',
+    'HTTP_SRC': 'HTTP Media Source',
+    'RTSP_SRC': 'RTSP Media Source',
+    'MEDIA_SOURCE': 'Media Source',
+    'TRACK_SELECTOR': 'Track Selector',
+    'LOAD_CONTROL': 'Load Control',
+    'TEXT_RENDERER': 'Text Renderer',
+    // NuPlayer Components
+    'NUPLAYER_MAIN': 'NuPlayer Main',
+    'PLAYBACK_THREAD': 'Playback Thread',
+    'PLAYER_API': 'Player API',
+    'AUDIOSINK': 'Audio Sink',
+    'A_PTS': 'Audio PTS',
+    'A_REN': 'Audio Renderer',
+    'A_RENDER': 'Audio Render',
+    'V_PTS': 'Video PTS',
+    'V_REN': 'Video Renderer',
+    'V_RENDER': 'Video Render',
+    // MediaSync
+    'MEDIASYNC': 'MediaSync',
+    'COMPARE': 'Compare PTS',
+    'DROP': 'Drop Frame',
+    'DUPLICATE': 'Duplicate Frame',
+    'NORMAL': 'Normal Playback',
+    // Misc
+    'L_APP': 'Legacy App',
+    'P_APP': 'Platform App',
+
     // Audio Framework (audio-framework.html)
     'AAUDIO': 'AAudio',
     'AF': 'AudioFlinger',
@@ -2490,6 +2526,501 @@ void DolbyVisionDisplayManager::applyToneMapping(
             'Retail Distribution',
             'Marketing Campaign',
             'Dolby Branding'
+        ]
+    },
+
+    // ========================================
+    // Media Playback Pipeline 노드 (media-playback.html)
+    // ========================================
+
+    // ExoPlayer/Media3 Components
+
+    'Audio Decoder': {
+        title: 'Audio Decoder (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer/Media3의 오디오 디코더 컴포넌트입니다.',
+        components: [
+            'MediaCodec Decoder',
+            'Format Support',
+            'Buffer Management',
+            'Decoder Output'
+        ],
+        path: 'androidx.media3.exoplayer.audio',
+        doc: 'https://developer.android.com/media/media3/exoplayer',
+        codeExample: `
+// Media3 ExoPlayer 오디오 디코더
+val audioRenderer = MediaCodecAudioRenderer(
+    context,
+    MediaCodecSelector.DEFAULT,
+    eventHandler,
+    audioSink
+)
+
+// ExoPlayer에 렌더러 추가
+val player = ExoPlayer.Builder(context)
+    .setRenderersFactory(DefaultRenderersFactory(context))
+    .build()
+        `.trim()
+    },
+
+    'Audio Renderer': {
+        title: 'Audio Renderer (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer의 오디오 렌더러로, 디코딩된 오디오를 AudioTrack으로 전달합니다.',
+        components: [
+            'AudioTrack Integration',
+            'Audio Sink',
+            'Volume Control',
+            'Playback Speed'
+        ],
+        path: 'androidx.media3.exoplayer.audio',
+        doc: 'https://developer.android.com/media/media3/exoplayer'
+    },
+
+    'Video Decoder': {
+        title: 'Video Decoder (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer/Media3의 비디오 디코더 컴포넌트입니다.',
+        components: [
+            'MediaCodec Decoder',
+            'Surface Rendering',
+            'Codec Configuration',
+            'DRM Support'
+        ],
+        path: 'androidx.media3.exoplayer.video',
+        doc: 'https://developer.android.com/media/media3/exoplayer',
+        codeExample: `
+// Media3 ExoPlayer 비디오 디코더
+val videoRenderer = MediaCodecVideoRenderer(
+    context,
+    MediaCodecSelector.DEFAULT,
+    allowedVideoJoiningTimeMs,
+    eventHandler,
+    videoSink,
+    maxDroppedFramesToNotify
+)
+
+// Surface 설정
+player.setVideoSurface(surface)
+        `.trim()
+    },
+
+    'Video Renderer': {
+        title: 'Video Renderer (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer의 비디오 렌더러로, 디코딩된 프레임을 Surface로 렌더링합니다.',
+        components: [
+            'Surface Rendering',
+            'Frame Drop Logic',
+            'Video Scaling',
+            'Color Space Handling'
+        ],
+        path: 'androidx.media3.exoplayer.video',
+        doc: 'https://developer.android.com/media/media3/exoplayer'
+    },
+
+    'Generic Media Source': {
+        title: 'Generic Media Source (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer의 일반 미디어 소스로, 파일 또는 ContentProvider URI를 재생합니다.',
+        components: [
+            'Local File Support',
+            'ContentResolver URI',
+            'Asset Loading',
+            'File Descriptor'
+        ],
+        path: 'androidx.media3.exoplayer.source',
+        doc: 'https://developer.android.com/media/media3/exoplayer',
+        codeExample: `
+// 로컬 파일 미디어 소스
+val mediaItem = MediaItem.fromUri(uri)
+val mediaSource = DefaultMediaSourceFactory(context)
+    .createMediaSource(mediaItem)
+
+player.setMediaSource(mediaSource)
+player.prepare()
+        `.trim()
+    },
+
+    'HTTP Media Source': {
+        title: 'HTTP Media Source (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer의 HTTP/HTTPS 스트리밍 미디어 소스입니다.',
+        components: [
+            'HTTP Client',
+            'Progressive Download',
+            'HLS Support',
+            'DASH Support',
+            'Caching'
+        ],
+        path: 'androidx.media3.datasource.okhttp',
+        doc: 'https://developer.android.com/media/media3/exoplayer',
+        codeExample: `
+// HTTP 미디어 소스
+val dataSourceFactory = DefaultHttpDataSource.Factory()
+    .setUserAgent("MyApp/1.0")
+    .setConnectTimeoutMs(30000)
+
+val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+    .createMediaSource(MediaItem.fromUri(httpUri))
+
+player.setMediaSource(mediaSource)
+player.prepare()
+        `.trim()
+    },
+
+    'RTSP Media Source': {
+        title: 'RTSP Media Source (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer의 RTSP 프로토콜 미디어 소스입니다.',
+        components: [
+            'RTSP Protocol',
+            'RTP/RTCP',
+            'Live Streaming',
+            'IP Camera Support'
+        ],
+        path: 'androidx.media3.exoplayer.rtsp',
+        doc: 'https://developer.android.com/media/media3/exoplayer',
+        codeExample: `
+// RTSP 미디어 소스
+val rtspUri = Uri.parse("rtsp://example.com/stream")
+val mediaItem = MediaItem.fromUri(rtspUri)
+val mediaSource = RtspMediaSource.Factory()
+    .createMediaSource(mediaItem)
+
+player.setMediaSource(mediaSource)
+player.prepare()
+        `.trim()
+    },
+
+    'Media Source': {
+        title: 'Media Source Base (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer의 미디어 소스 기본 인터페이스입니다.',
+        components: [
+            'Media Period',
+            'Timeline',
+            'Load Events',
+            'Source Preparation'
+        ],
+        path: 'androidx.media3.exoplayer.source',
+        doc: 'https://developer.android.com/media/media3/exoplayer'
+    },
+
+    'Track Selector': {
+        title: 'Track Selector (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer의 트랙 선택기로, 오디오/비디오/자막 트랙을 선택합니다.',
+        components: [
+            'Adaptive Track Selection',
+            'Bandwidth Estimation',
+            'Quality Selection',
+            'Language Preferences'
+        ],
+        path: 'androidx.media3.exoplayer.trackselection',
+        doc: 'https://developer.android.com/media/media3/exoplayer',
+        codeExample: `
+// 트랙 선택기 설정
+val trackSelector = DefaultTrackSelector(context).apply {
+    parameters = buildUponParameters()
+        .setMaxVideoSizeSd()  // SD 해상도로 제한
+        .setPreferredAudioLanguage("ko")  // 한국어 오디오 선호
+        .setPreferredTextLanguage("ko")  // 한국어 자막 선호
+        .build()
+}
+
+val player = ExoPlayer.Builder(context)
+    .setTrackSelector(trackSelector)
+    .build()
+        `.trim()
+    },
+
+    'Load Control': {
+        title: 'Load Control (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer의 로드 제어로, 버퍼링 정책을 관리합니다.',
+        components: [
+            'Buffer Management',
+            'Min/Max Buffer Duration',
+            'Playback Start Threshold',
+            'Rebuffer Detection'
+        ],
+        path: 'androidx.media3.exoplayer',
+        doc: 'https://developer.android.com/media/media3/exoplayer',
+        codeExample: `
+// 로드 컨트롤 설정
+val loadControl = DefaultLoadControl.Builder()
+    .setBufferDurationsMs(
+        15000,  // minBufferMs
+        50000,  // maxBufferMs
+        2500,   // bufferForPlaybackMs
+        5000    // bufferForPlaybackAfterRebufferMs
+    )
+    .build()
+
+val player = ExoPlayer.Builder(context)
+    .setLoadControl(loadControl)
+    .build()
+        `.trim()
+    },
+
+    'Text Renderer': {
+        title: 'Text Renderer (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer의 자막 렌더러입니다.',
+        components: [
+            'SubRip (SRT)',
+            'WebVTT',
+            'TTML',
+            'Closed Captions',
+            'Subtitle Overlay'
+        ],
+        path: 'androidx.media3.exoplayer.text',
+        doc: 'https://developer.android.com/media/media3/exoplayer'
+    },
+
+    // NuPlayer Components
+
+    'NuPlayer Main': {
+        title: 'NuPlayer Main Engine',
+        layer: 'Native',
+        description: 'AOSP의 기본 미디어 플레이어 엔진입니다. MediaPlayer API의 백엔드 구현체입니다.',
+        components: [
+            'State Machine',
+            'Source Management',
+            'Renderer Management',
+            'Decoder Management',
+            'A/V Sync'
+        ],
+        path: 'frameworks/av/media/libmediaplayerservice/nuplayer/',
+        doc: 'https://source.android.com/docs/core/media',
+        codeExample: `
+// NuPlayer 초기화 (internal)
+sp<NuPlayer> player = new NuPlayer(audioSink);
+player->setDriver(driver);
+
+// 데이터 소스 설정
+sp<IMediaHTTPService> httpService = ...;
+sp<IDataSource> dataSource = ...;
+player->setDataSourceAsync(httpService, url, headers);
+
+// 재생 시작
+player->start();
+        `.trim()
+    },
+
+    'Playback Thread': {
+        title: 'NuPlayer Playback Thread',
+        layer: 'Native',
+        description: 'NuPlayer의 메인 재생 스레드로, 디코더와 렌더러를 조율합니다.',
+        components: [
+            'Message Loop',
+            'Event Handling',
+            'Decoder Coordination',
+            'Renderer Coordination',
+            'Seek Handling'
+        ],
+        path: 'frameworks/av/media/libmediaplayerservice/nuplayer/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'Player API': {
+        title: 'MediaPlayer API',
+        layer: 'Framework',
+        description: 'Android MediaPlayer의 Java/Kotlin API 레이어입니다.',
+        components: [
+            'setDataSource()',
+            'prepare() / prepareAsync()',
+            'start() / pause() / stop()',
+            'seekTo()',
+            'Listener Callbacks'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaPlayer.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaPlayer',
+        codeExample: `
+// MediaPlayer 사용 예제
+val mediaPlayer = MediaPlayer().apply {
+    setDataSource(context, uri)
+    setOnPreparedListener {
+        start()
+    }
+    setOnCompletionListener {
+        release()
+    }
+    setOnErrorListener { mp, what, extra ->
+        Log.e(TAG, "Error: what=$what, extra=$extra")
+        true
+    }
+    prepareAsync()
+}
+        `.trim()
+    },
+
+    'Audio Sink': {
+        title: 'Audio Sink',
+        layer: 'Native',
+        description: 'NuPlayer의 오디오 출력 싱크로, AudioTrack으로 PCM 데이터를 전달합니다.',
+        components: [
+            'AudioTrack Management',
+            'PCM Buffer',
+            'Volume Control',
+            'Audio Effects'
+        ],
+        path: 'frameworks/av/media/libmediaplayerservice/nuplayer/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'Audio PTS': {
+        title: 'Audio Presentation Timestamp',
+        layer: 'Native',
+        description: '오디오 프레임의 재생 타임스탬프입니다.',
+        components: [
+            'Timestamp Calculation',
+            'Audio Clock',
+            'Sample Rate',
+            'Frame Count'
+        ]
+    },
+
+    'Audio Render': {
+        title: 'Audio Renderer (NuPlayer)',
+        layer: 'Native',
+        description: 'NuPlayer의 오디오 렌더러로, 디코딩된 PCM을 AudioSink로 전달합니다.',
+        components: [
+            'Audio Decoder Output',
+            'AudioSink Integration',
+            'A/V Sync',
+            'Audio Delay'
+        ],
+        path: 'frameworks/av/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'Video PTS': {
+        title: 'Video Presentation Timestamp',
+        layer: 'Native',
+        description: '비디오 프레임의 재생 타임스탬프입니다.',
+        components: [
+            'Timestamp Calculation',
+            'Frame Rate',
+            'Display Time',
+            'Vsync Sync'
+        ]
+    },
+
+    'Video Render': {
+        title: 'Video Renderer (NuPlayer)',
+        layer: 'Native',
+        description: 'NuPlayer의 비디오 렌더러로, 디코딩된 프레임을 Surface로 렌더링합니다.',
+        components: [
+            'Video Decoder Output',
+            'Surface Rendering',
+            'Frame Drop/Duplicate',
+            'A/V Sync'
+        ],
+        path: 'frameworks/av/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    // MediaSync Components
+
+    'MediaSync': {
+        title: 'MediaSync (A/V Synchronization)',
+        layer: 'Native',
+        description: '오디오와 비디오의 동기화를 담당하는 컴포넌트입니다.',
+        components: [
+            'Audio Master Clock',
+            'Video Slave Clock',
+            'PTS Comparison',
+            'Frame Drop/Duplicate Logic',
+            'Playback Rate Control'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media',
+        codeExample: `
+// MediaSync 사용 (internal)
+sp<MediaSync> sync = new MediaSync();
+
+// 오디오 트랙 설정 (마스터 클럭)
+sync->setAudioTrack(audioTrack);
+
+// 비디오 프레임 큐잉
+sync->queueBuffer(buffer, pts);
+
+// 동기화 상태 확인
+MediaSync::SyncMode mode;
+sync->getSyncMode(&mode);
+        `.trim()
+    },
+
+    'Compare PTS': {
+        title: 'Compare Presentation Timestamps',
+        layer: 'Native',
+        description: '오디오와 비디오 PTS를 비교하여 동기화 오차를 계산합니다.',
+        components: [
+            'Audio PTS',
+            'Video PTS',
+            'Sync Threshold',
+            'Drift Detection'
+        ]
+    },
+
+    'Drop Frame': {
+        title: 'Drop Video Frame',
+        layer: 'Native',
+        description: '비디오가 오디오보다 늦을 때 프레임을 드롭합니다.',
+        components: [
+            'Late Frame Detection',
+            'Drop Decision',
+            'Statistics Tracking'
+        ]
+    },
+
+    'Duplicate Frame': {
+        title: 'Duplicate Video Frame',
+        layer: 'Native',
+        description: '비디오가 오디오보다 빠를 때 프레임을 복제하여 지연시킵니다.',
+        components: [
+            'Early Frame Detection',
+            'Duplicate Decision',
+            'Frame Hold'
+        ]
+    },
+
+    'Normal Playback': {
+        title: 'Normal Playback Mode',
+        layer: 'Native',
+        description: '오디오와 비디오가 정상적으로 동기화된 재생 모드입니다.',
+        components: [
+            'Sync Within Threshold',
+            'Normal Rendering',
+            'No Adjustment'
+        ]
+    },
+
+    // Misc Components
+
+    'Legacy App': {
+        title: 'Legacy Application',
+        layer: 'Application',
+        description: 'Android 10 이전의 레거시 스토리지 접근 방식을 사용하는 앱입니다.',
+        components: [
+            'Direct File Path',
+            'READ_EXTERNAL_STORAGE',
+            'WRITE_EXTERNAL_STORAGE',
+            'Legacy Storage Flag'
+        ]
+    },
+
+    'Platform App': {
+        title: 'Platform Application',
+        layer: 'Application',
+        description: 'Scoped Storage를 사용하는 최신 Android 앱입니다.',
+        components: [
+            'MediaStore API',
+            'ContentResolver',
+            'Scoped Storage',
+            'File Access via URI'
         ]
     },
 
