@@ -269,6 +269,1874 @@
             </div>
         </section>
 
+        <!-- Section 6: Code Examples -->
+        <section class="section sec-input">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                실제 코드 예시
+            </h2>
+            <p class="section-description">
+                AAOS 환경에서 키 이벤트를 처리하는 실제 Kotlin/Java 코드 예시입니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">📱 MediaSession Callback 구현</h3>
+            <div class="code-block">
+                <pre><code>// MediaSession Callback으로 미디어 키 처리
+class CarMediaPlayer(private val context: Context) {
+    private lateinit var mediaSession: MediaSessionCompat
+    private lateinit var player: MediaPlayer
+
+    fun initialize() {
+        mediaSession = MediaSessionCompat(context, "CarMediaPlayer").apply {
+            setFlags(
+                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+            )
+
+            setCallback(mediaSessionCallback)
+
+            // PlaybackState 초기화
+            setPlaybackState(
+                PlaybackStateCompat.Builder()
+                    .setActions(
+                        PlaybackStateCompat.ACTION_PLAY or
+                        PlaybackStateCompat.ACTION_PAUSE or
+                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                    )
+                    .setState(PlaybackStateCompat.STATE_NONE, 0, 1.0f)
+                    .build()
+            )
+
+            isActive = true
+        }
+    }
+
+    private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
+        override fun onPlay() {
+            Log.d("CarMedia", "Hardware Play button pressed")
+
+            // Audio Focus 요청
+            if (requestAudioFocus()) {
+                player.start()
+                updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+            }
+        }
+
+        override fun onPause() {
+            Log.d("CarMedia", "Hardware Pause button pressed")
+            player.pause()
+            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED)
+        }
+
+        override fun onSkipToNext() {
+            Log.d("CarMedia", "Hardware Next button pressed")
+            playNextTrack()
+        }
+
+        override fun onSkipToPrevious() {
+            Log.d("CarMedia", "Hardware Previous button pressed")
+            playPreviousTrack()
+        }
+
+        override fun onStop() {
+            Log.d("CarMedia", "Hardware Stop button pressed")
+            player.stop()
+            abandonAudioFocus()
+            updatePlaybackState(PlaybackStateCompat.STATE_STOPPED)
+        }
+
+        override fun onSeekTo(pos: Long) {
+            Log.d("CarMedia", "Seek to: $pos")
+            player.seekTo(pos.toInt())
+        }
+
+        override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
+            Log.d("CarMedia", "Media button event: $mediaButtonEvent")
+            return super.onMediaButtonEvent(mediaButtonEvent)
+        }
+    }
+
+    private fun updatePlaybackState(state: Int) {
+        val position = if (::player.isInitialized) player.currentPosition.toLong() else 0
+
+        mediaSession.setPlaybackState(
+            PlaybackStateCompat.Builder()
+                .setState(state, position, 1.0f)
+                .setActions(
+                    PlaybackStateCompat.ACTION_PLAY or
+                    PlaybackStateCompat.ACTION_PAUSE or
+                    PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                    PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                )
+                .build()
+        )
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">⌨️ Activity에서 키 이벤트 처리</h3>
+            <div class="code-block">
+                <pre><code>// Activity에서 직접 키 이벤트 처리
+class CarMediaActivity : AppCompatActivity() {
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                Log.d("CarMedia", "Play key pressed")
+                handlePlayAction()
+                true
+            }
+
+            KeyEvent.KEYCODE_MEDIA_PAUSE -> {
+                Log.d("CarMedia", "Pause key pressed")
+                handlePauseAction()
+                true
+            }
+
+            KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                Log.d("CarMedia", "Next key pressed")
+                handleNextAction()
+                true
+            }
+
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                Log.d("CarMedia", "Previous key pressed")
+                handlePreviousAction()
+                true
+            }
+
+            KeyEvent.KEYCODE_VOLUME_UP -> {
+                Log.d("CarMedia", "Volume Up")
+                // CarAudioService가 자동으로 처리하므로
+                // 일반적으로 super 호출로 충분
+                super.onKeyDown(keyCode, event)
+            }
+
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                Log.d("CarMedia", "Volume Down")
+                super.onKeyDown(keyCode, event)
+            }
+
+            // 로터리 노브 회전 (AAOS 특화)
+            KeyEvent.KEYCODE_DPAD_CENTER -> {
+                Log.d("CarMedia", "Rotary Center (Select)")
+                handleSelectAction()
+                true
+            }
+
+            else -> super.onKeyDown(keyCode, event)
+        }
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        // Key Up 이벤트 처리 (필요 시)
+        return super.onKeyUp(keyCode, event)
+    }
+
+    // Dispatch 전에 키 이벤트 가로채기
+    override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
+        Log.d("CarMedia", "Key event: ${event?.keyCode}, action: ${event?.action}")
+        return super.dispatchKeyEvent(event)
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">🎯 Audio Focus와 키 이벤트 통합</h3>
+            <div class="code-block">
+                <pre><code>// Audio Focus를 고려한 미디어 키 처리
+class MediaKeyHandler(private val context: Context) {
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private var audioFocusRequest: AudioFocusRequest? = null
+    private var shouldResumeOnFocusGain = false
+
+    fun handlePlayKey() {
+        if (requestAudioFocus()) {
+            // Focus 획득 성공 → 재생
+            startPlayback()
+        } else {
+            // Focus 획득 실패 → 지연된 재생 (Delayed Focus Gain)
+            shouldResumeOnFocusGain = true
+            Log.w("MediaKey", "Audio focus request delayed")
+        }
+    }
+
+    fun handlePauseKey() {
+        pausePlayback()
+        // Focus는 유지 (일시정지 상태에서도)
+    }
+
+    private fun requestAudioFocus(): Boolean {
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .build()
+
+        audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(audioAttributes)
+            .setOnAudioFocusChangeListener(focusChangeListener)
+            .setAcceptsDelayedFocusGain(true)  // AAOS에서 중요
+            .build()
+
+        val result = audioManager.requestAudioFocus(audioFocusRequest!!)
+        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    }
+
+    private val focusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                Log.d("MediaKey", "Audio focus gained")
+                if (shouldResumeOnFocusGain) {
+                    startPlayback()
+                    shouldResumeOnFocusGain = false
+                }
+            }
+
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                Log.d("MediaKey", "Audio focus lost permanently")
+                pausePlayback()
+                shouldResumeOnFocusGain = false
+            }
+
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                Log.d("MediaKey", "Audio focus lost temporarily")
+                pausePlayback()
+                shouldResumeOnFocusGain = true
+            }
+
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                Log.d("MediaKey", "Ducking (volume down)")
+                // 볼륨 감소 (20%)
+            }
+        }
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 7: Rotary Controller Details -->
+        <section class="section sec-car">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Rotary Controller 상세
+            </h2>
+            <p class="section-description">
+                AAOS의 Rotary Controller는 로터리 노브 입력을 포커스 이동 및 스크롤 이벤트로 변환합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔄</span> RotaryService</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>역할</strong>: Rotary 입력 → Focus Navigation</li>
+                            <li><strong>방향</strong>: CW (시계방향), CCW (반시계방향)</li>
+                            <li><strong>Nudge</strong>: 한 칸씩 이동</li>
+                            <li><strong>Inertia</strong>: 빠른 회전 시 관성 스크롤</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎯</span> Focus Navigation</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>View 계층에서 포커스 가능한 항목 탐색</li>
+                            <li>Directional Focus (Up, Down, Left, Right)</li>
+                            <li>RecyclerView 스크롤 지원</li>
+                            <li>Custom FocusFinder 구현 가능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚙️</span> 설정</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>rotary_nudge_direction.xml 설정</li>
+                            <li>앱별 Rotary 동작 커스터마이징</li>
+                            <li>속도 및 가속도 튜닝</li>
+                            <li>Direct Manipulation 모드</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                    HW[Rotary Knob] --> VHAL[Vehicle HAL<br />VEHICLE_PROPERTY_HW_ROTARY_INPUT]
+                    VHAL --> RS[RotaryService]
+
+                    RS --> NM{Nudge Mode?}
+
+                    NM -->|Yes| FC[FocusController<br />requestFocus()]
+                    NM -->|No| SC[ScrollController<br />scrollBy()]
+
+                    FC --> VIEW1[Focusable View 1]
+                    FC --> VIEW2[Focusable View 2]
+
+                    SC --> RV[RecyclerView.smoothScrollBy()]
+
+                    style NM fill:#f9f
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">🔧 Rotary 이벤트 처리</h3>
+            <div class="code-block">
+                <pre><code>// View에서 Rotary 이벤트 처리
+class RotaryAwareView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null
+) : View(context, attrs) {
+
+    override fun onGenericMotionEvent(event: MotionEvent?): Boolean {
+        if (event?.source == InputDevice.SOURCE_ROTARY_ENCODER) {
+            // Rotary 회전 감지
+            val scroll = event.getAxisValue(MotionEvent.AXIS_SCROLL)
+
+            when {
+                scroll > 0 -> {
+                    // 시계방향 회전
+                    Log.d("Rotary", "Clockwise: $scroll")
+                    handleClockwiseRotation(scroll)
+                    return true
+                }
+                scroll < 0 -> {
+                    // 반시계방향 회전
+                    Log.d("Rotary", "Counter-clockwise: $scroll")
+                    handleCounterClockwiseRotation(scroll)
+                    return true
+                }
+            }
+        }
+
+        return super.onGenericMotionEvent(event)
+    }
+
+    private fun handleClockwiseRotation(amount: Float) {
+        // 다음 항목으로 포커스 이동
+        val nextView = focusSearch(View.FOCUS_DOWN)
+        nextView?.requestFocus()
+    }
+
+    private fun handleCounterClockwiseRotation(amount: Float) {
+        // 이전 항목으로 포커스 이동
+        val prevView = focusSearch(View.FOCUS_UP)
+        prevView?.requestFocus()
+    }
+}
+
+// RecyclerView에서 Rotary 스크롤
+class RotaryRecyclerView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null
+) : RecyclerView(context, attrs) {
+
+    override fun onGenericMotionEvent(event: MotionEvent?): Boolean {
+        if (event?.source == InputDevice.SOURCE_ROTARY_ENCODER) {
+            val scroll = event.getAxisValue(MotionEvent.AXIS_SCROLL)
+
+            if (scroll != 0f) {
+                // 스크롤 양 계산 (한 칸 = 100px)
+                val scrollAmount = (scroll * 100).toInt()
+                smoothScrollBy(0, -scrollAmount)
+                return true
+            }
+        }
+
+        return super.onGenericMotionEvent(event)
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">📊 Rotary Nudge Direction</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>회전 방향</th>
+                            <th>포커스 이동</th>
+                            <th>스크롤 방향</th>
+                            <th>적용 예시</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>시계방향 (CW)</td>
+                            <td>FOCUS_DOWN / FOCUS_FORWARD</td>
+                            <td>아래로 스크롤</td>
+                            <td>리스트에서 다음 항목</td>
+                        </tr>
+                        <tr>
+                            <td>반시계방향 (CCW)</td>
+                            <td>FOCUS_UP / FOCUS_BACKWARD</td>
+                            <td>위로 스크롤</td>
+                            <td>리스트에서 이전 항목</td>
+                        </tr>
+                        <tr>
+                            <td>센터 버튼 클릭</td>
+                            <td>KEYCODE_DPAD_CENTER</td>
+                            <td>-</td>
+                            <td>항목 선택 / 확인</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 8: Vehicle HAL Properties -->
+        <section class="section sec-input">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Vehicle HAL Properties
+            </h2>
+            <p class="section-description">
+                차량 하드웨어 입력을 Android로 전달하는 Vehicle HAL Property 구조입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔑</span> HW_KEY_INPUT</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Property ID</strong>: 0x0A10 (289415184)</li>
+                            <li><strong>타입</strong>: VehiclePropValue (int32 array)</li>
+                            <li><strong>데이터</strong>: [action, keyCode, displayType]</li>
+                            <li><strong>용도</strong>: 핸들 버튼 등 일반 키</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔄</span> HW_ROTARY_INPUT</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Property ID</strong>: 0x0A20 (289415200)</li>
+                            <li><strong>타입</strong>: VehiclePropValue (int32 array)</li>
+                            <li><strong>데이터</strong>: [rotaryInputType, detents, targetDisplay]</li>
+                            <li><strong>용도</strong>: Rotary Knob 회전</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📺</span> Display Type</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>0</strong>: MAIN (센터 디스플레이)</li>
+                            <li><strong>1</strong>: CLUSTER (계기판)</li>
+                            <li><strong>2</strong>: HUD (헤드업 디스플레이)</li>
+                            <li><strong>-1</strong>: UNKNOWN (시스템이 결정)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">📋 VehiclePropValue 구조</h3>
+            <div class="code-block">
+                <pre><code>// Vehicle HAL에서 Android로 전달되는 데이터 구조
+message VehiclePropValue {
+    int32 prop;           // Property ID (예: 0x0A10 for HW_KEY_INPUT)
+    int32 timestamp;      // 타임스탬프 (ms)
+    int32 areaId;         // Zone ID (멀티존 지원 시)
+
+    // HW_KEY_INPUT 데이터 (int32Values)
+    repeated int32 int32Values = [
+        action,           // 0: DOWN, 1: UP
+        keyCode,          // Android KeyCode (예: 126 = KEYCODE_MEDIA_PLAY)
+        displayType,      // 0: MAIN, 1: CLUSTER
+        repeatCount       // 롱 프레스 시 반복 횟수
+    ];
+}
+
+// HW_ROTARY_INPUT 데이터
+repeated int32 int32Values = [
+    rotaryInputType,      // 0: ROTARY_INPUT_TYPE_SYSTEM_NAVIGATION
+    detents,              // 회전 양 (클릭 수, 양수=CW, 음수=CCW)
+    targetDisplay,        // 타겟 디스플레이 (0: MAIN, 1: CLUSTER)
+    velocityInMillisPerDetent  // 회전 속도 (ms/detent)
+];</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">📊 Key Action & Display Type</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>항목</th>
+                            <th>값</th>
+                            <th>의미</th>
+                            <th>예시</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td rowspan="2">Action</td>
+                            <td>0</td>
+                            <td>KEY_DOWN</td>
+                            <td>버튼 눌림</td>
+                        </tr>
+                        <tr>
+                            <td>1</td>
+                            <td>KEY_UP</td>
+                            <td>버튼 떼어짐</td>
+                        </tr>
+                        <tr>
+                            <td rowspan="4">Display Type</td>
+                            <td>0</td>
+                            <td>MAIN</td>
+                            <td>센터 디스플레이</td>
+                        </tr>
+                        <tr>
+                            <td>1</td>
+                            <td>CLUSTER</td>
+                            <td>계기판 디스플레이</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>HUD</td>
+                            <td>헤드업 디스플레이</td>
+                        </tr>
+                        <tr>
+                            <td>-1</td>
+                            <td>UNKNOWN</td>
+                            <td>시스템 자동 결정</td>
+                        </tr>
+                        <tr>
+                            <td rowspan="2">Rotary Type</td>
+                            <td>0</td>
+                            <td>SYSTEM_NAVIGATION</td>
+                            <td>포커스 이동 (Nudge)</td>
+                        </tr>
+                        <tr>
+                            <td>1</td>
+                            <td>VOLUME</td>
+                            <td>볼륨 제어 전용</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">🔧 Vehicle HAL 구현 예시 (C++)</h3>
+            <div class="code-block">
+                <pre><code>// Vehicle HAL에서 키 이벤트 전송 (C++)
+void VehicleHalImpl::onButtonPress(int keyCode, int displayType) {
+    VehiclePropValue value;
+    value.prop = toInt(VehicleProperty::HW_KEY_INPUT);
+    value.timestamp = elapsedRealtimeNano();
+    value.areaId = 0;
+
+    // int32Values: [action, keyCode, displayType, repeatCount]
+    value.value.int32Values = {
+        0,              // 0 = KEY_DOWN
+        keyCode,        // Android KeyCode (예: 126 = MEDIA_PLAY)
+        displayType,    // 0 = MAIN, 1 = CLUSTER
+        0               // repeatCount
+    };
+
+    // CarService로 전송
+    mCallback->onPropertyEvent({value});
+}
+
+// Rotary 이벤트 전송
+void VehicleHalImpl::onRotaryInput(int detents) {
+    VehiclePropValue value;
+    value.prop = toInt(VehicleProperty::HW_ROTARY_INPUT);
+    value.timestamp = elapsedRealtimeNano();
+    value.areaId = 0;
+
+    // int32Values: [rotaryInputType, detents, targetDisplay, velocity]
+    value.value.int32Values = {
+        0,              // 0 = SYSTEM_NAVIGATION
+        detents,        // 양수 = CW, 음수 = CCW
+        0,              // 0 = MAIN display
+        100             // 100ms per detent
+    };
+
+    mCallback->onPropertyEvent({value});
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 9: Key Code Mapping -->
+        <section class="section sec-car">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                Key Code Mapping
+            </h2>
+            <p class="section-description">
+                Linux Input Event Code에서 Android KeyCode로의 매핑 및 차량 특화 키 코드입니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">📊 미디어 키 매핑</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Linux Event Code</th>
+                            <th>Android KeyCode</th>
+                            <th>값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>KEY_PLAYPAUSE (164)</td>
+                            <td>KEYCODE_MEDIA_PLAY_PAUSE</td>
+                            <td>85</td>
+                            <td>재생/일시정지 토글</td>
+                        </tr>
+                        <tr>
+                            <td>KEY_PLAY (207)</td>
+                            <td>KEYCODE_MEDIA_PLAY</td>
+                            <td>126</td>
+                            <td>재생</td>
+                        </tr>
+                        <tr>
+                            <td>KEY_PAUSE (119)</td>
+                            <td>KEYCODE_MEDIA_PAUSE</td>
+                            <td>127</td>
+                            <td>일시정지</td>
+                        </tr>
+                        <tr>
+                            <td>KEY_NEXTSONG (163)</td>
+                            <td>KEYCODE_MEDIA_NEXT</td>
+                            <td>87</td>
+                            <td>다음 곡</td>
+                        </tr>
+                        <tr>
+                            <td>KEY_PREVIOUSSONG (165)</td>
+                            <td>KEYCODE_MEDIA_PREVIOUS</td>
+                            <td>88</td>
+                            <td>이전 곡</td>
+                        </tr>
+                        <tr>
+                            <td>KEY_STOP (128)</td>
+                            <td>KEYCODE_MEDIA_STOP</td>
+                            <td>86</td>
+                            <td>정지</td>
+                        </tr>
+                        <tr>
+                            <td>KEY_FASTFORWARD (208)</td>
+                            <td>KEYCODE_MEDIA_FAST_FORWARD</td>
+                            <td>90</td>
+                            <td>빨리감기</td>
+                        </tr>
+                        <tr>
+                            <td>KEY_REWIND (168)</td>
+                            <td>KEYCODE_MEDIA_REWIND</td>
+                            <td>89</td>
+                            <td>되감기</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">📊 차량 특화 키 코드 (AAOS)</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>KeyCode</th>
+                            <th>값</th>
+                            <th>설명</th>
+                            <th>사용 예시</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>KEYCODE_STEM_PRIMARY</td>
+                            <td>264</td>
+                            <td>핸들 Primary 버튼</td>
+                            <td>음성 인식 시작</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_STEM_1</td>
+                            <td>265</td>
+                            <td>핸들 버튼 1</td>
+                            <td>통화 받기/끊기</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_STEM_2</td>
+                            <td>266</td>
+                            <td>핸들 버튼 2</td>
+                            <td>커스텀 기능</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_STEM_3</td>
+                            <td>267</td>
+                            <td>핸들 버튼 3</td>
+                            <td>커스텀 기능</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_CALL</td>
+                            <td>5</td>
+                            <td>통화 버튼</td>
+                            <td>전화 걸기</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_ENDCALL</td>
+                            <td>6</td>
+                            <td>통화 종료 버튼</td>
+                            <td>전화 끊기</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_VOICE_ASSIST</td>
+                            <td>231</td>
+                            <td>음성 인식 버튼</td>
+                            <td>Google Assistant</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_NAVIGATE_PREVIOUS</td>
+                            <td>260</td>
+                            <td>이전으로 이동</td>
+                            <td>브라우저 뒤로가기</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_NAVIGATE_NEXT</td>
+                            <td>261</td>
+                            <td>다음으로 이동</td>
+                            <td>브라우저 앞으로</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">📋 Generic.kl 키 매핑 파일</h3>
+            <div class="code-block">
+                <pre><code># Generic.kl - Key Layout 파일
+# 위치: frameworks/base/data/keyboards/Generic.kl
+
+# 미디어 키 매핑
+key 164   MEDIA_PLAY_PAUSE
+key 207   MEDIA_PLAY
+key 119   MEDIA_PAUSE
+key 163   MEDIA_NEXT
+key 165   MEDIA_PREVIOUS
+key 128   MEDIA_STOP
+key 208   MEDIA_FAST_FORWARD
+key 168   MEDIA_REWIND
+
+# 볼륨 키
+key 115   VOLUME_UP
+key 114   VOLUME_DOWN
+key 113   VOLUME_MUTE
+
+# 네비게이션 키
+key 103   DPAD_UP
+key 108   DPAD_DOWN
+key 105   DPAD_LEFT
+key 106   DPAD_RIGHT
+key 352   DPAD_CENTER
+
+# 통화 키
+key 231   CALL
+key 107   ENDCALL
+
+# 음성 인식
+key 582   VOICE_ASSIST</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">🔧 Custom Key 정의 (Vendor Overlay)</h3>
+            <div class="code-block">
+                <pre><code>// Vendor Overlay로 커스텀 키 정의
+// hardware/[vendor]/[device]/overlay/frameworks/base/core/res/res/values/config.xml
+
+&lt;resources&gt;
+    &lt;!-- Custom key behavior for STEM_PRIMARY --&gt;
+    &lt;integer name="config_longPressOnStemPrimaryBehavior"&gt;2&lt;/integer&gt;
+    &lt;!-- 0: Nothing, 1: Voice Assist, 2: Custom Action --&gt;
+
+    &lt;!-- Custom key mapping --&gt;
+    &lt;string-array name="config_custom_hardware_keys"&gt;
+        &lt;item&gt;264:VOICE_ASSIST&lt;/item&gt;    &lt;!-- STEM_PRIMARY --&gt;
+        &lt;item&gt;265:CALL&lt;/item&gt;            &lt;!-- STEM_1 --&gt;
+        &lt;item&gt;266:MEDIA_PLAY_PAUSE&lt;/item&gt; &lt;!-- STEM_2 --&gt;
+    &lt;/string-array&gt;
+&lt;/resources&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 10: CarInputService Details -->
+        <section class="section sec-input">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                CarInputService 상세
+            </h2>
+            <p class="section-description">
+                CarInputService는 VHAL에서 받은 키 이벤트를 Android Input Framework로 주입하는 핵심 서비스입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">💉</span> 키 인젝션</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>InputManager.injectInputEvent()</strong></li>
+                            <li>VHAL → KeyEvent 객체 생성</li>
+                            <li>InputDispatcher로 전달</li>
+                            <li>시스템 권한 필요 (INJECT_EVENTS)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎯</span> Display Routing</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>displayType 기반 타겟 결정</li>
+                            <li>MAIN: ActivityTaskManager</li>
+                            <li>CLUSTER: ClusterHomeService</li>
+                            <li>UNKNOWN: 포커스된 디스플레이</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔍</span> 키 필터링</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>특수 키 가로채기 (Voice, Call)</li>
+                            <li>UX Restrictions 적용</li>
+                            <li>주행 중 특정 키 차단</li>
+                            <li>우선순위 기반 전달</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant VHAL as Vehicle HAL
+                    participant CIS as CarInputService
+                    participant IM as InputManager
+                    participant ID as InputDispatcher
+                    participant APP as Application
+
+                    VHAL->>CIS: onHalEvents(HW_KEY_INPUT)
+                    CIS->>CIS: Parse VehiclePropValue
+                    CIS->>CIS: Create KeyEvent object
+                    CIS->>CIS: Determine target display
+
+                    alt Special Key (Voice/Call)
+                        CIS->>CIS: Handle internally
+                        CIS->>APP: Direct Intent
+                    else Normal Key
+                        CIS->>IM: injectInputEvent(KeyEvent)
+                        IM->>ID: notifyKey()
+                        ID->>APP: dispatchKeyEvent()
+                    end
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">📋 CarInputService 주요 메서드</h3>
+            <div class="code-block">
+                <pre><code>// CarInputService.java 핵심 로직 (의사 코드)
+public class CarInputService extends ICarInput.Stub {
+
+    // VHAL에서 키 이벤트 수신
+    @Override
+    public void onHalEvents(List&lt;VehiclePropValue&gt; values) {
+        for (VehiclePropValue value : values) {
+            if (value.prop == VehicleProperty.HW_KEY_INPUT) {
+                handleKeyEvent(value);
+            } else if (value.prop == VehicleProperty.HW_ROTARY_INPUT) {
+                handleRotaryEvent(value);
+            }
+        }
+    }
+
+    private void handleKeyEvent(VehiclePropValue value) {
+        int[] data = value.value.int32Values;
+        int action = data[0];        // 0: DOWN, 1: UP
+        int keyCode = data[1];       // Android KeyCode
+        int displayType = data[2];   // 0: MAIN, 1: CLUSTER
+        int repeatCount = data.length > 3 ? data[3] : 0;
+
+        // KeyEvent 객체 생성
+        KeyEvent event = new KeyEvent(
+            SystemClock.uptimeMillis(),
+            SystemClock.uptimeMillis(),
+            action == 0 ? KeyEvent.ACTION_DOWN : KeyEvent.ACTION_UP,
+            keyCode,
+            repeatCount
+        );
+
+        // 특수 키 처리
+        if (isSpecialKey(keyCode)) {
+            handleSpecialKey(keyCode, action);
+            return;
+        }
+
+        // 타겟 디스플레이 결정
+        int targetDisplayId = getTargetDisplay(displayType);
+
+        // InputManager로 키 인젝션
+        mInputManager.injectInputEvent(
+            event,
+            InputManager.INJECT_INPUT_EVENT_MODE_ASYNC,
+            targetDisplayId
+        );
+    }
+
+    private boolean isSpecialKey(int keyCode) {
+        return keyCode == KeyEvent.KEYCODE_VOICE_ASSIST ||
+               keyCode == KeyEvent.KEYCODE_CALL ||
+               keyCode == KeyEvent.KEYCODE_ENDCALL;
+    }
+
+    private void handleSpecialKey(int keyCode, int action) {
+        if (action != KeyEvent.ACTION_DOWN) {
+            return;  // Only handle key down
+        }
+
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_VOICE_ASSIST:
+                // 음성 인식 시작
+                startVoiceAssist();
+                break;
+
+            case KeyEvent.KEYCODE_CALL:
+                // 통화 시작/받기
+                handleCallButton();
+                break;
+
+            case KeyEvent.KEYCODE_ENDCALL:
+                // 통화 종료
+                endCall();
+                break;
+        }
+    }
+
+    private int getTargetDisplay(int displayType) {
+        switch (displayType) {
+            case 0:  // MAIN
+                return Display.DEFAULT_DISPLAY;
+
+            case 1:  // CLUSTER
+                return getClusterDisplayId();
+
+            default:  // UNKNOWN
+                return getFocusedDisplayId();
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">📊 키 필터링 규칙</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>키 종류</th>
+                            <th>주행 중 (Moving)</th>
+                            <th>정차 중 (Parked)</th>
+                            <th>처리 방법</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>미디어 키 (Play/Pause/Next)</td>
+                            <td>✅ 허용</td>
+                            <td>✅ 허용</td>
+                            <td>MediaSessionService로 전달</td>
+                        </tr>
+                        <tr>
+                            <td>볼륨 키 (Up/Down)</td>
+                            <td>✅ 허용</td>
+                            <td>✅ 허용</td>
+                            <td>CarAudioService로 전달</td>
+                        </tr>
+                        <tr>
+                            <td>음성 인식 (Voice Assist)</td>
+                            <td>✅ 허용</td>
+                            <td>✅ 허용</td>
+                            <td>CarInputService 내부 처리</td>
+                        </tr>
+                        <tr>
+                            <td>통화 키 (Call/Endcall)</td>
+                            <td>✅ 허용</td>
+                            <td>✅ 허용</td>
+                            <td>Telecom Service로 전달</td>
+                        </tr>
+                        <tr>
+                            <td>Rotary Nudge</td>
+                            <td>✅ 허용 (제한적)</td>
+                            <td>✅ 허용</td>
+                            <td>RotaryService로 전달</td>
+                        </tr>
+                        <tr>
+                            <td>Back/Home 키</td>
+                            <td>✅ 허용</td>
+                            <td>✅ 허용</td>
+                            <td>ActivityTaskManager</td>
+                        </tr>
+                        <tr>
+                            <td>텍스트 입력 키</td>
+                            <td>❌ 차단</td>
+                            <td>✅ 허용</td>
+                            <td>UX Restrictions 적용</td>
+                        </tr>
+                        <tr>
+                            <td>설정 진입 키</td>
+                            <td>❌ 차단</td>
+                            <td>✅ 허용</td>
+                            <td>UX Restrictions 적용</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 11: Cluster Display Key Handling -->
+        <section class="section sec-car">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                Cluster Display 키 처리
+            </h2>
+            <p class="section-description">
+                계기판(Instrument Cluster) 디스플레이로 라우팅되는 키 이벤트 처리입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📊</span> Cluster Display</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>독립 디스플레이</strong>: 계기판 별도 화면</li>
+                            <li><strong>제한된 UI</strong>: 안전을 위한 간소화</li>
+                            <li><strong>미디어 정보</strong>: 재생 중인 곡 정보</li>
+                            <li><strong>내비게이션</strong>: 간단한 경로 안내</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎯</span> 라우팅 규칙</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>displayType=1인 이벤트만 처리</li>
+                            <li>ClusterHomeService로 전달</li>
+                            <li>Cluster 전용 키 매핑</li>
+                            <li>Main Display와 독립 동작</li>
+                        </ul>
+                    </div>
+                </card>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔄</span> ClusterHomeService</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Cluster UI 관리</li>
+                            <li>키 이벤트 분배</li>
+                            <li>미디어/내비 전환</li>
+                            <li>ActivityView 호스팅</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    HW[Steering Wheel Button] --> VHAL[Vehicle HAL]
+                    VHAL --> CIS[CarInputService]
+
+                    CIS --> DT{Display Type?}
+
+                    DT -->|0: MAIN| MAIN_DISP[Main Display<br />ActivityTaskManager]
+                    DT -->|1: CLUSTER| CLUSTER_DISP[Cluster Display<br />ClusterHomeService]
+
+                    MAIN_DISP --> MEDIA_APP[Media App<br />Main Screen]
+                    CLUSTER_DISP --> CLUSTER_UI[Cluster UI<br />Media Info]
+
+                    style DT fill:#f9f
+                    style CLUSTER_DISP fill:#e3f2fd
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">📋 Cluster 전용 키 매핑</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>키 코드</th>
+                            <th>Cluster 동작</th>
+                            <th>Main Display 동작</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>KEYCODE_MEDIA_PLAY_PAUSE</td>
+                            <td>Cluster 미디어 정보 업데이트</td>
+                            <td>MediaSession onPlay() 호출</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_MEDIA_NEXT</td>
+                            <td>Cluster에 다음 곡 정보 표시</td>
+                            <td>MediaSession onSkipToNext()</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_DPAD_UP/DOWN</td>
+                            <td>Cluster 메뉴 탐색</td>
+                            <td>앱 내 포커스 이동</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_DPAD_CENTER</td>
+                            <td>Cluster 항목 선택</td>
+                            <td>Rotary 센터 클릭</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_STEM_PRIMARY</td>
+                            <td>Cluster 모드 전환 (Media ↔ Nav)</td>
+                            <td>음성 인식 시작</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">🔧 ClusterHomeService 구현 예시</h3>
+            <div class="code-block">
+                <pre><code>// ClusterHomeService에서 키 이벤트 처리
+class ClusterHomeService : Service() {
+    private var currentMode = ClusterMode.MEDIA
+
+    // 키 이벤트 수신
+    fun onKeyEvent(keyCode: Int, action: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
+                if (action == KeyEvent.ACTION_DOWN) {
+                    handleMediaPlayPause()
+                }
+            }
+
+            KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                if (action == KeyEvent.ACTION_DOWN) {
+                    handleMediaNext()
+                }
+            }
+
+            KeyEvent.KEYCODE_DPAD_UP -> {
+                if (action == KeyEvent.ACTION_DOWN) {
+                    navigateClusterMenu(Direction.UP)
+                }
+            }
+
+            KeyEvent.KEYCODE_DPAD_DOWN -> {
+                if (action == KeyEvent.ACTION_DOWN) {
+                    navigateClusterMenu(Direction.DOWN)
+                }
+            }
+
+            KeyEvent.KEYCODE_STEM_PRIMARY -> {
+                if (action == KeyEvent.ACTION_DOWN) {
+                    toggleClusterMode()
+                }
+            }
+        }
+    }
+
+    private fun handleMediaPlayPause() {
+        // MediaController를 통해 재생/일시정지
+        val controller = getActiveMediaController()
+        val state = controller?.playbackState?.state
+
+        if (state == PlaybackStateCompat.STATE_PLAYING) {
+            controller.transportControls.pause()
+        } else {
+            controller.transportControls.play()
+        }
+
+        // Cluster UI 업데이트
+        updateClusterMediaInfo()
+    }
+
+    private fun toggleClusterMode() {
+        currentMode = when (currentMode) {
+            ClusterMode.MEDIA -> ClusterMode.NAVIGATION
+            ClusterMode.NAVIGATION -> ClusterMode.MEDIA
+        }
+
+        updateClusterDisplay(currentMode)
+    }
+
+    enum class ClusterMode {
+        MEDIA,
+        NAVIGATION
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 12: Android Version Changes -->
+        <section class="section sec-input">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                Android 버전별 변화
+            </h2>
+            <p class="section-description">
+                Android 버전에 따른 Input Framework 및 키 이벤트 처리 변화입니다.
+            </p>
+
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>버전</th>
+                            <th>주요 변화</th>
+                            <th>새로운 기능</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Android 14</strong><br />(API 34)</td>
+                            <td>
+                                • Rotary Controller 개선<br />
+                                • Cluster Display 멀티 윈도우<br />
+                                • 향상된 키 필터링
+                            </td>
+                            <td>
+                                • Per-display Input routing<br />
+                                • Enhanced UX Restrictions<br />
+                                • Multi-user input isolation
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android 13</strong><br />(API 33)</td>
+                            <td>
+                                • Input Method 개선<br />
+                                • 차량 특화 IME<br />
+                                • Stylus 지원 강화
+                            </td>
+                            <td>
+                                • CarInputManager API<br />
+                                • Custom input device support<br />
+                                • Haptic feedback customization
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android 12</strong><br />(API 31)</td>
+                            <td>
+                                • InputFlinger 리팩토링<br />
+                                • MotionEvent 최적화<br />
+                                • Touch latency 개선
+                            </td>
+                            <td>
+                                • Input transfer API<br />
+                                • Per-window input features<br />
+                                • Enhanced gesture support
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android 11</strong><br />(API 30)</td>
+                            <td>
+                                • Rotary Input 정식 지원<br />
+                                • CarInputService 안정화<br />
+                                • VHAL 2.0 통합
+                            </td>
+                            <td>
+                                • RotaryService<br />
+                                • Direct Manipulation mode<br />
+                                • Hardware button customization
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android 10</strong><br />(API 29)</td>
+                            <td>
+                                • AAOS 차량 Input 도입<br />
+                                • Vehicle HAL 통합<br />
+                                • Cluster Display 지원
+                            </td>
+                            <td>
+                                • CarInputService<br />
+                                • HW_KEY_INPUT property<br />
+                                • Display-specific routing
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">🔄 API 변화 및 마이그레이션</h3>
+            <div class="code-block">
+                <pre><code>// Android 10 이전 (일반 Android)
+// 차량 특화 입력 없음, 표준 InputDevice만 사용
+@Override
+public boolean onKeyDown(int keyCode, KeyEvent event) {
+    // 일반 키 이벤트 처리
+    return super.onKeyDown(keyCode, event);
+}
+
+// ========================================
+
+// Android 10+ (AAOS)
+// CarInputService 도입, VHAL 통합
+override fun onCreate() {
+    super.onCreate()
+
+    // Car API 사용
+    val car = Car.createCar(this)
+    // CarInputService가 자동으로 VHAL 이벤트 처리
+}
+
+// ========================================
+
+// Android 11+ (Rotary 정식 지원)
+override fun onGenericMotionEvent(event: MotionEvent?): Boolean {
+    if (event?.source == InputDevice.SOURCE_ROTARY_ENCODER) {
+        // Rotary 이벤트 처리
+        val scroll = event.getAxisValue(MotionEvent.AXIS_SCROLL)
+        handleRotaryScroll(scroll)
+        return true
+    }
+    return super.onGenericMotionEvent(event)
+}
+
+// ========================================
+
+// Android 13+ (CarInputManager API)
+val carInputManager = car.getCarManager(Car.CAR_INPUT_SERVICE) as CarInputManager
+
+// Custom input device 등록
+carInputManager.requestInputEventCapture(
+    CarInputManager.INPUT_TYPE_ALL_INPUTS,
+    CarInputManager.CAPTURE_REQ_FLAGS_ALLOW_DELAYED_GRANT
+) { event ->
+    // 모든 입력 이벤트 캡처
+    handleCapturedEvent(event)
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 13: Debugging & Troubleshooting -->
+        <section class="section sec-car">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                디버깅 & 트러블슈팅
+            </h2>
+            <p class="section-description">
+                키 이벤트 문제를 진단하고 해결하기 위한 도구 및 방법론입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔍</span> 주요 디버깅 도구</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>getevent</code>: 원시 입력 이벤트</li>
+                            <li><code>dumpsys input</code>: Input 시스템 상태</li>
+                            <li><code>dumpsys car_service</code>: CarInputService</li>
+                            <li><code>logcat -s CarInputService:V</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚠️</span> 일반적인 문제</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>키 이벤트 미전달</li>
+                            <li>잘못된 디스플레이 라우팅</li>
+                            <li>Rotary 입력 미동작</li>
+                            <li>MediaSession 미응답</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🛠️</span> 로그 분석</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>VHAL Property 로그</li>
+                            <li>KeyEvent dispatch 추적</li>
+                            <li>MediaSession priority 확인</li>
+                            <li>Display routing 검증</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">🔧 주요 디버깅 명령어</h3>
+            <div class="code-block">
+                <pre><code># getevent - 원시 입력 이벤트 모니터링
+adb shell getevent -lt
+
+# 출력 예시:
+# [    123.456789] EV_KEY       KEY_PLAYPAUSE        DOWN
+# [    123.567890] EV_KEY       KEY_PLAYPAUSE        UP
+
+# dumpsys input - Input 시스템 상태
+adb shell dumpsys input
+
+# 출력 예시:
+# INPUT MANAGER (dumpsys input)
+#
+# Event Hub State:
+#   Built-in Keyboard: device 1
+#   Vehicle Hardware Keys: device 5
+#
+# Input Dispatcher State:
+#   Focused application: com.spotify.music
+#   Focused window: com.spotify.music/MainActivity
+
+# dumpsys car_service - CarInputService 상태
+adb shell dumpsys car_service --services CarInputService
+
+# 출력 예시:
+# CarInputService:
+#   Captured events: 1234
+#   Last key: KEYCODE_MEDIA_PLAY (126)
+#   Display routing: MAIN (0)
+#   Rotary events: 567
+
+# MediaSession 상태 확인
+adb shell dumpsys media_session
+
+# 출력 예시:
+# Active sessions:
+#   com.spotify.music (priority: 100, state: PLAYING)
+#   com.google.android.apps.maps (priority: 50, state: PAUSED)</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">📋 logcat 필터링</h3>
+            <div class="code-block">
+                <pre><code># CarInputService 로그
+adb logcat -s CarInputService:V
+
+# Input 관련 모든 로그
+adb logcat -s CarInputService:V InputDispatcher:V InputReader:V
+
+# 키 이벤트 추적
+adb logcat | grep -i "key event"
+
+# MediaSession 디스패치 추적
+adb logcat -s MediaSessionService:V | grep -i "dispatch"
+
+# Rotary 이벤트 추적
+adb logcat -s RotaryService:V
+
+# VHAL Property 로그
+adb logcat -s VehicleHal:V | grep -i "HW_KEY"</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">⚠️ 트러블슈팅 가이드</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>문제 증상</th>
+                            <th>가능한 원인</th>
+                            <th>해결 방법</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>미디어 키 눌러도 반응 없음</td>
+                            <td>
+                                • MediaSession 미생성<br />
+                                • isActive = false<br />
+                                • Callback 미구현
+                            </td>
+                            <td>
+                                • MediaSession.isActive = true 설정<br />
+                                • setCallback() 확인<br />
+                                • dumpsys media_session 확인
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>키 이벤트가 앱에 안 옴</td>
+                            <td>
+                                • VHAL 미전송<br />
+                                • CarInputService 필터링<br />
+                                • Display routing 오류
+                            </td>
+                            <td>
+                                • getevent로 하드웨어 확인<br />
+                                • dumpsys car_service 로그<br />
+                                • displayType 검증
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Cluster에 키 안 감</td>
+                            <td>
+                                • displayType != 1<br />
+                                • ClusterHomeService 미실행<br />
+                                • Cluster Display 미등록
+                            </td>
+                            <td>
+                                • VHAL displayType 확인<br />
+                                • dumpsys display로 Cluster 확인<br />
+                                • ClusterHomeService 로그
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Rotary 회전 안 됨</td>
+                            <td>
+                                • HW_ROTARY_INPUT 미전송<br />
+                                • RotaryService 비활성화<br />
+                                • View가 포커스 불가능
+                            </td>
+                            <td>
+                                • getevent로 Rotary 이벤트 확인<br />
+                                • View.focusable = true 설정<br />
+                                • onGenericMotionEvent() 구현
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>볼륨 키 안 먹힘</td>
+                            <td>
+                                • CarAudioService 오류<br />
+                                • Volume Group 미설정<br />
+                                • Fixed Volume 미활성화
+                            </td>
+                            <td>
+                                • dumpsys car_service --services CarAudioService<br />
+                                • car_audio_configuration.xml 확인<br />
+                                • Audio HAL 로그 확인
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>음성 인식 버튼 안 됨</td>
+                            <td>
+                                • KEYCODE_VOICE_ASSIST 미매핑<br />
+                                • Google App 미설치<br />
+                                • 권한 부족
+                            </td>
+                            <td>
+                                • Generic.kl 키 매핑 확인<br />
+                                • Google App 설치 확인<br />
+                                • RECORD_AUDIO 권한 확인
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>주행 중 특정 키 차단됨</td>
+                            <td>
+                                • UX Restrictions 적용<br />
+                                • 의도된 안전 기능<br />
+                                • 키 필터링 규칙
+                            </td>
+                            <td>
+                                • dumpsys car_service --services CarUxRestrictionsManagerService<br />
+                                • Driving State 확인<br />
+                                • 정차 후 재시도
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Custom Key 인식 안 됨</td>
+                            <td>
+                                • Key Layout 파일 누락<br />
+                                • KeyCode 매핑 오류<br />
+                                • Vendor Overlay 미적용
+                            </td>
+                            <td>
+                                • .kl 파일 생성<br />
+                                • getevent로 Linux code 확인<br />
+                                • Overlay 빌드 확인
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">🔍 키 이벤트 전체 경로 추적</h3>
+            <div class="code-block">
+                <pre><code># 1. 하드웨어 레벨 확인
+adb shell getevent -lt | grep "KEY_PLAYPAUSE"
+
+# 2. VHAL Property 확인
+adb logcat -s VehicleHal:V | grep "HW_KEY_INPUT"
+
+# 3. CarInputService 수신 확인
+adb logcat -s CarInputService:V | grep "onHalEvents"
+
+# 4. InputManager 인젝션 확인
+adb logcat -s InputManager:V | grep "injectInputEvent"
+
+# 5. InputDispatcher 전달 확인
+adb logcat -s InputDispatcher:V | grep "notifyKey"
+
+# 6. MediaSessionService 디스패치 확인
+adb logcat -s MediaSessionService:V | grep "dispatchMediaKeyEvent"
+
+# 7. 앱 수신 확인
+adb logcat -s YourApp:V | grep "onPlay"
+
+# 전체 한 번에
+adb logcat -s VehicleHal:V CarInputService:V InputDispatcher:V MediaSessionService:V | grep -E "KEY|MEDIA"</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 14: AOSP Source Reference -->
+        <section class="section sec-input">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                AOSP 소스 코드 참조
+            </h2>
+            <p class="section-description">
+                AAOS 키 이벤트 처리의 핵심 소스 코드 위치 및 주요 파일입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🚗</span> CarInputService</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>CarInputService.java</strong></li>
+                            <li>packages/services/Car/service/src/com/android/car/input/</li>
+                            <li>VHAL 이벤트 수신 및 키 인젝션</li>
+                            <li>Display Routing, 키 필터링</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⌨️</span> InputReader/Dispatcher</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>InputReader.cpp</strong></li>
+                            <li>frameworks/native/services/inputflinger/reader/</li>
+                            <li>Linux evdev → Android KeyEvent</li>
+                            <li>Key Layout 파일 파싱</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔄</span> RotaryService</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>RotaryService.java</strong></li>
+                            <li>packages/apps/Car/RotaryController/</li>
+                            <li>Rotary 입력 → Focus Navigation</li>
+                            <li>Nudge, Inertia 처리</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">📂 주요 디렉토리 구조</h3>
+            <div class="code-block">
+                <pre><code># CarInputService 소스
+packages/services/Car/service/src/com/android/car/input/
+├── CarInputService.java            # 메인 서비스
+├── InputHalService.java            # VHAL 통신
+└── CarInputManager.java            # Public API
+
+# RotaryService 소스
+packages/apps/Car/RotaryController/
+├── src/com/android/car/rotary/
+│   ├── RotaryService.java          # 메인 서비스
+│   ├── Navigator.java              # Focus 탐색
+│   └── RotaryCache.java            # 캐싱
+
+# InputReader (Native)
+frameworks/native/services/inputflinger/
+├── reader/
+│   ├── InputReader.cpp             # 입력 읽기
+│   ├── EventHub.cpp                # evdev 이벤트
+│   └── mapper/
+│       ├── KeyboardInputMapper.cpp # 키보드 매핑
+│       └── RotaryEncoderInputMapper.cpp  # Rotary 매핑
+├── dispatcher/
+│   └── InputDispatcher.cpp         # 이벤트 분배
+
+# InputManager (Framework)
+frameworks/base/services/core/java/com/android/server/input/
+├── InputManagerService.java        # Input 시스템 관리
+└── InputFilter.java                # 입력 필터링
+
+# MediaSession (Framework)
+frameworks/base/media/java/android/media/session/
+├── MediaSessionManager.java        # Session 관리
+├── MediaSession.java               # Session API
+└── MediaController.java            # Controller API
+
+# Vehicle HAL
+hardware/interfaces/automotive/vehicle/
+└── 2.0/
+    ├── IVehicle.hal                # Vehicle 인터페이스
+    └── types.hal                   # VehicleProperty 정의
+
+# Key Layout 파일
+frameworks/base/data/keyboards/
+├── Generic.kl                      # 기본 키 매핑
+└── Vendor_[xxxx]_Product_[yyyy].kl # 디바이스별 매핑</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">🔍 주요 클래스 상세</h3>
+            <div class="code-block">
+                <pre><code>// CarInputService.java - 핵심 메서드
+public class CarInputService extends ICarInput.Stub {
+    // VHAL 이벤트 핸들러
+    private final VehicleHal.VehicleHalEventListener mVehicleHalListener =
+        new VehicleHal.VehicleHalEventListener() {
+            @Override
+            public void onHalEvents(List&lt;VehiclePropValue&gt; values) {
+                for (VehiclePropValue v : values) {
+                    handleKeyEvent(v);
+                }
+            }
+        };
+
+    // 키 인젝션
+    private void injectKeyEvent(KeyEvent event, int targetDisplay) {
+        mInputManager.injectInputEvent(
+            event,
+            InputManager.INJECT_INPUT_EVENT_MODE_ASYNC,
+            targetDisplay
+        );
+    }
+}
+
+// InputReader.cpp - 키 읽기
+void EventHub::scanDevicesLocked() {
+    // /dev/input/event* 디바이스 스캔
+    for (int i = 0; i < INPUT_MAX_DEVICES; i++) {
+        char devname[PATH_MAX];
+        snprintf(devname, sizeof(devname), "/dev/input/event%d", i);
+
+        int fd = open(devname, O_RDONLY | O_CLOEXEC);
+        if (fd >= 0) {
+            // 디바이스 정보 읽기
+            struct input_id id;
+            ioctl(fd, EVIOCGID, &id);
+        }
+    }
+}
+
+// MediaSessionService.java - 키 디스패치
+boolean dispatchMediaKeyEvent(KeyEvent keyEvent, boolean asSystemService) {
+    // Priority 기반 타겟 선택
+    MediaSessionRecord target = findMediaSession();
+
+    if (target != null) {
+        target.getCallback().onMediaButton(keyEvent);
+        return true;
+    }
+    return false;
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">🌐 유용한 AOSP 링크</h3>
+            <div class="code-block">
+                <pre><code># CarInputService 소스
+https://cs.android.com/android/platform/superproject/main/+/main:packages/services/Car/service/src/com/android/car/input/
+
+# RotaryService 소스
+https://cs.android.com/android/platform/superproject/main/+/main:packages/apps/Car/RotaryController/
+
+# InputReader 소스
+https://cs.android.com/android/platform/superproject/main/+/main:frameworks/native/services/inputflinger/reader/
+
+# MediaSessionService 소스
+https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/media/java/android/media/session/
+
+# Vehicle HAL 소스
+https://cs.android.com/android/platform/superproject/main/+/main:hardware/interfaces/automotive/vehicle/
+
+# AAOS Input 공식 문서
+https://source.android.com/docs/automotive/hmi/input
+
+# Key Layout 문서
+https://source.android.com/docs/core/interaction/input/key-layout-files</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 15: Related Documentation -->
+        <section class="section sec-car">
+            <h2 class="section-title">
+                <span class="section-number">15</span>
+                관련 상세 문서
+            </h2>
+            <p class="section-description">
+                AAOS Key Events와 연관된 다른 주요 문서 및 리소스입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        <a href="carmedia.html" style="color: inherit; text-decoration: none;">
+                            Car Media Service
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        미디어 키 이벤트와 CarMediaService, MediaSession의 통합 동작
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        <a href="mediasession.html" style="color: inherit; text-decoration: none;">
+                            MediaSession
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        MediaSession Callback과 미디어 키 디스패칭, Priority 기반 전달
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        <a href="audio-framework.html" style="color: inherit; text-decoration: none;">
+                            Audio Framework
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        볼륨 키 처리와 CarAudioService, Volume Groups 연동
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚙</span>
+                        <a href="aaos.html" style="color: inherit; text-decoration: none;">
+                            Android Automotive OS
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        AAOS 전체 아키텍처, Vehicle HAL, CarService 통합
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        <a href="aaos-last-media.html" style="color: inherit; text-decoration: none;">
+                            Last Media Source & Autoplay
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        시동 켜짐 시 자동 재생과 미디어 키의 연동
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔋</span>
+                        <a href="power-policy-suspend.html" style="color: inherit; text-decoration: none;">
+                            Power Policy & Suspend
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        차량 전원 상태에 따른 키 이벤트 처리 및 Wake-up
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 추가 리소스:</strong> Android 공식 문서
+                <a href="https://source.android.com/docs/automotive/hmi/input" target="_blank"
+                   style="color: var(--accent-primary);">AAOS Input System</a>,
+                <a href="https://source.android.com/docs/core/interaction/input" target="_blank"
+                   style="color: var(--accent-primary);">Input Framework</a>
+            </div>
+        </section>
+
         <a href="index.html" class="nav-button">← Back to Dashboard</a>
     </div>
 
