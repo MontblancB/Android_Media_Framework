@@ -115,34 +115,49 @@
                 AOSP 전체 아키텍처
             </h2>
             <p class="section-description">
-                AOSP는 Linux 커널부터 애플리케이션까지 6개의 주요 레이어로 구성됩니다.
+                AOSP는 Linux 커널부터 애플리케이션까지 5개의 주요 레이어로 구성됩니다. (Android 공식 아키텍처)
             </p>
 
             <div class="mermaid-container">
                 <div class="mermaid">
                     graph TB
-                    APP["🎨 Application Layer<br/>System Apps • OEM Apps • 3rd Party Apps"]
+                    subgraph LAYER1["📱 Layer 1: System Apps"]
+                        APP["System Apps<br/>Phone • Contacts • Settings<br/>Email • Camera • Browser"]
+                    end
 
-                    FW["📱 Android Framework<br/>Activity Manager • Window Manager<br/>Package Manager • Content Providers"]
+                    subgraph LAYER2["☕ Layer 2: Java API Framework"]
+                        FW["View System • Activity Manager • Package Manager<br/>Window Manager • Notification Manager • Content Providers<br/>Resource Manager • Location Manager • Telephony Manager"]
+                        SERVICES["System Services (system_server)<br/>ActivityManagerService • WindowManagerService<br/>PackageManagerService • NotificationManagerService"]
+                    end
 
-                    ART_LAYER["☕ Android Runtime (ART)<br/>ART/Dalvik VM • Core Libraries"]
+                    subgraph LAYER3["⚡ Layer 3: Native Libraries & Android Runtime"]
+                        ART["Android Runtime (ART)<br/>Ahead-of-Time Compilation<br/>Garbage Collection<br/>Core Libraries"]
+                        NATIVE["Native C/C++ Libraries<br/>Media Framework (libstagefright)<br/>SurfaceFlinger • AudioFlinger<br/>WebView • libc (Bionic) • SSL"]
+                    end
 
-                    NATIVE["⚡ Native Layer (C/C++)<br/>libc • Media Framework • SQLite • WebView"]
+                    subgraph LAYER4["🔌 Layer 4: Hardware Abstraction Layer (HAL)"]
+                        HAL["HIDL/AIDL Interfaces<br/>Audio HAL • Camera HAL • Codec HAL<br/>Sensor HAL • Graphics HAL • Vehicle HAL"]
+                    end
 
-                    SERVICES["🔧 System Services<br/>system_server • SurfaceFlinger • AudioFlinger"]
+                    subgraph LAYER5["🐧 Layer 5: Linux Kernel"]
+                        KERNEL["Binder Driver • Display Driver • Camera Driver<br/>Audio Driver • Bluetooth Driver • WiFi Driver<br/>Power Management • Memory Management • SELinux"]
+                    end
 
-                    HAL_LAYER["🔌 Hardware Abstraction Layer<br/>Camera HAL • Audio HAL • Sensor HAL • Codec HAL"]
-
-                    KERNEL["🐧 Linux Kernel<br/>Drivers • Memory Mgmt • Process Mgmt • SELinux"]
-
-                    APP -->|Java/Kotlin API| FW
-                    FW -->|Framework API| ART_LAYER
-                    ART_LAYER -->|JNI| NATIVE
-                    NATIVE -->|Binder IPC| SERVICES
-                    SERVICES -->|HIDL/AIDL| HAL_LAYER
-                    HAL_LAYER -->|System Call| KERNEL
+                    APP -->|Java API| FW
+                    FW -->|JNI| ART
+                    FW -->|Binder IPC| SERVICES
+                    ART -->|JNI| NATIVE
+                    SERVICES -->|Native Calls| NATIVE
+                    NATIVE -->|HIDL/AIDL| HAL
+                    HAL -->|System Calls| KERNEL
 
                 </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 아키텍처 핵심 원칙</strong><br/>
+                각 레이어는 표준화된 인터페이스로 분리되어 있어, 상위 레이어를 수정하지 않고 하위 레이어(특히 HAL, Kernel)를 벤더가 독립적으로 업데이트할 수 있습니다.
+                이는 <strong>Project Treble</strong>의 핵심 설계 철학입니다.
             </div>
         </section>
 
@@ -276,10 +291,265 @@
             </div>
         </section>
 
-<!-- Section 4: AOSP Boot Process -->
+<!-- Section 4: Media Framework Overview -->
 <section class="content-section section">
     <h2 class="section-title">
         <span class="section-number">4</span>
+        미디어 프레임워크 개요
+    </h2>
+    <p class="section-description">
+        AOSP 미디어 스택은 오디오, 비디오, 이미지 처리를 담당하는 핵심 컴포넌트들로 구성됩니다.
+    </p>
+
+    <div class="mermaid-container">
+        <div class="mermaid">
+            graph TB
+            subgraph APP_LAYER["Application Layer"]
+                MEDIA_API["MediaPlayer • ExoPlayer<br/>MediaRecorder • Camera2 API<br/>AudioTrack • AudioRecord"]
+            end
+
+            subgraph FRAMEWORK["Framework Layer"]
+                MEDIA_SESSION["MediaSessionService<br/>Session Management"]
+                MEDIA_ROUTER["MediaRouter<br/>Audio Routing"]
+            end
+
+            subgraph NATIVE["Native Layer"]
+                STAGEFRIGHT["libstagefright<br/>Media Pipeline"]
+                CODEC_SERVICE["MediaCodecService<br/>Codec Management"]
+                AUDIO_FLINGER["AudioFlinger<br/>Audio Mixing & Routing"]
+                CAMERA_SERVICE["CameraService<br/>Camera Management"]
+            end
+
+            subgraph HAL_LAYER["HAL Layer"]
+                CODEC_HAL["Codec 2.0 HAL<br/>Hardware Codecs"]
+                AUDIO_HAL["Audio HAL<br/>Audio Hardware"]
+                CAMERA_HAL["Camera HAL<br/>Camera Hardware"]
+            end
+
+            MEDIA_API -->|Binder IPC| MEDIA_SESSION
+            MEDIA_API -->|Binder IPC| STAGEFRIGHT
+            MEDIA_API -->|Binder IPC| AUDIO_FLINGER
+            MEDIA_SESSION -->|Control| STAGEFRIGHT
+            STAGEFRIGHT -->|Codec Request| CODEC_SERVICE
+            CODEC_SERVICE -->|HIDL/AIDL| CODEC_HAL
+            AUDIO_FLINGER -->|HIDL/AIDL| AUDIO_HAL
+            CAMERA_SERVICE -->|HIDL/AIDL| CAMERA_HAL
+
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🎬</span>
+                Codec 2.0 Framework
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>libstagefright</strong>: 미디어 파이프라인 엔진</li>
+                    <li><strong>MediaCodec API</strong>: 앱 레벨 코덱 API</li>
+                    <li><strong>Codec 2.0 HAL</strong>: 하드웨어 가속 인터페이스</li>
+                    <li><strong>OMX IL 대체</strong>: Android 10+</li>
+                    <li>H.264/H.265/VP9/AV1 지원</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔊</span>
+                Audio Framework
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>AudioFlinger</strong>: 오디오 믹싱 엔진</li>
+                    <li><strong>AudioPolicyService</strong>: 라우팅 정책</li>
+                    <li><strong>Audio HAL</strong>: 하드웨어 추상화</li>
+                    <li>ALSA/TinyALSA 커널 드라이버</li>
+                    <li>다중 스트림 믹싱 & 리샘플링</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">📹</span>
+                Camera Framework
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Camera2 API</strong>: 고급 카메라 제어</li>
+                    <li><strong>CameraService</strong>: 카메라 세션 관리</li>
+                    <li><strong>Camera HAL3</strong>: Request-based 파이프라인</li>
+                    <li>RAW, YUV, JPEG 출력 지원</li>
+                    <li>다중 카메라 & HDR 지원</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section 5: Graphics Stack -->
+<section class="content-section section">
+    <h2 class="section-title">
+        <span class="section-number">5</span>
+        그래픽 스택
+    </h2>
+    <p class="section-description">
+        Android의 그래픽 렌더링 파이프라인은 BufferQueue를 중심으로 동작합니다.
+    </p>
+
+    <div class="mermaid-container">
+        <div class="mermaid">
+            graph TB
+            APP_VIEW["App: View/Canvas<br/>UI Rendering"]
+            SURFACE["Surface<br/>(Buffer Producer)"]
+            BUFFER_QUEUE["BufferQueue<br/>Triple Buffering"]
+            SURFACE_FLINGER["SurfaceFlinger<br/>Compositor"]
+            HWC["HWComposer (HAL)<br/>Hardware Composition"]
+            DISPLAY["Display Driver<br/>Frame Output"]
+
+            APP_VIEW -->|"1. Draw"| SURFACE
+            SURFACE -->|"2. Queue Buffer"| BUFFER_QUEUE
+            BUFFER_QUEUE -->|"3. Acquire Buffer"| SURFACE_FLINGER
+            SURFACE_FLINGER -->|"4. Composite Layers"| HWC
+            HWC -->|"5. Scan Out"| DISPLAY
+
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🖼️</span>
+                SurfaceFlinger
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li>모든 Surface를 합성하여 화면 출력</li>
+                    <li>다중 디스플레이 지원</li>
+                    <li>VSync 동기화</li>
+                    <li>HWComposer를 통한 하드웨어 가속</li>
+                    <li>Display HAL 인터페이스</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔄</span>
+                BufferQueue
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li>Producer-Consumer 패턴</li>
+                    <li>Triple Buffering (Front, Back, Spare)</li>
+                    <li>Gralloc으로 GPU 메모리 할당</li>
+                    <li>ANativeWindow 인터페이스</li>
+                    <li>프레임 드롭 방지</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">⚡</span>
+                HWComposer (HWC)
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li>하드웨어 레이어 합성</li>
+                    <li>GPU 사용 최소화</li>
+                    <li>오버레이 플레인 활용</li>
+                    <li>전력 소비 최적화</li>
+                    <li>Display HAL 2.x/3.x</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section 6: Security Architecture -->
+<section class="content-section section">
+    <h2 class="section-title">
+        <span class="section-number">6</span>
+        보안 아키텍처
+    </h2>
+    <p class="section-description">
+        Android는 다층 보안 모델을 통해 시스템과 사용자 데이터를 보호합니다.
+    </p>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🛡️</span>
+                SELinux (Mandatory Access Control)
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>강제 접근 제어</strong>: 모든 프로세스에 정책 적용</li>
+                    <li><strong>Domain 격리</strong>: 프로세스별 권한 제한</li>
+                    <li><strong>Type Enforcement</strong>: 파일/소켓 접근 제어</li>
+                    <li>Android 4.4+에서 Enforcing 모드</li>
+                    <li>시스템 파티션 보호</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">✅</span>
+                Verified Boot
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>부트로더 검증</strong>: 서명된 이미지만 부팅</li>
+                    <li><strong>dm-verity</strong>: 시스템 파티션 무결성</li>
+                    <li><strong>Rollback Protection</strong>: 다운그레이드 방지</li>
+                    <li>부팅 체인 전체 검증</li>
+                    <li>CTS 필수 요구사항 (Android 7.0+)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔐</span>
+                Keystore & Hardware Security
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Keymaster HAL</strong>: 하드웨어 키 저장</li>
+                    <li><strong>Trusted Execution Environment (TEE)</strong></li>
+                    <li><strong>StrongBox</strong>: 전용 보안 칩 (Titan M)</li>
+                    <li>암호화 키는 추출 불가</li>
+                    <li>생체인증 연동</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">📦</span>
+                Application Sandbox
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li>각 앱은 고유 UID로 실행</li>
+                    <li>프로세스 격리 (Linux User-based)</li>
+                    <li>파일 시스템 권한 분리</li>
+                    <li>네트워크 정책 (UID 기반)</li>
+                    <li>Inter-app 통신은 Binder 통해서만</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section 7: AOSP Boot Process -->
+<section class="content-section section">
+    <h2 class="section-title">
+        <span class="section-number">7</span>
         AOSP 부팅 프로세스
     </h2>
     <p class="section-description">
@@ -366,10 +636,10 @@
     </div>
 </section>
 
-<!-- Section 5: System Services -->
+<!-- Section 8: System Services -->
 <section class="content-section section">
     <h2 class="section-title">
-        <span class="section-number">5</span>
+        <span class="section-number">8</span>
         시스템 서비스 (System Services)
     </h2>
     <p class="section-description">
@@ -487,10 +757,10 @@
     </div>
 </section>
 
-<!-- Section 6: Binder IPC -->
+<!-- Section 9: Binder IPC -->
 <section class="content-section section">
     <h2 class="section-title">
-        <span class="section-number">6</span>
+        <span class="section-number">9</span>
         Binder IPC
     </h2>
     <p class="section-description">
@@ -587,10 +857,168 @@
     </div>
 </section>
 
-<!-- Section 7: AOSP vs AAOS Link -->
+<!-- Section 10: Project Treble -->
 <section class="content-section section">
     <h2 class="section-title">
-        <span class="section-number">7</span>
+        <span class="section-number">10</span>
+        Project Treble (Android 8.0+)
+    </h2>
+    <p class="section-description">
+        Android 8.0에서 도입된 Treble은 Framework와 Vendor 구현을 분리하여 업데이트 속도를 획기적으로 개선했습니다.
+    </p>
+
+    <div class="mermaid-container">
+        <div class="mermaid">
+            graph TB
+            subgraph SYSTEM["System Partition (Google)"]
+                FRAMEWORK["Android Framework<br/>System Services"]
+                VNDK["VNDK<br/>(Vendor NDK)"]
+            end
+
+            subgraph VENDOR["Vendor Partition (OEM)"]
+                VENDOR_IMPL["Vendor Implementation<br/>HAL Implementations"]
+                VENDOR_LIBS["Vendor Libraries"]
+            end
+
+            subgraph HAL_INTERFACE["Vendor Interface (VINTF)"]
+                HIDL["HIDL Interfaces<br/>(Hardware Interface Definition Language)"]
+                STABLE_AIDL["Stable AIDL<br/>(Android 11+)"]
+            end
+
+            FRAMEWORK -->|Uses| HIDL
+            FRAMEWORK -->|Uses| STABLE_AIDL
+            HIDL -->|Implements| VENDOR_IMPL
+            STABLE_AIDL -->|Implements| VENDOR_IMPL
+            VENDOR_IMPL -->|Uses| VENDOR_LIBS
+            FRAMEWORK -->|Links| VNDK
+
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🎯</span>
+                Treble의 핵심 목표
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>파티션 분리</strong>: System과 Vendor 완전 분리</li>
+                    <li><strong>독립 업데이트</strong>: Framework만 업데이트 가능</li>
+                    <li><strong>CTS 강화</strong>: VTS (Vendor Test Suite) 추가</li>
+                    <li><strong>호환성 매트릭스</strong>: VINTF로 버전 관리</li>
+                    <li>업데이트 개발 기간 수개월 → 수주로 단축</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔌</span>
+                HIDL (Hardware Interface Definition Language)
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li>HAL 인터페이스를 .hal 파일로 정의</li>
+                    <li>버전 관리 (예: android.hardware.audio@7.0)</li>
+                    <li>Passthrough vs Binderized 모드</li>
+                    <li>자동 C++/Java 코드 생성</li>
+                    <li>Android 11부터 Stable AIDL로 전환</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">📦</span>
+                VNDK (Vendor Native Development Kit)
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li>Vendor 코드가 사용 가능한 System 라이브러리</li>
+                    <li>System 업데이트 시 호환성 보장</li>
+                    <li>VNDK-SP (Same Process): 성능 중요 라이브러리</li>
+                    <li>LLNDK: 하위 레벨 라이브러리 (libc, libm)</li>
+                    <li>Vendor 라이브러리는 /vendor 파티션에 격리</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section 11: Project Mainline -->
+<section class="content-section section">
+    <h2 class="section-title">
+        <span class="section-number">11</span>
+        Project Mainline (Android 10+)
+    </h2>
+    <p class="section-description">
+        Android 10에서 도입된 Mainline은 핵심 시스템 컴포넌트를 모듈화하여 Google Play를 통해 독립적으로 업데이트합니다.
+    </p>
+
+    <div class="highlight-box">
+        <strong>💡 Treble vs Mainline</strong><br/>
+        <strong>Treble</strong>은 Vendor(OEM) 구현을 분리하여 Framework 업데이트를 가능하게 하고,
+        <strong>Mainline</strong>은 Framework 내부를 모듈화하여 개별 컴포넌트를 OTA 없이 업데이트합니다.
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">📦</span>
+                Mainline 모듈 (APEX/APK)
+            </h3>
+            <div class="card-description">
+                <p><strong>Android 13 기준 30+ 모듈</strong></p>
+                <ul>
+                    <li><strong>Media</strong>: com.android.media (Codec 업데이트)</li>
+                    <li><strong>MediaProvider</strong>: 스토리지 관리</li>
+                    <li><strong>DNS Resolver</strong>: 네트워크 DNS</li>
+                    <li><strong>Conscrypt</strong>: TLS/SSL</li>
+                    <li><strong>Timezone Data</strong>: 시간대 데이터</li>
+                    <li><strong>WebView</strong>: 웹 렌더링 엔진</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔄</span>
+                APEX (Android Pony EXpress)
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>컨테이너 포맷</strong>: APK + ext4/f2fs 이미지</li>
+                    <li><strong>서명 검증</strong>: dm-verity로 무결성 보장</li>
+                    <li><strong>부팅 시 마운트</strong>: /apex 디렉토리</li>
+                    <li>Native 라이브러리 (.so) 업데이트 가능</li>
+                    <li>Rollback 지원</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">⚡</span>
+                Mainline의 장점
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>빠른 보안 패치</strong>: OEM OTA 불필요</li>
+                    <li><strong>기능 추가</strong>: OS 업그레이드 없이 신규 기능</li>
+                    <li><strong>버그 수정</strong>: 즉시 배포 가능</li>
+                    <li><strong>호환성 유지</strong>: 구버전 기기도 최신 기능</li>
+                    <li>Google Play Store를 통한 자동 업데이트</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section 12: AOSP vs AAOS Link -->
+<section class="content-section section">
+    <h2 class="section-title">
+        <span class="section-number">12</span>
         Android Automotive OS (AAOS)
     </h2>
     <p class="section-description">
