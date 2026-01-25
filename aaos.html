@@ -62,15 +62,17 @@
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🏭</span>
-                        주요 제조사
+                        주요 제조사 (2024 기준)
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li><strong>Volvo</strong>: Polestar, XC40 Recharge</li>
-                            <li><strong>GM</strong>: Chevrolet, GMC, Cadillac</li>
-                            <li><strong>Ford</strong>: Lincoln 시리즈</li>
+                            <li><strong>Volvo/Polestar</strong>: XC40 Recharge, Polestar 2/3 (완전 AAOS 전용)</li>
+                            <li><strong>GM</strong>: Chevrolet, GMC, Cadillac (북미 전체 라인업)</li>
+                            <li><strong>Ford</strong>: Lincoln 시리즈, Mustang Mach-E</li>
+                            <li><strong>BMW</strong>: iDrive 8 (Android 13 기반, 7 Series, iX)</li>
                             <li><strong>Honda</strong>: Acura 모델</li>
-                            <li><strong>Renault</strong>: Megane E-Tech</li>
+                            <li><strong>Renault</strong>: Megane E-Tech, Austral</li>
+                            <li><strong>Nissan/Infiniti</strong>: 일부 전기차 모델</li>
                         </ul>
                     </div>
                 </div>
@@ -93,40 +95,239 @@
             </div>
         </section>
 
-        <!-- Section 2: AAOS Architecture -->
+        <!-- Section 2: Android Auto vs AAOS -->
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">2</span>
+                Android Auto vs AAOS
+            </h2>
+            <p class="section-description">
+                많은 사람들이 혼동하는 Android Auto와 AAOS의 근본적인 차이를 명확히 이해해야 합니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>핵심 차이:</strong> <strong>Android Auto</strong>는 스마트폰을 차량에 미러링하는 앱이고,
+                <strong>AAOS</strong>는 차량 자체에서 실행되는 완전한 운영체제입니다.
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph AA["Android Auto (Projection)"]
+                        PHONE["📱 Smartphone<br/>(Android/iOS)"]
+                        AA_APP["Android Auto App<br/>Running on Phone"]
+                        PHONE_HW["Phone Hardware<br/>(CPU, GPS, Network)"]
+                    end
+
+                    subgraph CAR_AA["Car (Display Only)"]
+                        CAR_DISPLAY["🖥️ Car Display<br/>(Head Unit)"]
+                        CAR_CONTROLS["Steering Wheel<br/>Controls"]
+                    end
+
+                    subgraph AAOS_FULL["Android Automotive OS (Native)"]
+                        AAOS_OS["🚗 AAOS<br/>Running in Car"]
+                        CAR_HW["Car Hardware<br/>(IVI SoC, GPS)"]
+                        VHAL["Vehicle HAL<br/>(ECU/CAN Access)"]
+                    end
+
+                    PHONE --> AA_APP
+                    AA_APP -->|USB/Wireless Projection| CAR_DISPLAY
+                    CAR_CONTROLS -->|Input Events| AA_APP
+                    PHONE_HW -.->|Uses Phone's Resources| AA_APP
+
+                    AAOS_OS --> CAR_HW
+                    AAOS_OS --> VHAL
+                    VHAL -.->|Direct Vehicle Access| CAR_HW
+                </div>
+            </div>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>비교 항목</th>
+                        <th>Android Auto</th>
+                        <th>AAOS (Android Automotive OS)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>실행 위치</strong></td>
+                        <td>스마트폰에서 실행</td>
+                        <td>차량 IVI 시스템에서 실행</td>
+                    </tr>
+                    <tr>
+                        <td><strong>연결 방식</strong></td>
+                        <td>USB 케이블 또는 무선 연결</td>
+                        <td>연결 불필요 (차량 부팅 시 자동 실행)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>스마트폰 필요</strong></td>
+                        <td>필수 (폰 없으면 작동 안 됨)</td>
+                        <td>불필요 (독립 실행)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>차량 역할</strong></td>
+                        <td>디스플레이 + 입력 장치</td>
+                        <td>완전한 컴퓨팅 플랫폼</td>
+                    </tr>
+                    <tr>
+                        <td><strong>차량 데이터 접근</strong></td>
+                        <td>제한적 (속도, 연료 등 기본 정보만)</td>
+                        <td>완전한 접근 (VHAL을 통해 모든 ECU 데이터)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>앱 스토어</strong></td>
+                        <td>Google Play (폰 앱)</td>
+                        <td>Google Play for Cars (차량 앱)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>앱 실행 환경</strong></td>
+                        <td>폰의 CPU/메모리 사용</td>
+                        <td>차량 IVI SoC 사용</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPS/네트워크</strong></td>
+                        <td>폰의 GPS/4G/5G 사용</td>
+                        <td>차량 내장 GPS/LTE 모듈 사용</td>
+                    </tr>
+                    <tr>
+                        <td><strong>업데이트</strong></td>
+                        <td>폰 앱 업데이트</td>
+                        <td>차량 OTA 업데이트</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Multi-User</strong></td>
+                        <td>미지원 (폰 소유자만)</td>
+                        <td>지원 (차량 내 여러 프로필)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Audio Routing</strong></td>
+                        <td>단일 출력 (차량 스피커)</td>
+                        <td>Multi-Zone Audio (구역별 독립)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HVAC 제어</strong></td>
+                        <td>불가능</td>
+                        <td>가능 (VHAL 통해 직접 제어)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>설치 비용</strong></td>
+                        <td>낮음 (호환 헤드유닛만 필요)</td>
+                        <td>높음 (차량 제조 단계부터 통합)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>채택 사례</strong></td>
+                        <td>대부분의 최신 차량 (애프터마켓 포함)</td>
+                        <td>Volvo, GM, Ford, Polestar, Renault 등</td>
+                    </tr>
+                    <tr>
+                        <td><strong>개발 복잡도</strong></td>
+                        <td>낮음 (일반 Android 앱 개발)</td>
+                        <td>높음 (Car App Library, 차량 통합)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Android Auto 사용 사례
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>기존 차량</strong>: Android Auto 호환 헤드유닛 장착</li>
+                            <li><strong>스마트폰 의존</strong>: 폰의 앱/데이터 사용</li>
+                            <li><strong>간편한 업그레이드</strong>: 하드웨어 교체 없이 폰 앱 업데이트</li>
+                            <li><strong>비용 효율적</strong>: 별도 차량 하드웨어 불필요</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        AAOS 사용 사례
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>프리미엄 차량</strong>: 고급 IVI 경험 제공</li>
+                            <li><strong>완전 통합</strong>: 차량 기능과 앱의 깊은 통합</li>
+                            <li><strong>독립 운영</strong>: 스마트폰 없이도 모든 기능 사용</li>
+                            <li><strong>OEM 커스터마이징</strong>: 제조사별 브랜드 경험</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        함께 사용 가능
+                    </h3>
+                    <div class="card-description">
+                        <p>AAOS 차량도 Android Auto를 지원할 수 있습니다!</p>
+                        <ul>
+                            <li>AAOS에서 Android Auto 앱 실행</li>
+                            <li>승객이 자신의 폰을 연결하여 사용</li>
+                            <li>운전자는 AAOS, 승객은 Android Auto</li>
+                            <li>최고의 유연성 제공</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: AAOS Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
                 AAOS 전체 아키텍처
             </h2>
             <p class="section-description">
-                AOSP 기반 위에 차량 특화 레이어를 추가한 6-layer 아키텍처입니다.
+                AAOS는 AOSP의 5-layer 아키텍처 위에 Car Services Layer를 추가한 구조입니다.
             </p>
 
             <div class="mermaid-container">
                 <div class="mermaid">
                     graph TB
-                    APP["🎨 Vehicle Apps<br /><br />Navigation, Media, HVAC Control<br />Car Settings"]
+                    subgraph Layer1["Layer 1: Vehicle Apps"]
+                        APP["Navigation • Media • HVAC<br/>Car Settings • OEM Apps"]
+                    end
 
-                    CAR_SERVICES["🚙 Car Services Layer<br /><br />Car API (android.car.*)<br />CarPropertyManager,
-                    CarAudioService<br />CarPowerService, CarUserService"]
+                    subgraph Layer2["Layer 2: Car Services (AAOS 추가)"]
+                        CAR_API["android.car.* API"]
+                        CAR_SVC["CarPropertyManager • CarAudioService<br/>CarPowerService • CarUserService<br/>CarInputService • CarPackageManager"]
+                    end
 
-                    FW["📱 Android Framework<br /><br />Activity Manager, Window Manager<br />Package Manager, Audio
-                    Manager"]
+                    subgraph Layer3["Layer 3-6: AOSP Core (표준 Android)"]
+                        FW["Java API Framework<br/>Activity Manager • Window Manager"]
+                        ART["Android Runtime (ART)<br/>Native Libraries"]
+                        HAL_STD["Standard HALs<br/>Audio • Camera • Graphics"]
+                    end
 
-                    ART["☕ Android Runtime<br /><br />ART, Core Libraries"]
+                    subgraph Layer7["Layer 7: Vehicle HAL (AAOS 추가)"]
+                        VHAL["Vehicle HAL 3.0 (AIDL)<br/>Vehicle Properties<br/>Get/Set/Subscribe"]
+                    end
 
-                    VHAL["🔌 Vehicle HAL (VHAL)<br /><br />Vehicle Properties<br />AIDL/HIDL Interface"]
+                    subgraph Hardware["Vehicle Hardware"]
+                        ECU["ECU Controllers<br/>CAN/LIN Bus<br/>Sensors & Actuators"]
+                    end
 
-                    VEHICLE_HW["⚡ Vehicle Hardware<br /><br />ECU, CAN Bus<br />Vehicle Sensors (Speed, Fuel, Gear)"]
-
-                    APP --> CAR_SERVICES
-                    CAR_SERVICES --> FW
+                    APP -->|android.car API| CAR_API
+                    CAR_API --> CAR_SVC
+                    CAR_SVC -->|Binder IPC| FW
                     FW --> ART
-                    ART --> VHAL
-                    VHAL --> VEHICLE_HW
-
+                    ART --> HAL_STD
+                    CAR_SVC -->|AIDL/HIDL| VHAL
+                    VHAL -->|CAN Messages| ECU
                 </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 AAOS 아키텍처 핵심</strong><br/>
+                AAOS는 AOSP 위에 <strong>2개의 레이어</strong>를 추가합니다:
+                <br/>① <strong>Car Services Layer</strong>: android.car API 제공
+                <br/>② <strong>Vehicle HAL</strong>: 차량 하드웨어 접근
             </div>
         </section>
 
@@ -301,9 +502,63 @@
 
                 </div>
             </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔄 VHAL 2.0 vs 3.0</strong><br/>
+                • <strong>VHAL 2.0 (HIDL)</strong>: Android 8.0~12, hardware.automotive.vehicle@2.0<br/>
+                • <strong>VHAL 3.0 (AIDL)</strong>: Android 13+, android.hardware.automotive.vehicle (Stable AIDL)<br/>
+                • 성능 향상, 더 나은 버전 관리, 간소화된 인터페이스
+            </div>
+
+            <table class="comparison-table" style="margin-top: 20px;">
+                <thead>
+                    <tr>
+                        <th>항목</th>
+                        <th>VHAL 2.0 (HIDL)</th>
+                        <th>VHAL 3.0 (AIDL)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>도입 시기</strong></td>
+                        <td>Android 8.0 (Oreo, 2017)</td>
+                        <td>Android 13 (Tiramisu, 2022)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>인터페이스</strong></td>
+                        <td>HIDL (Hardware Interface Definition Language)</td>
+                        <td>Stable AIDL (Android Interface Definition Language)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>패키지명</strong></td>
+                        <td><code>android.hardware.automotive.vehicle@2.0</code></td>
+                        <td><code>android.hardware.automotive.vehicle</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>버전 관리</strong></td>
+                        <td>Major 버전 변경 시 호환성 깨짐</td>
+                        <td>Stable AIDL로 하위 호환성 보장</td>
+                    </tr>
+                    <tr>
+                        <td><strong>성능</strong></td>
+                        <td>HIDL Binder IPC 오버헤드</td>
+                        <td>최적화된 AIDL Binder (더 빠름)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>확장성</strong></td>
+                        <td>Vendor Extensions</td>
+                        <td>더 유연한 Property 확장</td>
+                    </tr>
+                    <tr>
+                        <td><strong>상태</strong></td>
+                        <td>Legacy (Android 12까지 지원)</td>
+                        <td>Current (Android 13부터 권장)</td>
+                    </tr>
+                </tbody>
+            </table>
         </section>
 
-        <!-- Section 5: Multi-User Support -->
+        <!-- Section 6: Multi-User Support -->
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">5</span>
@@ -606,6 +861,245 @@
                 <strong>핵심 요약:</strong> AAOS는 AOSP 위에 <strong>Car Services</strong>, <strong>Vehicle HAL</strong>,
                 <strong>android.car API</strong>를 추가하여
                 차량 하드웨어와의 완전한 통합을 제공하며, 운전자 안전을 최우선으로 하는 UI/UX 가이드라인을 적용한 차량 전용 플랫폼입니다.
+            </div>
+        </section>
+
+        <!-- Section 9: AAOS App Development -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                AAOS 앱 개발
+            </h2>
+            <p class="section-description">
+                AAOS 앱을 개발하는 방법과 주요 라이브러리를 소개합니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph AppTypes["AAOS App Types"]
+                        CAR_APP["Car App<br/>(androidx.car.app)<br/>Navigation, Parking, Charging"]
+                        MEDIA_APP["Media App<br/>(androidx.media3)<br/>Audio/Video Playback"]
+                        SYSTEM_APP["System App<br/>(android.car API)<br/>OEM Customization"]
+                    end
+
+                    subgraph Framework["AAOS Framework"]
+                        CAR_APP_LIB["Car App Library<br/>Templates & APIs"]
+                        MEDIA3["Media3 Library<br/>MediaSession"]
+                        CAR_SERVICE["Car Services<br/>android.car.*"]
+                    end
+
+                    CAR_APP -->|Uses| CAR_APP_LIB
+                    MEDIA_APP -->|Uses| MEDIA3
+                    SYSTEM_APP -->|Uses| CAR_SERVICE
+
+                    CAR_APP_LIB --> CAR_SERVICE
+                    MEDIA3 --> CAR_SERVICE
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Car App Library
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>androidx.car.app</strong> (Navigation, Parking, Charging)</p>
+                        <ul>
+                            <li>템플릿 기반 UI (안전한 운전자 경험)</li>
+                            <li>NavigationTemplate, PlaceListNavigationTemplate</li>
+                            <li>Android Auto와 AAOS 모두 지원</li>
+                            <li>드라이버 주의 산만 규칙 자동 준수</li>
+                            <li><code>CarAppService</code> 구현 필요</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Media App Development
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>androidx.media3</strong> (Audio & Video)</p>
+                        <ul>
+                            <li>MediaSession API 사용 (Media3 권장)</li>
+                            <li>MediaBrowserService 구현</li>
+                            <li>ExoPlayer 통합</li>
+                            <li>앨범 아트, 메타데이터 제공</li>
+                            <li>Play/Pause/Skip 제어 지원</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        System App Development
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>android.car API</strong> (OEM Only)</p>
+                        <ul>
+                            <li>OEM 제조사 전용 (System 권한 필요)</li>
+                            <li>CarPropertyManager로 차량 데이터 접근</li>
+                            <li>CarAudioManager로 오디오 존 제어</li>
+                            <li>CarPowerManager로 전원 관리</li>
+                            <li>AAOS 플랫폼 서명 필요</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Distribution
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Google Play for Cars</strong>: Car App & Media App</li>
+                            <li>Car App Quality Guidelines 준수 필요</li>
+                            <li>Driver Distraction 검토</li>
+                            <li>Multi-screen (cluster) 지원 권장</li>
+                            <li>OEM 프리로드 (System Apps)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 개발 시작하기</strong><br/>
+                • <strong>Media App</strong>: Media3 + MediaSession (가장 일반적)<br/>
+                • <strong>Navigation App</strong>: Car App Library (템플릿 기반)<br/>
+                • <strong>OEM App</strong>: android.car API (제조사만 가능)<br/>
+                • 모든 앱은 AndroidManifest.xml에 <code>android.hardware.type.automotive</code> 선언 필요
+            </div>
+        </section>
+
+        <!-- Section 10: Related AAOS Pages -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                AAOS 상세 주제
+            </h2>
+            <p class="section-description">
+                AAOS의 주요 기능에 대한 상세한 설명은 아래 페이지를 참조하세요.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Car Media Service
+                    </h3>
+                    <div class="card-description">
+                        <p>차량 특화 미디어 서비스 및 오디오 라우팅 아키텍처</p>
+                        <ul>
+                            <li>CarAudioService 상세 구조</li>
+                            <li>Audio Zone 설정 및 관리</li>
+                            <li>Dynamic Audio Policy</li>
+                            <li>Volume Groups & Device Routing</li>
+                        </ul>
+                        <a href="carmedia.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⌨️</span>
+                        Key Event Handling
+                    </h3>
+                    <div class="card-description">
+                        <p>AAOS 키 이벤트 처리 및 미디어 제어</p>
+                        <ul>
+                            <li>CarService Input Framework</li>
+                            <li>Steering Wheel Controls</li>
+                            <li>UX Restriction Manager</li>
+                            <li>Media Key Routing</li>
+                        </ul>
+                        <a href="aaos-key-events.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Last Media & Autoplay
+                    </h3>
+                    <div class="card-description">
+                        <p>Last Media Source 저장 및 자동 재생 정책</p>
+                        <ul>
+                            <li>Last Media Source 복원 메커니즘</li>
+                            <li>Autoplay Policy & Triggers</li>
+                            <li>MediaSession Priority</li>
+                            <li>User Preference Storage</li>
+                        </ul>
+                        <a href="aaos-last-media.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔋</span>
+                        Power Policy & Suspend
+                    </h3>
+                    <div class="card-description">
+                        <p>차량 전원 관리 및 Deep Sleep 메커니즘</p>
+                        <ul>
+                            <li>Suspend-to-RAM vs Deep Sleep</li>
+                            <li>Audio Context 보존 로직</li>
+                            <li>Wake-up Triggers</li>
+                            <li>CarPowerManager API</li>
+                        </ul>
+                        <a href="power-policy-suspend.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        Google Automotive Services (GAS)
+                    </h3>
+                    <div class="card-description">
+                        <p>차량용 Google 서비스 통합</p>
+                        <ul>
+                            <li>Google Play Services for Cars</li>
+                            <li>Google Assistant Integration</li>
+                            <li>Google Maps Navigation</li>
+                            <li>GAS 구성 요소 및 라이센싱</li>
+                        </ul>
+                        <a href="gas.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        CarMa (Car Ready Mobile Apps)
+                    </h3>
+                    <div class="card-description">
+                        <p>모바일 앱을 차량으로 확장하는 프로그램</p>
+                        <ul>
+                            <li>기존 모바일 앱의 차량 확장</li>
+                            <li>최소한의 코드 변경</li>
+                            <li>Android Auto + AAOS 통합</li>
+                            <li>Google의 새로운 앱 전략</li>
+                        </ul>
+                        <a href="carma.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
             </div>
         </section>
 
