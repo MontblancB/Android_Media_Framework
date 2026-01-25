@@ -18,12 +18,14 @@ const NODE_ID_MAPPING = {
     'MEDIA_API': 'Media APIs',
     'MEDIA_SESSION': 'MediaSession',
     'MEDIA_ROUTER': 'MediaRouter',
-    'MEDIA_CODEC_SERVICE': 'MediaCodecService',
+    'STAGEFRIGHT': 'Media Framework',
+    'CODEC_SERVICE': 'MediaCodecService',
     'AUDIO_FLINGER': 'AudioFlinger',
-    'SURFACE_FLINGER': 'SurfaceFlinger',
+    'CAMERA_SERVICE': 'CameraService',
     'CODEC_HAL': 'Codec HAL',
     'AUDIO_HAL': 'Audio HAL',
     'CAMERA_HAL': 'Camera HAL',
+    'SURFACE_FLINGER': 'SurfaceFlinger',
 
     // 그래픽 스택
     'APP_VIEW': 'View System',
@@ -45,7 +47,16 @@ const NODE_ID_MAPPING = {
     'BINDER': 'Binder Driver',
     'SERVICE_MGR': 'Service Manager',
     'PROXY': 'Binder Proxy',
-    'STUB': 'Binder Stub'
+    'STUB': 'Binder Stub',
+    'SERVICE': 'System Service',
+
+    // Project Treble
+    'FRAMEWORK': 'Android Framework',
+    'VNDK': 'Vendor NDK',
+    'VENDOR_IMPL': 'Vendor Implementation',
+    'VENDOR_LIBS': 'Vendor Libraries',
+    'HIDL': 'HIDL Interface',
+    'STABLE_AIDL': 'Stable AIDL'
 };
 
 const DIAGRAM_NODE_DATA = {
@@ -492,6 +503,362 @@ adb shell ps | grep system_server
 
 # 서비스 목록
 adb shell service list
+        `.trim()
+    },
+
+    // ========================================
+    // 추가 미디어 프레임워크 노드
+    // ========================================
+
+    'Media APIs': {
+        title: 'Media APIs',
+        layer: 'Application Framework',
+        description: 'Android 앱에서 사용하는 미디어 관련 API 모음입니다.',
+        components: [
+            'MediaPlayer - 기본 재생',
+            'ExoPlayer - 고급 재생',
+            'MediaRecorder - 녹음',
+            'Camera2 API - 카메라',
+            'AudioTrack - 오디오 출력',
+            'AudioRecord - 오디오 입력'
+        ],
+        path: 'frameworks/base/media/java/android/media/',
+        doc: 'https://developer.android.com/guide/topics/media'
+    },
+
+    'MediaSession': {
+        title: 'MediaSession',
+        layer: 'Framework',
+        description: '미디어 재생 세션을 관리하고, 미디어 컨트롤을 표준화합니다.',
+        components: [
+            'MediaSession - 세션 생성',
+            'MediaController - 원격 제어',
+            'PlaybackState - 재생 상태',
+            'Metadata - 미디어 정보'
+        ],
+        path: 'frameworks/base/media/java/android/media/session/',
+        doc: 'https://developer.android.com/guide/topics/media-apps/working-with-a-media-session'
+    },
+
+    'MediaRouter': {
+        title: 'MediaRouter',
+        layer: 'Framework',
+        description: '오디오/비디오 출력 장치를 선택하고 라우팅합니다.',
+        components: [
+            'Route Discovery',
+            'Output Device Selection',
+            'Chromecast 지원',
+            'Bluetooth Audio'
+        ],
+        path: 'frameworks/base/media/java/android/media/',
+        doc: 'https://developer.android.com/guide/topics/media/mediarouteProvider'
+    },
+
+    'Media Framework': {
+        title: 'Media Framework (libstagefright)',
+        layer: 'Native',
+        description: 'Android의 네이티브 미디어 파이프라인 구현입니다.',
+        components: [
+            'Container Parsing',
+            'Codec Pipeline',
+            'Buffer Management',
+            'Sync 처리'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'CameraService': {
+        title: 'CameraService',
+        layer: 'Native',
+        description: '카메라 하드웨어를 관리하는 시스템 서비스입니다.',
+        components: [
+            'Camera Device 관리',
+            'Capture Session',
+            'Stream Configuration',
+            'Metadata 처리'
+        ],
+        path: 'frameworks/av/services/camera/',
+        doc: 'https://source.android.com/docs/core/camera'
+    },
+
+    // ========================================
+    // 그래픽 스택 노드
+    // ========================================
+
+    'Surface': {
+        title: 'Surface',
+        layer: 'Framework',
+        description: 'BufferQueue의 프로듀서 역할을 하는 화면 버퍼입니다.',
+        components: [
+            'Buffer Producer',
+            'Canvas Drawing',
+            'Hardware Acceleration',
+            'Fence Synchronization'
+        ],
+        path: 'frameworks/native/libs/gui/',
+        doc: 'https://source.android.com/docs/core/graphics/arch-sv'
+    },
+
+    'Hardware Composer': {
+        title: 'Hardware Composer (HWC)',
+        layer: 'HAL',
+        description: '하드웨어 레벨 화면 합성을 담당하는 HAL입니다.',
+        components: [
+            'Layer Composition',
+            'Display Configuration',
+            'VSync 관리',
+            'Overlay Plane 제어'
+        ],
+        path: 'hardware/interfaces/graphics/composer/',
+        doc: 'https://source.android.com/docs/core/graphics/implement-hwc'
+    },
+
+    'Display Driver': {
+        title: 'Display Driver',
+        layer: 'Kernel',
+        description: '디스플레이 하드웨어를 제어하는 커널 드라이버입니다.',
+        components: [
+            'Frame Buffer 관리',
+            'Panel 초기화',
+            'Backlight 제어',
+            'HDMI/DP 출력'
+        ],
+        path: 'kernel/drivers/video/',
+        doc: 'https://source.android.com/docs/core/graphics'
+    },
+
+    // ========================================
+    // 부팅 프로세스 노드
+    // ========================================
+
+    'Boot ROM': {
+        title: 'Boot ROM',
+        layer: 'Hardware',
+        description: 'SoC에 내장된 읽기 전용 부트 코드입니다. 전원이 켜지면 가장 먼저 실행됩니다.',
+        components: [
+            'Hardware 초기화',
+            'Bootloader 검증',
+            'Secure Boot',
+            'Recovery Mode 감지'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture/bootloader'
+    },
+
+    'Bootloader': {
+        title: 'Bootloader',
+        layer: 'Firmware',
+        description: '커널을 메모리에 로드하고 실행하는 부트로더입니다.',
+        components: [
+            'U-Boot/Fastboot',
+            'Kernel 로딩',
+            'Device Tree 전달',
+            'Fastboot Mode'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture/bootloader',
+        codeExample: `
+# Fastboot 모드 진입
+adb reboot bootloader
+
+# 부팅 이미지 플래시
+fastboot flash boot boot.img
+        `.trim()
+    },
+
+    'Init Process': {
+        title: 'Init Process (PID 1)',
+        layer: 'System',
+        description: 'Linux 커널 부팅 후 첫 번째로 실행되는 프로세스입니다.',
+        components: [
+            'init.rc 파싱',
+            'Property Service',
+            '서비스 시작',
+            'SELinux 설정'
+        ],
+        path: 'system/core/init/',
+        doc: 'https://source.android.com/docs/core/architecture/configuration/add-system-properties',
+        codeExample: `
+# Init 로그 확인
+adb shell dmesg | grep init
+
+# Property 확인
+adb shell getprop ro.build.version.release
+        `.trim()
+    },
+
+    'Native Daemons': {
+        title: 'Native Daemons',
+        layer: 'System',
+        description: '시스템 레벨에서 실행되는 네이티브 데몬 프로세스들입니다.',
+        components: [
+            'servicemanager - Binder 레지스트리',
+            'vold - 볼륨 관리',
+            'netd - 네트워크 관리',
+            'logd - 로그 수집'
+        ],
+        path: 'system/core/',
+        doc: 'https://source.android.com/docs/core/architecture'
+    },
+
+    'Launcher': {
+        title: 'Launcher (Home Screen)',
+        layer: 'Application',
+        description: 'Android의 홈 화면 앱입니다. 부팅 완료의 최종 단계입니다.',
+        components: [
+            'App Grid',
+            'Widgets',
+            'Wallpaper',
+            'App Shortcuts'
+        ],
+        path: 'packages/apps/Launcher3/',
+        doc: 'https://source.android.com/docs/core'
+    },
+
+    // ========================================
+    // Binder IPC 노드
+    // ========================================
+
+    'Binder Proxy': {
+        title: 'Binder Proxy',
+        layer: 'Framework',
+        description: 'AIDL에서 자동 생성되는 클라이언트 측 프록시입니다.',
+        components: [
+            'Remote Method Call',
+            'Parameter Marshalling',
+            'Transaction 생성',
+            'Death Recipient'
+        ],
+        path: 'frameworks/base/core/java/android/os/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl'
+    },
+
+    'Binder Stub': {
+        title: 'Binder Stub',
+        layer: 'Framework',
+        description: 'AIDL에서 자동 생성되는 서버 측 스텁입니다.',
+        components: [
+            'Transaction 수신',
+            'Parameter Unmarshalling',
+            'Method Dispatch',
+            'Result 반환'
+        ],
+        path: 'frameworks/base/core/java/android/os/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl'
+    },
+
+    'System Service': {
+        title: 'System Service',
+        layer: 'Framework',
+        description: 'System Server에서 실행되는 시스템 서비스입니다.',
+        components: [
+            'AIDL 인터페이스 구현',
+            'Binder 등록',
+            'Permission 체크',
+            'Callback 관리'
+        ],
+        path: 'frameworks/base/services/',
+        doc: 'https://source.android.com/docs/core/architecture'
+    },
+
+    // ========================================
+    // Project Treble 노드
+    // ========================================
+
+    'Android Framework': {
+        title: 'Android Framework (Treble)',
+        layer: 'System Partition',
+        description: 'Google이 관리하는 System Partition의 프레임워크입니다.',
+        components: [
+            'Framework Services',
+            'VNDK Libraries',
+            'System Apps',
+            'Updatable via OTA'
+        ],
+        path: 'frameworks/',
+        doc: 'https://source.android.com/docs/core/architecture/treble'
+    },
+
+    'Vendor NDK': {
+        title: 'VNDK (Vendor NDK)',
+        layer: 'System',
+        description: '벤더가 사용할 수 있는 안정화된 NDK 라이브러리 집합입니다.',
+        components: [
+            'Stable ABI',
+            'libc, libm 등',
+            'Vendor 접근 허용',
+            'Version 관리'
+        ],
+        path: 'frameworks/native/vndk/',
+        doc: 'https://source.android.com/docs/core/architecture/vndk'
+    },
+
+    'Vendor Implementation': {
+        title: 'Vendor Implementation',
+        layer: 'Vendor Partition',
+        description: 'OEM/벤더가 구현하는 HAL 및 드라이버입니다.',
+        components: [
+            'HAL Implementation',
+            'Kernel Modules',
+            'Vendor Libraries',
+            'Device-specific Code'
+        ],
+        path: 'vendor/',
+        doc: 'https://source.android.com/docs/core/architecture/treble'
+    },
+
+    'Vendor Libraries': {
+        title: 'Vendor Libraries',
+        layer: 'Vendor',
+        description: '벤더 전용 네이티브 라이브러리입니다.',
+        components: [
+            'Camera ISP Library',
+            'Audio DSP Library',
+            'Codec Library',
+            'GPU Driver'
+        ],
+        path: 'vendor/lib/',
+        doc: 'https://source.android.com/docs/core/architecture/treble'
+    },
+
+    'HIDL Interface': {
+        title: 'HIDL (Hardware Interface Definition Language)',
+        layer: 'HAL',
+        description: 'Android 8.0~10에서 사용된 HAL 인터페이스 정의 언어입니다.',
+        components: [
+            'HAL Interface 정의',
+            'Binder-based IPC',
+            'Versioned Interface',
+            'Code Generation'
+        ],
+        path: 'hardware/interfaces/',
+        doc: 'https://source.android.com/docs/core/architecture/hidl',
+        codeExample: `
+# HIDL 서비스 확인
+adb shell lshal
+
+# 특정 HAL 정보
+adb shell lshal | grep audio
+        `.trim()
+    },
+
+    'Stable AIDL': {
+        title: 'Stable AIDL',
+        layer: 'HAL',
+        description: 'Android 11+에서 사용되는 안정화된 AIDL HAL 인터페이스입니다.',
+        components: [
+            'Stable ABI',
+            'Backward Compatibility',
+            'Binder IPC',
+            'Versioning'
+        ],
+        path: 'hardware/interfaces/aidl/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl/stable-aidl',
+        codeExample: `
+# AIDL 서비스 확인
+adb shell dumpsys -l | grep aidl
+
+# AIDL HAL 버전
+adb shell service list | grep android.hardware
         `.trim()
     }
 };
