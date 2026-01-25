@@ -282,6 +282,1818 @@
                 </div>
             </div>
         </section>
+
+        <!-- Section 5: Codec Detailed Specifications -->
+        <section class="section sec-spec">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                코덱 상세 스펙
+            </h2>
+            <p class="section-description">
+                Dolby 오디오 및 비디오 코덱의 기술 사양과 메타데이터 구조를 상세히 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                🔊 Dolby Audio 기술 스펙
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>항목</th>
+                        <th>E-AC-3 (DD+)</th>
+                        <th>AC-4</th>
+                        <th>Dolby Atmos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>비트레이트</strong></td>
+                        <td>32-1024 kbps<br/>(일반: 128-384 kbps)</td>
+                        <td>48-1536 kbps<br/>(E-AC-3 대비 50% 효율)</td>
+                        <td>E-AC-3 또는 AC-4 기반<br/>(JOC 메타데이터 추가)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>샘플레이트</strong></td>
+                        <td>32, 44.1, 48 kHz</td>
+                        <td>44.1, 48, 96 kHz</td>
+                        <td>48 kHz (권장)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>채널 구성</strong></td>
+                        <td>1.0 ~ 7.1 (최대 15.1)</td>
+                        <td>1.0 ~ 7.1.4 (최대 24.1.10)</td>
+                        <td>7.1.4 (Bed: 7.1 + Heights: 4)<br/>+ 최대 118 오디오 객체</td>
+                    </tr>
+                    <tr>
+                        <td><strong>객체 기반 오디오</strong></td>
+                        <td>No (채널 기반)</td>
+                        <td>Yes (Native Object)</td>
+                        <td>Yes (JOC: Joint Object Coding)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>메타데이터</strong></td>
+                        <td>Dialogue Normalization<br/>Dynamic Range Control</td>
+                        <td>Dialogue Enhancement<br/>Personalization<br/>Loudness Management</td>
+                        <td>Object Position (3D)<br/>Renderer Instructions<br/>Height Channel Mapping</td>
+                    </tr>
+                    <tr>
+                        <td><strong>컨테이너</strong></td>
+                        <td>MP4, MKV, TS</td>
+                        <td>MP4, MKV, TS</td>
+                        <td>MP4 (via E-AC-3 JOC)<br/>MAT (TrueHD + Atmos)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>주요 사용처</strong></td>
+                        <td>Netflix, Disney+<br/>Blu-ray</td>
+                        <td>차세대 방송 (ATSC 3.0)<br/>스트리밍</td>
+                        <td>극장, 홈 시네마<br/>프리미엄 스트리밍</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎧 Dolby Atmos 렌더링
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        객체 기반 오디오
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>3D 공간 오디오 배치</strong></p>
+                        <ul>
+                            <li><strong>Bed Channels</strong>: 기존 채널 기반 (7.1)</li>
+                            <li><strong>Height Channels</strong>: 천장 스피커 (4개)</li>
+                            <li><strong>Audio Objects</strong>: 독립적으로 위치 지정 가능 (최대 118개)</li>
+                            <li><strong>Renderer</strong>: 재생 환경에 맞게 실시간 변환<br/>(예: 7.1.4 → 5.1 또는 Headphone)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎚️</span>
+                        JOC (Joint Object Coding)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>효율적인 객체 인코딩</strong></p>
+                        <ul>
+                            <li>E-AC-3 비트스트림에 메타데이터 삽입</li>
+                            <li>기존 E-AC-3 디코더와 하위 호환</li>
+                            <li>Atmos 렌더러가 메타데이터를 읽어 3D 공간 재현</li>
+                            <li>비트레이트 증가 최소화 (약 20-50 kbps 추가)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Binaural Rendering
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>헤드폰 최적화</strong></p>
+                        <ul>
+                            <li>HRTF (Head-Related Transfer Function) 적용</li>
+                            <li>2채널 스테레오로 3D 공간 재현</li>
+                            <li>DAP (Dolby Audio Processing) 엔진 필요</li>
+                            <li>스마트폰 및 태블릿에서 몰입감 제공</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📐</span>
+                        채널 레이아웃
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>표준 Atmos 구성</strong></p>
+                        <ul>
+                            <li><strong>5.1.2</strong>: FL, FR, C, LFE, SL, SR + TFL, TFR</li>
+                            <li><strong>5.1.4</strong>: 5.1 + TFL, TFR, TBL, TBR</li>
+                            <li><strong>7.1.4</strong>: 7.1 + 4 Heights (권장)</li>
+                            <li><strong>9.1.6</strong>: 9.1 + 6 Heights (극장)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📺 Dolby Vision 메타데이터 구조
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Stream["Dolby Vision Stream"]
+                        BL["Base Layer (BL)<br/>SDR/HDR10 호환<br/>8/10-bit HEVC"]
+                        EL["Enhancement Layer (EL)<br/>추가 색상 정보<br/>Profile 5/7 전용"]
+                        RPU["RPU (Reference Processing Unit)<br/>동적 메타데이터<br/>Scene/Frame-by-Frame"]
+                    end
+
+                    subgraph Decoder["Dolby Vision Decoder"]
+                        COMPOSER["DV Composer<br/>BL + EL 합성"]
+                        DM["Display Manager<br/>RPU 처리 및 Tone Mapping"]
+                    end
+
+                    BL --> COMPOSER
+                    EL --> COMPOSER
+                    RPU --> DM
+                    COMPOSER --> DM
+                    DM --> SCREEN["HDR Display<br/>(10/12-bit Panel)"]
+                </div>
+            </div>
+
+            <table class="comparison-table" style="margin-top: 30px;">
+                <thead>
+                    <tr>
+                        <th>Profile</th>
+                        <th>Base Layer</th>
+                        <th>Enhancement Layer</th>
+                        <th>메타데이터</th>
+                        <th>주요 사용처</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Profile 5</strong></td>
+                        <td>독자 IPTPQc2<br/>(10-bit)</td>
+                        <td>필수<br/>(10-bit)</td>
+                        <td>RPU<br/>(Scene/Frame)</td>
+                        <td>스트리밍<br/>(Netflix, Apple TV+)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Profile 7</strong></td>
+                        <td>독자 IPTPQc2<br/>(10/12-bit)</td>
+                        <td>선택<br/>(12-bit)</td>
+                        <td>RPU<br/>(Scene)</td>
+                        <td>UHD Blu-ray<br/>(물리 미디어)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Profile 8.1</strong></td>
+                        <td>HDR10<br/>(10-bit HEVC)</td>
+                        <td>없음</td>
+                        <td>RPU<br/>(Frame)</td>
+                        <td>HDR10 하위 호환<br/>스트리밍</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Profile 8.4</strong></td>
+                        <td>HLG<br/>(10-bit HEVC)</td>
+                        <td>없음</td>
+                        <td>RPU<br/>(Scene)</td>
+                        <td>방송, UGC<br/>(카메라 캡처)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 RPU (Reference Processing Unit)</strong><br/>
+                Dolby Vision의 핵심 메타데이터로, 각 장면 또는 프레임마다 다음 정보를 포함:
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Target Display</strong>: 최적화할 디스플레이 특성 (Peak Brightness, Color Gamut)</li>
+                    <li><strong>Tone Mapping</strong>: HDR → SDR 또는 HDR → 다른 HDR 변환 곡선</li>
+                    <li><strong>Color Grading</strong>: 창작자가 의도한 색상 및 밝기 정보</li>
+                    <li><strong>Trim Pass</strong>: 디스플레이별 미세 조정 파라미터</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 6: MediaCodec API Usage Examples -->
+        <section class="section sec-api">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                MediaCodec API 사용 예시
+            </h2>
+            <p class="section-description">
+                앱에서 Dolby Audio 및 Dolby Vision을 재생하는 실제 코드 예시입니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                🔊 Dolby Audio Passthrough
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        E-AC-3 Passthrough 설정
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>비트스트림 직접 출력 (HDMI)</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// MediaCodec을 사용하지 않고 압축된 비트스트림 직접 출력
+val audioTrack = AudioTrack.Builder()
+    .setAudioAttributes(
+        AudioAttributes.Builder()
+            .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .build()
+    )
+    .setAudioFormat(
+        AudioFormat.Builder()
+            .setEncoding(AudioFormat.ENCODING_E_AC3)
+            .setSampleRate(48000)
+            .setChannelMask(AudioFormat.CHANNEL_OUT_5POINT1)
+            .build()
+    )
+    .setTransferMode(AudioTrack.MODE_STREAM)
+    .setBufferSizeInBytes(bufferSize)
+    .build()
+
+// 압축된 E-AC-3 프레임을 직접 write
+audioTrack.write(compressedAudioFrame, offset, size)</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎧</span>
+                        E-AC-3 PCM 디코딩
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaCodec으로 디코딩</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// E-AC-3 디코더 생성
+val decoder = MediaCodec.createDecoderByType("audio/eac3")
+
+val format = MediaFormat().apply {
+    setString(MediaFormat.KEY_MIME, "audio/eac3")
+    setInteger(MediaFormat.KEY_SAMPLE_RATE, 48000)
+    setInteger(MediaFormat.KEY_CHANNEL_COUNT, 6) // 5.1
+}
+
+decoder.configure(format, null, null, 0)
+decoder.start()
+
+// 입력: 압축된 E-AC-3
+// 출력: PCM (16-bit Interleaved)</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎼</span>
+                        AC-4 디코더 사용
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>차세대 오디오 코덱</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// AC-4 디코더 (벤더 구현 필요)
+val decoder = MediaCodec.createDecoderByType("audio/ac4")
+
+val format = MediaFormat.createAudioFormat(
+    "audio/ac4",
+    48000,  // Sample Rate
+    6       // Channel Count (최대 24.1.10)
+)
+
+// AC-4 특화 파라미터
+format.setInteger("dialog-enhancement", 1)  // 대화 강화
+format.setInteger("presentation-id", 0)      // 프레젠테이션 선택
+
+decoder.configure(format, null, null, 0)
+decoder.start()</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Dolby Atmos 지원 확인
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>디바이스 능력 체크</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>fun supportsAtmos(): Boolean {
+    val audioManager = getSystemService(AudioManager::class.java)
+
+    // HDMI/디지털 출력에서 E-AC-3 JOC 지원 확인
+    val encodings = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+        .filter { it.type == AudioDeviceInfo.TYPE_HDMI }
+        .flatMap { it.encodings.toList() }
+
+    return AudioFormat.ENCODING_E_AC3_JOC in encodings ||
+           AudioFormat.ENCODING_DOLBY_TRUEHD in encodings
+}
+
+// AudioAttributes로 Atmos 활성화
+val attrs = AudioAttributes.Builder()
+    .setSpatializationBehavior(
+        AudioAttributes.SPATIALIZATION_BEHAVIOR_AUTO
+    )
+    .build()</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📺 Dolby Vision 재생
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        ExoPlayer Dolby Vision 설정
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Media3 ExoPlayer 사용</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// build.gradle
+implementation("androidx.media3:media3-exoplayer:1.2.0")
+
+// ExoPlayer 초기화
+val player = ExoPlayer.Builder(context)
+    .setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT)
+    .build()
+
+// Surface HDR 모드 활성화
+val surfaceView = findViewById&lt;SurfaceView&gt;(R.id.surface)
+surfaceView.holder.addCallback(object : SurfaceHolder.Callback {
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        // HDR 모드 요청
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            holder.surface.setFrameRate(
+                60f,
+                Surface.FRAME_RATE_COMPATIBILITY_DEFAULT
+            )
+        }
+    }
+})
+
+player.setVideoSurfaceHolder(surfaceView.holder)</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        MediaCodec Dolby Vision
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>직접 MediaCodec 사용</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Dolby Vision 디코더
+val decoder = MediaCodec.createDecoderByType("video/dolby-vision")
+
+val format = MediaFormat.createVideoFormat(
+    "video/dolby-vision",
+    3840,  // 4K UHD
+    2160
+).apply {
+    setInteger(MediaFormat.KEY_PROFILE,
+        MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheSt)
+    setInteger(MediaFormat.KEY_COLOR_FORMAT,
+        MediaCodecInfo.CodecCapabilities.COLOR_Format32bitABGR2101010)
+    // 10-bit 색상
+}
+
+// HDR Static Metadata 설정
+val hdrStaticInfo = ByteBuffer.allocate(25)
+// ... metadata 채우기
+format.setByteBuffer("hdr-static-info", hdrStaticInfo)
+
+decoder.configure(format, surface, null, 0)
+decoder.start()</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Surface HDR 능력 확인
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>디스플레이 HDR 지원 체크</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>fun supportsDolbyVision(): Boolean {
+    val display = (getSystemService(Context.DISPLAY_SERVICE)
+        as DisplayManager).displays[0]
+
+    val hdrCapabilities = display.hdrCapabilities
+
+    return Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION in
+           hdrCapabilities.supportedHdrTypes
+}
+
+// 디스플레이 Peak Brightness
+val maxLuminance = display.hdrCapabilities
+    .desiredMaxLuminance  // nits (cd/m²)
+
+// Profile 지원 확인
+val codecList = MediaCodecList(MediaCodecList.ALL_CODECS)
+val dvCodecs = codecList.codecInfos.filter {
+    it.supportedTypes.contains("video/dolby-vision")
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎞️</span>
+                        Dolby Vision Capture (Android 13+)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>10-bit HDR 비디오 녹화</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Camera2 10-bit HLG 캡처
+val characteristics = cameraManager
+    .getCameraCharacteristics(cameraId)
+
+val capabilities = characteristics.get(
+    CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES
+)
+
+val supports10Bit = CameraCharacteristics
+    .REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT in capabilities!!
+
+// MediaRecorder Dolby Vision 인코딩
+val recorder = MediaRecorder().apply {
+    setVideoSource(MediaRecorder.VideoSource.SURFACE)
+    setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+    setVideoEncoder(MediaRecorder.VideoEncoder.HEVC)
+    setVideoEncodingProfileLevel(
+        MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10,
+        MediaCodecInfo.CodecProfileLevel.HEVCMainTierLevel5
+    )
+    // Profile 8.4 (HLG 기반)
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ 주의사항</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Passthrough</strong>: HDMI 연결 및 AVR/사운드바가 Dolby 디코딩 지원 필수</li>
+                    <li><strong>Dolby Vision</strong>: 디스플레이가 HDR10+/Dolby Vision 인증 필요</li>
+                    <li><strong>라이센스</strong>: 상용 앱은 Dolby 라이센스 계약 필수</li>
+                    <li><strong>테스트</strong>: Dolby 제공 샘플 컨텐츠로 검증 권장</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 7: Vendor Implementation Guide -->
+        <section class="section sec-vendor">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                벤더 구현 가이드
+            </h2>
+            <p class="section-description">
+                하드웨어 제조사가 AOSP에 Dolby 기술을 통합하는 방법입니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                🔊 Audio HAL - Dolby MS12 통합
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        libdolbyms12.so 통합
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby Audio 엔진 라이브러리</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// hardware/[vendor]/[device]/audio/audio_hw.c
+
+#include &lt;dolby_ms12.h&gt;
+
+struct dolby_ms12_context {
+    void *ms12_handle;
+    dolby_ms12_config_t config;
+};
+
+static int init_dolby_ms12(struct audio_device *adev) {
+    adev->dolby_ctx = calloc(1, sizeof(struct dolby_ms12_context));
+
+    // MS12 초기화
+    adev->dolby_ctx->ms12_handle =
+        dolby_ms12_init(&adev->dolby_ctx->config);
+
+    // 설정: AC-3, E-AC-3, AC-4 디코더 활성화
+    dolby_ms12_set_decoder(adev->dolby_ctx->ms12_handle,
+                           DOLBY_MS12_DEC_AC3 |
+                           DOLBY_MS12_DEC_EAC3 |
+                           DOLBY_MS12_DEC_AC4);
+
+    return 0;
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        audio_policy_configuration.xml
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby 포맷 라우팅 설정</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>&lt;!-- device/[vendor]/[device]/audio/audio_policy_configuration.xml --&gt;
+
+&lt;audioPolicyConfiguration&gt;
+    &lt;modules&gt;
+        &lt;module name="primary" halVersion="AIDL"&gt;
+            &lt;mixPorts&gt;
+                &lt;!-- Direct Output for Dolby Formats --&gt;
+                &lt;mixPort name="dolby_direct" role="source"
+                         flags="AUDIO_OUTPUT_FLAG_DIRECT"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_AC3"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_5POINT1"/&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_E_AC3"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_7POINT1"/&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_AC4"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_7POINT1POINT4"/&gt;
+                &lt;/mixPort&gt;
+            &lt;/mixPorts&gt;
+        &lt;/module&gt;
+    &lt;/modules&gt;
+&lt;/audioPolicyConfiguration&gt;</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">3️⃣</span>
+                        Android.bp 빌드 설정
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Audio HAL 빌드 파일</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// hardware/[vendor]/[device]/audio/Android.bp
+
+cc_library_shared {
+    name: "audio.primary.[device]",
+    vendor: true,
+
+    srcs: [
+        "audio_hw.c",
+        "dolby_ms12_wrapper.c",
+    ],
+
+    shared_libs: [
+        "libaudioutils",
+        "liblog",
+        "libcutils",
+        "libdolbyms12",  // Dolby 독점 라이브러리
+    ],
+
+    cflags: [
+        "-DDOLBY_MS12_ENABLED",
+        "-DDOLBY_ATMOS_ENABLED",
+    ],
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">4️⃣</span>
+                        AudioFlinger 연동
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>오디오 데이터 처리</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Passthrough vs PCM 처리
+static ssize_t out_write(struct audio_stream_out *stream,
+                         const void *buffer, size_t bytes) {
+    struct stream_out *out = (struct stream_out *)stream;
+
+    if (out->format == AUDIO_FORMAT_E_AC3) {
+        // Passthrough: 압축 비트스트림 직접 HDMI 출력
+        return write_compressed_data(out, buffer, bytes);
+    } else {
+        // PCM: Dolby MS12 디코딩 후 출력
+        void *pcm_output;
+        size_t pcm_size;
+
+        dolby_ms12_process(out->dolby_handle,
+                          buffer, bytes,
+                          &pcm_output, &pcm_size);
+
+        return pcm_write(out->pcm_device, pcm_output, pcm_size);
+    }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📺 Video HAL - Dolby Vision 통합
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Codec2 Dolby Vision 컴포넌트
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>C2Component 구현</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// vendor/[company]/codec2/DolbyVisionDecoder.cpp
+
+class C2VendorDolbyVisionDecoder : public SimpleC2Component {
+public:
+    void process(const std::unique_ptr&lt;C2Work&gt;& work,
+                 const std::shared_ptr&lt;C2BlockPool&gt;& pool) override {
+
+        C2ReadView rView = work->input.buffers[0]
+            ->data().linearBlocks().front().map().get();
+
+        // Dolby Vision 비트스트림 파싱
+        DolbyVisionFrame dvFrame;
+        parseDolbyVisionStream(rView.data(), rView.capacity(), &dvFrame);
+
+        // 하드웨어 디코더로 BL + EL + RPU 전달
+        mHwDecoder->decode(dvFrame.baseLayer,
+                          dvFrame.enhancementLayer,
+                          dvFrame.rpu);
+
+        // 10-bit P010 또는 12-bit P016 출력
+        std::shared_ptr&lt;C2GraphicBlock&gt; block;
+        pool->fetchGraphicBlock(mWidth, mHeight,
+                               HAL_PIXEL_FORMAT_P010, // 10-bit
+                               usage, &block);
+
+        fillOutputBuffer(block, work);
+    }
+};</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📄</span>
+                        media_codecs.xml 선언
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby Vision 코덱 등록</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>&lt;!-- device/[vendor]/[device]/media_codecs.xml --&gt;
+
+&lt;MediaCodecs&gt;
+    &lt;Decoders&gt;
+        &lt;MediaCodec name="c2.vendor.dolby-vision.decoder"
+                    type="video/dolby-vision"&gt;
+            &lt;Limit name="size" min="96x96" max="3840x2160"/&gt;
+            &lt;Limit name="alignment" value="2x2"/&gt;
+            &lt;Limit name="block-size" value="16x16"/&gt;
+            &lt;Limit name="frame-rate" range="1-60"/&gt;
+            &lt;Limit name="bitrate" range="1-120000000"/&gt;
+
+            &lt;!-- Dolby Vision Profiles --&gt;
+            &lt;Feature name="profile-dolby-vision-dvhe-st" /&gt;
+            &lt;Feature name="profile-dolby-vision-dvhe-stn" /&gt;
+            &lt;Feature name="profile-dolby-vision-dvhe-dtr" /&gt;
+
+            &lt;Feature name="adaptive-playback"/&gt;
+            &lt;Feature name="secure-playback" required="true"/&gt;
+        &lt;/MediaCodec&gt;
+
+        &lt;!-- Dolby Audio Codecs --&gt;
+        &lt;MediaCodec name="c2.vendor.ac3.decoder" type="audio/ac3"/&gt;
+        &lt;MediaCodec name="c2.vendor.eac3.decoder" type="audio/eac3"/&gt;
+        &lt;MediaCodec name="c2.vendor.ac4.decoder" type="audio/ac4"/&gt;
+    &lt;/Decoders&gt;
+&lt;/MediaCodecs&gt;</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🖥️</span>
+                        Display Pipeline 설정
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>HDR 메타데이터 처리</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// HWComposer HAL - Dolby Vision 메타데이터 전달
+
+struct hwc_layer {
+    buffer_handle_t buffer;  // P010 10-bit YUV
+
+    // Dolby Vision RPU 메타데이터
+    struct dolby_vision_metadata {
+        uint8_t profile;         // 5, 7, 8.1, 8.4
+        uint8_t level;
+        uint32_t rpu_size;
+        uint8_t *rpu_data;       // RPU 바이너리
+
+        // Display Management
+        uint16_t target_max_luminance;  // nits
+        uint16_t target_min_luminance;
+        uint8_t tone_mapping_flag;
+    } dv_metadata;
+};
+
+// Display HAL에서 RPU 처리 및 Tone Mapping
+int processDolbyVisionFrame(struct hwc_layer *layer) {
+    if (layer->dv_metadata.rpu_data) {
+        applyDolbyVisionToneMapping(
+            layer->buffer,
+            &layer->dv_metadata,
+            mDisplayCapabilities
+        );
+    }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        디스플레이 능력 설정
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>HDR Static Info</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// frameworks/native/services/surfaceflinger/DisplayHardware/
+
+// 디스플레이 HDR 능력 광고
+HdrCapabilities getHdrCapabilities() {
+    HdrCapabilities caps;
+
+    caps.supportedHdrTypes = {
+        HdrType::HDR10,
+        HdrType::HLG,
+        HdrType::DOLBY_VISION
+    };
+
+    // 패널 스펙
+    caps.maxLuminance = 1000.0f;      // nits (cd/m²)
+    caps.maxAverageLuminance = 400.0f;
+    caps.minLuminance = 0.0001f;
+
+    return caps;
+}
+
+// EDID에서 Dolby Vision VSVDB 파싱
+bool parseDolbyVisionVSVDB(uint8_t *edid) {
+    // IEEE OUI: 00-D0-46 (Dolby)
+    // Version, DM Version, Target Display 정보 추출
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ 벤더 구현 체크리스트</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>✅ <strong>Dolby 라이센스</strong>: libdolbyms12.so 라이브러리 계약 및 획득</li>
+                    <li>✅ <strong>Audio HAL</strong>: Direct Output 플래그 및 Passthrough 지원</li>
+                    <li>✅ <strong>Codec2 HAL</strong>: Dolby Vision 프로파일 구현</li>
+                    <li>✅ <strong>Display HAL</strong>: 10/12-bit 파이프라인 및 RPU 처리</li>
+                    <li>✅ <strong>EDID</strong>: Dolby Vision VSVDB 파싱 및 능력 광고</li>
+                    <li>✅ <strong>SELinux</strong>: libdolbyms12 접근 권한 설정</li>
+                    <li>✅ <strong>CTS/VTS</strong>: Dolby 관련 테스트 통과</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 8: Licensing and Certification -->
+        <section class="section sec-license">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                라이센싱 및 인증
+            </h2>
+            <p class="section-description">
+                Dolby 기술을 상용 제품에 사용하기 위한 라이센스 절차와 인증 요구사항입니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                📜 Dolby 라이센스 타입
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        디바이스 라이센스
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>하드웨어 제조사용</strong></p>
+                        <ul>
+                            <li><strong>대상</strong>: 스마트폰, 태블릿, TV, 셋톱박스, 자동차</li>
+                            <li><strong>포함 기술</strong>:
+                                <ul style="margin-top: 5px; padding-left: 20px;">
+                                    <li>Dolby Audio (AC-3, E-AC-3, AC-4)</li>
+                                    <li>Dolby Atmos (DAP 엔진)</li>
+                                    <li>Dolby Vision (디코더 + Display Manager)</li>
+                                </ul>
+                            </li>
+                            <li><strong>라이브러리</strong>: libdolbyms12.so, libdv_composer.so</li>
+                            <li><strong>비용 구조</strong>: 디바이스당 로열티 (유닛 기반)</li>
+                            <li><strong>계약 주체</strong>: OEM (삼성, LG, Xiaomi 등)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        앱 라이센스
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>소프트웨어 개발자용</strong></p>
+                        <ul>
+                            <li><strong>대상</strong>: 스트리밍 앱, 미디어 플레이어, OTT 서비스</li>
+                            <li><strong>포함 기술</strong>:
+                                <ul style="margin-top: 5px; padding-left: 20px;">
+                                    <li>Dolby Audio SDK (DAP 후처리)</li>
+                                    <li>Dolby Atmos Renderer (소프트웨어)</li>
+                                </ul>
+                            </li>
+                            <li><strong>제한 사항</strong>: 디바이스 라이센스 없이 앱 단독 사용 불가 (일반적)</li>
+                            <li><strong>비용 구조</strong>: 연간 구독 또는 다운로드 기반</li>
+                            <li><strong>예시</strong>: Netflix, Disney+, Apple TV+ (콘텐츠 인코딩)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎞️</span>
+                        콘텐츠 인코딩 라이센스
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>콘텐츠 제작자용</strong></p>
+                        <ul>
+                            <li><strong>대상</strong>: 스튜디오, 방송사, 스트리밍 플랫폼</li>
+                            <li><strong>도구</strong>:
+                                <ul style="margin-top: 5px; padding-left: 20px;">
+                                    <li>Dolby Atmos Production Suite</li>
+                                    <li>Dolby Vision CMU (Content Mapping Unit)</li>
+                                    <li>Dolby Media Encoder</li>
+                                </ul>
+                            </li>
+                            <li><strong>비용</strong>: 프로젝트 기반 또는 연간 라이센스</li>
+                            <li><strong>인증</strong>: Dolby Atmos Mastering 스튜디오 인증</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔓</span>
+                        개발 및 테스트 라이센스
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>무료 개발 키트</strong>: 제한적인 기능, 워터마크 포함</li>
+                            <li><strong>NDA 필요</strong>: Dolby와 비밀유지계약 체결</li>
+                            <li><strong>기술 지원</strong>: Dolby 엔지니어 컨설팅 포함</li>
+                            <li><strong>샘플 컨텐츠</strong>: 테스트용 Atmos/Vision 파일 제공</li>
+                            <li><strong>기간 제한</strong>: 일반적으로 6-12개월</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ✅ 인증 프로세스
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TD
+                    START[라이센스 계약 체결] --> DEV[개발 키트 수령]
+                    DEV --> IMPL[AOSP 통합 구현]
+                    IMPL --> SELF[Self-Test<br/>CTS/VTS 통과]
+                    SELF --> DOLBY_TEST[Dolby 인증 테스트]
+
+                    DOLBY_TEST --> AUDIO{Audio Test}
+                    DOLBY_TEST --> VIDEO{Video Test}
+
+                    AUDIO --> AUDIO_PASS[Passthrough 검증<br/>DAP 처리 검증<br/>Atmos 렌더링 검증]
+                    VIDEO --> VIDEO_PASS[Profile 5/8.1 디코딩<br/>RPU 처리 검증<br/>Tone Mapping 검증]
+
+                    AUDIO_PASS --> CERT[Dolby 인증서 발급]
+                    VIDEO_PASS --> CERT
+
+                    CERT --> LOGO[Dolby 로고 사용 승인]
+                    LOGO --> PROD[제품 출시]
+                </div>
+            </div>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧪</span>
+                        Self-Test 항목
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>벤더 자체 검증</strong></p>
+                        <ul>
+                            <li>CTS MediaCodec 테스트 통과</li>
+                            <li>Dolby 샘플 컨텐츠 재생 검증</li>
+                            <li>HDMI Passthrough 동작 확인</li>
+                            <li>Dolby Vision 10-bit 출력 확인</li>
+                            <li>로그 분석 및 성능 프로파일링</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏆</span>
+                        Dolby 공식 인증 테스트
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby 랩 검증</strong></p>
+                        <ul>
+                            <li><strong>Audio</strong>: 디코딩 품질, 동기화, 채널 매핑</li>
+                            <li><strong>Atmos</strong>: 객체 렌더링, Binaural 출력</li>
+                            <li><strong>Vision</strong>: Tone Mapping 정확도, 색 재현</li>
+                            <li><strong>성능</strong>: 지연 시간, CPU/메모리 사용량</li>
+                            <li><strong>호환성</strong>: HDMI CEC, EDID 파싱</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        제출 자료
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>디바이스 사양서 (하드웨어 BOM)</li>
+                            <li>AOSP 버전 및 빌드 정보</li>
+                            <li>Dolby 라이브러리 버전</li>
+                            <li>Self-Test 결과 리포트</li>
+                            <li>CTS/VTS 테스트 결과</li>
+                            <li>샘플 펌웨어 (테스트용)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏱️</span>
+                        인증 기간 및 비용
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Self-Test</strong>: 2-4주 (벤더 자체)</li>
+                            <li><strong>Dolby 인증</strong>: 4-8주 (제출 후)</li>
+                            <li><strong>재테스트</strong>: 이슈 발견 시 1-2주 추가</li>
+                            <li><strong>인증 비용</strong>: 디바이스 타입별 상이 (NDA 조건)</li>
+                            <li><strong>연간 갱신</strong>: 새 AOSP 버전 적용 시 재인증 필요</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 라이센스 문의</strong><br/>
+                Dolby 라이센스 및 인증 관련 문의:
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>공식 웹사이트</strong>: <a href="https://professional.dolby.com/" target="_blank" style="color: var(--accent-primary);">professional.dolby.com</a></li>
+                    <li><strong>개발자 포털</strong>: <a href="https://developer.dolby.com/" target="_blank" style="color: var(--accent-primary);">developer.dolby.com</a></li>
+                    <li><strong>연락처</strong>: 각 지역별 Dolby 세일즈 팀</li>
+                    <li><strong>참고</strong>: 라이센스 비용은 NDA하에 협상 진행</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: CDD/CTS Requirements -->
+        <section class="section sec-cdd">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                CDD/CTS 요구사항
+            </h2>
+            <p class="section-description">
+                Android 호환성 정의 문서(CDD) 및 호환성 테스트 스위트(CTS)의 Dolby 관련 항목입니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                📜 Android CDD - Dolby 요구사항
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>CDD 섹션</th>
+                        <th>요구사항</th>
+                        <th>필수/권장</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>5.1.3 Video Codecs</strong></td>
+                        <td>Dolby Vision Profile 5, 8.1 디코더 지원<br/>(4K HDR TV 디바이스)</td>
+                        <td>권장 (SHOULD)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5.2 Video Encoding</strong></td>
+                        <td>Dolby Vision Profile 8.4 인코더 지원<br/>(Android 13+ 카메라)</td>
+                        <td>선택 (MAY)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5.4.1 Audio Codecs</strong></td>
+                        <td>AC-3 (Dolby Digital) 디코더<br/>(HDMI 출력 디바이스)</td>
+                        <td>권장 (SHOULD)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5.4.1 Audio Codecs</strong></td>
+                        <td>E-AC-3 (Dolby Digital Plus) 디코더<br/>(HDMI 출력 디바이스)</td>
+                        <td>권장 (SHOULD)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5.8 Secure Media</strong></td>
+                        <td>Dolby Vision Secure Decoder<br/>(Widevine L1과 함께)</td>
+                        <td>필수 (MUST)<br/>(DV 지원 시)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5.10 Audio Output</strong></td>
+                        <td>HDMI Audio Passthrough<br/>(AC-3, E-AC-3, AC-4)</td>
+                        <td>필수 (MUST)<br/>(HDMI 있는 경우)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>7.7 USB</strong></td>
+                        <td>USB-C Audio (Dolby Atmos 지원)</td>
+                        <td>선택 (MAY)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>8.3 Display</strong></td>
+                        <td>HDR10+ 및 Dolby Vision 지원<br/>(Peak Brightness ≥ 540 nits)</td>
+                        <td>권장 (SHOULD)<br/>(HDR TV)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🧪 CTS 테스트 항목
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        MediaCodec 테스트
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>cts/tests/tests/media/codec/</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Dolby Audio Decoder 테스트
+adb shell am instrument -w -e class \
+  android.media.cts.DecoderTest#testAC3Decode \
+  android.media.cts/.MediaCodecTestRunner
+
+adb shell am instrument -w -e class \
+  android.media.cts.DecoderTest#testEAC3Decode \
+  android.media.cts/.MediaCodecTestRunner
+
+# Dolby Vision Decoder 테스트
+adb shell am instrument -w -e class \
+  android.media.cts.DecoderTest#testDolbyVisionDecode \
+  android.media.cts/.MediaCodecTestRunner</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        AudioTrack 테스트
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>cts/tests/tests/media/audio/</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Passthrough 지원 확인
+adb shell am instrument -w -e class \
+  android.media.audio.cts.AudioTrackTest#testDirectPlayback \
+  android.media.cts/.AudioTestRunner
+
+# Dolby Atmos Encoding 지원
+adb shell am instrument -w -e class \
+  android.media.audio.cts.AudioFormatTest#testEAC3JOC \
+  android.media.cts/.AudioTestRunner</code></pre>
+                    </div>
+                </card>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        Display HDR 테스트
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>cts/tests/tests/display/</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># HDR Capabilities 조회
+adb shell am instrument -w -e class \
+  android.display.cts.HdrCapabilitiesTest#testDolbyVision \
+  android.display.cts/.DisplayTestRunner
+
+# 10-bit Surface 지원
+adb shell am instrument -w -e class \
+  android.view.cts.SurfaceTest#test10BitColorFormat \
+  android.view.cts/.ViewTestRunner</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📹</span>
+                        Camera 10-bit Capture
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>cts/tests/camera/ (Android 13+)</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># 10-bit HDR 캡처 지원
+adb shell am instrument -w -e class \
+  android.camera.cts.Camera2Test#test10BitCapture \
+  android.camera.cts/.CameraTestRunner
+
+# Dolby Vision Profile 8.4 인코딩
+adb shell am instrument -w -e class \
+  android.camera.cts.RecorderTest#testDolbyVisionRecording \
+  android.camera.cts/.CameraTestRunner</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ✅ 호환성 매트릭스
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>디바이스 타입</th>
+                        <th>Audio 필수</th>
+                        <th>Video 필수</th>
+                        <th>CTS 테스트</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>핸드헬드 (폰/태블릿)</strong></td>
+                        <td>E-AC-3 디코더<br/>(SHOULD)</td>
+                        <td>Dolby Vision 5/8.1<br/>(MAY)</td>
+                        <td>MediaCodec Audio<br/>Display HDR (선택)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TV / 셋톱박스</strong></td>
+                        <td>AC-3, E-AC-3 디코더<br/>Passthrough (MUST)</td>
+                        <td>Dolby Vision 5/8.1<br/>(SHOULD)</td>
+                        <td>MediaCodec Audio/Video<br/>AudioTrack Passthrough<br/>Display HDR</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Automotive (AAOS)</strong></td>
+                        <td>AC-3, E-AC-3<br/>AC-4 (권장)</td>
+                        <td>선택 (MAY)</td>
+                        <td>MediaCodec Audio<br/>Car Audio Routing</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Wear OS</strong></td>
+                        <td>E-AC-3 디코더<br/>(MAY)</td>
+                        <td>해당 없음</td>
+                        <td>MediaCodec Audio (선택)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ CTS 통과 필수 사항</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Dolby 코덱을 media_codecs.xml에 선언하면 해당 CTS 테스트 자동 실행</li>
+                    <li>테스트 실패 시 Android 호환성 인증(GMS) 불가</li>
+                    <li>Dolby 라이브러리 버전이 CTS와 호환되는지 사전 확인 필요</li>
+                    <li>Self-Test로 CTS 테스트 사전 검증 권장</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 10: Debugging and Troubleshooting -->
+        <section class="section sec-debug">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                디버깅 및 트러블슈팅
+            </h2>
+            <p class="section-description">
+                Dolby 통합 과정에서 발생하는 일반적인 문제와 해결 방법입니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                🔍 디버깅 명령어
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        adb logcat 필터링
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby 관련 로그 추출</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Audio HAL Dolby 로그
+adb logcat -s audio_hw_primary DolbyMS12
+
+# MediaCodec Dolby Decoder
+adb logcat -s OMXCodec MediaCodec | grep -i dolby
+
+# AudioFlinger Routing
+adb logcat -s AudioFlinger AudioPolicyManager | grep -i "ac3\|eac3\|ac4"
+
+# Dolby Vision Decoder
+adb logcat -s C2SoftDolbyVisionDec | grep -i "profile\|rpu"
+
+# 전체 Dolby 관련 로그
+adb logcat | grep -iE "dolby|atmos|vision|ac-3|eac3|ac4"</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        dumpsys 분석
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>시스템 상태 조회</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Audio HAL 정보
+adb shell dumpsys media.audio_flinger
+
+# Dolby 코덱 등록 확인
+adb shell dumpsys media.codec | grep -i dolby
+
+# HDMI 오디오 지원 포맷
+adb shell dumpsys audio | grep -A 20 "HDMI"
+
+# Display HDR 능력
+adb shell dumpsys display | grep -i hdr
+
+# 활성 AudioTrack (Passthrough 확인)
+adb shell dumpsys media.audio_flinger | grep -A 5 "Direct"</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        시스템 속성
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby 기능 제어</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Dolby MS12 디버그 로그 활성화
+adb shell setprop vendor.dolby.ms12.debug 1
+
+# Dolby Vision 강제 비활성화 (테스트)
+adb shell setprop vendor.dolby.vision.disable 1
+
+# Audio Passthrough 강제 활성화
+adb shell setprop ro.vendor.audio.dolby.passthrough true
+
+# 재부팅 없이 Audio 서비스 재시작
+adb shell stop audioserver && adb shell start audioserver</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        테스트 샘플 재생
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby 샘플 컨텐츠 테스트</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># E-AC-3 샘플 재생
+adb push dolby_atmos_sample.ec3 /sdcard/
+adb shell am start -a android.intent.action.VIEW \
+  -d file:///sdcard/dolby_atmos_sample.ec3
+
+# Dolby Vision MP4 재생
+adb push dolby_vision_sample.mp4 /sdcard/
+adb shell am start -a android.intent.action.VIEW \
+  -t video/mp4 \
+  -d file:///sdcard/dolby_vision_sample.mp4</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ⚠️ 일반적인 문제 및 해결책
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>문제</th>
+                        <th>원인</th>
+                        <th>해결 방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>E-AC-3 오디오 재생 안됨</strong></td>
+                        <td>Dolby 디코더 미등록 또는 audio_policy_configuration.xml 설정 오류</td>
+                        <td><code>dumpsys media.codec</code>로 디코더 확인, Direct Output 플래그 설정</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HDMI Passthrough 실패</strong></td>
+                        <td>AVR/사운드바가 E-AC-3 미지원, EDID 파싱 오류</td>
+                        <td>EDID 로그 확인, PCM 디코딩으로 폴백</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dolby Atmos 렌더링 안됨</strong></td>
+                        <td>JOC 메타데이터 파싱 실패, DAP 엔진 미초기화</td>
+                        <td>libdolbyms12 로딩 확인, 메타데이터 로그 분석</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dolby Vision 화면 깨짐</strong></td>
+                        <td>RPU 파싱 오류, Tone Mapping 버그, 10-bit 파이프라인 미지원</td>
+                        <td>RPU 로그 확인, Display HAL P010 포맷 지원 검증</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Profile 5 재생 안됨</strong></td>
+                        <td>Enhancement Layer 디코딩 실패, Dolby Vision Composer 오류</td>
+                        <td>BL+EL 모두 디코딩되는지 확인, libdv_composer 버전 확인</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AC-4 디코더 크래시</strong></td>
+                        <td>벤더 HAL 구현 버그, 메모리 부족</td>
+                        <td>AC-4 로그 확인, 메모리 프로파일링</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CTS 테스트 실패</strong></td>
+                        <td>코덱 능력 선언 불일치, 샘플 디코딩 오류</td>
+                        <td>media_codecs.xml 정확히 설정, CTS 샘플로 수동 테스트</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dolby 라이센스 에러</strong></td>
+                        <td>libdolbyms12.so 서명 검증 실패, 만료된 라이센스</td>
+                        <td>Dolby에 문의하여 최신 라이브러리 수령</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎬 테스트 샘플 컨텐츠
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Dolby Audio 샘플
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>AC-3 (5.1)</strong>: dolby_digital_51.ac3</li>
+                            <li><strong>E-AC-3 (7.1)</strong>: dolby_digital_plus_71.ec3</li>
+                            <li><strong>E-AC-3 JOC (Atmos)</strong>: dolby_atmos_joc.ec3</li>
+                            <li><strong>AC-4 (Atmos)</strong>: dolby_ac4_atmos.ac4</li>
+                            <li><strong>제공</strong>: Dolby 개발자 포털 (NDA 필요)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        Dolby Vision 샘플
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Profile 5 (4K HDR)</strong>: dv_profile5_4k.mp4</li>
+                            <li><strong>Profile 8.1 (HDR10 호환)</strong>: dv_profile81_uhd.mp4</li>
+                            <li><strong>Profile 8.4 (HLG)</strong>: dv_profile84_hlg.mp4</li>
+                            <li><strong>테스트 패턴</strong>: RPU 메타데이터 검증용</li>
+                            <li><strong>제공</strong>: Dolby 라이센스 계약 후</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        공개 스트리밍 테스트
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Netflix</strong>: Dolby Atmos + Vision 콘텐츠 (구독 필요)</li>
+                            <li><strong>Disney+</strong>: IMAX Enhanced + Atmos</li>
+                            <li><strong>Apple TV+</strong>: Dolby Vision HDR</li>
+                            <li><strong>YouTube</strong>: 일부 HDR 콘텐츠 (Dolby Vision 아님)</li>
+                            <li><strong>참고</strong>: 실제 서비스 호환성 테스트용</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧪</span>
+                        분석 도구
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>MediaInfo</strong>: 컨테이너 메타데이터 분석</li>
+                            <li><strong>ffmpeg/ffprobe</strong>: 비트스트림 파싱</li>
+                            <li><strong>Dolby Stream Analyzer</strong>: RPU 검증 (Dolby 제공)</li>
+                            <li><strong>Systrace</strong>: 디코딩 성능 프로파일링</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 디버깅 팁</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Dolby 샘플 컨텐츠로 먼저 검증 후 실제 스트리밍 서비스 테스트</li>
+                    <li>HDMI Analyzer로 실제 출력 비트스트림 캡처 및 분석</li>
+                    <li>Dolby 기술 지원팀에 로그 제공 시 전체 logcat + dumpsys 포함</li>
+                    <li>벤더 HAL 코드에 상세 로그 추가하여 디버깅 효율 향상</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 11: AOSP Source Code Reference -->
+        <section class="section sec-source">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                AOSP 소스 코드 참조
+            </h2>
+            <p class="section-description">
+                Dolby 통합과 관련된 AOSP 소스 코드 위치 및 참조 구현입니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                📂 주요 디렉토리
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Audio 프레임워크
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/av/media/libaudioclient/</code><br/>
+                            → AudioTrack.cpp (Passthrough 로직)</li>
+                            <li><code>frameworks/av/services/audioflinger/</code><br/>
+                            → AudioFlinger.cpp, Tracks.cpp</li>
+                            <li><code>frameworks/av/services/audiopolicy/</code><br/>
+                            → AudioPolicyManager.cpp (라우팅)</li>
+                            <li><code>hardware/interfaces/audio/</code><br/>
+                            → Audio HAL AIDL/HIDL 인터페이스</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Video/Codec 프레임워크
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/av/media/libstagefright/</code><br/>
+                            → MediaCodec.cpp, NuPlayer.cpp</li>
+                            <li><code>frameworks/av/media/codec2/</code><br/>
+                            → Codec2 Core, VNDK, Components</li>
+                            <li><code>hardware/interfaces/media/c2/</code><br/>
+                            → Codec2 HAL AIDL/HIDL</li>
+                        </ul>
+                    </div>
+                </card>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🖥️</span>
+                        Display 프레임워크
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/native/services/surfaceflinger/</code><br/>
+                            → DisplayHardware/ (HDR 처리)</li>
+                            <li><code>frameworks/base/core/java/android/view/</code><br/>
+                            → Display.java (HdrCapabilities)</li>
+                            <li><code>hardware/interfaces/graphics/composer/</code><br/>
+                            → HWComposer HAL</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        Configuration Files
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/av/media/libstagefright/data/</code><br/>
+                            → media_codecs_google_*.xml</li>
+                            <li><code>device/[vendor]/[device]/</code><br/>
+                            → media_codecs.xml (벤더별)</li>
+                            <li><code>frameworks/av/services/audiopolicy/config/</code><br/>
+                            → audio_policy_configuration.xml</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔬 참조 구현 예시
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎚️</span>
+                        AudioPolicyManager - Dolby 라우팅
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Direct Output 플래그 설정</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/av/services/audiopolicy/managerdefault/AudioPolicyManager.cpp
+
+audio_io_handle_t AudioPolicyManager::getOutputForAttr(...) {
+    audio_format_t format = attributes->mFormat;
+
+    // Dolby 포맷은 Direct Output 사용
+    if (format == AUDIO_FORMAT_AC3 ||
+        format == AUDIO_FORMAT_E_AC3 ||
+        format == AUDIO_FORMAT_E_AC3_JOC ||
+        format == AUDIO_FORMAT_AC4) {
+
+        flags |= AUDIO_OUTPUT_FLAG_DIRECT;
+
+        // Passthrough 지원 장치 찾기
+        DeviceVector devices = getAvailableOutputDevices();
+        for (const auto& device : devices) {
+            if (device->supportedFormats().count(format) &&
+                device->type() == AUDIO_DEVICE_OUT_HDMI) {
+                return openDirectOutput(device, format, ...);
+            }
+        }
+    }
+
+    // 폴백: PCM 디코딩
+    return openMixedOutput(...);
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        Display - HDR 능력 광고
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby Vision 지원 광고</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/native/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+
+void HWComposer::getCapabilities(Display display) {
+    // EDID에서 Dolby Vision VSVDB 파싱
+    auto edid = mDisplays[display]->getEdid();
+
+    std::vector&lt;ui::Hdr&gt; hdrTypes;
+    if (edid.supportsDolbyVision()) {
+        hdrTypes.push_back(ui::Hdr::DOLBY_VISION);
+    }
+    if (edid.supportsHDR10()) {
+        hdrTypes.push_back(ui::Hdr::HDR10);
+    }
+
+    mDisplays[display]->setHdrCapabilities(
+        HdrCapabilities(hdrTypes,
+                       edid.getMaxLuminance(),
+                       edid.getMaxAverageLuminance(),
+                       edid.getMinLuminance())
+    );
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        MediaCodec - Dolby Vision 설정
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>HDR Static Metadata 전달</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/av/media/libstagefright/MediaCodec.cpp
+
+status_t MediaCodec::configure(...) {
+    if (mime == "video/dolby-vision") {
+        // HDR Static Info 설정
+        sp&lt;ABuffer&gt; hdrStaticInfo;
+        if (format->findBuffer("hdr-static-info", &hdrStaticInfo)) {
+            mCodec->setParameters({
+                {"vendor.dolby-vision.static-metadata", hdrStaticInfo}
+            });
+        }
+
+        // Profile 확인
+        int32_t profile;
+        if (format->findInt32(KEY_PROFILE, &profile)) {
+            // Profile 5, 7, 8.1, 8.4 등
+            mCodec->setProfile(profile);
+        }
+    }
+
+    return mCodec->configure(format, ...);
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📄</span>
+                        media_codecs.xml 파싱
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>코덱 능력 로딩</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/av/media/libstagefright/omx/SoftwareRenderer.cpp
+
+// media_codecs.xml에서 Dolby 코덱 로딩
+MediaCodecList::getInstance()->findCodecByType(
+    "video/dolby-vision", false, MediaCodecList::kPreferSoftwareCodecs
+);
+
+// 지원 프로파일 조회
+const sp&lt;MediaCodecInfo&gt; info = ...;
+const sp&lt;MediaCodecInfo::Capabilities&gt; caps =
+    info->getCapabilitiesFor("video/dolby-vision");
+
+auto profiles = caps->getSupportedProfileLevels();
+for (const auto& pl : profiles) {
+    if (pl.mProfile == DolbyVisionProfileDvheSt) {
+        // Profile 5 지원
+    }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔗 유용한 AOSP 링크</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>AOSP 소스 브라우저</strong>: <a href="https://cs.android.com/" target="_blank" style="color: var(--accent-primary);">cs.android.com</a></li>
+                    <li><strong>Audio 공식 문서</strong>: <a href="https://source.android.com/docs/core/audio" target="_blank" style="color: var(--accent-primary);">source.android.com/audio</a></li>
+                    <li><strong>Media 공식 문서</strong>: <a href="https://source.android.com/docs/core/media" target="_blank" style="color: var(--accent-primary);">source.android.com/media</a></li>
+                    <li><strong>CDD 문서</strong>: <a href="https://source.android.com/docs/compatibility/cdd" target="_blank" style="color: var(--accent-primary);">Android CDD</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 12: Related Pages -->
+        <section class="section sec-related">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                관련 상세 문서
+            </h2>
+            <p class="section-description">
+                Dolby 기술과 관련된 Android 미디어 프레임워크의 다른 주제들을 탐색하세요.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Codec 2.0
+                    </h3>
+                    <div class="card-description">
+                        <p>차세대 코덱 프레임워크</p>
+                        <ul>
+                            <li>Dolby Vision C2Component 구현</li>
+                            <li>C2Allocator Zero-Copy 버퍼</li>
+                            <li>HAL 인터페이스 (HIDL/AIDL)</li>
+                            <li>벤더 구현 가이드</li>
+                        </ul>
+                        <a href="codec2.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>오디오 처리 파이프라인</p>
+                        <ul>
+                            <li>AudioFlinger 믹싱 엔진</li>
+                            <li>AudioPolicyManager 라우팅</li>
+                            <li>Audio HAL Dolby 통합</li>
+                            <li>Passthrough vs PCM 디코딩</li>
+                        </ul>
+                        <a href="audio-framework.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        <p>전체 미디어 아키텍처</p>
+                        <ul>
+                            <li>AOSP 5-Layer 구조</li>
+                            <li>MediaCodec API 위치</li>
+                            <li>Framework → HAL 데이터 플로우</li>
+                            <li>Dolby가 전체 구조에서 차지하는 역할</li>
+                        </ul>
+                        <a href="media-framework-core.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Widevine DRM
+                    </h3>
+                    <div class="card-description">
+                        <p>DRM 보호 콘텐츠 재생</p>
+                        <ul>
+                            <li>Dolby Vision + Widevine L1</li>
+                            <li>Secure Decoder (TEE)</li>
+                            <li>Protected Surface</li>
+                            <li>Netflix 4K HDR 요구사항</li>
+                        </ul>
+                        <a href="widevine.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Media Playback Pipeline
+                    </h3>
+                    <div class="card-description">
+                        <p>미디어 재생 파이프라인</p>
+                        <ul>
+                            <li>NuPlayer의 Dolby 통합</li>
+                            <li>End-to-End 데이터 플로우</li>
+                            <li>A/V 동기화</li>
+                            <li>버퍼 관리 및 성능 최적화</li>
+                        </ul>
+                        <a href="media-playback.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Dolby Porting Guides
+                    </h3>
+                    <div class="card-description">
+                        <p>Dolby 포팅 상세 가이드</p>
+                        <ul>
+                            <li>Dolby Digital Plus 포팅 (E-AC-3)</li>
+                            <li>Dolby Vision 포팅</li>
+                            <li>벤더별 구현 사례</li>
+                            <li>인증 체크리스트</li>
+                        </ul>
+                        <a href="dolby-ddp-porting.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            DDP 포팅 →
+                        </a>
+                        <a href="dolby-vision-porting.html" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Vision 포팅 →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 
     <script src="scripts/mermaid-theme.js"></script>
