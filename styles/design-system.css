@@ -1651,17 +1651,22 @@ footer {
     padding-bottom: 0;
     margin-bottom: 0;
     border-bottom: none;
+    justify-content: center;
 }
 
 .toc-sidebar.collapsed .toc-header span {
     display: none;
 }
 
+.toc-sidebar.collapsed .toc-icon {
+    display: none;
+}
+
 .toc-sidebar.collapsed .toc-toggle-btn {
     position: static;
     transform: none;
-    margin: 0 auto;
-    display: flex;
+    margin: 0;
+    padding: 6px;
 }
 
 /* TOC 호버 시 완전히 표시 */
@@ -1703,6 +1708,8 @@ footer {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 24px;
+    height: 24px;
 }
 
 .toc-toggle-btn:hover {
@@ -1714,6 +1721,7 @@ footer {
     width: 16px;
     height: 16px;
     transition: transform 0.3s ease;
+    flex-shrink: 0;
 }
 
 .toc-sidebar.collapsed .toc-toggle-btn svg {
