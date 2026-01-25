@@ -121,40 +121,34 @@
             <div class="mermaid-container">
                 <div class="mermaid">
                     graph TB
-                    APP["🎨 Application Layer<br /><br />System Apps, OEM Apps, 3rd Party Apps<br />(Phone, Contacts,
-                    Settings)"]
+                    APP["🎨 Application Layer<br/>System Apps • OEM Apps • 3rd Party Apps"]
 
-                    FW["📱 Android Framework<br /><br />Activity Manager, Window Manager<br />Package Manager,
-                    Notification Manager<br />Content Providers, View System"]
+                    FW["📱 Android Framework<br/>Activity Manager • Window Manager<br/>Package Manager • Content Providers"]
 
-                    ART_LAYER["☕ Android Runtime (ART)<br /><br />ART/Dalvik Runtime<br />Core Libraries (java.*,
-                    android.*)"]
+                    ART_LAYER["☕ Android Runtime (ART)<br/>ART/Dalvik VM • Core Libraries"]
 
-                    NATIVE["⚡ Native Layer<br /><br />libc (Bionic), SSL/Crypto<br />Media Framework, SQLite, WebView"]
+                    NATIVE["⚡ Native Layer (C/C++)<br/>libc • Media Framework • SQLite • WebView"]
 
-                    SERVICES["🔧 System Services<br /><br />system_server, SurfaceFlinger<br />AudioFlinger,
-                    MediaService"]
+                    SERVICES["🔧 System Services<br/>system_server • SurfaceFlinger • AudioFlinger"]
 
-                    HAL_LAYER["🔌 Hardware Abstraction Layer (HAL)<br /><br />Camera HAL, Audio HAL<br />Sensor HAL,
-                    Codec HAL"]
+                    HAL_LAYER["🔌 Hardware Abstraction Layer<br/>Camera HAL • Audio HAL • Sensor HAL • Codec HAL"]
 
-                    KERNEL["🐧 Linux Kernel<br /><br />Device Drivers, Memory Management<br />Process Management,
-                    Security (SELinux)"]
+                    KERNEL["🐧 Linux Kernel<br/>Drivers • Memory Mgmt • Process Mgmt • SELinux"]
 
-                    APP --> FW
-                    FW --> ART_LAYER
-                    ART_LAYER --> NATIVE
-                    NATIVE --> SERVICES
-                    SERVICES --> HAL_LAYER
-                    HAL_LAYER --> KERNEL
+                    APP -->|Java/Kotlin API| FW
+                    FW -->|Framework API| ART_LAYER
+                    ART_LAYER -->|JNI| NATIVE
+                    NATIVE -->|Binder IPC| SERVICES
+                    SERVICES -->|HIDL/AIDL| HAL_LAYER
+                    HAL_LAYER -->|System Call| KERNEL
 
                     style APP fill:#1a1f35,stroke:#10b981,stroke-width:3px,color:#e5e7eb
                     style FW fill:#1a1f35,stroke:#00d4ff,stroke-width:3px,color:#e5e7eb
-                    style ART_LAYER fill:#1a1f35,stroke:#7c3aed,stroke-width:2px,color:#e5e7eb
+                    style ART_LAYER fill:#1a1f35,stroke:#7c3aed,stroke-width:3px,color:#e5e7eb
                     style NATIVE fill:#1a1f35,stroke:#ec4899,stroke-width:2px,color:#e5e7eb
                     style SERVICES fill:#1a1f35,stroke:#f59e0b,stroke-width:2px,color:#e5e7eb
-                    style HAL_LAYER fill:#1a1f35,stroke:#14b8a6,stroke-width:2px,color:#e5e7eb
-                    style KERNEL fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+                    style HAL_LAYER fill:#1a1f35,stroke:#14b8a6,stroke-width:3px,color:#e5e7eb
+                    style KERNEL fill:#1a1f35,stroke:#6b7280,stroke-width:3px,color:#e5e7eb
                 </div>
             </div>
         </section>
@@ -302,21 +296,22 @@
     <div class="mermaid-container">
         <div class="mermaid">
             graph TB
-            BOOTROM[Boot ROM<br />Power On]
-            BOOTLOADER[Bootloader<br />U-Boot]
-            KERNEL[Linux Kernel<br />초기화]
-            INIT[Init Process<br />PID 1]
-            DAEMONS[Native Daemons<br />servicemanager, vold, etc.]
-            ZYGOTE[Zygote Process<br />Core Libraries 로드]
-            SYSSERVER[System Server<br />System Services 시작]
-            LAUNCHER[Launcher<br />홈 화면]
-            BOOTROM --> BOOTLOADER
-            BOOTLOADER --> KERNEL
-            KERNEL --> INIT
-            INIT --> DAEMONS
-            INIT --> ZYGOTE
-            ZYGOTE --> SYSSERVER
-            SYSSERVER --> LAUNCHER
+            BOOTROM["① Boot ROM<br/>Power On"]
+            BOOTLOADER["② Bootloader<br/>U-Boot/Fastboot"]
+            KERNEL["③ Linux Kernel<br/>Drivers & Memory Init"]
+            INIT["④ Init Process<br/>(PID 1)"]
+            DAEMONS["⑤ Native Daemons<br/>servicemanager • vold • netd"]
+            ZYGOTE["⑥ Zygote Process<br/>Preload Core Libraries"]
+            SYSSERVER["⑦ System Server<br/>60+ System Services"]
+            LAUNCHER["⑧ Launcher<br/>Home Screen Ready"]
+
+            BOOTROM -->|"Hardware Init"| BOOTLOADER
+            BOOTLOADER -->|"Load Kernel"| KERNEL
+            KERNEL -->|"Start"| INIT
+            INIT -->|"Parallel"| DAEMONS
+            INIT -->|"Fork"| ZYGOTE
+            ZYGOTE -->|"Fork"| SYSSERVER
+            SYSSERVER -->|"Boot Complete"| LAUNCHER
 
             style BOOTROM fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
             style BOOTLOADER fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
@@ -325,7 +320,7 @@
             style DAEMONS fill:#1a1f35,stroke:#00d4ff,stroke-width:2px,color:#e5e7eb
             style ZYGOTE fill:#1a1f35,stroke:#ec4899,stroke-width:3px,color:#e5e7eb
             style SYSSERVER fill:#1a1f35,stroke:#f59e0b,stroke-width:3px,color:#e5e7eb
-            style LAUNCHER fill:#1a1f35,stroke:#10b981,stroke-width:2px,color:#e5e7eb
+            style LAUNCHER fill:#1a1f35,stroke:#10b981,stroke-width:3px,color:#e5e7eb
         </div>
     </div>
 
@@ -575,31 +570,43 @@
 
     <div class="mermaid-container">
         <div class="mermaid">
-            graph LR
-            APP[App Process<br />Client]
-            PROXY[Proxy<br />AIDL Stub]
-            BINDER_DRIVER[Binder Driver<br />Kernel]
-            SERVICE_MGR[Service Manager]
-            STUB[Stub<br />AIDL Interface]
-            SERVICE[System Service<br />Server]
+            graph TB
+            subgraph CLIENT["📱 Client Process"]
+                APP["Application"]
+                PROXY["Proxy<br/>(AIDL Generated)"]
+            end
 
-            APP -->|1. Call Method| PROXY
-            PROXY -->|2. Serialize| BINDER_DRIVER
-            BINDER_DRIVER -->|3. Route| STUB
-            STUB -->|4. Deserialize| SERVICE
-            SERVICE -->|5. Execute| STUB
-            STUB -->|6. Return| BINDER_DRIVER
-            BINDER_DRIVER -->|7. Route Back| PROXY
-            PROXY -->|8. Return| APP
+            subgraph KERNEL["🐧 Kernel Space"]
+                BINDER["Binder Driver<br/>/dev/binder"]
+                SERVICE_MGR["Service Manager<br/>(Registry)"]
+            end
 
-            SERVICE_MGR -.->|Register/Lookup| BINDER_DRIVER
+            subgraph SERVER["🔧 Server Process"]
+                STUB["Stub<br/>(AIDL Generated)"]
+                SERVICE["System Service"]
+            end
 
+            APP -->|"① Method Call"| PROXY
+            PROXY -->|"② Serialize & Send"| BINDER
+            BINDER -->|"③ Route to Server"| STUB
+            STUB -->|"④ Execute"| SERVICE
+            SERVICE -->|"⑤ Result"| STUB
+            STUB -->|"⑥ Serialize & Send"| BINDER
+            BINDER -->|"⑦ Route to Client"| PROXY
+            PROXY -->|"⑧ Return"| APP
+
+            SERVICE_MGR -.->|"Register Service"| BINDER
+            BINDER -.->|"Lookup Service"| SERVICE_MGR
+
+            style CLIENT fill:#0a0e1a,stroke:#10b981,stroke-width:2px,color:#e5e7eb
+            style KERNEL fill:#0a0e1a,stroke:#7c3aed,stroke-width:3px,color:#e5e7eb
+            style SERVER fill:#0a0e1a,stroke:#f59e0b,stroke-width:2px,color:#e5e7eb
             style APP fill:#1a1f35,stroke:#10b981,stroke-width:2px,color:#e5e7eb
             style PROXY fill:#1a1f35,stroke:#00d4ff,stroke-width:2px,color:#e5e7eb
-            style BINDER_DRIVER fill:#1a1f35,stroke:#7c3aed,stroke-width:3px,color:#e5e7eb
+            style BINDER fill:#1a1f35,stroke:#7c3aed,stroke-width:3px,color:#e5e7eb
             style SERVICE_MGR fill:#1a1f35,stroke:#ec4899,stroke-width:2px,color:#e5e7eb
             style STUB fill:#1a1f35,stroke:#00d4ff,stroke-width:2px,color:#e5e7eb
-            style SERVICE fill:#1a1f35,stroke:#f59e0b,stroke-width:2px,color:#e5e7eb
+            style SERVICE fill:#1a1f35,stroke:#f59e0b,stroke-width:3px,color:#e5e7eb
         </div>
     </div>
 </section>
