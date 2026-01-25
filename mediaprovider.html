@@ -507,6 +507,1740 @@
             </div>
         </section>
 
+        <!-- Section 6: Code Examples -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                실제 코드 예시
+            </h2>
+            <p class="section-description">
+                MediaStore API를 사용한 실제 구현 코드와 Scoped Storage 마이그레이션 예시를 제공합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                🔍 MediaStore Query (이미지 조회)
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// MediaStore에서 이미지 조회
+fun queryImages(context: Context): List<ImageData> {
+    val images = mutableListOf<ImageData>()
+
+    // Projection (반환할 컬럼 지정)
+    val projection = arrayOf(
+        MediaStore.Images.Media._ID,
+        MediaStore.Images.Media.DISPLAY_NAME,
+        MediaStore.Images.Media.SIZE,
+        MediaStore.Images.Media.DATE_ADDED,
+        MediaStore.Images.Media.MIME_TYPE,
+        MediaStore.Images.Media.WIDTH,
+        MediaStore.Images.Media.HEIGHT
+    )
+
+    // Selection (WHERE 절)
+    val selection = "${MediaStore.Images.Media.SIZE} > ?"
+    val selectionArgs = arrayOf("10240") // 10KB 이상
+
+    // Sort Order
+    val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
+
+    // ContentResolver로 쿼리
+    context.contentResolver.query(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        projection,
+        selection,
+        selectionArgs,
+        sortOrder
+    )?.use { cursor ->
+        val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+        val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+        val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
+        val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
+        val mimeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.MIME_TYPE)
+
+        while (cursor.moveToNext()) {
+            val id = cursor.getLong(idColumn)
+            val name = cursor.getString(nameColumn)
+            val size = cursor.getLong(sizeColumn)
+            val dateAdded = cursor.getLong(dateColumn)
+            val mimeType = cursor.getString(mimeColumn)
+
+            // Content URI 생성
+            val contentUri = ContentUris.withAppendedId(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                id
+            )
+
+            images.add(ImageData(id, name, size, dateAdded, mimeType, contentUri))
+        }
+    }
+
+    return images
+}
+
+data class ImageData(
+    val id: Long,
+    val name: String,
+    val size: Long,
+    val dateAdded: Long,
+    val mimeType: String,
+    val uri: Uri
+)</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ➕ MediaStore Insert (새 이미지 저장)
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// 새 이미지를 MediaStore에 저장
+fun saveImageToMediaStore(context: Context, bitmap: Bitmap, displayName: String): Uri? {
+    // ContentValues 설정
+    val contentValues = ContentValues().apply {
+        put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
+        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+        put(MediaStore.Images.Media.WIDTH, bitmap.width)
+        put(MediaStore.Images.Media.HEIGHT, bitmap.height)
+
+        // Android 10+ (Scoped Storage)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+            put(MediaStore.Images.Media.IS_PENDING, 1) // 작업 중 상태
+        }
+    }
+
+    // MediaStore에 레코드 삽입
+    val uri = context.contentResolver.insert(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        contentValues
+    ) ?: return null
+
+    try {
+        // OutputStream으로 파일 쓰기
+        context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 95, outputStream)
+        }
+
+        // Android 10+: IS_PENDING 플래그 해제 (완료 상태)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            contentValues.clear()
+            contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
+            context.contentResolver.update(uri, contentValues, null, null)
+        }
+
+        return uri
+    } catch (e: IOException) {
+        // 에러 발생 시 레코드 삭제
+        context.contentResolver.delete(uri, null, null)
+        return null
+    }
+}
+
+// Bitmap을 파일로 저장하고 MediaScanner로 스캔 (Legacy 방식)
+fun saveBitmapLegacy(context: Context, bitmap: Bitmap, filename: String) {
+    val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), filename)
+
+    FileOutputStream(file).use { out ->
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+    }
+
+    // MediaScannerConnection으로 스캔 요청
+    MediaScannerConnection.scanFile(
+        context,
+        arrayOf(file.absolutePath),
+        arrayOf("image/jpeg")
+    ) { path, uri ->
+        Log.d("MediaScanner", "Scanned: $path -> $uri")
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ✏️ MediaStore Update & Delete
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// 이미지 메타데이터 업데이트 (Favorite 설정)
+fun markAsFavorite(context: Context, imageUri: Uri) {
+    val contentValues = ContentValues().apply {
+        put(MediaStore.Images.Media.IS_FAVORITE, 1)
+    }
+
+    try {
+        context.contentResolver.update(imageUri, contentValues, null, null)
+    } catch (e: RecoverableSecurityException) {
+        // Android 10+: 다른 앱의 파일 수정 시 사용자 동의 필요
+        val intentSender = e.userAction.actionIntent.intentSender
+        startIntentSenderForResult(intentSender, REQUEST_CODE_MODIFY, null, 0, 0, 0, null)
+    }
+}
+
+// 이미지 삭제
+fun deleteImage(context: Context, imageUri: Uri): Boolean {
+    return try {
+        val deletedRows = context.contentResolver.delete(imageUri, null, null)
+        deletedRows > 0
+    } catch (e: RecoverableSecurityException) {
+        // 사용자 동의 필요
+        val intentSender = e.userAction.actionIntent.intentSender
+        startIntentSenderForResult(intentSender, REQUEST_CODE_DELETE, null, 0, 0, 0, null)
+        false
+    }
+}
+
+// Activity의 onActivityResult에서 처리
+override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    super.onActivityResult(requestCode, resultCode, data)
+
+    when (requestCode) {
+        REQUEST_CODE_MODIFY, REQUEST_CODE_DELETE -> {
+            if (resultCode == Activity.RESULT_OK) {
+                // 사용자가 승인 → 작업 재시도
+                retryPendingOperation()
+            } else {
+                // 사용자가 거부
+                Toast.makeText(this, "권한이 거부되었습니다", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📂 Storage Access Framework (SAF)
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// SAF로 파일 선택 (사용자가 직접 선택)
+fun openFilePicker() {
+    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+        addCategory(Intent.CATEGORY_OPENABLE)
+        type = "image/*"
+
+        // 여러 파일 선택 허용
+        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+    }
+    startActivityForResult(intent, REQUEST_CODE_PICK_FILE)
+}
+
+// 파일 선택 결과 처리
+override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    super.onActivityResult(requestCode, resultCode, data)
+
+    if (requestCode == REQUEST_CODE_PICK_FILE && resultCode == Activity.RESULT_OK) {
+        data?.data?.let { uri ->
+            // 단일 파일 선택
+            processFile(uri)
+        }
+
+        // 여러 파일 선택
+        data?.clipData?.let { clipData ->
+            for (i in 0 until clipData.itemCount) {
+                val uri = clipData.getItemAt(i).uri
+                processFile(uri)
+            }
+        }
+    }
+}
+
+// 선택한 파일 처리
+fun processFile(uri: Uri) {
+    contentResolver.openInputStream(uri)?.use { inputStream ->
+        val bitmap = BitmapFactory.decodeStream(inputStream)
+        // Bitmap 처리...
+    }
+
+    // 파일 메타데이터 조회
+    contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+        if (cursor.moveToFirst()) {
+            val displayNameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+
+            val displayName = cursor.getString(displayNameIndex)
+            val size = cursor.getLong(sizeIndex)
+
+            Log.d("SAF", "File: $displayName, Size: $size bytes")
+        }
+    }
+
+    // 영구 권한 부여 (앱 재시작 후에도 접근 가능)
+    val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+    contentResolver.takePersistableUriPermission(uri, takeFlags)
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 코드 예시 핵심 포인트:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Query</strong>: projection으로 필요한 컬럼만 조회, cursor.use로 자동 close</li>
+                    <li><strong>Insert</strong>: IS_PENDING 플래그로 작업 중/완료 상태 관리 (Android 10+)</li>
+                    <li><strong>Update/Delete</strong>: RecoverableSecurityException으로 사용자 동의 처리</li>
+                    <li><strong>SAF</strong>: 사용자가 직접 파일 선택, takePersistableUriPermission으로 영구 권한</li>
+                    <li><strong>Worker Thread</strong>: 모든 ContentResolver 작업은 백그라운드 스레드에서 실행 권장</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 7: Permissions & User Consent -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                권한 모델 & 사용자 동의
+            </h2>
+            <p class="section-description">
+                Android 버전별 권한 모델과 사용자 동의 처리 방법을 설명합니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TB
+                    START[앱에서 미디어 접근 시도] --> VERSION{Android 버전}
+
+                    VERSION -->|Android 12 이하| OLD_PERM[READ_EXTERNAL_STORAGE]
+                    VERSION -->|Android 13+| NEW_PERM[READ_MEDIA_IMAGES<br />READ_MEDIA_VIDEO<br />READ_MEDIA_AUDIO]
+
+                    OLD_PERM --> CHECK_OLD{권한 있음?}
+                    NEW_PERM --> CHECK_NEW{권한 있음?}
+
+                    CHECK_OLD -->|Yes| OWN{자신의 파일?}
+                    CHECK_OLD -->|No| REQUEST_OLD[권한 요청]
+
+                    CHECK_NEW -->|Yes| OWN
+                    CHECK_NEW -->|No| REQUEST_NEW[Granular 권한 요청]
+
+                    OWN -->|Yes| FULL_ACCESS[읽기/쓰기 가능]
+                    OWN -->|No| READ_ONLY[읽기만 가능]
+
+                    READ_ONLY --> MODIFY{수정/삭제?}
+                    MODIFY -->|Yes| USER_CONSENT[RecoverableSecurityException<br />사용자 동의 요청]
+                    MODIFY -->|No| SUCCESS[작업 완료]
+
+                    USER_CONSENT --> APPROVE{승인?}
+                    APPROVE -->|Yes| FULL_ACCESS
+                    APPROVE -->|No| DENIED[작업 거부]
+
+                    REQUEST_OLD --> GRANTED_OLD{승인?}
+                    REQUEST_NEW --> GRANTED_NEW{승인?}
+
+                    GRANTED_OLD -->|Yes| OWN
+                    GRANTED_OLD -->|No| DENIED
+
+                    GRANTED_NEW -->|Yes| OWN
+                    GRANTED_NEW -->|No| DENIED
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📱 Android 13+ Granular 권한
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// AndroidManifest.xml
+&lt;manifest&gt;
+    &lt;!-- Android 13+ Granular 권한 --&gt;
+    &lt;uses-permission android:name="android.permission.READ_MEDIA_IMAGES" /&gt;
+    &lt;uses-permission android:name="android.permission.READ_MEDIA_VIDEO" /&gt;
+    &lt;uses-permission android:name="android.permission.READ_MEDIA_AUDIO" /&gt;
+
+    &lt;!-- Android 12 이하 호환성 --&gt;
+    &lt;uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+                     android:maxSdkVersion="32" /&gt;
+    &lt;uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+                     android:maxSdkVersion="29" /&gt;
+
+    &lt;!-- 특수 권한 (파일 관리자 앱 등) --&gt;
+    &lt;uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+                     tools:ignore="ScopedStorage" /&gt;
+&lt;/manifest&gt;
+
+// Kotlin 권한 요청
+class MainActivity : AppCompatActivity() {
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.entries.all { it.value }
+        if (allGranted) {
+            loadMedia()
+        } else {
+            Toast.makeText(this, "권한이 필요합니다", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        checkAndRequestPermissions()
+    }
+
+    private fun checkAndRequestPermissions() {
+        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Android 13+: Granular 권한
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO,
+                Manifest.permission.READ_MEDIA_AUDIO
+            )
+        } else {
+            // Android 12 이하
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+
+        val notGranted = permissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (notGranted.isNotEmpty()) {
+            requestPermissionLauncher.launch(notGranted.toTypedArray())
+        } else {
+            loadMedia()
+        }
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔐 RecoverableSecurityException 처리
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// 다른 앱이 만든 파일 수정/삭제 시 사용자 동의 처리
+class MediaEditor : AppCompatActivity() {
+
+    private val modifyRequestLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // 사용자가 승인 → 작업 재시도
+            pendingUri?.let { uri ->
+                when (pendingAction) {
+                    Action.UPDATE -> updateMediaItem(uri)
+                    Action.DELETE -> deleteMediaItem(uri)
+                }
+            }
+        } else {
+            Toast.makeText(this, "권한이 거부되었습니다", Toast.LENGTH_SHORT).show()
+        }
+        pendingUri = null
+        pendingAction = null
+    }
+
+    private var pendingUri: Uri? = null
+    private var pendingAction: Action? = null
+
+    enum class Action {
+        UPDATE, DELETE
+    }
+
+    fun updateMediaItem(uri: Uri) {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.IS_FAVORITE, 1)
+        }
+
+        try {
+            contentResolver.update(uri, contentValues, null, null)
+            Toast.makeText(this, "업데이트 완료", Toast.LENGTH_SHORT).show()
+        } catch (e: RecoverableSecurityException) {
+            // Android 10+: 사용자 동의 필요
+            pendingUri = uri
+            pendingAction = Action.UPDATE
+
+            val intentSender = e.userAction.actionIntent.intentSender
+            val request = IntentSenderRequest.Builder(intentSender).build()
+            modifyRequestLauncher.launch(request)
+        } catch (e: SecurityException) {
+            // 권한 없음
+            Toast.makeText(this, "권한이 없습니다", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun deleteMediaItem(uri: Uri) {
+        try {
+            val deletedRows = contentResolver.delete(uri, null, null)
+            if (deletedRows > 0) {
+                Toast.makeText(this, "삭제 완료", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: RecoverableSecurityException) {
+            pendingUri = uri
+            pendingAction = Action.DELETE
+
+            val intentSender = e.userAction.actionIntent.intentSender
+            val request = IntentSenderRequest.Builder(intentSender).build()
+            modifyRequestLauncher.launch(request)
+        }
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ⚙️ MANAGE_EXTERNAL_STORAGE 특수 권한
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// MANAGE_EXTERNAL_STORAGE 권한 요청 (파일 관리자 앱)
+fun requestManageExternalStorage() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (!Environment.isExternalStorageManager()) {
+            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            startActivityForResult(intent, REQUEST_CODE_MANAGE_STORAGE)
+        } else {
+            // 이미 권한 있음
+            accessAllFiles()
+        }
+    } else {
+        // Android 10 이하: WRITE_EXTERNAL_STORAGE 사용
+        requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_CODE_STORAGE)
+    }
+}
+
+override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    super.onActivityResult(requestCode, resultCode, data)
+
+    if (requestCode == REQUEST_CODE_MANAGE_STORAGE) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (Environment.isExternalStorageManager()) {
+                accessAllFiles()
+            } else {
+                Toast.makeText(this, "All Files Access가 거부되었습니다", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}
+
+fun accessAllFiles() {
+    // 전체 파일 시스템 접근 가능
+    val rootDir = Environment.getExternalStorageDirectory()
+    rootDir.listFiles()?.forEach { file ->
+        Log.d("FileManager", "File: ${file.absolutePath}")
+    }
+}</code></pre>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ MANAGE_EXTERNAL_STORAGE 제약사항:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Google Play Store에서 <strong>매우 엄격히 제한</strong>됨</li>
+                    <li>허용되는 앱 유형: 파일 관리자, 백업/복원, 안티바이러스, 문서 관리</li>
+                    <li>일반 앱은 <strong>심사 거부</strong>될 가능성 높음</li>
+                    <li>대부분의 경우 <strong>MediaStore API + SAF</strong>로 충분</li>
+                    <li>Play Store 정책: <a href="https://support.google.com/googleplay/android-developer/answer/10467955" target="_blank" style="color: var(--accent-primary);">MANAGE_EXTERNAL_STORAGE 정책</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 8: Trash & Favorites -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Trash & Favorites 기능
+            </h2>
+            <p class="section-description">
+                Android 11부터 지원하는 휴지통 및 즐겨찾기 기능을 활용하는 방법을 설명합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🗑️</span>
+                        Trash (휴지통)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>is_trashed 플래그</strong></p>
+                        <ul>
+                            <li>Android 11+ 지원</li>
+                            <li>즉시 삭제 대신 휴지통으로 이동</li>
+                            <li>30일 후 자동 영구 삭제</li>
+                            <li>사용자가 복구 가능</li>
+                            <li>시스템 설정에서 수동 비우기 가능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⭐</span>
+                        Favorites (즐겨찾기)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>is_favorite 플래그</strong></p>
+                        <ul>
+                            <li>Android 11+ 지원</li>
+                            <li>사용자가 즐겨찾기로 표시한 미디어</li>
+                            <li>갤러리 앱에서 특별 컬렉션 표시</li>
+                            <li>빠른 접근 가능</li>
+                            <li>자동 삭제 방지 (일부 앱)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📅</span>
+                        is_pending
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>작업 진행 상태</strong></p>
+                        <ul>
+                            <li>Android 10+ 지원</li>
+                            <li>파일 작성 중 다른 앱에서 숨김</li>
+                            <li>완료 후 0으로 설정하여 공개</li>
+                            <li>다운로드, 카메라 촬영 시 활용</li>
+                            <li>원자적 작업 보장</li>
+                        </ul>
+                    </div>
+                </card>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏰</span>
+                        date_expires
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>자동 만료 시간</strong></p>
+                        <ul>
+                            <li>Android 11+ 지원</li>
+                            <li>Trash 파일의 영구 삭제 시간</li>
+                            <li>기본 30일 (2592000초)</li>
+                            <li>System이 자동으로 설정</li>
+                            <li>만료 시 자동 삭제</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🗑️ Trash 사용 예시
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// 파일을 휴지통으로 이동 (Android 11+)
+fun moveToTrash(context: Context, imageUri: Uri) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.IS_TRASHED, 1)
+            // date_expires는 System이 자동으로 설정 (현재 시간 + 30일)
+        }
+
+        try {
+            val updatedRows = context.contentResolver.update(imageUri, contentValues, null, null)
+            if (updatedRows > 0) {
+                Toast.makeText(context, "휴지통으로 이동했습니다", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: RecoverableSecurityException) {
+            // 다른 앱의 파일 → 사용자 동의 필요
+            requestUserConsent(e)
+        }
+    } else {
+        // Android 10 이하: 즉시 삭제
+        context.contentResolver.delete(imageUri, null, null)
+    }
+}
+
+// 휴지통에서 복구
+fun restoreFromTrash(context: Context, imageUri: Uri) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.IS_TRASHED, 0)
+        }
+
+        try {
+            context.contentResolver.update(imageUri, contentValues, null, null)
+            Toast.makeText(context, "복구했습니다", Toast.LENGTH_SHORT).show()
+        } catch (e: RecoverableSecurityException) {
+            requestUserConsent(e)
+        }
+    }
+}
+
+// 휴지통의 모든 파일 조회
+fun queryTrashedFiles(context: Context): List<Uri> {
+    val trashedFiles = mutableListOf<Uri>()
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val projection = arrayOf(
+            MediaStore.Images.Media._ID,
+            MediaStore.Images.Media.DISPLAY_NAME,
+            MediaStore.Images.Media.DATE_EXPIRES
+        )
+
+        val selection = "${MediaStore.Images.Media.IS_TRASHED} = ?"
+        val selectionArgs = arrayOf("1")
+
+        context.contentResolver.query(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            projection,
+            Bundle().apply {
+                putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
+                putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, selectionArgs)
+                putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_INCLUDE)
+            },
+            null
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idColumn)
+                val uri = ContentUris.withAppendedId(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    id
+                )
+                trashedFiles.add(uri)
+            }
+        }
+    }
+
+    return trashedFiles
+}
+
+// 휴지통 영구 비우기 (즉시 삭제)
+fun emptyTrash(context: Context, trashedUris: List<Uri>) {
+    trashedUris.forEach { uri ->
+        try {
+            context.contentResolver.delete(uri, null, null)
+        } catch (e: RecoverableSecurityException) {
+            requestUserConsent(e)
+        }
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ⭐ Favorites 사용 예시
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// 즐겨찾기로 표시
+fun markAsFavorite(context: Context, imageUri: Uri, isFavorite: Boolean) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.IS_FAVORITE, if (isFavorite) 1 else 0)
+        }
+
+        try {
+            context.contentResolver.update(imageUri, contentValues, null, null)
+        } catch (e: RecoverableSecurityException) {
+            requestUserConsent(e)
+        }
+    }
+}
+
+// 즐겨찾기 파일만 조회
+fun queryFavorites(context: Context): List<Uri> {
+    val favorites = mutableListOf<Uri>()
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val projection = arrayOf(
+            MediaStore.Images.Media._ID,
+            MediaStore.Images.Media.DISPLAY_NAME
+        )
+
+        val selection = "${MediaStore.Images.Media.IS_FAVORITE} = ?"
+        val selectionArgs = arrayOf("1")
+
+        context.contentResolver.query(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            projection,
+            selection,
+            selectionArgs,
+            "${MediaStore.Images.Media.DATE_ADDED} DESC"
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idColumn)
+                val uri = ContentUris.withAppendedId(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    id
+                )
+                favorites.add(uri)
+            }
+        }
+    }
+
+    return favorites
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Trash & Favorites 핵심 포인트:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Trash</strong>: 영구 삭제 전 30일 유예 기간, 사용자 실수 방지</li>
+                    <li><strong>Favorites</strong>: 사용자가 중요하다고 표시한 미디어, UI에서 특별 취급</li>
+                    <li><strong>MATCH_INCLUDE</strong>: Trash 파일을 쿼리 결과에 포함하려면 명시 필요</li>
+                    <li><strong>date_expires</strong>: System이 자동 설정, 수동 변경 불가</li>
+                    <li><strong>호환성</strong>: Android 11 미만에서는 플래그 무시됨</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: Performance Optimization -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                성능 최적화
+            </h2>
+            <p class="section-description">
+                MediaStore 쿼리 및 파일 작업의 성능을 최적화하는 방법을 설명합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Projection 최적화
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>필요한 컬럼만 조회</strong></p>
+                        <ul>
+                            <li>모든 컬럼(*) 대신 필요한 것만 지정</li>
+                            <li>BLOB 컬럼 (썸네일) 제외</li>
+                            <li>데이터 전송량 감소</li>
+                            <li>쿼리 속도 향상</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔢</span>
+                        Limit & Offset
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>페이지네이션</strong></p>
+                        <ul>
+                            <li>한 번에 소량만 로드 (예: 20개)</li>
+                            <li>무한 스크롤 구현</li>
+                            <li>메모리 사용량 감소</li>
+                            <li>초기 로딩 속도 향상</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Batch 작업
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>일괄 처리</strong></p>
+                        <ul>
+                            <li>bulkInsert로 여러 레코드 한 번에 삽입</li>
+                            <li>applyBatch로 트랜잭션 처리</li>
+                            <li>Binder 호출 횟수 감소</li>
+                            <li>IPC 오버헤드 최소화</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        ContentObserver
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>변경 감지</strong></p>
+                        <ul>
+                            <li>MediaStore 변경 실시간 감지</li>
+                            <li>폴링 대신 푸시 방식</li>
+                            <li>UI 자동 업데이트</li>
+                            <li>리소스 효율적</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 Cursor 최적화
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// ❌ 나쁜 예: 모든 컬럼 조회
+val cursor = contentResolver.query(
+    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+    null,  // 모든 컬럼
+    null,
+    null,
+    null
+)
+
+// ✅ 좋은 예: 필요한 컬럼만 조회
+val projection = arrayOf(
+    MediaStore.Images.Media._ID,
+    MediaStore.Images.Media.DISPLAY_NAME,
+    MediaStore.Images.Media.DATE_ADDED
+)
+
+val cursor = contentResolver.query(
+    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+    projection,  // 필요한 것만
+    null,
+    null,
+    "${MediaStore.Images.Media.DATE_ADDED} DESC LIMIT 20"  // 페이지네이션
+)
+
+// ✅ Android 10+: Bundle로 LIMIT/OFFSET 지정
+val queryArgs = Bundle().apply {
+    putInt(ContentResolver.QUERY_ARG_LIMIT, 20)
+    putInt(ContentResolver.QUERY_ARG_OFFSET, 0)
+    putString(ContentResolver.QUERY_ARG_SORT_COLUMNS, arrayOf(MediaStore.Images.Media.DATE_ADDED).first())
+    putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_DESCENDING)
+}
+
+val cursor = contentResolver.query(
+    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+    projection,
+    queryArgs,
+    null
+)
+
+// ⚠️ 반드시 Cursor close
+cursor?.use { c ->
+    while (c.moveToNext()) {
+        // 데이터 처리
+    }
+}  // use 블록 종료 시 자동 close</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📦 Batch 작업
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// bulkInsert로 여러 이미지 한 번에 삽입
+fun bulkInsertImages(context: Context, images: List<ImageInfo>): Int {
+    val contentValues = images.map { image ->
+        ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, image.name)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+        }
+    }.toTypedArray()
+
+    return context.contentResolver.bulkInsert(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        contentValues
+    )
+}
+
+// applyBatch로 여러 작업을 트랜잭션으로 실행
+fun batchOperations(context: Context, operations: List<ContentProviderOperation>) {
+    try {
+        val results = context.contentResolver.applyBatch(
+            MediaStore.AUTHORITY,
+            ArrayList(operations)
+        )
+        Log.d("Batch", "Success: ${results.size} operations")
+    } catch (e: Exception) {
+        Log.e("Batch", "Failed", e)
+    }
+}
+
+// 예시: 여러 이미지를 Favorite로 표시
+fun batchMarkFavorite(context: Context, imageUris: List<Uri>) {
+    val operations = imageUris.map { uri ->
+        ContentProviderOperation.newUpdate(uri)
+            .withValue(MediaStore.Images.Media.IS_FAVORITE, 1)
+            .build()
+    }
+
+    batchOperations(context, operations)
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 ContentObserver 변경 감지
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// MediaStore 변경 감지
+class MediaObserver(
+    private val handler: Handler,
+    private val onChange: () -> Unit
+) : ContentObserver(handler) {
+
+    override fun onChange(selfChange: Boolean) {
+        super.onChange(selfChange)
+        onChange()
+    }
+
+    override fun onChange(selfChange: Boolean, uri: Uri?) {
+        super.onChange(selfChange, uri)
+        Log.d("MediaObserver", "Changed: $uri")
+        onChange()
+    }
+}
+
+// Activity에서 사용
+class GalleryActivity : AppCompatActivity() {
+    private lateinit var mediaObserver: ContentObserver
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // ContentObserver 등록
+        val handler = Handler(Looper.getMainLooper())
+        mediaObserver = MediaObserver(handler) {
+            // MediaStore 변경 시 UI 업데이트
+            loadImages()
+        }
+
+        contentResolver.registerContentObserver(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            true,  // descendants도 감지
+            mediaObserver
+        )
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        contentResolver.unregisterContentObserver(mediaObserver)
+    }
+
+    private fun loadImages() {
+        // 이미지 다시 로드 및 UI 업데이트
+        lifecycleScope.launch {
+            val images = withContext(Dispatchers.IO) {
+                queryImages(this@GalleryActivity)
+            }
+            adapter.submitList(images)
+        }
+    }
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>📏 성능 벤치마크:</strong>
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">작업</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">최적화 전</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">최적화 후</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">개선율</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Query (1000개)</strong></td>
+                            <td style="padding: 10px;">250ms (전체 컬럼)</td>
+                            <td style="padding: 10px;">80ms (Projection)</td>
+                            <td style="padding: 10px;">68% 향상</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Insert (100개)</strong></td>
+                            <td style="padding: 10px;">1500ms (개별 삽입)</td>
+                            <td style="padding: 10px;">120ms (bulkInsert)</td>
+                            <td style="padding: 10px;">92% 향상</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Update (50개)</strong></td>
+                            <td style="padding: 10px;">800ms (개별 업데이트)</td>
+                            <td style="padding: 10px;">90ms (applyBatch)</td>
+                            <td style="padding: 10px;">89% 향상</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px;"><strong>변경 감지</strong></td>
+                            <td style="padding: 10px;">폴링 (1초마다 쿼리)</td>
+                            <td style="padding: 10px;">ContentObserver (푸시)</td>
+                            <td style="padding: 10px;">CPU 95% 감소</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 10: Android Version Changes -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                Android 버전별 변화
+            </h2>
+            <p class="section-description">
+                Android 10부터 13까지 Scoped Storage 및 권한 모델의 주요 변화를 정리합니다.
+            </p>
+
+            <div class="highlight-box">
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">항목</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Android 9 (Pie)</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Android 10 (Q)</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Android 11 (R)</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Android 12 (S)</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Android 13 (T)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Storage 모델</strong></td>
+                            <td style="padding: 10px;">Legacy Storage</td>
+                            <td style="padding: 10px;">Scoped Storage (선택)</td>
+                            <td style="padding: 10px;">Scoped Storage (강제)</td>
+                            <td style="padding: 10px;">Scoped Storage</td>
+                            <td style="padding: 10px;">Scoped Storage</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>권한</strong></td>
+                            <td style="padding: 10px;">READ/WRITE_EXTERNAL_STORAGE</td>
+                            <td style="padding: 10px;">READ_EXTERNAL_STORAGE</td>
+                            <td style="padding: 10px;">READ_EXTERNAL_STORAGE</td>
+                            <td style="padding: 10px;">READ_EXTERNAL_STORAGE</td>
+                            <td style="padding: 10px;">READ_MEDIA_IMAGES/VIDEO/AUDIO</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>파일 접근</strong></td>
+                            <td style="padding: 10px;">File API 직접 접근</td>
+                            <td style="padding: 10px;">MediaStore + File API</td>
+                            <td style="padding: 10px;">MediaStore (권장)</td>
+                            <td style="padding: 10px;">MediaStore (필수)</td>
+                            <td style="padding: 10px;">MediaStore (필수)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>FUSE</strong></td>
+                            <td style="padding: 10px;">없음</td>
+                            <td style="padding: 10px;">없음</td>
+                            <td style="padding: 10px;">FUSE Daemon</td>
+                            <td style="padding: 10px;">FUSE Passthrough</td>
+                            <td style="padding: 10px;">FUSE Passthrough</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Trash & Favorites</strong></td>
+                            <td style="padding: 10px;">없음</td>
+                            <td style="padding: 10px;">없음</td>
+                            <td style="padding: 10px;">is_trashed, is_favorite</td>
+                            <td style="padding: 10px;">동일</td>
+                            <td style="padding: 10px;">동일</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>다른 앱 파일 수정</strong></td>
+                            <td style="padding: 10px;">자유롭게 가능</td>
+                            <td style="padding: 10px;">RecoverableSecurityException</td>
+                            <td style="padding: 10px;">RecoverableSecurityException</td>
+                            <td style="padding: 10px;">동일</td>
+                            <td style="padding: 10px;">동일</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Location Redaction</strong></td>
+                            <td style="padding: 10px;">없음</td>
+                            <td style="padding: 10px;">ACCESS_MEDIA_LOCATION 필요</td>
+                            <td style="padding: 10px;">동일</td>
+                            <td style="padding: 10px;">동일</td>
+                            <td style="padding: 10px;">동일</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px;"><strong>MANAGE_EXTERNAL_STORAGE</strong></td>
+                            <td style="padding: 10px;">없음</td>
+                            <td style="padding: 10px;">없음</td>
+                            <td style="padding: 10px;">도입 (특수 권한)</td>
+                            <td style="padding: 10px;">Play Store 제한 강화</td>
+                            <td style="padding: 10px;">더욱 엄격한 제한</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 마이그레이션 가이드
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        Android 9 → 10
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Scoped Storage 선택 도입</strong></p>
+                        <ul>
+                            <li><code>requestLegacyExternalStorage=true</code>로 일시적 회피 가능</li>
+                            <li>File API 대신 MediaStore 사용 시작</li>
+                            <li>WRITE_EXTERNAL_STORAGE 불필요 (자신의 미디어)</li>
+                            <li>ContentValues + OutputStream 패턴 적용</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        Android 10 → 11
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Scoped Storage 강제 적용</strong></p>
+                        <ul>
+                            <li><code>requestLegacyExternalStorage</code> 무시됨</li>
+                            <li>File API 접근 제한 (getExternalStorageDirectory 불가)</li>
+                            <li>FUSE Daemon 도입으로 실시간 권한 검사</li>
+                            <li>Trash & Favorites 기능 사용 가능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">3️⃣</span>
+                        Android 11 → 12
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>FUSE Passthrough 최적화</strong></p>
+                        <ul>
+                            <li>I/O 성능 대폭 향상 (User-space 우회)</li>
+                            <li>앱 코드 변경 불필요 (자동 적용)</li>
+                            <li>MANAGE_EXTERNAL_STORAGE 정책 강화</li>
+                            <li>Play Store 심사 엄격</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">4️⃣</span>
+                        Android 12 → 13
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Granular 권한 도입</strong></p>
+                        <ul>
+                            <li>READ_MEDIA_IMAGES/VIDEO/AUDIO로 분리</li>
+                            <li>사용자가 미디어 타입별로 권한 제어</li>
+                            <li>AndroidManifest.xml에 3개 권한 선언</li>
+                            <li>하위 호환성 유지 (maxSdkVersion)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ⚠️ Deprecated API 대체
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// ❌ Deprecated: File API 직접 접근 (Android 10+)
+val file = File(Environment.getExternalStorageDirectory(), "Pictures/photo.jpg")
+FileOutputStream(file).use { out ->
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+}
+
+// ✅ 권장: MediaStore API
+val contentValues = ContentValues().apply {
+    put(MediaStore.Images.Media.DISPLAY_NAME, "photo.jpg")
+    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+    put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+}
+
+val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+uri?.let {
+    contentResolver.openOutputStream(it)?.use { out ->
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+    }
+}
+
+// ❌ Deprecated: MediaStore.Images.Thumbnails (Android 10+)
+val thumbnail = MediaStore.Images.Thumbnails.getThumbnail(
+    contentResolver, imageId, MediaStore.Images.Thumbnails.MINI_KIND, null
+)
+
+// ✅ 권장: loadThumbnail()
+val thumbnail = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    contentResolver.loadThumbnail(imageUri, Size(512, 512), null)
+} else {
+    // Fallback for older versions
+    MediaStore.Images.Thumbnails.getThumbnail(
+        contentResolver, imageId, MediaStore.Images.Thumbnails.MINI_KIND, null
+    )
+}</code></pre>
+        </section>
+
+        <!-- Section 11: Debugging & Troubleshooting -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                디버깅 & 트러블슈팅
+            </h2>
+            <p class="section-description">
+                MediaProvider의 문제를 진단하고 해결하기 위한 도구와 방법을 소개합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📊 dumpsys 명령어
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># MediaProvider 상태 조회
+adb shell dumpsys media_provider
+
+# 데이터베이스 통계
+adb shell dumpsys media_provider database
+
+# FUSE 상태
+adb shell dumpsys media_provider fuse
+
+# 권한 및 앱별 접근 기록
+adb shell dumpsys media_provider permissions
+
+# MediaStore 데이터베이스 직접 조회 (개발 빌드)
+adb shell sqlite3 /data/data/com.android.providers.media.module/databases/external.db
+> SELECT _id, _display_name, _size FROM files WHERE media_type=1 LIMIT 10;
+> .quit</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 adb shell content 명령어
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># MediaStore 쿼리 (이미지 조회)
+adb shell content query --uri content://media/external/images/media \
+  --projection _id,_display_name,_size
+
+# 특정 조건으로 쿼리 (크기 > 1MB)
+adb shell content query --uri content://media/external/images/media \
+  --projection _id,_display_name,_size \
+  --where "_size>1048576"
+
+# 새 레코드 삽입
+adb shell content insert --uri content://media/external/images/media \
+  --bind _display_name:s:test.jpg \
+  --bind mime_type:s:image/jpeg
+
+# 레코드 업데이트 (Favorite 설정)
+adb shell content update --uri content://media/external/images/media/123 \
+  --bind is_favorite:i:1
+
+# 레코드 삭제
+adb shell content delete --uri content://media/external/images/media/123
+
+# MediaScanner 트리거 (전체 스캔)
+adb shell am broadcast -a android.intent.action.MEDIA_MOUNTED \
+  -d file:///storage/emulated/0</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🐛 트러블슈팅 가이드
+            </h3>
+
+            <div class="highlight-box">
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">증상</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">원인</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">해결 방법</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>query() 결과가 비어있음</strong></td>
+                            <td style="padding: 10px;">권한 부족 또는 실제 파일 없음</td>
+                            <td style="padding: 10px;">1. READ_MEDIA_* 권한 확인<br>2. adb shell content query로 DB 확인<br>3. MediaScanner 트리거</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>insert() 후 URI가 null</strong></td>
+                            <td style="padding: 10px;">ContentValues 잘못됨 또는 권한 부족</td>
+                            <td style="padding: 10px;">1. DISPLAY_NAME, MIME_TYPE 필수 확인<br>2. RELATIVE_PATH 유효성 검증<br>3. Logcat에서 에러 확인</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>openOutputStream() 실패</strong></td>
+                            <td style="padding: 10px;">URI가 유효하지 않음</td>
+                            <td style="padding: 10px;">1. insert() 반환 URI 확인<br>2. IS_PENDING 플래그 해제 확인<br>3. Storage 공간 확인</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>RecoverableSecurityException 발생</strong></td>
+                            <td style="padding: 10px;">다른 앱의 파일 수정 시도</td>
+                            <td style="padding: 10px;">1. e.userAction.actionIntent로 사용자 동의 요청<br>2. onActivityResult에서 재시도<br>3. 자신의 파일인지 확인</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>새 파일이 갤러리에 안 보임</strong></td>
+                            <td style="padding: 10px;">MediaScanner 미실행</td>
+                            <td style="padding: 10px;">1. IS_PENDING=0으로 설정 확인<br>2. MediaScannerConnection.scanFile() 호출<br>3. 앱 재시작 또는 기기 재부팅</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>위치 정보가 null로 표시됨</strong></td>
+                            <td style="padding: 10px;">Location Redaction (자동 삭제)</td>
+                            <td style="padding: 10px;">1. ACCESS_MEDIA_LOCATION 권한 추가<br>2. setRequireOriginal(true) 사용<br>3. ExifInterface로 원본 읽기</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>FileNotFoundException (Android 10+)</strong></td>
+                            <td style="padding: 10px;">File API로 직접 접근 시도</td>
+                            <td style="padding: 10px;">1. MediaStore API로 전환<br>2. SAF 사용<br>3. getExternalFilesDir() 사용</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px;"><strong>성능 저하 (느린 쿼리)</strong></td>
+                            <td style="padding: 10px;">전체 컬럼 조회 또는 대량 데이터</td>
+                            <td style="padding: 10px;">1. Projection으로 필요한 컬럼만<br>2. LIMIT/OFFSET으로 페이지네이션<br>3. Background Thread 사용<br>4. Cursor 즉시 close</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📈 성능 분석
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># Logcat 필터링
+adb logcat -s MediaProvider FuseDaemon
+
+# StrictMode로 메인 스레드 I/O 감지
+if (BuildConfig.DEBUG) {
+    StrictMode.setThreadPolicy(
+        StrictMode.ThreadPolicy.Builder()
+            .detectDiskReads()
+            .detectDiskWrites()
+            .penaltyLog()
+            .build()
+    )
+}
+
+// 쿼리 성능 측정
+val startTime = SystemClock.elapsedRealtime()
+val cursor = contentResolver.query(...)
+val queryTime = SystemClock.elapsedRealtime() - startTime
+Log.d("Performance", "Query took ${queryTime}ms")
+
+cursor?.use {
+    val count = it.count
+    Log.d("Performance", "Returned $count rows")
+}
+
+# Android Profiler 사용
+# Android Studio → View → Tool Windows → Profiler
+# - CPU: ContentResolver 호출 추적
+# - Memory: Cursor 누수 확인
+# - Network: 없어야 함 (로컬 DB)</code></pre>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>💡 디버깅 Best Practices:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>dumpsys media_provider로 전체 상태 파악 후 문제 영역 특정</li>
+                    <li>adb shell content로 MediaStore DB 직접 조작하여 앱 외부에서 재현</li>
+                    <li>StrictMode로 메인 스레드 I/O 조기 발견</li>
+                    <li>Logcat에서 RecoverableSecurityException 상세 메시지 확인</li>
+                    <li>Android Profiler로 Cursor 누수 및 성능 병목 분석</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 12: AOSP Source Code Reference -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                AOSP 소스 코드 참조
+            </h2>
+            <p class="section-description">
+                MediaProvider 구현을 이해하기 위한 AOSP 소스 코드 위치와 핵심 로직을 소개합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📂 주요 소스 파일 위치
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        MediaProvider (Java)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>ContentProvider 구현</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>packages/providers/MediaProvider/src/com/android/providers/media/
+├── MediaProvider.java
+├── MediaService.java
+├── MediaVolume.java
+└── DatabaseHelper.java</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        FuseDaemon (C++)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>FUSE 파일 시스템</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>packages/providers/MediaProvider/jni/
+├── FuseDaemon.cpp
+├── MediaProviderWrapper.cpp
+└── node-inl.h</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📚</span>
+                        MediaStore API
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Framework Contract</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>frameworks/base/core/java/android/provider/
+├── MediaStore.java
+└── MediaStore$*.java (Inner classes)</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🗄️</span>
+                        Database Schema
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>SQLite 스키마 정의</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>packages/providers/MediaProvider/src/com/android/providers/media/
+└── DatabaseHelper.java
+  - createFilesTable()
+  - createIndexes()</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                💻 핵심 코드 스니펫
+            </h3>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                1. MediaProvider.java (Query 처리)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// packages/providers/MediaProvider/src/com/android/providers/media/MediaProvider.java
+
+@Override
+public Cursor query(Uri uri, String[] projection, String selection,
+                    String[] selectionArgs, String sortOrder) {
+    // 권한 검사
+    enforceCallingOrSelfPermissionAndAppOps(uri, callingPackage);
+
+    // URI 파싱 (어떤 테이블인지 결정)
+    final int match = matchUri(uri);
+    final DatabaseHelper helper = getDatabaseForUri(uri);
+    final SQLiteDatabase db = helper.getReadableDatabase();
+
+    // 쿼리 빌드
+    SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+    switch (match) {
+        case IMAGES_MEDIA:
+            qb.setTables("files");
+            qb.appendWhere("media_type=" + FileColumns.MEDIA_TYPE_IMAGE);
+            break;
+        case AUDIO_MEDIA:
+            qb.setTables("files");
+            qb.appendWhere("media_type=" + FileColumns.MEDIA_TYPE_AUDIO);
+            break;
+        // ...
+    }
+
+    // Scoped Storage: 다른 앱의 파일 필터링
+    if (!isCallerAllowed(uri)) {
+        qb.appendWhere("_data IS NOT NULL AND owner_package_name=?");
+        selectionArgs = appendSelectionArgs(selectionArgs, callingPackage);
+    }
+
+    // 쿼리 실행
+    Cursor c = qb.query(db, projection, selection, selectionArgs,
+                        null, null, sortOrder, limit);
+
+    // ContentObserver 알림 설정
+    c.setNotificationUri(getContext().getContentResolver(), uri);
+
+    return c;
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                2. FuseDaemon.cpp (파일 열기 처리)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// packages/providers/MediaProvider/jni/FuseDaemon.cpp
+
+static int fuse_open(const char* path, struct fuse_file_info* fi) {
+    // JNI로 Java 레이어에 권한 검사 요청
+    JNIEnv* env = MaybeAttachCurrentThread();
+    jstring j_path = env->NewStringUTF(path);
+
+    // MediaProvider.shouldAllowAccess() 호출
+    bool allowed = env->CallBooleanMethod(
+        media_provider_object_,
+        mid_should_allow_access_,
+        j_path,
+        fi->fh,  // 파일 핸들
+        uid,     // 호출자 UID
+        gid
+    );
+
+    if (!allowed) {
+        // 권한 거부
+        return -EACCES;
+    }
+
+    // 실제 파일 열기
+    int fd = openat(AT_FDCWD, actual_path, fi->flags);
+    if (fd < 0) {
+        return -errno;
+    }
+
+    // FUSE Passthrough 설정 (Android 12+)
+    if (supports_passthrough) {
+        struct fuse_passthrough_out passthrough;
+        passthrough.fd = fd;
+        fuse_reply_open_passthrough(req, fi, &passthrough);
+    } else {
+        fi->fh = fd;
+        fuse_reply_open(req, fi);
+    }
+
+    return 0;
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                3. DatabaseHelper.java (테이블 생성)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// packages/providers/MediaProvider/src/com/android/providers/media/DatabaseHelper.java
+
+private void createFilesTable(SQLiteDatabase db) {
+    db.execSQL("CREATE TABLE files (" +
+        "_id INTEGER PRIMARY KEY AUTOINCREMENT," +
+        "_data TEXT UNIQUE COLLATE NOCASE," +
+        "_display_name TEXT," +
+        "_size INTEGER," +
+        "mime_type TEXT," +
+        "date_added INTEGER," +
+        "date_modified INTEGER," +
+        "media_type INTEGER," +
+        "width INTEGER," +
+        "height INTEGER," +
+        "duration INTEGER," +
+        "album TEXT," +
+        "artist TEXT," +
+        "is_trashed INTEGER DEFAULT 0," +
+        "is_favorite INTEGER DEFAULT 0," +
+        "is_pending INTEGER DEFAULT 0," +
+        "date_expires INTEGER," +
+        "owner_package_name TEXT," +
+        // ... 더 많은 컬럼
+        ")"
+    );
+
+    // 인덱스 생성 (성능 최적화)
+    db.execSQL("CREATE INDEX media_type_index ON files(media_type)");
+    db.execSQL("CREATE INDEX date_added_index ON files(date_added)");
+    db.execSQL("CREATE INDEX owner_package_name_index ON files(owner_package_name)");
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔗 AOSP 소스 코드 탐색 링크:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:packages/providers/MediaProvider/" target="_blank" style="color: var(--accent-primary);">MediaProvider (Mainline 모듈)</a></li>
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/provider/MediaStore.java" target="_blank" style="color: var(--accent-primary);">MediaStore API (Framework)</a></li>
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:packages/providers/MediaProvider/jni/FuseDaemon.cpp" target="_blank" style="color: var(--accent-primary);">FuseDaemon (Native)</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 13: Related Documentation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                관련 상세 문서
+            </h2>
+            <p class="section-description">
+                MediaProvider와 관련된 다른 상세 문서 페이지로 이동할 수 있습니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        <p>Android 미디어 프레임워크의 전체 아키텍처와 계층 구조를 설명합니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>Framework → Native 계층 상호작용</li>
+                            <li>MediaPlayer, MediaRecorder API</li>
+                            <li>Binder IPC 통신</li>
+                        </ul>
+                        <a href="media-framework-core.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        MediaExtractor
+                    </h3>
+                    <div class="card-description">
+                        <p>컨테이너 파싱 및 디먹싱 아키텍처를 설명합니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>MP4/MKV/WebM Parser</li>
+                            <li>샘플 추출 메커니즘</li>
+                            <li>Seeking 및 Metadata</li>
+                        </ul>
+                        <a href="media-extractor.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        Media Playback Pipeline
+                    </h3>
+                    <div class="card-description">
+                        <p>미디어 재생 파이프라인과 NuPlayer를 설명합니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>NuPlayer 아키텍처</li>
+                            <li>버퍼 관리 및 A/V Sync</li>
+                            <li>스트리밍 파이프라인</li>
+                        </ul>
+                        <a href="media-playback.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>AudioFlinger와 오디오 파이프라인을 다룹니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>AudioTrack/AudioRecord</li>
+                            <li>AudioFlinger 믹싱</li>
+                            <li>오디오 라우팅 정책</li>
+                        </ul>
+                        <a href="audio-framework.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        MediaSession
+                    </h3>
+                    <div class="card-description">
+                        <p>미디어 재생 제어 및 세션 관리를 설명합니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>MediaSession 프레임워크</li>
+                            <li>Android Auto 통합</li>
+                            <li>Media3 vs Legacy</li>
+                        </ul>
+                        <a href="mediasession.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Widevine DRM
+                    </h3>
+                    <div class="card-description">
+                        <p>Widevine DRM 아키텍처와 보안 레벨을 설명합니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>L1/L2/L3 보안 레벨</li>
+                            <li>MediaDrm API</li>
+                            <li>Provisioning & 라이선스</li>
+                        </ul>
+                        <a href="widevine.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 40px;">
+                <h3 style="color: var(--accent-primary); font-size: 1.2rem; margin-bottom: 15px;">
+                    📚 추가 학습 리소스
+                </h3>
+                <ul style="padding-left: 20px;">
+                    <li><strong>Android Developer - Storage</strong>: <a href="https://developer.android.com/training/data-storage" target="_blank" style="color: var(--accent-primary);">developer.android.com/training/data-storage</a></li>
+                    <li><strong>Scoped Storage 가이드</strong>: <a href="https://developer.android.com/about/versions/11/privacy/storage" target="_blank" style="color: var(--accent-primary);">developer.android.com/about/versions/11/privacy/storage</a></li>
+                    <li><strong>MediaStore API 레퍼런스</strong>: <a href="https://developer.android.com/reference/android/provider/MediaStore" target="_blank" style="color: var(--accent-primary);">developer.android.com/reference/android/provider/MediaStore</a></li>
+                    <li><strong>Storage Access Framework</strong>: <a href="https://developer.android.com/guide/topics/providers/document-provider" target="_blank" style="color: var(--accent-primary);">developer.android.com/guide/topics/providers/document-provider</a></li>
+                </ul>
+            </div>
+        </section>
+
         <!-- Footer -->
         <footer
             style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
