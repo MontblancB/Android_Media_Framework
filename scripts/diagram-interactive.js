@@ -407,16 +407,26 @@ function showNodeModal(nodeData) {
         </div>
     `;
 
+    // body에 스크롤 방지
+    document.body.style.overflow = 'hidden';
+
     document.body.appendChild(modal);
     activeModal = modal;
+
+    // 디버깅: 모달 생성 알림 (테스트용)
+    console.warn(`🚨 모달 생성! 제목: ${nodeData.title}`);
     console.log(`   ✅ 모달이 DOM에 추가됨`);
     console.log(`   모달 요소:`, modal);
+    console.log(`   모달 위치:`, modal.getBoundingClientRect());
+    console.log(`   모달 z-index:`, window.getComputedStyle(modal).zIndex);
 
-    // 애니메이션 시작
-    requestAnimationFrame(() => {
+    // 애니메이션 시작 (모바일 호환성을 위해 setTimeout 사용)
+    setTimeout(() => {
         modal.classList.add('show');
         console.log(`   ✅ 'show' 클래스 추가 (애니메이션 시작)`);
-    });
+        console.log(`   모달 opacity:`, window.getComputedStyle(modal).opacity);
+        console.log(`   모달 display:`, window.getComputedStyle(modal).display);
+    }, 10);
 
     // 닫기 이벤트
     const closeBtn = modal.querySelector('.diagram-modal-close');
@@ -451,6 +461,8 @@ function closeModal() {
             activeModal.remove();
             activeModal = null;
         }
+        // body 스크롤 복원
+        document.body.style.overflow = '';
     }, 300);
 
     document.removeEventListener('keydown', handleEscKey);
