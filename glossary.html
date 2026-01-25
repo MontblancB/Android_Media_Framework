@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Media Glossary - Android Media Framework</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #1a1f35;
+            --bg-tertiary: #252b45;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --accent-red: #ef4444;
+            --border-color: rgba(148, 163, 184, 0.1);
+            --code-bg: #1e293b;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1420 100%);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 300;
+        }
+
+        section {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 2rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 3px;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin: 2rem 0 1rem 0;
+            color: var(--accent-purple);
+            font-weight: 600;
+        }
+
+        p, li {
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            background: var(--code-bg);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: var(--accent-green);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .term-card {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--accent-blue);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+        }
+
+        .term-title {
+            font-size: 1.5rem;
+            color: var(--accent-blue);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .term-pronunciation {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+
+        .term-definition {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            line-height: 1.8;
+        }
+
+        .term-related {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+        }
+
+        .alphabet-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin: 2rem 0;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+        }
+
+        .alphabet-nav a {
+            display: inline-block;
+            width: 2.5rem;
+            height: 2.5rem;
+            line-height: 2.5rem;
+            text-align: center;
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-blue);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .alphabet-nav a:hover {
+            background: var(--accent-blue);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            section {
+                padding: 1.5rem;
+            }
+
+            .alphabet-nav a {
+                width: 2rem;
+                height: 2rem;
+                line-height: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📖 Android Media Glossary</h1>
+            <p class="subtitle">미디어 프레임워크 용어 사전 (알파벳 순)</p>
+        </header>
+
+        <!-- Alphabet Navigation -->
+        <div class="alphabet-nav">
+            <a href="#A">A</a>
+            <a href="#B">B</a>
+            <a href="#C">C</a>
+            <a href="#D">D</a>
+            <a href="#E">E</a>
+            <a href="#F">F</a>
+            <a href="#G">G</a>
+            <a href="#H">H</a>
+            <a href="#I">I</a>
+            <a href="#L">L</a>
+            <a href="#M">M</a>
+            <a href="#N">N</a>
+            <a href="#O">O</a>
+            <a href="#P">P</a>
+            <a href="#R">R</a>
+            <a href="#S">S</a>
+            <a href="#T">T</a>
+            <a href="#U">U</a>
+            <a href="#V">V</a>
+            <a href="#W">W</a>
+        </div>
+
+        <!-- Section A -->
+        <section id="A">
+            <h2>A</h2>
+
+            <div class="term-card">
+                <div class="term-title">AAC (Advanced Audio Coding)</div>
+                <div class="term-pronunciation">에이에이씨</div>
+                <div class="term-definition">
+                    MP3의 후속 오디오 코덱으로, 동일 비트레이트에서 더 높은 음질을 제공합니다. MIME 타입: <code>audio/mp4a-latm</code>. Android에서 가장 널리 사용되는 오디오 코덱입니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Codec</span>
+                    <span class="tag">Audio</span>
+                    <span class="tag">MPEG-4</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">ABR (Adaptive Bitrate Streaming)</div>
+                <div class="term-pronunciation">에이비알, 적응형 비트레이트 스트리밍</div>
+                <div class="term-definition">
+                    네트워크 대역폭에 따라 동적으로 비디오 품질을 조정하는 스트리밍 기술입니다. HLS, DASH, SmoothStreaming이 대표적입니다. ExoPlayer의 <code>DefaultTrackSelector</code>가 ABR을 자동으로 처리합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Streaming</span>
+                    <span class="tag">ExoPlayer</span>
+                    <span class="tag">HLS</span>
+                    <span class="tag">DASH</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">ACodec</div>
+                <div class="term-pronunciation">에이코덱</div>
+                <div class="term-definition">
+                    Android의 Native 레벨 코덱 래퍼로, OMX (OpenMAX) 코덱을 추상화합니다. Codec 2.0에서는 <code>CCodec</code>으로 대체되었습니다. <code>stagefright</code> 라이브러리의 일부입니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Native</span>
+                    <span class="tag">OMX</span>
+                    <span class="tag">Codec</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">AIDL (Android Interface Definition Language)</div>
+                <div class="term-pronunciation">에이아이디엘</div>
+                <div class="term-definition">
+                    프로세스 간 통신(IPC)을 위한 인터페이스 정의 언어입니다. HAL 3.0+에서 HIDL을 대체하며, MediaCodec, AudioFlinger 등이 AIDL을 사용합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">IPC</span>
+                    <span class="tag">HAL</span>
+                    <span class="tag">Binder</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Audio Focus</div>
+                <div class="term-pronunciation">오디오 포커스</div>
+                <div class="term-definition">
+                    여러 앱이 동시에 오디오를 재생할 때 우선순위를 관리하는 Android 시스템입니다. <code>AudioManager.requestAudioFocus()</code>로 요청하며, 다른 앱이 포커스를 획득하면 <code>AUDIOFOCUS_LOSS</code> 콜백을 받습니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">AudioManager</span>
+                    <span class="tag">Ducking</span>
+                    <span class="tag">Policy</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">AudioFlinger</div>
+                <div class="term-pronunciation">오디오플링어</div>
+                <div class="term-definition">
+                    Android의 Native 오디오 서버로, 모든 오디오 스트림을 믹싱하여 HAL로 전달합니다. <code>AudioTrack</code>, <code>AudioRecord</code>의 백엔드이며, <code>dumpsys media.audio_flinger</code>로 상태를 확인할 수 있습니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Native</span>
+                    <span class="tag">Audio HAL</span>
+                    <span class="tag">Mixing</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">AVC (Advanced Video Coding)</div>
+                <div class="term-pronunciation">에이브이씨</div>
+                <div class="term-definition">
+                    H.264의 공식 명칭입니다. MIME 타입: <code>video/avc</code>. 가장 널리 사용되는 비디오 코덱으로, Android의 모든 디바이스가 지원합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">H.264</span>
+                    <span class="tag">Codec</span>
+                    <span class="tag">Video</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section B -->
+        <section id="B">
+            <h2>B</h2>
+
+            <div class="term-card">
+                <div class="term-title">Binder</div>
+                <div class="term-pronunciation">바인더</div>
+                <div class="term-definition">
+                    Android의 프로세스 간 통신(IPC) 메커니즘입니다. Framework와 Native Service 간 통신에 사용되며, <code>dumpsys</code>, <code>service list</code> 명령으로 Binder 서비스를 확인할 수 있습니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">IPC</span>
+                    <span class="tag">Kernel</span>
+                    <span class="tag">AIDL</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Buffer</div>
+                <div class="term-pronunciation">버퍼</div>
+                <div class="term-definition">
+                    미디어 데이터를 임시로 저장하는 메모리 영역입니다. MediaCodec의 <code>ByteBuffer</code>, ExoPlayer의 <code>LoadControl</code>이 버퍼를 관리합니다. 버퍼링(Buffering)은 재생 전 충분한 데이터를 미리 로드하는 과정입니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">MediaCodec</span>
+                    <span class="tag">ExoPlayer</span>
+                    <span class="tag">Memory</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section C -->
+        <section id="C">
+            <h2>C</h2>
+
+            <div class="term-card">
+                <div class="term-title">CCodec</div>
+                <div class="term-pronunciation">씨코덱</div>
+                <div class="term-definition">
+                    Codec 2.0의 클라이언트 래퍼입니다. ACodec(OMX)을 대체하며, <code>IComponentStore</code>를 통해 Codec 2.0 HAL과 통신합니다. Android 10+에서 기본 코덱입니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Codec 2.0</span>
+                    <span class="tag">HAL</span>
+                    <span class="tag">Native</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">CDD (Compatibility Definition Document)</div>
+                <div class="term-pronunciation">씨디디, 호환성 정의 문서</div>
+                <div class="term-definition">
+                    Android 디바이스가 준수해야 할 정책 요구사항을 정의한 문서입니다. CTS 테스트의 근거이며, [C-X-Y] 형식의 Requirement ID를 사용합니다. 예: [C-1-1] = Handheld MUST support H.264 1080p@30fps.
+                </div>
+                <div class="term-related">
+                    <span class="tag">CTS</span>
+                    <span class="tag">Compatibility</span>
+                    <span class="tag">Policy</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Codec</div>
+                <div class="term-pronunciation">코덱</div>
+                <div class="term-definition">
+                    Coder-Decoder의 약자로, 미디어 데이터를 인코딩/디코딩하는 소프트웨어 또는 하드웨어입니다. H.264, H.265(비디오), AAC, Opus(오디오) 등이 있습니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">H.264</span>
+                    <span class="tag">AAC</span>
+                    <span class="tag">MediaCodec</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Codec 2.0</div>
+                <div class="term-pronunciation">코덱 투포인트오</div>
+                <div class="term-definition">
+                    Android 9+의 차세대 코덱 HAL입니다. OMX를 대체하며, C++17 기반의 모던 API를 제공합니다. <code>C2Component</code>, <code>C2Work</code> 구조를 사용합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">HAL</span>
+                    <span class="tag">CCodec</span>
+                    <span class="tag">Native</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">CTS (Compatibility Test Suite)</div>
+                <div class="term-pronunciation">씨티에스</div>
+                <div class="term-definition">
+                    Android 호환성 검증 테스트 스위트입니다. <code>CtsMediaTestCases</code>는 MediaCodec, MediaPlayer, DRM 등을 테스트합니다. <code>cts-tradefed</code> 하니스로 실행합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Testing</span>
+                    <span class="tag">CDD</span>
+                    <span class="tag">VTS</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section D -->
+        <section id="D">
+            <h2>D</h2>
+
+            <div class="term-card">
+                <div class="term-title">DASH (Dynamic Adaptive Streaming over HTTP)</div>
+                <div class="term-pronunciation">대시</div>
+                <div class="term-definition">
+                    MPEG에서 표준화한 ABR 스트리밍 프로토콜입니다. Manifest 파일(.mpd)로 세그먼트 정보를 제공합니다. ExoPlayer의 <code>DashMediaSource</code>로 재생합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Streaming</span>
+                    <span class="tag">ABR</span>
+                    <span class="tag">ExoPlayer</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Demuxer</div>
+                <div class="term-pronunciation">디먹서</div>
+                <div class="term-definition">
+                    컨테이너 파일(MP4, MKV)에서 비디오/오디오 스트림을 분리(demultiplexing)하는 컴포넌트입니다. Android의 <code>MediaExtractor</code>가 demuxer 역할을 합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">MediaExtractor</span>
+                    <span class="tag">Container</span>
+                    <span class="tag">Muxer</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">DRM (Digital Rights Management)</div>
+                <div class="term-pronunciation">디알엠, 디지털 저작권 관리</div>
+                <div class="term-definition">
+                    디지털 콘텐츠의 불법 복제를 방지하는 기술입니다. Android는 Widevine, PlayReady, ClearKey를 지원합니다. <code>MediaDrm</code> API로 라이선스를 관리합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Widevine</span>
+                    <span class="tag">MediaDrm</span>
+                    <span class="tag">Security</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Ducking</div>
+                <div class="term-pronunciation">더킹</div>
+                <div class="term-definition">
+                    오디오 포커스를 잃었을 때 볼륨을 줄이는(duck) 대신 계속 재생하는 동작입니다. <code>AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK</code> 이벤트에서 볼륨을 20%로 낮춥니다. 내비게이션 TTS가 대표적인 예입니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Audio Focus</span>
+                    <span class="tag">AudioManager</span>
+                    <span class="tag">AAOS</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section E -->
+        <section id="E">
+            <h2>E</h2>
+
+            <div class="term-card">
+                <div class="term-title">ExoPlayer</div>
+                <div class="term-pronunciation">엑소플레이어</div>
+                <div class="term-definition">
+                    Google이 개발한 오픈소스 미디어 플레이어 라이브러리입니다. MediaPlayer보다 유연하며, DASH/HLS, DRM, ABR을 지원합니다. 현재는 <code>androidx.media3</code>로 마이그레이션되었습니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Media3</span>
+                    <span class="tag">Player</span>
+                    <span class="tag">AndroidX</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section F -->
+        <section id="F">
+            <h2>F</h2>
+
+            <div class="term-card">
+                <div class="term-title">Frame Drop</div>
+                <div class="term-pronunciation">프레임 드롭</div>
+                <div class="term-definition">
+                    비디오 재생 중 특정 프레임을 스킵하는 현상입니다. CPU/GPU 오버로드, 버퍼 부족, 디코딩 지연 등이 원인입니다. <code>dumpsys SurfaceFlinger</code>로 모니터링할 수 있습니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Performance</span>
+                    <span class="tag">SurfaceFlinger</span>
+                    <span class="tag">Rendering</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">ftrace</div>
+                <div class="term-pronunciation">에프트레이스</div>
+                <div class="term-definition">
+                    Linux 커널의 이벤트 트레이싱 도구입니다. perfetto, systrace의 백엔드이며, <code>/sys/kernel/debug/tracing</code>에서 직접 제어할 수 있습니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Kernel</span>
+                    <span class="tag">perfetto</span>
+                    <span class="tag">Debugging</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section H -->
+        <section id="H">
+            <h2>H</h2>
+
+            <div class="term-card">
+                <div class="term-title">H.264 (AVC)</div>
+                <div class="term-pronunciation">에이치이육사</div>
+                <div class="term-definition">
+                    가장 널리 사용되는 비디오 코덱입니다. MIME 타입: <code>video/avc</code>. Baseline/Main/High Profile을 지원하며, Android CDD에서 모든 디바이스의 필수 지원 코덱입니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Codec</span>
+                    <span class="tag">AVC</span>
+                    <span class="tag">MPEG-4</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">H.265 (HEVC)</div>
+                <div class="term-pronunciation">에이치이육오</div>
+                <div class="term-definition">
+                    H.264의 후속 코덱으로, 동일 화질에서 50% 적은 비트레이트를 사용합니다. MIME 타입: <code>video/hevc</code>. 4K/8K 비디오에 주로 사용됩니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Codec</span>
+                    <span class="tag">HEVC</span>
+                    <span class="tag">4K</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">HAL (Hardware Abstraction Layer)</div>
+                <div class="term-pronunciation">할, 하드웨어 추상화 계층</div>
+                <div class="term-definition">
+                    Android Framework와 하드웨어 드라이버 사이의 인터페이스 계층입니다. Audio HAL, Codec HAL 등이 있으며, HIDL/AIDL로 정의됩니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">HIDL</span>
+                    <span class="tag">AIDL</span>
+                    <span class="tag">Vendor</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">HDCP (High-bandwidth Digital Content Protection)</div>
+                <div class="term-pronunciation">에이치디씨피</div>
+                <div class="term-definition">
+                    HDMI/DisplayPort의 콘텐츠 보호 기술입니다. Widevine L1 콘텐츠는 외부 디스플레이 출력 시 HDCP 2.2 이상을 요구합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">DRM</span>
+                    <span class="tag">HDMI</span>
+                    <span class="tag">Widevine</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">HIDL (Hardware Interface Definition Language)</div>
+                <div class="term-pronunciation">히들</div>
+                <div class="term-definition">
+                    Android 8.0+의 HAL 인터페이스 정의 언어입니다. Codec 2.0, Audio HAL 6.0 등이 HIDL을 사용합니다. Android 11+에서는 AIDL로 대체되고 있습니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">HAL</span>
+                    <span class="tag">AIDL</span>
+                    <span class="tag">Treble</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">HLS (HTTP Live Streaming)</div>
+                <div class="term-pronunciation">에이치엘에스</div>
+                <div class="term-definition">
+                    Apple이 개발한 ABR 스트리밍 프로토콜입니다. Manifest 파일(.m3u8)로 세그먼트를 제공합니다. ExoPlayer의 <code>HlsMediaSource</code>로 재생합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Streaming</span>
+                    <span class="tag">ABR</span>
+                    <span class="tag">Apple</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section I -->
+        <section id="I">
+            <h2>I</h2>
+
+            <div class="term-card">
+                <div class="term-title">I-Frame (Intra-coded Frame)</div>
+                <div class="term-pronunciation">아이프레임, 키프레임</div>
+                <div class="term-definition">
+                    비디오에서 독립적으로 디코딩 가능한 프레임입니다. Seek 동작은 가장 가까운 I-Frame으로 이동합니다. GOP(Group of Pictures)의 시작 프레임입니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Codec</span>
+                    <span class="tag">Seek</span>
+                    <span class="tag">GOP</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">IPC (Inter-Process Communication)</div>
+                <div class="term-pronunciation">아이피씨, 프로세스 간 통신</div>
+                <div class="term-definition">
+                    Android에서 서로 다른 프로세스 간 데이터를 교환하는 메커니즘입니다. Binder, Socket, Pipe 등이 있으며, 미디어 프레임워크는 주로 Binder를 사용합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Binder</span>
+                    <span class="tag">AIDL</span>
+                    <span class="tag">HIDL</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section L -->
+        <section id="L">
+            <h2>L</h2>
+
+            <div class="term-card">
+                <div class="term-title">Latency</div>
+                <div class="term-pronunciation">레이턴시, 지연시간</div>
+                <div class="term-definition">
+                    오디오 입력부터 출력까지의 시간 지연입니다. Android CDD는 Automotive 디바이스에 ≤100ms, Handheld에 ≤80ms를 요구합니다. Low-latency 모드는 <code>AudioTrack.PERFORMANCE_MODE_LOW_LATENCY</code>로 활성화합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Audio</span>
+                    <span class="tag">Performance</span>
+                    <span class="tag">CDD</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section M -->
+        <section id="M">
+            <h2>M</h2>
+
+            <div class="term-card">
+                <div class="term-title">Media3</div>
+                <div class="term-pronunciation">미디어쓰리</div>
+                <div class="term-definition">
+                    ExoPlayer 2.x의 AndroidX 마이그레이션 버전입니다. 패키지명이 <code>androidx.media3.*</code>로 변경되었으며, MediaSession 통합 등 새로운 기능이 추가되었습니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">ExoPlayer</span>
+                    <span class="tag">AndroidX</span>
+                    <span class="tag">Migration</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">MediaCodec</div>
+                <div class="term-pronunciation">미디어코덱</div>
+                <div class="term-definition">
+                    Android의 저수준 코덱 API입니다. <code>configure()</code>, <code>start()</code>, <code>queueInputBuffer()</code>, <code>dequeueOutputBuffer()</code>로 인코딩/디코딩을 직접 제어합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Codec</span>
+                    <span class="tag">Framework</span>
+                    <span class="tag">Native</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">MediaExtractor</div>
+                <div class="term-pronunciation">미디어익스트랙터</div>
+                <div class="term-definition">
+                    컨테이너 파일(MP4, MKV)에서 오디오/비디오 트랙을 추출하는 Android API입니다. <code>readSampleData()</code>로 프레임 데이터를 읽습니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Demuxer</span>
+                    <span class="tag">Container</span>
+                    <span class="tag">Framework</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">MediaPlayer</div>
+                <div class="term-pronunciation">미디어플레이어</div>
+                <div class="term-definition">
+                    Android의 고수준 미디어 재생 API입니다. <code>setDataSource()</code>, <code>prepare()</code>, <code>start()</code>로 간단히 재생할 수 있지만, 커스터마이징이 제한적입니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Player</span>
+                    <span class="tag">Framework</span>
+                    <span class="tag">Legacy</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">MediaSession</div>
+                <div class="term-pronunciation">미디어세션</div>
+                <div class="term-definition">
+                    미디어 재생 상태와 메타데이터를 시스템과 공유하는 API입니다. 잠금 화면, Android Auto, Wear OS에서 재생 제어를 가능하게 합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Framework</span>
+                    <span class="tag">Notification</span>
+                    <span class="tag">AAOS</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">MIME Type</div>
+                <div class="term-pronunciation">마임 타입</div>
+                <div class="term-definition">
+                    미디어 형식을 나타내는 표준 문자열입니다. 예: <code>video/avc</code> (H.264), <code>audio/mp4a-latm</code> (AAC). <code>MediaCodec.createDecoderByType()</code>에서 사용합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Codec</span>
+                    <span class="tag">Format</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Muxer</div>
+                <div class="term-pronunciation">먹서</div>
+                <div class="term-definition">
+                    여러 스트림을 하나의 컨테이너 파일로 합치는(multiplexing) 컴포넌트입니다. Android의 <code>MediaMuxer</code>가 muxer 역할을 합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">MediaMuxer</span>
+                    <span class="tag">Container</span>
+                    <span class="tag">Demuxer</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section O -->
+        <section id="O">
+            <h2>O</h2>
+
+            <div class="term-card">
+                <div class="term-title">OMX (OpenMAX)</div>
+                <div class="term-pronunciation">오엠엑스</div>
+                <div class="term-definition">
+                    멀티미디어 코덱의 표준 인터페이스입니다. Android 8 이하에서 코덱 HAL로 사용되었으며, Android 9+에서는 Codec 2.0으로 대체되었습니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Legacy</span>
+                    <span class="tag">Codec 2.0</span>
+                    <span class="tag">HAL</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section P -->
+        <section id="P">
+            <h2>P</h2>
+
+            <div class="term-card">
+                <div class="term-title">perfetto</div>
+                <div class="term-pronunciation">퍼페토</div>
+                <div class="term-definition">
+                    Android 10+의 시스템 트레이싱 도구입니다. CPU, GPU, Memory, Binder IPC를 추적하며, <code>ui.perfetto.dev</code> 웹 UI에서 분석합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Debugging</span>
+                    <span class="tag">Profiling</span>
+                    <span class="tag">ftrace</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Performance Class</div>
+                <div class="term-pronunciation">퍼포먼스 클래스</div>
+                <div class="term-definition">
+                    Android 12+에서 도입된 미디어 성능 등급입니다. Class 11/12/13/14로 구분되며, 각 등급마다 코덱 성능, RAM, 디스플레이 요구사항이 다릅니다. <code>Build.VERSION.MEDIA_PERFORMANCE_CLASS</code>로 확인합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">CDD</span>
+                    <span class="tag">Performance</span>
+                    <span class="tag">Android 12+</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section R -->
+        <section id="R">
+            <h2>R</h2>
+
+            <div class="term-card">
+                <div class="term-title">Renderer</div>
+                <div class="term-pronunciation">렌더러</div>
+                <div class="term-definition">
+                    ExoPlayer에서 미디어를 렌더링하는 컴포넌트입니다. <code>MediaCodecVideoRenderer</code>, <code>MediaCodecAudioRenderer</code> 등이 있으며, 커스텀 렌더러를 구현할 수 있습니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">ExoPlayer</span>
+                    <span class="tag">Rendering</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section S -->
+        <section id="S">
+            <h2>S</h2>
+
+            <div class="term-card">
+                <div class="term-title">SPS/PPS (Sequence/Picture Parameter Set)</div>
+                <div class="term-pronunciation">에스피에스/피피에스</div>
+                <div class="term-definition">
+                    H.264/H.265 비디오 스트림의 설정 데이터입니다. 해상도, 프로파일, 컬러 포맷 등을 포함하며, MediaCodec의 <code>MediaFormat.KEY_CSD_0</code>로 전달됩니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">H.264</span>
+                    <span class="tag">Codec</span>
+                    <span class="tag">Configuration</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">SurfaceFlinger</div>
+                <div class="term-pronunciation">서피스플링어</div>
+                <div class="term-definition">
+                    Android의 화면 합성(compositing) 서비스입니다. 모든 Surface를 합쳐서 디스플레이로 전송합니다. <code>dumpsys SurfaceFlinger</code>로 프레임 드롭, Vsync 등을 확인할 수 있습니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Graphics</span>
+                    <span class="tag">Native</span>
+                    <span class="tag">Rendering</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section T -->
+        <section id="T">
+            <h2>T</h2>
+
+            <div class="term-card">
+                <div class="term-title">Track</div>
+                <div class="term-pronunciation">트랙</div>
+                <div class="term-definition">
+                    미디어 컨테이너 내의 개별 스트림입니다. 비디오 트랙, 오디오 트랙, 자막 트랙 등이 있으며, <code>MediaExtractor.selectTrack()</code>로 선택합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">MediaExtractor</span>
+                    <span class="tag">Container</span>
+                    <span class="tag">Stream</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">TrackSelector</div>
+                <div class="term-pronunciation">트랙셀렉터</div>
+                <div class="term-definition">
+                    ExoPlayer에서 재생할 트랙을 선택하는 컴포넌트입니다. <code>DefaultTrackSelector</code>는 ABR, 언어, 화질 우선순위를 자동으로 관리합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">ExoPlayer</span>
+                    <span class="tag">ABR</span>
+                    <span class="tag">Track</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section U -->
+        <section id="U">
+            <h2>U</h2>
+
+            <div class="term-card">
+                <div class="term-title">Underrun</div>
+                <div class="term-pronunciation">언더런</div>
+                <div class="term-definition">
+                    오디오 버퍼가 비어서 재생이 끊기는 현상입니다. <code>dumpsys media.audio_flinger</code>의 <code>underruns</code> 카운터로 확인할 수 있습니다. CPU 부족, 버퍼 크기 부족이 원인입니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Audio</span>
+                    <span class="tag">AudioFlinger</span>
+                    <span class="tag">Performance</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section V -->
+        <section id="V">
+            <h2>V</h2>
+
+            <div class="term-card">
+                <div class="term-title">VTS (Vendor Test Suite)</div>
+                <div class="term-pronunciation">브이티에스</div>
+                <div class="term-definition">
+                    HAL 구현을 검증하는 테스트 스위트입니다. Codec HAL, Audio HAL 등을 테스트하며, <code>vts-tradefed</code> 하니스로 실행합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Testing</span>
+                    <span class="tag">HAL</span>
+                    <span class="tag">CTS</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section W -->
+        <section id="W">
+            <h2>W</h2>
+
+            <div class="term-card">
+                <div class="term-title">Widevine</div>
+                <div class="term-pronunciation">와이드바인</div>
+                <div class="term-definition">
+                    Google의 DRM 솔루션입니다. L1(하드웨어 TEE), L3(소프트웨어) 두 가지 보안 레벨이 있습니다. <code>MediaDrm</code> API로 라이선스를 요청합니다.
+                </div>
+                <div class="term-related">
+                    <span class="tag">DRM</span>
+                    <span class="tag">Security</span>
+                    <span class="tag">Google</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Back to Home -->
+        <section style="text-align: center; padding: 3rem;">
+            <a href="index.html" style="display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; transition: transform 0.3s ease;">
+                ← Back to Main Page
+            </a>
+        </section>
+    </div>
+</body>
+</html>
