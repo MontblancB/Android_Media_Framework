@@ -501,8 +501,12 @@ const NODE_ID_MAPPING = {
 
     // CTS/CDD (cts.html, cdd.html)
     'CTS': 'Compatibility Test Suite',
+    'CTS_DESC': 'CTS Description',
     'VTS': 'Vendor Test Suite',
+    'VTS_DESC': 'VTS Description',
     'GTS': 'GMS Test Suite',
+    'GTS_DESC': 'GTS Description',
+    'DEVICE': 'Test Device',
     'CDD': 'Compatibility Definition Document',
     'CDD_MEDIA': 'CDD Media Requirements',
 
