@@ -260,6 +260,15 @@ const NODE_ID_MAPPING = {
     'SPK_MAIN': 'Main Speaker',
     'SPK_NAV': 'Navigation Speaker',
     'SPK_REAR': 'Rear Speaker',
+    'AA_FW': 'Android Auto Framework',
+    'AUDIO_SVC': 'AudioService',
+    'CAR_APPS': 'Car Media Apps',
+    'RADIO': 'Radio App',
+    'SPOTIFY': 'Spotify App',
+    'YT': 'YouTube Music',
+    'REQ_CALL': 'Call Audio Request',
+    'REQ_MEDIA': 'Media Audio Request',
+    'REQ_NAV': 'Navigation Audio Request',
 
     // MediaSession (mediasession.html)
     'SESSION': 'MediaSession',
@@ -4311,6 +4320,324 @@ val volumeGroupCount = carAudioManager.getVolumeGroupCount(primaryZoneId)
             'Independent Audio Focus'
         ],
         doc: 'https://source.android.com/docs/automotive/audio/audio-routing'
+    },
+
+    'Android Auto Framework': {
+        title: 'Android Auto Framework (Smartphone)',
+        layer: 'Smartphone Framework',
+        description: '스마트폰의 Android Framework로, Android Auto 앱이 실행되는 환경입니다.',
+        components: [
+            'Media Browser Service',
+            'MediaSession Manager',
+            'Audio Manager',
+            'Bluetooth Audio Streaming',
+            'USB Audio Streaming'
+        ],
+        path: 'frameworks/base/core/java/android/app/',
+        doc: 'https://developer.android.com/training/cars/media',
+        codeExample: `
+// Android Auto Media App (스마트폰)
+class MyMediaBrowserService : MediaBrowserServiceCompat() {
+    override fun onGetRoot(
+        clientPackageName: String,
+        clientUid: Int,
+        rootHints: Bundle?
+    ): BrowserRoot? {
+        // Android Auto 클라이언트 확인
+        if (clientPackageName == "com.google.android.projection.gearhead") {
+            return BrowserRoot(MEDIA_ROOT_ID, null)
+        }
+        return null
+    }
+
+    override fun onLoadChildren(
+        parentId: String,
+        result: Result<MutableList<MediaBrowserCompat.MediaItem>>
+    ) {
+        // 미디어 목록 반환
+    }
+}
+        `.trim()
+    },
+
+    'AudioService': {
+        title: 'AudioService',
+        layer: 'Framework Service',
+        description: 'Android의 오디오 관리 시스템 서비스입니다.',
+        components: [
+            'Volume Control',
+            'Audio Focus Management',
+            'Routing Policy',
+            'Device Connection',
+            'Audio Policy Service Integration'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/audio/AudioService.java',
+        doc: 'https://source.android.com/docs/core/audio',
+        codeExample: `
+// AudioService와의 상호작용 (앱 레벨)
+val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+// Audio Focus 요청
+val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).apply {
+    setAudioAttributes(AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_MEDIA)
+        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+        .build())
+}.build()
+
+audioManager.requestAudioFocus(focusRequest)
+        `.trim()
+    },
+
+    'Car Media Apps': {
+        title: 'Car Media Apps (Native)',
+        layer: 'Application',
+        description: 'AAOS에 내장된 네이티브 미디어 앱들입니다.',
+        components: [
+            'Built-in Radio App',
+            'Bluetooth Audio App',
+            'USB Media App',
+            'OEM Media Apps',
+            'MediaSession Integration'
+        ],
+        doc: 'https://source.android.com/docs/automotive/start/app-dev',
+        codeExample: `
+// AAOS 네이티브 미디어 앱
+class CarRadioService : MediaBrowserServiceCompat() {
+    private val mediaSession: MediaSessionCompat by lazy {
+        MediaSessionCompat(this, "CarRadio").apply {
+            setCallback(object : MediaSessionCompat.Callback() {
+                override fun onPlay() {
+                    // 라디오 재생
+                    tuner.start()
+                }
+                override fun onCustomAction(action: String, extras: Bundle?) {
+                    when (action) {
+                        "tune_frequency" -> {
+                            val frequency = extras?.getFloat("frequency")
+                            tuner.tuneFrequency(frequency ?: 88.1f)
+                        }
+                    }
+                }
+            })
+            isActive = true
+        }
+    }
+}
+        `.trim()
+    },
+
+    'Radio App': {
+        title: 'Radio App (MediaSession)',
+        layer: 'Application',
+        description: 'FM/AM/DAB 라디오를 재생하는 앱입니다. MediaSession을 통해 제어됩니다.',
+        components: [
+            'FM/AM Tuner',
+            'DAB (Digital Audio Broadcasting)',
+            'Preset Management',
+            'RDS (Radio Data System)',
+            'MediaSession Integration'
+        ],
+        doc: 'https://source.android.com/docs/automotive/audio',
+        codeExample: `
+// Radio App MediaSession
+val radioSession = MediaSessionCompat(context, "RadioApp")
+radioSession.setCallback(object : MediaSessionCompat.Callback() {
+    override fun onPlayFromMediaId(mediaId: String, extras: Bundle?) {
+        // 주파수 튜닝: mediaId = "FM_88.1"
+        val frequency = mediaId.substringAfter("_").toFloat()
+        radioTuner.tuneFrequency(frequency)
+
+        radioSession.setMetadata(MediaMetadataCompat.Builder()
+            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, "FM \$frequency MHz")
+            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, "Radio")
+            .build())
+    }
+})
+        `.trim()
+    },
+
+    'Spotify App': {
+        title: 'Spotify (MediaSession)',
+        layer: 'Application',
+        description: 'Spotify 음악 스트리밍 앱입니다. MediaSession을 통해 차량과 통합됩니다.',
+        components: [
+            'Music Streaming',
+            'Offline Playback',
+            'Playlist Management',
+            'MediaSession Integration',
+            'Android Auto Support'
+        ],
+        doc: 'https://developer.spotify.com/documentation/android/',
+        codeExample: `
+// Spotify MediaSession 통합
+class SpotifyMediaService : MediaBrowserServiceCompat() {
+    private val spotifyPlayer: SpotifyAppRemote by lazy {
+        // Spotify SDK 초기화
+    }
+
+    private val mediaSession: MediaSessionCompat by lazy {
+        MediaSessionCompat(this, "Spotify").apply {
+            setCallback(object : MediaSessionCompat.Callback() {
+                override fun onPlay() {
+                    spotifyPlayer.playerApi.resume()
+                }
+                override fun onPause() {
+                    spotifyPlayer.playerApi.pause()
+                }
+                override fun onSkipToNext() {
+                    spotifyPlayer.playerApi.skipNext()
+                }
+            })
+        }
+    }
+}
+        `.trim()
+    },
+
+    'YouTube Music': {
+        title: 'YouTube Music (MediaSession)',
+        layer: 'Application',
+        description: 'YouTube Music 앱입니다. MediaSession을 통해 차량과 통합됩니다.',
+        components: [
+            'Music Streaming',
+            'Video to Audio Mode',
+            'Playlist Management',
+            'MediaSession Integration',
+            'Android Auto Support'
+        ],
+        doc: 'https://developers.google.com/youtube/android/player',
+        codeExample: `
+// YouTube Music MediaSession
+class YouTubeMusicService : MediaBrowserServiceCompat() {
+    private val mediaSession: MediaSessionCompat by lazy {
+        MediaSessionCompat(this, "YouTubeMusic").apply {
+            setCallback(object : MediaSessionCompat.Callback() {
+                override fun onPlayFromMediaId(mediaId: String, extras: Bundle?) {
+                    // YouTube Video ID로 재생
+                    youtubePlayer.loadVideo(mediaId)
+                }
+
+                override fun onCustomAction(action: String, extras: Bundle?) {
+                    when (action) {
+                        "toggle_video_mode" -> {
+                            // 비디오 모드 전환 (Android Auto는 오디오만)
+                            youtubePlayer.setAudioOnly(true)
+                        }
+                    }
+                }
+            })
+        }
+    }
+}
+        `.trim()
+    },
+
+    'Call Audio Request': {
+        title: 'Call Audio Focus Request',
+        layer: 'Audio Focus',
+        description: '통화 중 오디오 포커스를 요청합니다. (USAGE_VOICE_COMMUNICATION)',
+        components: [
+            'USAGE_VOICE_COMMUNICATION',
+            'AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE',
+            'Highest Priority',
+            'Ducks/Pauses Other Audio',
+            'Zone-specific Routing'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media-apps/audio-focus',
+        codeExample: `
+// 통화 중 Audio Focus 요청
+val callFocusRequest = AudioFocusRequest.Builder(
+    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE
+).apply {
+    setAudioAttributes(AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+        .build())
+    setOnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                // 통화 종료
+                phoneCall.hangup()
+            }
+        }
+    }
+}.build()
+
+audioManager.requestAudioFocus(callFocusRequest)
+// → 다른 모든 오디오가 일시정지됨
+        `.trim()
+    },
+
+    'Media Audio Request': {
+        title: 'Media Audio Focus Request',
+        layer: 'Audio Focus',
+        description: '미디어 재생을 위한 오디오 포커스를 요청합니다. (USAGE_MEDIA)',
+        components: [
+            'USAGE_MEDIA',
+            'AUDIOFOCUS_GAIN',
+            'Normal Priority',
+            'Can be Ducked',
+            'Mixable with Navigation'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media-apps/audio-focus',
+        codeExample: `
+// 미디어 재생 Audio Focus 요청
+val mediaFocusRequest = AudioFocusRequest.Builder(
+    AudioManager.AUDIOFOCUS_GAIN
+).apply {
+    setAudioAttributes(AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_MEDIA)
+        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+        .build())
+    setOnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS -> player.pause()
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> player.pause()
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> player.setVolume(0.3f)
+            AudioManager.AUDIOFOCUS_GAIN -> player.setVolume(1.0f)
+        }
+    }
+}.build()
+
+audioManager.requestAudioFocus(mediaFocusRequest)
+        `.trim()
+    },
+
+    'Navigation Audio Request': {
+        title: 'Navigation Audio Focus Request',
+        layer: 'Audio Focus',
+        description: '내비게이션 안내를 위한 오디오 포커스를 요청합니다. (USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)',
+        components: [
+            'USAGE_ASSISTANCE_NAVIGATION_GUIDANCE',
+            'AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK',
+            'High Priority',
+            'Ducks Media Audio',
+            'Short Duration'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media-apps/audio-focus',
+        codeExample: `
+// 내비게이션 안내 Audio Focus 요청
+val navFocusRequest = AudioFocusRequest.Builder(
+    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+).apply {
+    setAudioAttributes(AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+        .build())
+    setOnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                // TTS 음성 안내 시작
+                tts.speak("Turn left in 500 meters", TextToSpeech.QUEUE_FLUSH, null, null)
+            }
+        }
+    }
+}.build()
+
+audioManager.requestAudioFocus(navFocusRequest)
+// → 미디어 음량이 30%로 감소 (Ducking)
+        `.trim()
     },
 
     // ========================================
