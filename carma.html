@@ -217,6 +217,1716 @@
             </div>
         </section>
 
+        <!-- Section 4: 코드 예시 및 설정 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                코드 예시 및 설정
+            </h2>
+            <p class="section-description">
+                기존 모바일 앱을 CarMa 호환으로 전환하기 위한 실제 코드 예시와 설정 방법을 제공합니다.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📄 AndroidManifest.xml 설정
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.videoapp"&gt;
+
+    &lt;!-- Automotive 지원 선언 --&gt;
+    &lt;uses-feature
+        android:name="android.hardware.type.automotive"
+        android:required="false" /&gt;
+
+    &lt;!-- 주차 시에만 실행 가능한 앱 선언 --&gt;
+    &lt;uses-feature
+        android:name="android.software.car.templates_host"
+        android:required="false" /&gt;
+
+    &lt;application
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"&gt;
+
+        &lt;!-- CarMa 호환 Activity --&gt;
+        &lt;activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
+            android:screenOrientation="userLandscape"&gt;
+
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.MAIN" /&gt;
+                &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
+
+                &lt;!-- Automotive 런처에 표시 --&gt;
+                &lt;category android:name="android.intent.category.APP_VIDEOS" /&gt;
+            &lt;/intent-filter&gt;
+
+            &lt;!-- CarMa 메타데이터 --&gt;
+            &lt;meta-data
+                android:name="distractionOptimized"
+                android:value="false" /&gt;
+        &lt;/activity&gt;
+
+        &lt;!-- 미디어 서비스 (배경 재생용) --&gt;
+        &lt;service
+            android:name=".MediaPlaybackService"
+            android:exported="true"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="androidx.media3.session.MediaSessionService" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/service&gt;
+    &lt;/application&gt;
+&lt;/manifest&gt;</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎨 대화면 레이아웃 (res/layout-w600dp)
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- res/layout-w600dp/activity_main.xml --&gt;
+&lt;androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"&gt;
+
+    &lt;!-- 좌측: 비디오 플레이어 --&gt;
+    &lt;com.google.android.exoplayer2.ui.PlayerView
+        android:id="@+id/player_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/controls_panel"
+        app:layout_constraintWidth_percent="0.7" /&gt;
+
+    &lt;!-- 우측: 컨트롤 패널 --&gt;
+    &lt;LinearLayout
+        android:id="@+id/controls_panel"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:padding="24dp"
+        app:layout_constraintStart_toEndOf="@id/player_view"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintWidth_percent="0.3"&gt;
+
+        &lt;TextView
+            android:id="@+id/video_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="24sp"
+            android:textStyle="bold" /&gt;
+
+        &lt;!-- 재생 컨트롤 버튼 (최소 48dp 터치 타겟) --&gt;
+        &lt;Button
+            android:id="@+id/btn_play_pause"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="16dp"
+            android:text="Play/Pause" /&gt;
+
+        &lt;Button
+            android:id="@+id/btn_next"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:text="Next" /&gt;
+    &lt;/LinearLayout&gt;
+&lt;/androidx.constraintlayout.widget.ConstraintLayout&gt;</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🖥️ Jetpack Compose 대응
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// MainActivity.kt
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        setContent {
+            VideoAppTheme {
+                // 화면 크기에 따른 반응형 레이아웃
+                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                    val configuration = LocalConfiguration.current
+                    val screenWidth = configuration.screenWidthDp
+
+                    if (screenWidth >= 600) {
+                        // 태블릿/차량용 레이아웃 (두 패널)
+                        TwoPaneLayout()
+                    } else {
+                        // 휴대폰 레이아웃
+                        SinglePaneLayout()
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TwoPaneLayout() {
+    Row(modifier = Modifier.fillMaxSize()) {
+        // 좌측: 비디오 플레이어
+        Box(
+            modifier = Modifier
+                .weight(0.7f)
+                .fillMaxHeight()
+        ) {
+            AndroidView(
+                factory = { context ->
+                    PlayerView(context).apply {
+                        // ExoPlayer 설정
+                    }
+                }
+            )
+        }
+
+        // 우측: 컨트롤 및 재생목록
+        Column(
+            modifier = Modifier
+                .weight(0.3f)
+                .fillMaxHeight()
+                .padding(24.dp)
+        ) {
+            Text(
+                text = "Now Playing",
+                style = MaterialTheme.typography.headlineMedium
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 터치 타겟 최소 48dp
+            Button(
+                onClick = { /* Play/Pause */ },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) {
+                Text("Play/Pause")
+            }
+        }
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        주요 설정 항목
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>resizeableActivity="true"</code>: 다양한 화면 크기 대응</li>
+                            <li><code>screenOrientation="userLandscape"</code>: 가로 모드 우선</li>
+                            <li><code>configChanges</code>: 화면 회전 시 재생성 방지</li>
+                            <li><code>distractionOptimized="false"</code>: 주차 시에만 실행</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📐</span>
+                        레이아웃 브레이크포인트
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>layout-w600dp</code>: 태블릿/차량용 (7인치+)</li>
+                            <li><code>layout-w840dp</code>: 대형 차량 디스플레이 (10인치+)</li>
+                            <li><code>layout-land</code>: 가로 모드 전용 레이아웃</li>
+                            <li>ConstraintLayout 또는 Compose로 반응형 구현</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: 주행 상태 감지 API -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                주행 상태 감지 API
+            </h2>
+            <p class="section-description">
+                차량의 주행 상태를 감지하여 UI를 제한하거나 배경 재생으로 전환하는 방법을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🚗 CarUxRestrictionsManager 사용
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// build.gradle
+dependencies {
+    implementation 'androidx.car.app:app:1.4.0'
+}
+
+// MainActivity.kt
+class MainActivity : ComponentActivity() {
+    private lateinit var carUxRestrictionsManager: CarUxRestrictionsManager
+    private var isParked = true
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Car UX Restrictions Manager 초기화
+        val car = Car.createCar(this)
+        carUxRestrictionsManager = car.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE)
+            as CarUxRestrictionsManager
+
+        // 주행 상태 변화 리스너 등록
+        carUxRestrictionsManager.registerListener { restrictions ->
+            handleUxRestrictions(restrictions)
+        }
+    }
+
+    private fun handleUxRestrictions(restrictions: CarUxRestrictions) {
+        isParked = !restrictions.isRequiresDistractionOptimization
+
+        if (isParked) {
+            // 주차 상태: 전체 UI 표시
+            showFullUI()
+        } else {
+            // 주행 중: 화면 차단 또는 오디오만 재생
+            switchToAudioOnlyMode()
+        }
+    }
+
+    private fun showFullUI() {
+        // 비디오 플레이어 표시
+        findViewById<PlayerView>(R.id.player_view).visibility = View.VISIBLE
+
+        // 컨트롤 패널 활성화
+        findViewById<View>(R.id.controls_panel).isEnabled = true
+    }
+
+    private fun switchToAudioOnlyMode() {
+        // 비디오 플레이어 숨김
+        findViewById<PlayerView>(R.id.player_view).visibility = View.GONE
+
+        // 오디오는 계속 재생 (MediaSession 통해)
+        // 화면에는 "주행 중에는 사용할 수 없습니다" 메시지 표시
+        showDrivingBlockedMessage()
+    }
+
+    private fun showDrivingBlockedMessage() {
+        setContent {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "주행 중에는 비디오를 볼 수 없습니다",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "오디오는 계속 재생됩니다",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        carUxRestrictionsManager.unregisterListener()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 주행 상태 전환 플로우
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant User as 사용자
+                    participant App as CarMa App
+                    participant UXR as CarUxRestrictionsManager
+                    participant Vehicle as Vehicle System
+
+                    User->>Vehicle: 시동 걸기 & 기어 D
+                    Vehicle->>UXR: Driving State Change
+                    UXR->>App: onUxRestrictionsChanged(driving=true)
+
+                    App->>App: switchToAudioOnlyMode()
+                    App->>User: 화면 차단 메시지 표시
+
+                    Note over App: 비디오 숨김, 오디오만 재생
+
+                    User->>Vehicle: 주차 후 기어 P
+                    Vehicle->>UXR: Driving State Change
+                    UXR->>App: onUxRestrictionsChanged(parked=true)
+
+                    App->>App: showFullUI()
+                    App->>User: 전체 UI 표시
+
+                    Note over App: 비디오 재생 재개
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        UX Restrictions 종류
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>NO_SETUP</code>: 설정 화면 차단</li>
+                            <li><code>NO_VIDEO</code>: 비디오 재생 차단</li>
+                            <li><code>LIMIT_STRING_LENGTH</code>: 텍스트 길이 제한</li>
+                            <li><code>NO_KEYBOARD</code>: 키보드 입력 차단</li>
+                            <li><code>LIMIT_CONTENT</code>: 콘텐츠 목록 제한</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        주의사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>UX Restrictions 무시 시 Play Store 거부</li>
+                            <li>주행 중 비디오 표시는 법적 위반 가능</li>
+                            <li>에뮬레이터에서는 항상 parked 상태</li>
+                            <li>실제 차량에서 반드시 테스트 필요</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: 호환성 모드 상세 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                호환성 모드 상세
+            </h2>
+            <p class="section-description">
+                AAOS의 Compatibility Mode가 모바일 앱을 차량 디스플레이에 렌더링하는 메커니즘을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📐 화면 비율 조정
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        모바일 앱 비율
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>일반적인 비율:</strong> 9:16 (세로), 16:9 (가로)</li>
+                            <li><strong>폴더블:</strong> 5:4, 4:3 등 다양</li>
+                            <li><strong>태블릿:</strong> 16:10, 3:2</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        차량 디스플레이 비율
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>일반 IVI:</strong> 16:9, 16:10</li>
+                            <li><strong>와이드:</strong> 21:9, 32:9 (Ultra Wide)</li>
+                            <li><strong>세로형:</strong> 9:16 (Tesla Model S/X)</li>
+                            <li><strong>커스텀:</strong> OEM별 특수 비율</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🖼️ 레터박스/필러박스 처리
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// 호환성 모드가 자동으로 처리하지만, 직접 제어도 가능
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // 윈도우 레이아웃 파라미터 조정
+        if (isRunningOnAutomotive()) {
+            adjustWindowLayout()
+        }
+    }
+
+    private fun isRunningOnAutomotive(): Boolean {
+        return packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
+    }
+
+    private fun adjustWindowLayout() {
+        window.attributes = window.attributes.apply {
+            // 전체 화면 사용 (시스템 바 제외)
+            flags = flags or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+
+            // 선호하는 화면 비율 힌트 (16:9)
+            preferredDisplayModeId = 0
+        }
+
+        // 시스템 바 숨김 (몰입형 모드)
+        window.decorView.systemUiVisibility = (
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            or View.SYSTEM_UI_FLAG_FULLSCREEN
+        )
+    }
+}</code></pre>
+            </div>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>차량 디스플레이</th>
+                        <th>해상도</th>
+                        <th>비율</th>
+                        <th>처리 방식</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Standard IVI</td>
+                        <td>1920x1080</td>
+                        <td>16:9</td>
+                        <td>전체 화면 렌더링</td>
+                    </tr>
+                    <tr>
+                        <td>Ultra Wide</td>
+                        <td>3840x1080</td>
+                        <td>32:9</td>
+                        <td>좌우 레터박스 (검은 띠)</td>
+                    </tr>
+                    <tr>
+                        <td>Tesla Portrait</td>
+                        <td>1200x1920</td>
+                        <td>9:16</td>
+                        <td>모바일 앱 그대로 표시</td>
+                    </tr>
+                    <tr>
+                        <td>Dual Screen</td>
+                        <td>각 1920x720</td>
+                        <td>가변</td>
+                        <td>하나의 화면만 사용</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎮 입력 변환
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🖱️</span>
+                        지원 입력 방식
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>터치스크린:</strong> 대부분 차량 지원</li>
+                            <li><strong>로터리 노브:</strong> 회전 → 스크롤 이벤트 변환</li>
+                            <li><strong>D-Pad:</strong> 방향키 → 포커스 이동</li>
+                            <li><strong>음성:</strong> Google Assistant 통합</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        입력 처리 권장사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>터치 타겟 최소 48dp 유지</li>
+                            <li>로터리 노브 대응 (스크롤 가능 UI)</li>
+                            <li>키보드 포커스 순서 명확히</li>
+                            <li>음성 명령 지원 (선택사항)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: 배경 재생 처리 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                배경 재생 처리 (비디오 앱)
+            </h3>
+            <p class="section-description">
+                주행 중 비디오를 숨기고 오디오만 재생하는 MediaSession 통합 방법을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎵 MediaSession API 구현
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// build.gradle
+dependencies {
+    implementation 'androidx.media3:media3-session:1.2.0'
+    implementation 'androidx.media3:media3-exoplayer:1.2.0'
+}
+
+// MediaPlaybackService.kt
+class MediaPlaybackService : MediaSessionService() {
+    private var mediaSession: MediaSession? = null
+    private lateinit var player: ExoPlayer
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // ExoPlayer 초기화
+        player = ExoPlayer.Builder(this).build()
+
+        // MediaSession 생성
+        mediaSession = MediaSession.Builder(this, player)
+            .setCallback(MediaSessionCallback())
+            .build()
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
+        return mediaSession
+    }
+
+    override fun onDestroy() {
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
+        }
+        super.onDestroy()
+    }
+
+    // MediaSession Callback
+    private inner class MediaSessionCallback : MediaSession.Callback {
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): MediaSession.ConnectionResult {
+            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                .setAvailableSessionCommands(
+                    MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS
+                )
+                .build()
+        }
+
+        override fun onAddMediaItems(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: List<MediaItem>
+        ): ListenableFuture<List<MediaItem>> {
+            // 미디어 아이템 추가 처리
+            return Futures.immediateFuture(mediaItems)
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📺 Activity와 Service 연동
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// MainActivity.kt
+class MainActivity : ComponentActivity() {
+    private var mediaController: MediaController? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // MediaController 연결
+        val sessionToken = SessionToken(
+            this,
+            ComponentName(this, MediaPlaybackService::class.java)
+        )
+
+        val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
+        controllerFuture.addListener({
+            mediaController = controllerFuture.get()
+
+            // 재생 상태 변화 리스너
+            mediaController?.addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(state: Int) {
+                    when (state) {
+                        Player.STATE_READY -> {
+                            // 재생 준비 완료
+                        }
+                        Player.STATE_ENDED -> {
+                            // 재생 종료
+                        }
+                    }
+                }
+            })
+        }, MoreExecutors.directExecutor())
+    }
+
+    private fun playVideo(videoUrl: String) {
+        val mediaItem = MediaItem.Builder()
+            .setUri(videoUrl)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle("Video Title")
+                    .setArtist("Creator Name")
+                    .build()
+            )
+            .build()
+
+        mediaController?.apply {
+            setMediaItem(mediaItem)
+            prepare()
+            play()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaController?.release()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 주행 중 오디오 전환
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// 주행 상태 감지 시 비디오 숨김
+private fun handleUxRestrictions(restrictions: CarUxRestrictions) {
+    if (restrictions.isRequiresDistractionOptimization) {
+        // 주행 중: 비디오 화면 숨김, 오디오는 계속 재생
+        playerView.player = null  // PlayerView에서 분리
+        // MediaController는 백그라운드에서 계속 재생
+
+        showAudioOnlyUI()
+    } else {
+        // 주차 시: 비디오 화면 다시 연결
+        mediaController?.let { controller ->
+            playerView.player = controller
+        }
+    }
+}
+
+@Composable
+fun AudioOnlyUI(mediaController: MediaController?) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // 앨범 아트 (메타데이터에서 가져옴)
+        AsyncImage(
+            model = mediaController?.mediaMetadata?.artworkUri,
+            contentDescription = null,
+            modifier = Modifier.size(200.dp)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // 제목
+        Text(
+            text = mediaController?.mediaMetadata?.title.toString(),
+            style = MaterialTheme.typography.headlineMedium
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // 재생 컨트롤
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            IconButton(
+                onClick = { mediaController?.seekToPreviousMediaItem() },
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(Icons.Default.SkipPrevious, null)
+            }
+
+            IconButton(
+                onClick = {
+                    if (mediaController?.isPlaying == true) {
+                        mediaController?.pause()
+                    } else {
+                        mediaController?.play()
+                    }
+                },
+                modifier = Modifier.size(64.dp)
+            ) {
+                Icon(
+                    if (mediaController?.isPlaying == true)
+                        Icons.Default.Pause
+                    else
+                        Icons.Default.PlayArrow,
+                    null
+                )
+            }
+
+            IconButton(
+                onClick = { mediaController?.seekToNextMediaItem() },
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(Icons.Default.SkipNext, null)
+            }
+        }
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        배경 재생 권장사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>MediaSession 필수 구현</li>
+                            <li>MediaMetadata 설정 (제목, 아티스트, 앨범 아트)</li>
+                            <li>Notification 미디어 컨트롤 표시</li>
+                            <li>오디오 포커스 관리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚫</span>
+                        PiP 제한
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>CarMa 앱은 PiP 지원 안 함</li>
+                            <li>주행 중 비디오는 완전히 숨겨야 함</li>
+                            <li>작은 비디오 윈도우도 허용 안 됨</li>
+                            <li>오디오 전용 UI로 전환 필수</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Play Store 제출 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Play Store 제출 프로세스
+            </h2>
+            <p class="section-description">
+                CarMa 앱을 Google Play Store의 Automotive 카테고리에 제출하는 절차를 안내합니다.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📝 제출 절차
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                    A[앱 준비] --> B[Play Console 등록]
+                    B --> C[Automotive 메타데이터 추가]
+                    C --> D[스크린샷 업로드]
+                    D --> E[심사 제출]
+                    E --> F{Google 검토}
+                    F -->|승인| G[Play Store 배포]
+                    F -->|거부| H[피드백 수정]
+                    H --> E
+
+                    style A fill:#1a1f35,stroke:#3b82f6,stroke-width:2px
+                    style G fill:#1a1f35,stroke:#10b981,stroke-width:2px
+                    style H fill:#1a1f35,stroke:#ef4444,stroke-width:2px
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📋 Automotive 메타데이터
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏷️</span>
+                        앱 카테고리
+                    </h3>
+                    <div class="card-description">
+                        <p>Play Console에서 선택:</p>
+                        <ul>
+                            <li><strong>APP_VIDEOS</strong>: 비디오 스트리밍 앱</li>
+                            <li><strong>APP_GAMES</strong>: 게임 앱</li>
+                            <li><strong>APP_BROWSER</strong>: 웹 브라우저</li>
+                            <li><strong>APP_MUSIC</strong>: 음악 앱 (향후)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📸</span>
+                        스크린샷 요구사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>최소 2장</strong>, 최대 8장</li>
+                            <li><strong>해상도:</strong> 1920x1080 권장</li>
+                            <li><strong>비율:</strong> 16:9 또는 16:10</li>
+                            <li><strong>형식:</strong> PNG 또는 JPG</li>
+                            <li>주차 상태 UI 캡처</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ✅ 심사 체크리스트
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>항목</th>
+                        <th>요구사항</th>
+                        <th>검증 방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>대화면 지원</td>
+                        <td><code>resizeableActivity="true"</code></td>
+                        <td>에뮬레이터에서 다양한 화면 크기 테스트</td>
+                    </tr>
+                    <tr>
+                        <td>가로 모드</td>
+                        <td>Landscape 레이아웃 필수</td>
+                        <td>회전하여 UI 확인</td>
+                    </tr>
+                    <tr>
+                        <td>UX Restrictions</td>
+                        <td>주행 중 비디오 차단</td>
+                        <td>CarUxRestrictionsManager 구현 확인</td>
+                    </tr>
+                    <tr>
+                        <td>배경 재생</td>
+                        <td>MediaSession 구현</td>
+                        <td>오디오 포커스 및 Notification 확인</td>
+                    </tr>
+                    <tr>
+                        <td>터치 타겟</td>
+                        <td>최소 48dp</td>
+                        <td>모든 버튼 크기 측정</td>
+                    </tr>
+                    <tr>
+                        <td>권한 처리</td>
+                        <td>차량에서 불필요한 권한 우아하게 처리</td>
+                        <td>카메라, 위치 등 권한 거부 시 동작 확인</td>
+                    </tr>
+                    <tr>
+                        <td>안정성</td>
+                        <td>크래시 없이 안정적 동작</td>
+                        <td>장시간 테스트 (주차↔주행 반복)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>⏱️ 심사 기간:</strong> 일반적으로 2-5일 소요되며,
+                Google은 실제 차량 환경에서 앱을 테스트할 수 있습니다.
+            </div>
+        </section>
+
+        <!-- Section 9: 테스트 방법 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                테스트 방법
+            </h2>
+            <p class="section-description">
+                CarMa 앱을 개발 단계에서 테스트하는 다양한 방법을 제공합니다.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🖥️ Android Studio Automotive Emulator
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-bash"># AVD Manager에서 Automotive 이미지 다운로드
+
+# 1. Android Studio → Tools → AVD Manager
+# 2. Create Virtual Device → Automotive 탭
+# 3. "Automotive (1024p landscape)" 선택
+# 4. System Image: API 33+ (Tiramisu) 선택
+# 5. "Android Automotive with Play Store" 이미지 다운로드
+
+# 커맨드라인으로 에뮬레이터 실행
+emulator -avd Automotive_API_33 -gpu host
+
+# 주행 상태 시뮬레이션 (adb 명령어)
+# 주차 → 주행
+adb shell cmd car_service set-driving-state driving
+
+# 주행 → 주차
+adb shell cmd car_service set-driving-state parked
+
+# 현재 주행 상태 확인
+adb shell dumpsys car_service | grep "driving"</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🚗 Desktop Head Unit (DHU)
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-bash"># DHU (Desktop Head Unit) 설치
+# Android SDK Manager → SDK Tools → Android Auto Desktop Head Unit
+
+# DHU 실행
+cd $ANDROID_SDK_ROOT/extras/google/auto/
+./desktop-head-unit
+
+# 에뮬레이터와 연결
+adb forward tcp:5277 tcp:5277
+
+# DHU에서 앱 실행
+# DHU 인터페이스에서 앱 아이콘 클릭</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 다양한 화면 크기 테스트
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-bash"># 에뮬레이터 화면 크기 변경
+adb shell wm size 1920x1080  # 16:9 (일반 IVI)
+adb shell wm size 3840x1080  # 32:9 (Ultra Wide)
+adb shell wm size 1200x1920  # 9:16 (Tesla Portrait)
+
+# 원래대로 복원
+adb shell wm size reset
+
+# DPI 변경 (선택사항)
+adb shell wm density 160  # mdpi
+adb shell wm density 240  # hdpi
+adb shell wm density 320  # xhdpi</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        테스트 체크리스트
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>다양한 화면 비율 (16:9, 21:9, 32:9)</li>
+                            <li>주행 상태 전환 (Parked ↔ Driving)</li>
+                            <li>배경 재생 (비디오 숨김 후 오디오 계속)</li>
+                            <li>회전 (가로 ↔ 세로)</li>
+                            <li>멀티윈도우 모드 (지원 시)</li>
+                            <li>로터리 노브 입력 (시뮬레이션)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚨</span>
+                        실제 차량 테스트
+                    </h3>
+                    <div class="card-description">
+                        <p>에뮬레이터 테스트 후 반드시 실제 차량에서 테스트:</p>
+                        <ul>
+                            <li>OEM 파트너에게 테스트 차량 요청</li>
+                            <li>Google I/O 등 이벤트에서 데모 차량 사용</li>
+                            <li>주행 중 UX Restrictions 실제 동작 확인</li>
+                            <li>실제 로터리 노브/D-Pad 입력 테스트</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 10: 실제 배포 사례 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                실제 배포 사례
+            </h2>
+            <p class="section-description">
+                CarMa 프로그램을 통해 차량용으로 확장된 주요 앱들의 사례를 분석합니다.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📺 YouTube (Google)
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        구현 전략
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>기존 앱 활용:</strong> 모바일/태블릿 앱 코드베이스 재사용</li>
+                            <li><strong>대화면 최적화:</strong> 태블릿 레이아웃 그대로 사용</li>
+                            <li><strong>주행 중 처리:</strong> 비디오 숨김, 오디오만 재생</li>
+                            <li><strong>음성 제어:</strong> Google Assistant 통합</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✨</span>
+                        주요 기능
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>주차 시 전체 YouTube UI</li>
+                            <li>추천 영상, 구독 채널, 검색</li>
+                            <li>주행 중 YouTube Music 모드 전환</li>
+                            <li>Chromecast 연동 (승객 스크린)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎮 캐주얼 게임
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎲</span>
+                        Angry Birds (Rovio)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>터치 기반 게임플레이</li>
+                            <li>주차 상태에서만 실행</li>
+                            <li>가로 모드 전용</li>
+                            <li>레벨 진행 상황 Google Play Games 동기화</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧩</span>
+                        Candy Crush (King)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>대화면에 최적화된 레이아웃</li>
+                            <li>충전 중 또는 대기 시간에 플레이</li>
+                            <li>Facebook 계정 동기화</li>
+                            <li>인앱 구매 지원</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🌐 웹 브라우저
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        Chrome (Google)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>주차 상태 전용</li>
+                            <li>북마크 및 탭 동기화</li>
+                            <li>음성 검색 지원</li>
+                            <li>안전 모드 (성인 콘텐츠 필터링)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🦊</span>
+                        Firefox (Mozilla)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>태블릿 UI 재사용</li>
+                            <li>프라이버시 모드 강조</li>
+                            <li>애드온 제한적 지원</li>
+                            <li>리더 모드 (긴 글 읽기)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>앱</th>
+                        <th>카테고리</th>
+                        <th>개발 기간</th>
+                        <th>코드 재사용률</th>
+                        <th>특이사항</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>YouTube</td>
+                        <td>비디오</td>
+                        <td>2주</td>
+                        <td>95%</td>
+                        <td>주행 중 YouTube Music 모드</td>
+                    </tr>
+                    <tr>
+                        <td>Netflix</td>
+                        <td>비디오</td>
+                        <td>3주</td>
+                        <td>90%</td>
+                        <td>다운로드 콘텐츠 오프라인 재생</td>
+                    </tr>
+                    <tr>
+                        <td>Angry Birds</td>
+                        <td>게임</td>
+                        <td>1주</td>
+                        <td>98%</td>
+                        <td>주차 전용, 터치 입력만</td>
+                    </tr>
+                    <tr>
+                        <td>Chrome</td>
+                        <td>브라우저</td>
+                        <td>2주</td>
+                        <td>92%</td>
+                        <td>주차 전용, 안전 모드</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>📈 성과:</strong> CarMa 프로그램 덕분에 개발자들은 평균 1-3주 만에
+                기존 모바일 앱을 차량용으로 확장할 수 있었으며, 코드 재사용률은 90% 이상입니다.
+            </div>
+        </section>
+
+        <!-- Section 11: 디버깅 & 트러블슈팅 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                디버깅 & 트러블슈팅
+            </h2>
+            <p class="section-description">
+                CarMa 앱 개발 시 자주 발생하는 문제와 해결 방법을 정리합니다.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔍 logcat 디버깅
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-bash"># Car UX Restrictions 로그
+adb logcat | grep "CarUxRestrictions"
+
+# Window Manager (화면 비율 관련)
+adb logcat | grep "WindowManager"
+
+# MediaSession 로그
+adb logcat | grep "MediaSession"
+
+# Car Service 전체 로그
+adb logcat | grep "CarService"
+
+# 앱별 필터링
+adb logcat | grep "com.example.videoapp"</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🛠️ 일반적인 문제 해결
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>문제</th>
+                        <th>원인</th>
+                        <th>해결 방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>앱이 Play Store에 표시 안 됨</td>
+                        <td><code>android.hardware.type.automotive</code> 선언 누락</td>
+                        <td>AndroidManifest.xml에 uses-feature 추가</td>
+                    </tr>
+                    <tr>
+                        <td>화면 비율 이상 (찌그러짐)</td>
+                        <td><code>resizeableActivity</code> 미설정</td>
+                        <td>Activity에 <code>resizeableActivity="true"</code> 추가</td>
+                    </tr>
+                    <tr>
+                        <td>주행 중에도 비디오 재생됨</td>
+                        <td>CarUxRestrictionsManager 미구현</td>
+                        <td>UX Restrictions 리스너 등록 및 처리</td>
+                    </tr>
+                    <tr>
+                        <td>배경 재생 안 됨</td>
+                        <td>MediaSession 미구현</td>
+                        <td>MediaSessionService 구현 및 Notification 표시</td>
+                    </tr>
+                    <tr>
+                        <td>터치 입력 무반응</td>
+                        <td>터치 타겟 너무 작음 (48dp 미만)</td>
+                        <td>모든 버튼 크기를 최소 48dp로 조정</td>
+                    </tr>
+                    <tr>
+                        <td>로터리 노브 입력 안 됨</td>
+                        <td>포커스 처리 미구현</td>
+                        <td>View focusable 속성 설정, 키 이벤트 처리</td>
+                    </tr>
+                    <tr>
+                        <td>에뮬레이터에서 주행 상태 변경 안 됨</td>
+                        <td>adb 명령어 미사용</td>
+                        <td><code>adb shell cmd car_service set-driving-state</code> 사용</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🧪 테스트 시나리오
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        필수 테스트
+                    </h3>
+                    <div class="card-description">
+                        <ol>
+                            <li>앱 실행 후 주차→주행 전환</li>
+                            <li>비디오 재생 중 주행 시작 (화면 숨김 확인)</li>
+                            <li>주행 중 오디오 계속 재생 확인</li>
+                            <li>주행→주차 전환 (비디오 화면 복원)</li>
+                            <li>다양한 화면 크기에서 레이아웃 확인</li>
+                            <li>회전 시 레이아웃 유지</li>
+                            <li>백그라운드→포그라운드 복원</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        디버그 도구
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Layout Inspector:</strong> UI 계층 구조 확인</li>
+                            <li><strong>Logcat:</strong> 런타임 로그 모니터링</li>
+                            <li><strong>Network Profiler:</strong> 네트워크 사용량</li>
+                            <li><strong>Memory Profiler:</strong> 메모리 누수 감지</li>
+                            <li><strong>dumpsys:</strong> 시스템 상태 덤프</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 12: CarMa vs 전용 차량 앱 비교 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                CarMa vs 전용 차량 앱 비교
+            </h2>
+            <p class="section-description">
+                CarMa 프로그램과 Android for Cars App Library를 사용한 전용 차량 앱의 차이를 비교합니다.
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>항목</th>
+                        <th>Car Ready Mobile Apps (CarMa)</th>
+                        <th>전용 차량 앱 (Car App Library)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>개발 방식</strong></td>
+                        <td>기존 모바일 앱 재사용</td>
+                        <td>처음부터 차량용으로 개발</td>
+                    </tr>
+                    <tr>
+                        <td><strong>코드 재사용</strong></td>
+                        <td>90%+ 재사용 가능</td>
+                        <td>새로 작성 필요</td>
+                    </tr>
+                    <tr>
+                        <td><strong>개발 기간</strong></td>
+                        <td>1-3주</td>
+                        <td>2-6개월</td>
+                    </tr>
+                    <tr>
+                        <td><strong>실행 조건</strong></td>
+                        <td>주차 상태 전용</td>
+                        <td>주행 중에도 사용 가능</td>
+                    </tr>
+                    <tr>
+                        <td><strong>UI 자유도</strong></td>
+                        <td>높음 (모바일 앱 그대로)</td>
+                        <td>제한적 (템플릿 기반)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>입력 방식</strong></td>
+                        <td>주로 터치</td>
+                        <td>터치, 로터리 노브, 음성</td>
+                    </tr>
+                    <tr>
+                        <td><strong>대상 앱</strong></td>
+                        <td>비디오, 게임, 브라우저</td>
+                        <td>내비게이션, 미디어, 메시징, 주차</td>
+                    </tr>
+                    <tr>
+                        <td><strong>API</strong></td>
+                        <td>표준 Android API</td>
+                        <td>Car App Library API</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Android Auto 지원</strong></td>
+                        <td>없음 (AAOS 전용)</td>
+                        <td>있음 (동일 코드로 양쪽 지원)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>심사 난이도</strong></td>
+                        <td>낮음</td>
+                        <td>높음 (운전 중 안전 검증)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="content-grid" style="margin-top: 40px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        CarMa 선택 기준
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>주차 시에만 사용하는 앱</li>
+                            <li>빠른 시장 출시 필요</li>
+                            <li>기존 모바일 앱 활용</li>
+                            <li>비디오 스트리밍, 게임, 브라우저</li>
+                            <li>개발 리소스 제한적</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        전용 차량 앱 선택 기준
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>주행 중에도 사용해야 하는 앱</li>
+                            <li>최적의 차량용 UX 제공</li>
+                            <li>내비게이션, 미디어 플레이어</li>
+                            <li>Android Auto도 지원 필요</li>
+                            <li>음성/로터리 노브 입력 중요</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 권장사항:</strong> 비디오, 게임, 브라우저는 CarMa를 사용하고,
+                내비게이션, 음악 플레이어, 메시징은 Car App Library로 전용 개발하는 것이 좋습니다.
+            </div>
+        </section>
+
+        <!-- Section 13: AOSP 소스 코드 참조 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                AOSP 소스 코드 참조
+            </h2>
+            <p class="section-description">
+                CarMa 관련 AOSP 소스 코드 및 참조 문서를 정리합니다.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📂 주요 소스 파일
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>컴포넌트</th>
+                        <th>경로</th>
+                        <th>설명</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Car UX Restrictions</td>
+                        <td>packages/services/Car/car-lib/src/android/car/drivingstate/</td>
+                        <td>CarUxRestrictionsManager 구현</td>
+                    </tr>
+                    <tr>
+                        <td>Car Service</td>
+                        <td>packages/services/Car/service/</td>
+                        <td>차량 서비스 핵심 로직</td>
+                    </tr>
+                    <tr>
+                        <td>Window Manager</td>
+                        <td>frameworks/base/services/core/java/com/android/server/wm/</td>
+                        <td>화면 비율 조정 로직</td>
+                    </tr>
+                    <tr>
+                        <td>Activity Manager</td>
+                        <td>frameworks/base/services/core/java/com/android/server/am/</td>
+                        <td>Activity 생명주기 관리</td>
+                    </tr>
+                    <tr>
+                        <td>Media Session</td>
+                        <td>frameworks/base/media/java/android/media/session/</td>
+                        <td>MediaSession API</td>
+                    </tr>
+                    <tr>
+                        <td>Car Launcher</td>
+                        <td>packages/apps/Car/Launcher/</td>
+                        <td>차량용 런처 앱</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📚 공식 문서
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>문서</th>
+                        <th>링크</th>
+                        <th>내용</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Car Ready Mobile Apps</td>
+                        <td><a href="https://developer.android.com/training/cars/mobile-apps" style="color: var(--accent-automotive);">developer.android.com/cars/mobile-apps</a></td>
+                        <td>CarMa 프로그램 공식 가이드</td>
+                    </tr>
+                    <tr>
+                        <td>Android for Cars App Library</td>
+                        <td><a href="https://developer.android.com/training/cars/apps" style="color: var(--accent-automotive);">developer.android.com/cars/apps</a></td>
+                        <td>전용 차량 앱 개발 가이드</td>
+                    </tr>
+                    <tr>
+                        <td>Large Screen Guidelines</td>
+                        <td><a href="https://developer.android.com/guide/topics/large-screens" style="color: var(--accent-automotive);">developer.android.com/large-screens</a></td>
+                        <td>대화면 지원 가이드</td>
+                    </tr>
+                    <tr>
+                        <td>MediaSession API</td>
+                        <td><a href="https://developer.android.com/guide/topics/media/media-controls" style="color: var(--accent-automotive);">developer.android.com/media-controls</a></td>
+                        <td>미디어 재생 제어</td>
+                    </tr>
+                    <tr>
+                        <td>Google I/O 2024</td>
+                        <td><a href="https://io.google/2024/explore/automotive" style="color: var(--accent-automotive);">io.google/2024/automotive</a></td>
+                        <td>CarMa 발표 영상 및 슬라이드</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛠️</span>
+                        개발 도구
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Android Studio:</strong> Hedgehog 2023.1.1 이상</li>
+                            <li><strong>Automotive Emulator:</strong> API 33+ 이미지</li>
+                            <li><strong>Car App Library:</strong> androidx.car.app:app:1.4.0</li>
+                            <li><strong>Media3:</strong> androidx.media3:media3-session:1.2.0</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📖</span>
+                        학습 리소스
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Codelabs:</strong> 단계별 실습 튜토리얼</li>
+                            <li><strong>Sample Apps:</strong> GitHub 샘플 코드</li>
+                            <li><strong>YouTube:</strong> Android Developers 채널</li>
+                            <li><strong>Stack Overflow:</strong> android-automotive 태그</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 14: 관련 상세 문서 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                관련 상세 문서
+            </h2>
+            <p class="section-description">
+                CarMa와 연관된 다른 AAOS 및 미디어 프레임워크 문서 링크를 제공합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Android Automotive OS
+                    </h3>
+                    <div class="card-description">
+                        AAOS의 전체 아키텍처, Vehicle HAL, Car Service를 상세히 설명합니다.
+                    </div>
+                    <a href="aaos.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Car Media Service
+                    </h3>
+                    <div class="card-description">
+                        AAOS의 미디어 관리 서비스 및 MediaSession 통합 방법을 다룹니다.
+                    </div>
+                    <a href="carmedia.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Google Automotive Services (GAS)
+                    </h3>
+                    <div class="card-description">
+                        GAS 플랫폼 및 Google Play Services API 통합을 설명합니다.
+                    </div>
+                    <a href="gas.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        Android 미디어 프레임워크의 코어 아키텍처 (MediaPlayer, MediaSession)를 설명합니다.
+                    </div>
+                    <a href="media-framework-core.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        AudioFlinger, AudioPolicyService 등 AAOS 오디오 시스템을 다룹니다.
+                    </div>
+                    <a href="audio-framework.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⌨️</span>
+                        AAOS Key Events
+                    </h3>
+                    <div class="card-description">
+                        차량 스티어링 휠 버튼 및 물리 키 이벤트 처리 방법을 설명합니다.
+                    </div>
+                    <a href="aaos-key-events.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧪</span>
+                        CTS/GTS Testing
+                    </h3>
+                    <div class="card-description">
+                        CTS/VTS/GTS 테스트 프레임워크 및 차량용 앱 인증 요구사항을 정리합니다.
+                    </div>
+                    <a href="cts.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        CDD (호환성 정의 문서)
+                    </h3>
+                    <div class="card-description">
+                        Android CDD의 Automotive 섹션 요구사항을 다룹니다.
+                    </div>
+                    <a href="cdd.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+            </div>
+        </section>
+
         <footer
             style="text-align: center; margin-top: 60px; padding: 40px; color: var(--text-muted); border-top: 1px solid var(--border-color);">
             <p>© Android Media Framework Documentation</p>
