@@ -134,7 +134,7 @@ const NODE_ID_MAPPING = {
 
     // Car Media Service (carmedia.html)
     'CMS': 'CarMediaService',
-    'CAR_AUDIO': 'CarAudioService',
+    'CAR_AUDIO': 'Car Audio Service',
     'CAR_DISPLAY': 'CarDisplayService',
     'CAR_OS': 'Car OS',
     'VEHICLE_HAL': 'Vehicle HAL',
@@ -188,6 +188,7 @@ const NODE_ID_MAPPING = {
     'HAL_STD': 'Standard HAL',
     'SYSTEM_APP': 'System Apps',
     'MEDIA_APP': 'Media App',
+    'MEDIA3': 'Media3 Library',
     'APP': 'Vehicle App',
     'APP1': 'Navigation App',
     'APP2': 'Media App',
@@ -3606,6 +3607,39 @@ val speed = carPropertyManager.getFloatProperty(
             'Turn-by-turn Guidance'
         ],
         doc: 'https://developer.android.com/training/cars/navigation'
+    },
+
+    'Media3 Library': {
+        title: 'Media3 Library',
+        layer: 'Framework Library',
+        description: 'Jetpack Media3는 ExoPlayer를 포함하는 차세대 미디어 라이브러리입니다.',
+        components: [
+            'ExoPlayer (Core Player)',
+            'MediaSession (Session Management)',
+            'Media3 UI Components',
+            'Casting Support',
+            'Background Playback'
+        ],
+        path: 'androidx.media3',
+        doc: 'https://developer.android.com/media/media3',
+        codeExample: `
+// Media3 ExoPlayer 생성
+val player = ExoPlayer.Builder(context)
+    .setAudioAttributes(AudioAttributes.DEFAULT, true)
+    .setHandleAudioBecomingNoisy(true)
+    .build()
+
+// MediaSession 연결
+val mediaSession = MediaSession.Builder(context, player)
+    .setCallback(MediaSessionCallback())
+    .build()
+
+// 재생
+val mediaItem = MediaItem.fromUri(uri)
+player.setMediaItem(mediaItem)
+player.prepare()
+player.play()
+        `.trim()
     },
 
     'AAOS App Types': {
