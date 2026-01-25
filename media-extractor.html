@@ -443,6 +443,126 @@
                     </div>
                 </div>
             </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📦 WebM (WebM Parser)
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        WebM 개요
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>웹 최적화 포맷</strong></p>
+                        <ul>
+                            <li>Matroska 기반 (EBML 구조 동일)</li>
+                            <li>HTML5 &lt;video&gt; 표준 포맷</li>
+                            <li>로열티 프리 오픈 포맷</li>
+                            <li>Google 주도 개발</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        지원 코덱
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>비디오 & 오디오</strong></p>
+                        <ul>
+                            <li><strong>비디오</strong>: VP8, VP9, AV1</li>
+                            <li><strong>오디오</strong>: Vorbis, Opus</li>
+                            <li>모두 로열티 프리 코덱</li>
+                            <li>4K/8K UHD 지원 (VP9/AV1)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        WebM 장점
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>웹 스트리밍에 최적화</strong></p>
+                        <ul>
+                            <li>작은 파일 크기</li>
+                            <li>빠른 시작 시간</li>
+                            <li>적응형 스트리밍 지원</li>
+                            <li>브라우저 네이티브 지원</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        MKV vs WebM
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>주요 차이점</strong></p>
+                        <ul>
+                            <li><strong>MKV</strong>: 모든 코덱 지원, 로컬 저장</li>
+                            <li><strong>WebM</strong>: VP8/VP9/AV1만, 웹 스트리밍</li>
+                            <li>WebM은 MKV 부분집합</li>
+                            <li>동일한 Parser (MatroskaExtractor)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>📊 MKV vs WebM 비교:</strong>
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">항목</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">MKV (Matroska)</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">WebM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>컨테이너 구조</strong></td>
+                            <td style="padding: 10px;">EBML (Extensible Binary Meta Language)</td>
+                            <td style="padding: 10px;">EBML (동일)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>비디오 코덱</strong></td>
+                            <td style="padding: 10px;">H.264, H.265, VP8, VP9, AV1 등 모든 코덱</td>
+                            <td style="padding: 10px;">VP8, VP9, AV1만</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>오디오 코덱</strong></td>
+                            <td style="padding: 10px;">AAC, MP3, Vorbis, Opus, Dolby 등</td>
+                            <td style="padding: 10px;">Vorbis, Opus만</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>파일 확장자</strong></td>
+                            <td style="padding: 10px;">.mkv, .mka, .mks</td>
+                            <td style="padding: 10px;">.webm</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>라이선스</strong></td>
+                            <td style="padding: 10px;">오픈 스펙 (코덱별 라이선스 별도)</td>
+                            <td style="padding: 10px;">완전 로열티 프리</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>주요 용도</strong></td>
+                            <td style="padding: 10px;">로컬 미디어 저장, 고품질 아카이브</td>
+                            <td style="padding: 10px;">웹 스트리밍, HTML5 비디오</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px;"><strong>브라우저 지원</strong></td>
+                            <td style="padding: 10px;">플러그인 필요</td>
+                            <td style="padding: 10px;">Chrome, Firefox, Edge 네이티브</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </section>
 
         <!-- Section 5: Sample Extraction -->
@@ -673,10 +793,690 @@
             </div>
         </section>
 
-        <!-- Section 8: Decoder Selection -->
+        <!-- Section 7: Code Examples -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                실제 코드 예시
+            </h2>
+            <p class="section-description">
+                MediaExtractor를 사용한 실제 코드 예시를 통해 API 사용법을 익힙니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📝 기본 사용 예시
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// 1. File Path로 MediaExtractor 초기화
+val extractor = MediaExtractor()
+extractor.setDataSource("/storage/emulated/0/Movies/video.mp4")
+
+// 2. URI로 초기화 (Content Provider)
+val uri = Uri.parse("content://media/external/video/media/123")
+extractor.setDataSource(context, uri, null)
+
+// 3. FileDescriptor로 초기화
+val fd = assets.openFd("sample.mp4")
+extractor.setDataSource(fd.fileDescriptor, fd.startOffset, fd.length)
+fd.close()
+
+// 4. 트랙 정보 조회
+val trackCount = extractor.trackCount
+for (i in 0 until trackCount) {
+    val format = extractor.getTrackFormat(i)
+    val mime = format.getString(MediaFormat.KEY_MIME)
+    Log.d("Extractor", "Track $i: $mime")
+
+    if (mime?.startsWith("video/") == true) {
+        val width = format.getInteger(MediaFormat.KEY_WIDTH)
+        val height = format.getInteger(MediaFormat.KEY_HEIGHT)
+        Log.d("Extractor", "Resolution: ${width}x${height}")
+    }
+}
+
+// 5. 리소스 해제
+extractor.release()</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎬 MediaExtractor + MediaCodec 파이프라인
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// 비디오 트랙 추출 및 디코딩
+val extractor = MediaExtractor()
+extractor.setDataSource(videoPath)
+
+// 비디오 트랙 찾기 및 선택
+var videoTrackIndex = -1
+for (i in 0 until extractor.trackCount) {
+    val format = extractor.getTrackFormat(i)
+    val mime = format.getString(MediaFormat.KEY_MIME)
+    if (mime?.startsWith("video/") == true) {
+        videoTrackIndex = i
+        extractor.selectTrack(i)
+        break
+    }
+}
+
+if (videoTrackIndex == -1) {
+    throw IllegalStateException("No video track found")
+}
+
+// MediaCodec 디코더 생성 및 설정
+val format = extractor.getTrackFormat(videoTrackIndex)
+val mime = format.getString(MediaFormat.KEY_MIME)!!
+val decoder = MediaCodec.createDecoderByType(mime)
+decoder.configure(format, surface, null, 0)
+decoder.start()
+
+// 디코딩 루프
+val bufferInfo = MediaCodec.BufferInfo()
+val inputBuffer = ByteBuffer.allocate(1024 * 1024) // 1MB
+var isEOS = false
+
+while (!isEOS) {
+    // 1. 입력: Extractor → Decoder
+    val inputIndex = decoder.dequeueInputBuffer(10000)
+    if (inputIndex >= 0) {
+        val buffer = decoder.getInputBuffer(inputIndex)!!
+        val sampleSize = extractor.readSampleData(buffer, 0)
+
+        if (sampleSize < 0) {
+            // EOS
+            decoder.queueInputBuffer(inputIndex, 0, 0, 0,
+                MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+            isEOS = true
+        } else {
+            val presentationTimeUs = extractor.sampleTime
+            decoder.queueInputBuffer(inputIndex, 0, sampleSize,
+                presentationTimeUs, 0)
+            extractor.advance()
+        }
+    }
+
+    // 2. 출력: Decoder → Surface/Buffer
+    val outputIndex = decoder.dequeueOutputBuffer(bufferInfo, 10000)
+    when {
+        outputIndex >= 0 -> {
+            // 디코딩된 프레임 렌더링 (Surface 사용 시)
+            decoder.releaseOutputBuffer(outputIndex, true)
+
+            if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                break
+            }
+        }
+        outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+            val newFormat = decoder.outputFormat
+            Log.d("Decoder", "Output format changed: $newFormat")
+        }
+    }
+}
+
+// 리소스 해제
+decoder.stop()
+decoder.release()
+extractor.release()</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔐 DRM 콘텐츠 처리 (MediaDrm + MediaCrypto)
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Widevine DRM 콘텐츠 처리
+val WIDEVINE_UUID = UUID(0xEDEF8BA979D64ACEL, 0xA3C827DCD51D21EDL)
+
+// 1. MediaDrm 초기화
+val mediaDrm = MediaDrm(WIDEVINE_UUID)
+
+// 2. 세션 생성
+val sessionId = mediaDrm.openSession()
+
+// 3. 라이선스 요청 (생략 - 서버와 통신)
+// ... provisioning, key request/response ...
+
+// 4. MediaCrypto 생성
+val mediaCrypto = MediaCrypto(WIDEVINE_UUID, sessionId)
+
+// 5. MediaExtractor 설정
+val extractor = MediaExtractor()
+extractor.setDataSource(drmVideoPath)
+
+// 비디오 트랙 선택
+var videoTrackIndex = -1
+for (i in 0 until extractor.trackCount) {
+    val format = extractor.getTrackFormat(i)
+    val mime = format.getString(MediaFormat.KEY_MIME)
+    if (mime?.startsWith("video/") == true) {
+        videoTrackIndex = i
+        extractor.selectTrack(i)
+        break
+    }
+}
+
+// 6. MediaCodec에 MediaCrypto 전달
+val format = extractor.getTrackFormat(videoTrackIndex)
+val mime = format.getString(MediaFormat.KEY_MIME)!!
+val decoder = MediaCodec.createDecoderByType(mime)
+decoder.configure(format, surface, mediaCrypto, 0)  // MediaCrypto 전달
+decoder.start()
+
+// 7. 암호화된 샘플 처리
+val bufferInfo = MediaCodec.BufferInfo()
+val cryptoInfo = MediaCodec.CryptoInfo()
+
+while (true) {
+    val inputIndex = decoder.dequeueInputBuffer(10000)
+    if (inputIndex >= 0) {
+        val buffer = decoder.getInputBuffer(inputIndex)!!
+        val sampleSize = extractor.readSampleData(buffer, 0)
+
+        if (sampleSize < 0) {
+            decoder.queueInputBuffer(inputIndex, 0, 0, 0,
+                MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+            break
+        }
+
+        val presentationTimeUs = extractor.sampleTime
+        val flags = extractor.sampleFlags
+
+        // ENCRYPTED 플래그 확인
+        if ((flags and MediaExtractor.SAMPLE_FLAG_ENCRYPTED) != 0) {
+            // CryptoInfo 설정 (IV, Key ID 등)
+            extractor.getSampleCryptoInfo(cryptoInfo)
+            decoder.queueSecureInputBuffer(inputIndex, 0, cryptoInfo,
+                presentationTimeUs, 0)
+        } else {
+            decoder.queueInputBuffer(inputIndex, 0, sampleSize,
+                presentationTimeUs, 0)
+        }
+
+        extractor.advance()
+    }
+
+    // 출력 처리 (일반 파이프라인과 동일)
+    val outputIndex = decoder.dequeueOutputBuffer(bufferInfo, 10000)
+    if (outputIndex >= 0) {
+        decoder.releaseOutputBuffer(outputIndex, true)
+        if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+            break
+        }
+    }
+}
+
+// 리소스 해제
+decoder.stop()
+decoder.release()
+extractor.release()
+mediaCrypto.release()
+mediaDrm.closeSession(sessionId)
+mediaDrm.release()</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 코드 예시 핵심 포인트:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>기본 사용</strong>: setDataSource() 3가지 방법 (Path, URI, FD), 트랙 정보 조회, 리소스 해제</li>
+                    <li><strong>MediaCodec 연동</strong>: selectTrack() → readSampleData() → queueInputBuffer() → dequeueOutputBuffer() 루프</li>
+                    <li><strong>DRM 처리</strong>: MediaDrm + MediaCrypto 생성, SAMPLE_FLAG_ENCRYPTED 확인, queueSecureInputBuffer() 사용</li>
+                    <li><strong>주의사항</strong>: 반드시 Worker Thread에서 실행, ByteBuffer 재사용, release() 호출 필수</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 8: Custom Extractor Development -->
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">8</span>
+                커스텀 Extractor 개발
+            </h2>
+            <p class="section-description">
+                Android 10 이상에서 커스텀 컨테이너 포맷을 지원하기 위한 Extractor 플러그인 개발 방법을 설명합니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TB
+                    START[커스텀 포맷 지원 필요] --> NATIVE[Native Extractor 구현<br />C/C++]
+
+                    NATIVE --> INTERFACE[MediaExtractorPluginHelper<br />인터페이스 구현]
+
+                    INTERFACE --> METHODS[필수 메서드 구현]
+                    METHODS --> SNIFF[sniff: 포맷 탐지]
+                    METHODS --> CREATE[create: Extractor 생성]
+                    METHODS --> TRACK[getTrackCount, getTrackFormat]
+                    METHODS --> READ[readSampleData, advance]
+
+                    READ --> BUILD[Android.bp 빌드 설정]
+                    BUILD --> SO[libcustomextractor.so 생성]
+
+                    SO --> REGISTER[Extractor 등록]
+                    REGISTER --> MANIFEST[media_codecs_performance.xml]
+                    REGISTER --> PLUGIN[MediaExtractorFactory 플러그인]
+
+                    PLUGIN --> TEST[테스트 및 검증]
+                    TEST --> DEPLOY[시스템에 배포]
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 Native 인터페이스 구현
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// CustomExtractor.h
+#include &lt;media/stagefright/MediaExtractorPluginApi.h&gt;
+#include &lt;media/stagefright/MediaExtractorPluginHelper.h&gt;
+
+namespace android {
+
+class CustomExtractor : public MediaExtractorPluginHelper {
+public:
+    explicit CustomExtractor(DataSourceHelper *source);
+    virtual ~CustomExtractor();
+
+    // 필수 메서드 구현
+    virtual size_t countTracks() override;
+    virtual MediaTrackHelper *getTrack(size_t index) override;
+    virtual media_status_t getTrackMetaData(AMediaFormat *meta, size_t index) override;
+    virtual media_status_t getMetaData(AMediaFormat *meta) override;
+    virtual uint32_t flags() const override;
+
+private:
+    DataSourceHelper *mDataSource;
+    // 트랙 정보, 파서 상태 등
+};
+
+// sniff 함수: 포맷 탐지
+extern "C" {
+    CreatorFunc sniff(
+        DataSourceHelper *source,
+        float *confidence,
+        void **,
+        FreeMetaFunc *) {
+
+        // 매직 넘버 또는 헤더 검사
+        uint8_t header[16];
+        if (source->readAt(0, header, 16) != 16) {
+            return nullptr;
+        }
+
+        // 커스텀 포맷 식별 (예: "CSTM" 매직 넘버)
+        if (memcmp(header, "CSTM", 4) == 0) {
+            *confidence = 0.8f;  // 높은 신뢰도
+            return [](DataSourceHelper *src, void *) -> CMediaExtractor* {
+                return wrap(new CustomExtractor(src));
+            };
+        }
+
+        return nullptr;
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📦 Android.bp 빌드 설정
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Android.bp
+cc_library_shared {
+    name: "libcustomextractor",
+
+    srcs: [
+        "CustomExtractor.cpp",
+    ],
+
+    shared_libs: [
+        "liblog",
+        "libmediandk",
+    ],
+
+    static_libs: [
+        "libstagefright_foundation",
+        "libstagefright_metadatautils",
+    ],
+
+    include_dirs: [
+        "frameworks/av/media/libstagefright/include",
+        "frameworks/av/media/ndk/include",
+    ],
+
+    cflags: [
+        "-Werror",
+        "-Wall",
+    ],
+
+    relative_install_path: "extractors",  // /system/lib64/extractors/
+
+    compile_multilib: "both",
+
+    vendor: true,  // 벤더 파티션에 설치
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔌 Extractor 등록
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📝</span>
+                        자동 로딩
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaExtractorFactory 스캔</strong></p>
+                        <ul>
+                            <li>/system/lib64/extractors/ 디렉토리 스캔</li>
+                            <li>.so 파일 자동 로드</li>
+                            <li>sniff() 함수 호출</li>
+                            <li>신뢰도 높은 Extractor 선택</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        수동 등록
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>media_codecs.xml</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.8rem; margin-top: 10px;"><code>&lt;MediaExtractors&gt;
+  &lt;MediaExtractor name="custom"
+    library="libcustomextractor.so" /&gt;
+&lt;/MediaExtractors&gt;</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧪</span>
+                        테스트
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>검증 방법</strong></p>
+                        <ul>
+                            <li><code>adb shell dumpsys media.extractor</code>: 등록 확인</li>
+                            <li>MediaExtractor API로 파일 열기</li>
+                            <li>CTS Extractor 테스트 실행</li>
+                            <li>다양한 샘플 파일 검증</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        주의사항
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>개발 시 고려사항</strong></p>
+                        <ul>
+                            <li>Thread-safe 구현 필수</li>
+                            <li>메모리 누수 방지</li>
+                            <li>sniff() 성능 최적화 (빠른 판단)</li>
+                            <li>에러 처리 철저히</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ 커스텀 Extractor 개발 제약사항:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Android 10 (API 29) 이상에서만 플러그인 아키텍처 지원</li>
+                    <li>System 또는 Vendor 파티션 권한 필요 (일반 앱에서 불가)</li>
+                    <li>C/C++ Native 개발 필수, Java/Kotlin으로 구현 불가</li>
+                    <li>CTS/VTS 테스트 통과 필요 (OEM/ODM 배포 시)</li>
+                    <li>대부분의 경우 ExoPlayer 커스텀 Extractor가 더 실용적</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: Streaming Processing -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                스트리밍 처리 가이드
+            </h2>
+            <p class="section-description">
+                네트워크 스트림에서 MediaExtractor를 사용하는 방법과 버퍼링 전략을 설명합니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App
+                    participant ME as MediaExtractor
+                    participant DS as HTTPDataSource
+                    participant Server as HTTP Server
+                    participant Buffer as Buffer Manager
+
+                    App->>ME: setDataSource(url)
+                    ME->>DS: HTTPDataSource 생성
+                    DS->>Server: HTTP GET 요청
+                    Server-->>DS: HTTP 200 + 헤더
+                    DS->>DS: Content-Length 확인
+                    DS-->>ME: DataSource 준비 완료
+
+                    ME->>DS: 헤더 읽기 (초기 탐색)
+                    DS->>Server: Range: bytes=0-8191
+                    Server-->>DS: 초기 8KB 데이터
+                    DS->>Buffer: 버퍼에 저장
+                    Buffer-->>DS: 버퍼 데이터
+                    DS-->>ME: 헤더 데이터
+
+                    ME->>ME: 컨테이너 포맷 파싱
+                    ME->>ME: 트랙 정보 추출
+
+                    loop 샘플 읽기
+                    App->>ME: readSampleData()
+                    ME->>DS: 샘플 오프셋 위치 요청
+
+                    alt 버퍼에 있음
+                    DS->>Buffer: 캐시 히트
+                    Buffer-->>DS: 버퍼 데이터
+                    else 버퍼에 없음
+                    DS->>Server: Range: bytes=X-Y
+                    Server-->>DS: 요청 범위 데이터
+                    DS->>Buffer: 새 데이터 버퍼링
+                    Buffer-->>DS: 버퍼 데이터
+                    end
+
+                    DS-->>ME: 샘플 데이터
+                    ME-->>App: 샘플 크기 반환
+
+                    App->>ME: getCachedDuration()
+                    ME->>DS: 버퍼된 시간 조회
+                    DS->>Buffer: 버퍼 상태 확인
+                    Buffer-->>DS: 캐시된 범위
+                    DS-->>ME: 캐시된 시간 (µs)
+                    ME-->>App: 재생 가능한 시간
+                    end
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🌐 네트워크 DataSource 사용
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// HTTP URL로 스트리밍
+val extractor = MediaExtractor()
+val url = "https://example.com/video.mp4"
+
+try {
+    // HTTP(S) URL 지원
+    extractor.setDataSource(url)
+
+    // 또는 헤더와 함께
+    val headers = mapOf(
+        "User-Agent" to "MyApp/1.0",
+        "Authorization" to "Bearer token123"
+    )
+    extractor.setDataSource(url, headers)
+
+    // 버퍼 상태 확인
+    val cachedDurationUs = extractor.cachedDuration
+    val cachedDurationMs = cachedDurationUs / 1000
+    Log.d("Streaming", "Buffered: ${cachedDurationMs}ms")
+
+    // 트랙 선택 및 재생
+    for (i in 0 until extractor.trackCount) {
+        val format = extractor.getTrackFormat(i)
+        val mime = format.getString(MediaFormat.KEY_MIME)
+        if (mime?.startsWith("video/") == true) {
+            extractor.selectTrack(i)
+            break
+        }
+    }
+
+    // 샘플 읽기 (로컬 파일과 동일)
+    val buffer = ByteBuffer.allocate(1024 * 1024)
+    while (true) {
+        val sampleSize = extractor.readSampleData(buffer, 0)
+        if (sampleSize < 0) break
+
+        // 버퍼 상태 재확인
+        val remainingCached = extractor.cachedDuration
+        if (remainingCached < 2_000_000) {  // 2초 미만
+            Log.w("Streaming", "Low buffer: ${remainingCached / 1000}ms")
+            // 버퍼링 대기 또는 재생 일시정지
+        }
+
+        // 디코더에 전달...
+        extractor.advance()
+    }
+
+} catch (e: IOException) {
+    Log.e("Streaming", "Network error", e)
+} finally {
+    extractor.release()
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 버퍼링 전략
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏸️</span>
+                        Threshold-based Buffering
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>임계값 기반 버퍼링</strong></p>
+                        <ul>
+                            <li><strong>Low Threshold</strong>: 2초 미만 시 일시정지</li>
+                            <li><strong>High Threshold</strong>: 10초 이상 시 재생 재개</li>
+                            <li><code>getCachedDuration()</code>으로 모니터링</li>
+                            <li>사용자에게 버퍼링 UI 표시</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Prefetch Strategy
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>미리 읽기 전략</strong></p>
+                        <ul>
+                            <li>재생 위치보다 앞서서 샘플 읽기</li>
+                            <li>별도 Worker Thread에서 Prefetch</li>
+                            <li>Queue에 샘플 저장</li>
+                            <li>Seek 시 Prefetch 취소 및 재시작</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📡</span>
+                        Network Monitoring
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>네트워크 상태 감지</strong></p>
+                        <ul>
+                            <li>ConnectivityManager로 연결 상태 확인</li>
+                            <li>WiFi ↔ Cellular 전환 감지</li>
+                            <li>네트워크 끊김 시 에러 처리</li>
+                            <li>자동 재연결 로직</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Adaptive Buffering
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>적응형 버퍼링</strong></p>
+                        <ul>
+                            <li>네트워크 속도에 따라 임계값 조정</li>
+                            <li>빠른 네트워크: 작은 버퍼</li>
+                            <li>느린 네트워크: 큰 버퍼</li>
+                            <li>배터리 및 데이터 사용량 고려</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎬 HLS/DASH 프래그먼트 처리
+            </h3>
+
+            <div class="highlight-box">
+                <strong>⚠️ MediaExtractor의 HLS/DASH 제약사항:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>MediaExtractor는 <strong>단일 파일 기반</strong>으로 설계됨 - 매니페스트 파싱 미지원</li>
+                    <li>HLS(.m3u8), DASH(.mpd)는 여러 프래그먼트로 구성 → MediaExtractor 직접 사용 불가</li>
+                    <li><strong>권장 방법</strong>: ExoPlayer 사용 (HlsMediaSource, DashMediaSource 내장)</li>
+                    <li><strong>대안</strong>: 개별 .ts/.m4s 프래그먼트를 수동으로 다운로드 후 순차 처리</li>
+                </ul>
+            </div>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary); margin-top: 20px;"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// HLS 프래그먼트 수동 처리 (권장하지 않음)
+// 실무에서는 ExoPlayer 사용 권장
+
+// 1. .m3u8 매니페스트 파싱 (수동 구현 필요)
+val m3u8Url = "https://example.com/playlist.m3u8"
+val fragmentUrls = parseM3U8(m3u8Url)  // 직접 구현 필요
+
+// 2. 각 프래그먼트를 순차 처리
+for (fragmentUrl in fragmentUrls) {
+    val extractor = MediaExtractor()
+    extractor.setDataSource(fragmentUrl)
+
+    // 트랙 선택
+    extractor.selectTrack(0)
+
+    // 샘플 읽기
+    val buffer = ByteBuffer.allocate(1024 * 1024)
+    while (true) {
+        val size = extractor.readSampleData(buffer, 0)
+        if (size < 0) break
+
+        // 디코더에 전달...
+        extractor.advance()
+    }
+
+    extractor.release()
+}
+
+// ⚠️ 위 방법의 문제점:
+// - 프래그먼트 전환 시 끊김 발생
+// - ABR (Adaptive Bitrate) 미지원
+// - 복잡한 매니페스트 파싱 직접 구현 필요
+// - DRM 처리 복잡
+
+// ✅ 권장 방법: ExoPlayer 사용
+val player = ExoPlayer.Builder(context).build()
+val mediaItem = MediaItem.fromUri("https://example.com/playlist.m3u8")
+player.setMediaItem(mediaItem)
+player.prepare()
+player.play()</code></pre>
+        </section>
+
+        <!-- Section 10: Decoder Selection -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
                 디코더 선정 과정
             </h2>
             <p class="section-description">
@@ -856,10 +1656,456 @@
             </div>
         </section>
 
-        <!-- Section 9: Best Practices -->
+        <!-- Section 11: Performance Profiling & Debugging -->
         <section class="content-section section">
             <h2 class="section-title">
-                <span class="section-number">9</span>
+                <span class="section-number">11</span>
+                성능 프로파일링 및 디버깅
+            </h2>
+            <p class="section-description">
+                MediaExtractor의 성능 분석 및 문제 해결을 위한 도구와 방법을 소개합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📊 adb logcat 필터링
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># MediaExtractor 관련 로그만 보기
+adb logcat -s MediaExtractor MediaExtractorFactory
+
+# Parser 로그 (MP4, MKV 등)
+adb logcat -s MPEG4Extractor MatroskaExtractor
+
+# DataSource 로그 (네트워크, 파일)
+adb logcat -s NuCachedSource2 HTTPDataSource
+
+# 샘플 읽기 관련 로그
+adb logcat | grep -iE "sample|track|seek"
+
+# 에러만 필터링
+adb logcat *:E | grep -i extractor
+
+# 성능 관련 로그 (시간 측정)
+adb logcat | grep -iE "took|duration|latency"</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 dumpsys 명령어
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># MediaExtractor 서비스 정보
+adb shell dumpsys media.extractor
+
+# 등록된 Extractor 플러그인 목록
+adb shell dumpsys media.extractor plugins
+
+# 활성화된 Extractor 세션
+adb shell dumpsys media.extractor sessions
+
+# MediaCodecList (디코더 정보)
+adb shell dumpsys media.codec_list
+
+# 전체 미디어 서비스 상태
+adb shell dumpsys media.player</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📈 Systrace 프로파일링
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># Systrace 캡처 (10초, media 카테고리)
+adb shell atrace -z -t 10 gfx audio video media -o /data/local/tmp/trace.html
+adb pull /data/local/tmp/trace.html
+
+# Chrome에서 trace.html 열어서 분석
+# - MediaExtractor::readSampleData 호출 시간
+# - DataSource::readAt I/O 레이턴시
+# - Parser 파싱 오버헤드
+# - Seek 연산 시간
+
+# Perfetto 사용 (Android 10+)
+adb shell perfetto \
+  -c - --txt \
+  -o /data/misc/perfetto-traces/trace \
+  <<EOF
+duration_ms: 10000
+buffers {
+  size_kb: 32768
+}
+data_sources {
+  config {
+    name: "linux.ftrace"
+    ftrace_config {
+      ftrace_events: "sched/sched_switch"
+      ftrace_events: "power/suspend_resume"
+      atrace_categories: "media"
+    }
+  }
+}
+EOF
+
+adb pull /data/misc/perfetto-traces/trace
+# https://ui.perfetto.dev/ 에서 분석</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🐛 트러블슈팅 가이드
+            </h3>
+
+            <div class="highlight-box">
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">증상</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">원인</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">해결 방법</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>setDataSource() 실패</strong></td>
+                            <td style="padding: 10px;">지원하지 않는 컨테이너 포맷</td>
+                            <td style="padding: 10px;">1. 파일 매직 넘버 확인 (hexdump)<br>2. MediaExtractor 지원 포맷 확인<br>3. ExoPlayer로 대체</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>getTrackCount() = 0</strong></td>
+                            <td style="padding: 10px;">손상된 파일 또는 메타데이터 없음</td>
+                            <td style="padding: 10px;">1. 파일 무결성 검사<br>2. FFprobe로 파일 분석<br>3. 다른 인코더로 재생성</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>readSampleData() = -1</strong></td>
+                            <td style="padding: 10px;">selectTrack() 미호출 또는 EOS</td>
+                            <td style="padding: 10px;">1. selectTrack() 호출 확인<br>2. getSampleTime()으로 EOS 확인<br>3. seekTo(0)로 처음부터 재생</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>버퍼 오버플로우</strong></td>
+                            <td style="padding: 10px;">ByteBuffer 크기 부족</td>
+                            <td style="padding: 10px;">1. MediaFormat에서 KEY_MAX_INPUT_SIZE 확인<br>2. 충분한 버퍼 할당 (권장: 1~2MB)<br>3. readSampleData() 반환값 확인</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Seek가 정확하지 않음</strong></td>
+                            <td style="padding: 10px;">키프레임 간격이 큼 (GOP 크기)</td>
+                            <td style="padding: 10px;">1. CLOSEST_SYNC 모드 사용<br>2. getSampleTime()으로 실제 위치 확인<br>3. 필요 시 인코딩 GOP 크기 조정</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>네트워크 스트림 버퍼링</strong></td>
+                            <td style="padding: 10px;">느린 네트워크 또는 서버 응답</td>
+                            <td style="padding: 10px;">1. getCachedDuration() 모니터링<br>2. Prefetch 전략 구현<br>3. 저해상도로 폴백</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>DRM 콘텐츠 재생 실패</strong></td>
+                            <td style="padding: 10px;">MediaCrypto 미설정 또는 라이선스 오류</td>
+                            <td style="padding: 10px;">1. SAMPLE_FLAG_ENCRYPTED 확인<br>2. MediaDrm 세션 상태 검증<br>3. 라이선스 서버 응답 로그 확인</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px;"><strong>메모리 누수</strong></td>
+                            <td style="padding: 10px;">release() 미호출</td>
+                            <td style="padding: 10px;">1. try-finally 블록에서 release()<br>2. LeakCanary로 누수 탐지<br>3. Profiler에서 Native 메모리 확인</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📏 성능 메트릭
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏱️</span>
+                        Sample Read Latency
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>샘플 읽기 시간</strong></p>
+                        <ul>
+                            <li><strong>로컬 파일</strong>: &lt;1ms (SSD)</li>
+                            <li><strong>네트워크</strong>: 10~100ms</li>
+                            <li>Systrace에서 readSampleData 구간 확인</li>
+                            <li>I/O 병목 지점 파악</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        Seek Performance
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>탐색 성능</strong></p>
+                        <ul>
+                            <li><strong>MP4</strong>: &lt;10ms (인덱스 기반)</li>
+                            <li><strong>MKV</strong>: ~50ms (Cluster 탐색)</li>
+                            <li>seekTo() 호출 후 getSampleTime() 확인</li>
+                            <li>키프레임 인덱스 최적화 여부</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💾</span>
+                        Memory Usage
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>메모리 사용량</strong></p>
+                        <ul>
+                            <li><strong>MediaExtractor</strong>: ~1MB</li>
+                            <li><strong>Parser</strong>: ~2~5MB (메타데이터)</li>
+                            <li><strong>Buffer</strong>: 사용자 할당 크기</li>
+                            <li>Profiler에서 Native Heap 모니터링</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Throughput
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>처리량</strong></p>
+                        <ul>
+                            <li><strong>로컬</strong>: 100+ MB/s (SSD)</li>
+                            <li><strong>네트워크</strong>: 대역폭 의존</li>
+                            <li>readSampleData() 호출 빈도 측정</li>
+                            <li>Batch 처리로 최적화</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>💡 디버깅 Best Practices:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>문제 재현 시 logcat과 Systrace를 동시에 캡처하여 전체 그림 파악</li>
+                    <li>FFprobe/MediaInfo로 입력 파일 분석 후 MediaExtractor 동작과 비교</li>
+                    <li>성능 이슈 시 I/O (DataSource), 파싱 (Parser), 버퍼 복사 중 어느 단계가 느린지 분리 측정</li>
+                    <li>ExoPlayer 소스 코드는 MediaExtractor 고급 사용 예시의 보고</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 12: AOSP Source Code Reference -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                AOSP 소스 코드 참조
+            </h2>
+            <p class="section-description">
+                MediaExtractor 구현을 이해하기 위한 AOSP 소스 코드 위치와 핵심 로직을 소개합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📂 주요 소스 파일 위치
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Framework (Java/Kotlin)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Public API</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>frameworks/base/media/java/android/media/
+├── MediaExtractor.java
+├── MediaFormat.java
+├── MediaCodec.java
+└── MediaDrm.java</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Native Core
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>libstagefright</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>frameworks/av/media/libstagefright/
+├── MediaExtractor.cpp
+├── MediaExtractorFactory.cpp
+├── DataSource.cpp
+└── foundation/</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Container Parsers
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Extractor 구현</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>frameworks/av/media/extractors/
+├── mp4/MPEG4Extractor.cpp
+├── mkv/MatroskaExtractor.cpp
+├── wav/WAVExtractor.cpp
+└── mpeg2/MPEG2PSExtractor.cpp</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        Plugin Interface
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Android 10+ Plugin</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>frameworks/av/media/libstagefright/include/
+├── MediaExtractorPluginApi.h
+└── MediaExtractorPluginHelper.h</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                💻 핵심 코드 스니펫
+            </h3>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                1. MediaExtractor.cpp (Framework Native)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// frameworks/av/media/libstagefright/MediaExtractor.cpp
+
+sp&lt;MediaExtractor&gt; MediaExtractor::Create(
+        const sp&lt;DataSource&gt; &source,
+        const char *mime) {
+
+    // MediaExtractorFactory로 적절한 Extractor 선택
+    sp&lt;MediaExtractorFactory&gt; factory = new MediaExtractorFactory();
+    return factory-&gt;CreateFromDataSource(source, mime);
+}
+
+status_t MediaExtractor::getTrackMetaData(
+        sp&lt;MetaData&gt; &meta,
+        size_t index,
+        uint32_t flags) {
+
+    // 트랙별 메타데이터 반환
+    meta = mImpl-&gt;getTrackMetaData(index, flags);
+    return meta != NULL ? OK : UNKNOWN_ERROR;
+}
+
+status_t MediaExtractor::readSampleData(
+        const sp&lt;ABuffer&gt; &buffer,
+        size_t trackIndex,
+        int64_t *sampleTimeUs) {
+
+    // 실제 구현은 각 Parser에 위임
+    return mTracks[trackIndex]-&gt;read(buffer, sampleTimeUs);
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                2. MPEG4Extractor.cpp (MP4 Parser)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// frameworks/av/media/extractors/mp4/MPEG4Extractor.cpp
+
+status_t MPEG4Extractor::parseChunk(off64_t *offset) {
+    uint32_t hdr[2];
+    if (mDataSource-&gt;readAt(*offset, hdr, 8) &lt; 8) {
+        return ERROR_IO;
+    }
+
+    uint64_t chunk_size = ntohl(hdr[0]);
+    uint32_t chunk_type = ntohl(hdr[1]);
+
+    // Box 타입별 처리
+    switch (chunk_type) {
+        case FOURCC('m', 'o', 'o', 'v'):
+            return parseMoov(*offset);  // Movie Box
+        case FOURCC('m', 'd', 'a', 't'):
+            return parseMdat(*offset);  // Media Data
+        case FOURCC('t', 'r', 'a', 'k'):
+            return parseTrak(*offset);  // Track
+        // ...
+    }
+
+    *offset += chunk_size;
+    return OK;
+}
+
+// Sample Table 파싱
+status_t MPEG4Extractor::Track::getSample(
+        off64_t *offset,
+        size_t *size,
+        int64_t *timeUs) {
+
+    // stts (Time-to-Sample)에서 PTS 계산
+    *timeUs = mSampleIterator-&gt;getSampleTime();
+
+    // stsz (Sample Size)에서 크기 가져오기
+    *size = mSampleIterator-&gt;getSampleSize();
+
+    // stco (Chunk Offset)에서 위치 계산
+    *offset = mSampleIterator-&gt;getSampleOffset();
+
+    return OK;
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                3. MatroskaExtractor.cpp (MKV Parser)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// frameworks/av/media/extractors/mkv/MatroskaExtractor.cpp
+
+status_t MatroskaExtractor::readMetaData() {
+    // libwebm으로 EBML 파싱
+    mkvparser::Segment *segment;
+    long long pos = 0;
+
+    long long ret = mkvparser::Segment::CreateInstance(
+        mReader, pos, segment);
+
+    if (ret) {
+        return ERROR_MALFORMED;
+    }
+
+    // Tracks Element 파싱
+    const mkvparser::Tracks *tracks = segment-&gt;GetTracks();
+    for (size_t i = 0; i &lt; tracks-&gt;GetTracksCount(); ++i) {
+        const mkvparser::Track *track = tracks-&gt;GetTrackByIndex(i);
+        addTrack(track);
+    }
+
+    return OK;
+}
+
+status_t MatroskaExtractor::MatroskaSource::readBlock() {
+    const mkvparser::Block *block;
+    int64_t timeUs;
+
+    // Cluster에서 Block 읽기
+    status_t err = mExtractor-&gt;advance();
+    if (err != OK) return err;
+
+    block = mExtractor-&gt;block();
+    timeUs = mExtractor-&gt;blockTimeUs();
+
+    // SimpleBlock 또는 BlockGroup 처리
+    const mkvparser::Block::Frame &frame = block-&gt;GetFrame(0);
+    *buffer = new ABuffer(frame.len);
+    frame.Read(mExtractor-&gt;mReader, buffer-&gt;data());
+
+    return OK;
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔗 AOSP 소스 코드 탐색 링크:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/av/media/libstagefright/" target="_blank" style="color: var(--accent-primary);">libstagefright (Core)</a></li>
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/av/media/extractors/" target="_blank" style="color: var(--accent-primary);">Extractor Plugins</a></li>
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/base/media/java/android/media/MediaExtractor.java" target="_blank" style="color: var(--accent-primary);">MediaExtractor.java (Framework)</a></li>
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/av/media/ndk/" target="_blank" style="color: var(--accent-primary);">Media NDK</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 13: Best Practices -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
                 Best Practices
             </h2>
             <p class="section-description">
@@ -939,6 +2185,139 @@
                     <li>모든 컨테이너 포맷이 지원되는 것은 아님 - 사전 확인 필요</li>
                     <li>DRM 콘텐츠는 MediaDrm과 함께 사용해야 함</li>
                     <li>네트워크 스트림은 버퍼링 고려 필요</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 14: Related Documentation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                관련 상세 문서
+            </h2>
+            <p class="section-description">
+                MediaExtractor와 관련된 다른 상세 문서 페이지로 이동할 수 있습니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        <p>Android 미디어 프레임워크의 전체 아키텍처와 계층 구조를 설명합니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>Framework → Native 계층 상호작용</li>
+                            <li>MediaPlayer, MediaRecorder API</li>
+                            <li>Binder IPC 통신</li>
+                        </ul>
+                        <a href="media-framework-core.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Codec 2.0 & HAL
+                    </h3>
+                    <div class="card-description">
+                        <p>MediaCodec과 Codec 2.0 아키텍처, HAL 인터페이스를 상세히 다룹니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>MediaCodec API 사용법</li>
+                            <li>C2Component 구조</li>
+                            <li>Vendor Codec 구현</li>
+                        </ul>
+                        <a href="codec2.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        Media Playback Pipeline
+                    </h3>
+                    <div class="card-description">
+                        <p>미디어 재생 파이프라인, NuPlayer, 버퍼 관리, A/V 동기화를 설명합니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>NuPlayer 아키텍처</li>
+                            <li>버퍼 관리 및 Zero-Copy</li>
+                            <li>PTS 기반 A/V Sync</li>
+                        </ul>
+                        <a href="media-playback.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>AudioFlinger, AudioPolicyService, HAL을 포함한 오디오 스택을 다룹니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>AudioTrack/AudioRecord API</li>
+                            <li>AudioFlinger 믹싱 파이프라인</li>
+                            <li>오디오 라우팅 정책</li>
+                        </ul>
+                        <a href="audio-framework.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📁</span>
+                        MediaProvider
+                    </h3>
+                    <div class="card-description">
+                        <p>미디어 스토리지 접근, Scoped Storage, FUSE를 설명합니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>MediaStore API</li>
+                            <li>Scoped Storage 메커니즘</li>
+                            <li>FUSE Passthrough</li>
+                        </ul>
+                        <a href="mediaprovider.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Widevine DRM
+                    </h3>
+                    <div class="card-description">
+                        <p>Widevine DRM 아키텍처, 보안 레벨, 라이선스 관리를 다룹니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>L1/L2/L3 보안 레벨</li>
+                            <li>MediaDrm API 사용</li>
+                            <li>Provisioning & 라이선스</li>
+                        </ul>
+                        <a href="widevine.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 40px;">
+                <h3 style="color: var(--accent-primary); font-size: 1.2rem; margin-bottom: 15px;">
+                    📚 추가 학습 리소스
+                </h3>
+                <ul style="padding-left: 20px;">
+                    <li><strong>AOSP 공식 문서</strong>: <a href="https://source.android.com/docs/core/media" target="_blank" style="color: var(--accent-primary);">source.android.com/docs/core/media</a></li>
+                    <li><strong>Android Developer 가이드</strong>: <a href="https://developer.android.com/guide/topics/media" target="_blank" style="color: var(--accent-primary);">developer.android.com/guide/topics/media</a></li>
+                    <li><strong>ExoPlayer 문서</strong>: <a href="https://exoplayer.dev/" target="_blank" style="color: var(--accent-primary);">exoplayer.dev</a></li>
+                    <li><strong>Media3 라이브러리</strong>: <a href="https://developer.android.com/jetpack/androidx/releases/media3" target="_blank" style="color: var(--accent-primary);">androidx.media3</a></li>
                 </ul>
             </div>
         </section>
