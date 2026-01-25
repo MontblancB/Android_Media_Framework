@@ -1621,10 +1621,10 @@ footer {
 
 .toc-sidebar {
     position: fixed;
-    top: 120px;
+    top: 80px;
     left: 20px;
     width: 237.5px;
-    max-height: calc(100vh - 200px);
+    max-height: calc(100vh - 160px);
     overflow-y: auto;
     background: var(--color-surface);
     border: 1px solid rgba(255, 255, 255, 0.1);
