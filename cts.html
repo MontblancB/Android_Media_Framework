@@ -779,44 +779,8 @@
         </footer>
     </div>
 
+    <script src="scripts/mermaid-theme.js"></script>
     <script>
-        mermaid.initialize({
-            startOnLoad: true,
-            theme: 'dark',
-            themeVariables: {
-                primaryColor: '#1a1f35',
-                primaryTextColor: '#e5e7eb',
-                primaryBorderColor: '#ef4444',
-                lineColor: '#f87171',
-                secondaryColor: '#111827',
-                tertiaryColor: '#0a0e1a',
-                background: '#0a0e1a',
-                mainBkg: '#1a1f35',
-                secondBkg: '#111827',
-                border1: '#ef4444',
-                border2: '#f87171',
-                note: '#fca5a5',
-                noteBkgColor: 'rgba(239, 68, 68, 0.1)',
-                noteBorderColor: '#ef4444',
-                fontFamily: 'Noto Sans KR'
-            },
-            flowchart: {
-                curve: 'basis',
-                padding: 20,
-                nodeSpacing: 50,
-                rankSpacing: 50
-            },
-            sequence: {
-                actorMargin: 50,
-                width: 150,
-                height: 65,
-                boxMargin: 10,
-                boxTextMargin: 5,
-                noteMargin: 10,
-                messageMargin: 35
-            }
-        });
-
         const observerOptions = {
             threshold: 0.1,
             rootMargin: '0px 0px -100px 0px'

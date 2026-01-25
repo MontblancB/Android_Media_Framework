@@ -653,68 +653,7 @@ graph LR
 
     </div>
 
-    <script>
-        // Initialize Mermaid with theme awareness
-        function initMermaid() {
-            const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-
-            mermaid.initialize({
-                startOnLoad: true,
-                theme: 'base',
-                themeVariables: isDark ? {
-                    // Dark theme
-                    darkMode: true,
-                    background: '#1a2030',
-                    primaryColor: '#8b5cf6',
-                    secondaryColor: '#ec4899',
-                    tertiaryColor: '#1f2937',
-                    primaryTextColor: '#e8eaed',
-                    secondaryTextColor: '#9aa0a6',
-                    lineColor: '#4b5563',
-                    nodeBorder: '#8b5cf6',
-                    clusterBkg: '#1a2030',
-                    clusterBorder: '#4b5563',
-                    edgeLabelBackground: '#1a2030'
-                } : {
-                    // Light theme
-                    darkMode: false,
-                    background: '#fafaf9',
-                    primaryColor: '#0369a1',
-                    secondaryColor: '#dc2626',
-                    tertiaryColor: '#e7e5e4',
-                    primaryTextColor: '#292524',
-                    secondaryTextColor: '#57534e',
-                    lineColor: '#a8a29e',
-                    nodeBorder: '#0369a1',
-                    clusterBkg: '#f5f5f4',
-                    clusterBorder: '#a8a29e',
-                    edgeLabelBackground: '#fafaf9'
-                }
-            });
-
-            // Re-render existing diagrams
-            if (typeof mermaid !== 'undefined') {
-                mermaid.contentLoaded();
-            }
-        }
-
-        // Initialize on load
-        initMermaid();
-
-        // Re-initialize when theme changes
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.attributeName === 'data-theme') {
-                    initMermaid();
-                }
-            });
-        });
-
-        observer.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ['data-theme']
-        });
-    </script>
+    <script src="scripts/mermaid-theme.js"></script>
     <script src="scripts/theme-toggle.js"></script>
 </body>
 
