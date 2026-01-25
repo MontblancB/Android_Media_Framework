@@ -11,8 +11,228 @@
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles/design-system.css">
 
-        <style>
-        /* Page-specific styles loaded from design-system.css */
+    <style>
+        /* Timeline Styles */
+        .timeline-container-scroll {
+            width: 100%;
+            overflow-x: auto;
+            padding: var(--spacing-lg) 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .timeline-wrapper {
+            display: flex;
+            gap: var(--spacing-xl);
+            min-width: min-content;
+            padding: var(--spacing-md) 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-sm);
+            min-width: 200px;
+            position: relative;
+        }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            right: -100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--color-accent), transparent);
+            z-index: 0;
+        }
+
+        .timeline-item:last-child::after {
+            display: none;
+        }
+
+        .timeline-date {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--color-accent);
+            text-align: center;
+            min-height: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timeline-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--color-accent);
+            box-shadow: 0 0 20px var(--color-accent);
+            position: relative;
+            z-index: 1;
+        }
+
+        .timeline-content-box {
+            background: var(--color-surface);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: var(--spacing-md);
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            transition: all 0.3s ease;
+        }
+
+        .timeline-content-box:hover {
+            background: var(--color-surface-elevated);
+            border-color: var(--color-accent);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .timeline-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .timeline-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+
+        .timeline-list li {
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+            padding-left: var(--spacing-sm);
+            position: relative;
+        }
+
+        .timeline-list li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--color-accent);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--color-accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: auto;
+        }
+
+        /* Card Grid */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-lg);
+        }
+
+        .card {
+            background: var(--color-surface);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: var(--spacing-lg);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            background: var(--color-surface-elevated);
+            border-color: var(--color-accent);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .card h3 {
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .card ul {
+            margin-top: var(--spacing-sm);
+        }
+
+        /* Tags */
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .tag-deprecated {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .tag-version {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .tag-new {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* Light Theme Overrides */
+        [data-theme="light"] .timeline-content-box,
+        [data-theme="light"] .card {
+            border-color: rgba(41, 37, 36, 0.12);
+            box-shadow: 0 2px 8px rgba(41, 37, 36, 0.06);
+        }
+
+        [data-theme="light"] .timeline-content-box:hover,
+        [data-theme="light"] .card:hover {
+            border-color: var(--color-accent);
+            box-shadow: 0 8px 24px rgba(3, 105, 161, 0.2);
+        }
+
+        [data-theme="light"] .timeline-item::after {
+            background: linear-gradient(90deg, var(--color-accent), rgba(3, 105, 161, 0.2));
+        }
+
+        [data-theme="light"] .tag-deprecated {
+            background: rgba(220, 38, 38, 0.1);
+            color: #dc2626;
+            border-color: rgba(220, 38, 38, 0.3);
+        }
+
+        [data-theme="light"] .tag-version {
+            background: rgba(29, 78, 216, 0.1);
+            color: #1d4ed8;
+            border-color: rgba(29, 78, 216, 0.3);
+        }
+
+        [data-theme="light"] .tag-new {
+            background: rgba(4, 120, 87, 0.1);
+            color: #047857;
+            border-color: rgba(4, 120, 87, 0.3);
+        }
     </style>
 </head>
 
@@ -39,10 +259,6 @@
                 Android 미디어 프레임워크는 초기 Stagefright 기반의 모놀리식 구조에서, 모듈화된 Codec2 및 Jetpack 기반의 Media3 라이브러리로 지속적으로 진화해왔습니다.
                 이 타임라인은 주요 아키텍처 변경 사항과 API 도입 시점을 보여줍니다.
             </p>
-
-                <style>
-        /* Page-specific styles loaded from design-system.css */
-    </style>
 
             <div class="timeline-container-scroll">
                 <div class="timeline-wrapper">
@@ -255,24 +471,26 @@
                 </div>
             </div>
 
-            <div class="mermaid">
-                graph LR
-                subgraph Legacy ["Legacy (Pre-Android 10)"]
-                App1[App] --> MediaCodec1[MediaCodec API]
-                MediaCodec1 --> ACodec
-                ACodec --> OMX[OpenMAX IL]
-                OMX --> VendorLib[Vendor Codec Lib]
-                end
+            <div class="mermaid-container">
+                <div class="mermaid">
+graph LR
+    subgraph Legacy ["Legacy (Pre-Android 10)"]
+        App1[App] --> MediaCodec1[MediaCodec API]
+        MediaCodec1 --> ACodec
+        ACodec --> OMX[OpenMAX IL]
+        OMX --> VendorLib[Vendor Codec Lib]
+    end
 
-                subgraph Modern ["Modern (Android 10+)"]
-                App2[App] --> MediaCodec2[MediaCodec API]
-                MediaCodec2 --> CCodec
-                CCodec --> Codec2[Codec2 API]
-                Codec2 --> Codec2Impl[Codec2 Implementation]
-                end
+    subgraph Modern ["Modern (Android 10+)"]
+        App2[App] --> MediaCodec2[MediaCodec API]
+        MediaCodec2 --> CCodec
+        CCodec --> Codec2[Codec2 API]
+        Codec2 --> Codec2Impl[Codec2 Implementation]
+    end
 
-                style Legacy fill:#1f2937,stroke:#4b5563
-                style Modern fill:#1f2937,stroke:#8b5cf6
+    style Legacy fill:#1f2937,stroke:#4b5563
+    style Modern fill:#1f2937,stroke:#8b5cf6
+                </div>
             </div>
         </section>
 
@@ -436,26 +654,65 @@
     </div>
 
     <script>
-        mermaid.initialize({
-            startOnLoad: true,
-            theme: 'base',
-            themeVariables: {
-                darkMode: true,
-                background: '#1a1f35',
-                primaryColor: '#8b5cf6',
-                secondaryColor: '#ec4899',
-                tertiaryColor: '#1f2937',
-                primaryTextColor: '#e5e7eb',
-                secondaryTextColor: '#e5e7eb',
-                lineColor: '#4b5563',
-                // Timeline specific high contrast colors
-                cScale0: '#3b82f6', cScaleLabel0: '#ffffff',
-                cScale1: '#8b5cf6', cScaleLabel1: '#ffffff',
-                cScale2: '#ec4899', cScaleLabel2: '#ffffff',
-                cScale3: '#10b981', cScaleLabel3: '#ffffff',
-                cScale4: '#f59e0b', cScaleLabel4: '#ffffff',
-                cScale5: '#6366f1', cScaleLabel5: '#ffffff'
+        // Initialize Mermaid with theme awareness
+        function initMermaid() {
+            const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'base',
+                themeVariables: isDark ? {
+                    // Dark theme
+                    darkMode: true,
+                    background: '#1a2030',
+                    primaryColor: '#8b5cf6',
+                    secondaryColor: '#ec4899',
+                    tertiaryColor: '#1f2937',
+                    primaryTextColor: '#e8eaed',
+                    secondaryTextColor: '#9aa0a6',
+                    lineColor: '#4b5563',
+                    nodeBorder: '#8b5cf6',
+                    clusterBkg: '#1a2030',
+                    clusterBorder: '#4b5563',
+                    edgeLabelBackground: '#1a2030'
+                } : {
+                    // Light theme
+                    darkMode: false,
+                    background: '#fafaf9',
+                    primaryColor: '#0369a1',
+                    secondaryColor: '#dc2626',
+                    tertiaryColor: '#e7e5e4',
+                    primaryTextColor: '#292524',
+                    secondaryTextColor: '#57534e',
+                    lineColor: '#a8a29e',
+                    nodeBorder: '#0369a1',
+                    clusterBkg: '#f5f5f4',
+                    clusterBorder: '#a8a29e',
+                    edgeLabelBackground: '#fafaf9'
+                }
+            });
+
+            // Re-render existing diagrams
+            if (typeof mermaid !== 'undefined') {
+                mermaid.contentLoaded();
             }
+        }
+
+        // Initialize on load
+        initMermaid();
+
+        // Re-initialize when theme changes
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'data-theme') {
+                    initMermaid();
+                }
+            });
+        });
+
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-theme']
         });
     </script>
     <script src="scripts/theme-toggle.js"></script>
