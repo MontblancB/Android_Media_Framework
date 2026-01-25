@@ -466,6 +466,15 @@ const NODE_ID_MAPPING = {
     'GEARHEAD': 'Android Auto (Gearhead)',
     'GMAPS': 'Google Maps',
     'GASSISTANT': 'Google Assistant',
+    'AOS': 'Android OS Core',
+    'GASSIST': 'Google Assistant',
+    'GMAP': 'Google Maps',
+    'GPLAY': 'Google Play Store',
+    'GSERVICES': 'Google Play Services',
+    'OEM_APPS': 'OEM Apps',
+    'OEM_UI': 'OEM UI',
+    'OTHER': 'Other Google Apps',
+    'THIRD_PARTY': '3rd Party Apps',
 
     // Power Policy (power-policy-suspend.html)
     'VMCU': 'Vehicle MCU',
@@ -5830,6 +5839,238 @@ override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) 
 // 폴더 전체 접근 (Android 5.0+)
 val treeIntent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
 startActivityForResult(treeIntent, TREE_REQUEST_CODE)
+        `.trim()
+    },
+
+    // ========================================
+    // GAS (Google Automotive Services) 노드 (gas.html) - Card 17
+    // ========================================
+
+    'Android OS Core': {
+        title: 'Android OS Core (AOSP)',
+        layer: 'Operating System',
+        description: 'AOSP 기반 Android OS 코어입니다. Linux Kernel과 HAL을 포함합니다.',
+        components: [
+            'Linux Kernel',
+            'Hardware Abstraction Layer (HAL)',
+            'Native Libraries (libc, SQLite)',
+            'Android Runtime (ART)',
+            'Binder IPC'
+        ],
+        doc: 'https://source.android.com/',
+        codeExample: `
+// AOSP Core Architecture
+/*
+[Android OS Core]
+├── Linux Kernel (Device Drivers, Memory Management)
+├── HAL (Audio, Camera, Sensors, Vehicle)
+├── Native Libraries (WebKit, OpenGL, Media Framework)
+└── ART (Android Runtime, Dalvik VM)
+*/
+        `.trim()
+    },
+
+    'Google Assistant': {
+        title: 'Google Assistant (GAS)',
+        layer: 'Google Services',
+        description: 'Google의 AI 음성 비서입니다. 차량에서 음성 명령으로 제어합니다.',
+        components: [
+            'Voice Recognition',
+            'Natural Language Processing',
+            'Context Awareness',
+            'Car Integration',
+            'Hotword Detection ("Hey Google")'
+        ],
+        doc: 'https://developers.google.com/assistant/automotive',
+        codeExample: `
+// Google Assistant Integration (AndroidManifest.xml)
+<intent-filter>
+    <action android:name="android.intent.action.ASSIST" />
+    <category android:name="android.intent.category.DEFAULT" />
+</intent-filter>
+
+// 음성 명령 예시:
+// "Hey Google, play music"
+// "Hey Google, navigate to home"
+// "Hey Google, call Mom"
+        `.trim()
+    },
+
+    'Google Maps': {
+        title: 'Google Maps & Navigation (GAS)',
+        layer: 'Google Services',
+        description: 'Google의 지도 및 내비게이션 서비스입니다.',
+        components: [
+            'Real-time Navigation',
+            'Traffic Information',
+            'Points of Interest',
+            'Turn-by-Turn Directions',
+            'Car-optimized UI'
+        ],
+        doc: 'https://developers.google.com/maps',
+        codeExample: `
+// Google Maps Intent (Navigation)
+val gmmIntentUri = Uri.parse("google.navigation:q=Starbucks")
+val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+mapIntent.setPackage("com.google.android.apps.maps")
+startActivity(mapIntent)
+        `.trim()
+    },
+
+    'Google Play Store': {
+        title: 'Google Play Store (GAS)',
+        layer: 'Google Services',
+        description: '차량용 앱을 다운로드하고 업데이트합니다.',
+        components: [
+            'App Discovery',
+            'App Installation',
+            'Auto Updates',
+            'Car App Filtering',
+            'License Verification'
+        ],
+        doc: 'https://developer.android.com/distribute/google-play',
+        codeExample: `
+// Play Store에서 앱 업데이트 확인
+val appUpdateManager = AppUpdateManagerFactory.create(context)
+val appUpdateInfoTask = appUpdateManager.appUpdateInfo
+
+appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
+    if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
+        // 업데이트 가능
+    }
+}
+        `.trim()
+    },
+
+    'Google Play Services': {
+        title: 'Google Play Services (GAS)',
+        layer: 'Google Services',
+        description: 'Google 앱들의 공통 서비스 레이어입니다. 인증, 위치, 지도 등을 제공합니다.',
+        components: [
+            'Google APIs (Maps, Drive, etc.)',
+            'Location Services',
+            'Google Sign-In',
+            'Firebase Integration',
+            'SafetyNet'
+        ],
+        doc: 'https://developers.google.com/android/guides/overview',
+        codeExample: `
+// Google Play Services 사용 (예: Location)
+val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+    if (location != null) {
+        val latitude = location.latitude
+        val longitude = location.longitude
+    }
+}
+        `.trim()
+    },
+
+    'Other Google Apps': {
+        title: 'Other Google Apps (YouTube Music, Chrome, etc.)',
+        layer: 'Google Services',
+        description: 'GAS에 포함된 기타 Google 앱들입니다.',
+        components: [
+            'YouTube Music',
+            'Chrome Browser',
+            'Google Messages',
+            'Google Calendar',
+            'Google News'
+        ],
+        doc: 'https://www.android.com/intl/en_us/auto/',
+        codeExample: `
+// YouTube Music Intent
+val intent = Intent(Intent.ACTION_VIEW)
+intent.setPackage("com.google.android.apps.youtube.music")
+intent.data = Uri.parse("https://music.youtube.com/")
+startActivity(intent)
+        `.trim()
+    },
+
+    'OEM Apps': {
+        title: 'OEM Apps (Climate, Radio, etc.)',
+        layer: 'OEM Customization',
+        description: 'OEM이 개발한 차량 전용 앱들입니다.',
+        components: [
+            'Climate Control App',
+            'Radio/Tuner App',
+            'Vehicle Settings',
+            'Charging Status (EV)',
+            'OEM Services'
+        ],
+        doc: 'https://source.android.com/docs/automotive/start/app-dev',
+        codeExample: `
+// OEM Climate Control App (예시)
+class ClimateControlActivity : AppCompatActivity() {
+    private val carPropertyManager by lazy {
+        car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+    }
+
+    fun setTemperature(zone: Int, temperature: Float) {
+        carPropertyManager.setFloatProperty(
+            VehiclePropertyIds.HVAC_TEMPERATURE_SET,
+            zone,
+            temperature
+        )
+    }
+}
+        `.trim()
+    },
+
+    'OEM UI': {
+        title: 'OEM Custom UI/UX',
+        layer: 'OEM Customization',
+        description: 'OEM이 커스터마이징한 UI/UX입니다.',
+        components: [
+            'Custom Launcher',
+            'System UI Theme',
+            'Navigation Bar',
+            'Notification Shade',
+            'Brand Identity'
+        ],
+        doc: 'https://source.android.com/docs/automotive/start/customization',
+        codeExample: `
+// OEM SystemUI Customization
+// frameworks/base/packages/SystemUI/
+
+// OEM Custom Launcher
+<application>
+    <activity android:name=".OemLauncher">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent-filter>
+    </activity>
+</application>
+        `.trim()
+    },
+
+    '3rd Party Apps': {
+        title: '3rd Party Apps (Spotify, Waze, etc.)',
+        layer: 'User Applications',
+        description: '사용자가 설치한 서드파티 앱들입니다.',
+        components: [
+            'Spotify (Music)',
+            'Waze (Navigation)',
+            'Audible (Audiobooks)',
+            'Pocket Casts (Podcasts)',
+            'Car-compatible Apps'
+        ],
+        doc: 'https://developer.android.com/training/cars',
+        codeExample: `
+// Car-compatible 3rd Party App (Manifest)
+<application>
+    <meta-data
+        android:name="com.google.android.gms.car.application"
+        android:resource="@xml/automotive_app_desc" />
+</application>
+
+// automotive_app_desc.xml
+<automotiveApp>
+    <uses name="media" />
+    <uses name="navigation" />
+</automotiveApp>
         `.trim()
     },
 
