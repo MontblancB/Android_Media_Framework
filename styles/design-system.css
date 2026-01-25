@@ -1622,7 +1622,7 @@ footer {
 .toc-sidebar {
     position: fixed;
     top: 120px;
-    left: 40px;
+    left: 20px;
     width: 237.5px;
     max-height: calc(100vh - 200px);
     overflow-y: auto;
@@ -1633,12 +1633,13 @@ footer {
     z-index: 100;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     opacity: 0.3;
-    transition: opacity 0.3s ease, transform 0.3s ease, width 0.3s ease;
+    transition: opacity 0.3s ease, transform 0.3s ease, width 0.3s ease, padding 0.3s ease;
 }
 
 /* TOC 접힌 상태 */
 .toc-sidebar.collapsed {
     width: 50px;
+    padding: 12px 8px;
     overflow: hidden;
 }
 
@@ -1646,8 +1647,21 @@ footer {
     display: none;
 }
 
+.toc-sidebar.collapsed .toc-header {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
 .toc-sidebar.collapsed .toc-header span {
     display: none;
+}
+
+.toc-sidebar.collapsed .toc-toggle-btn {
+    position: static;
+    transform: none;
+    margin: 0 auto;
+    display: flex;
 }
 
 /* TOC 호버 시 완전히 표시 */
@@ -1970,6 +1984,10 @@ footer {
     .toc-sidebar {
         width: 200px;
         left: 20px;
+    }
+
+    .toc-sidebar.collapsed {
+        width: 50px;
     }
 }
 
