@@ -195,39 +195,81 @@ body::before {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     background: var(--color-surface);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
     color: var(--color-accent);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-size: 1.2rem;
+    font-size: 1.3rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle glow effect */
+.theme-toggle-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, var(--color-accent), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.theme-toggle-btn:hover::before {
+    opacity: 0.1;
 }
 
 [data-theme="light"] .theme-toggle-btn {
     background: var(--color-surface);
-    border-color: rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .theme-toggle-btn::before {
+    background: radial-gradient(circle at center, var(--color-accent), transparent 70%);
 }
 
 .theme-toggle-btn:hover {
     background: var(--color-surface-elevated);
     border-color: var(--color-accent);
-    transform: rotate(15deg) scale(1.05);
-    box-shadow: 0 4px 20px var(--color-glow);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 24px var(--color-glow);
 }
 
 .theme-toggle-btn:active {
-    transform: rotate(15deg) scale(0.95);
+    transform: translateY(0) scale(0.98);
 }
 
 .theme-icon {
-    transition: transform 0.3s ease;
+    position: relative;
+    z-index: 1;
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    display: inline-block;
 }
 
 .theme-toggle-btn:hover .theme-icon {
-    transform: scale(1.1);
+    transform: rotate(20deg) scale(1.15);
+}
+
+/* Icon animation on theme change */
+@keyframes iconPop {
+    0% {
+        transform: scale(0.8) rotate(-20deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2) rotate(10deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+.theme-icon {
+    animation: iconPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 /* Hide icons based on theme */
@@ -717,6 +759,10 @@ footer {
     background: rgba(255, 255, 255, 1);
     border-color: var(--color-accent);
     box-shadow: 0 4px 20px rgba(2, 132, 199, 0.15);
+}
+
+[data-theme="light"] .theme-toggle-btn:hover {
+    box-shadow: 0 8px 24px rgba(2, 132, 199, 0.2);
 }
 
 [data-theme="light"] .card-panel,
