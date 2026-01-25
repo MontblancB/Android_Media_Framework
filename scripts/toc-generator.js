@@ -92,14 +92,28 @@ function generateTOC() {
     });
 }
 
-// Scroll Spy - 스크롤 시 현재 섹션 하이라이트
+// Scroll Spy - 스크롤 시 현재 섹션 하이라이트 및 TOC 표시
 function setupScrollSpy() {
     let ticking = false;
+    let scrollTimeout = null;
+    const tocSidebar = document.getElementById('tocSidebar');
 
     window.addEventListener('scroll', () => {
         if (!ticking) {
             window.requestAnimationFrame(() => {
                 updateActiveTOCLink();
+
+                // 스크롤 중일 때 TOC 표시
+                if (tocSidebar) {
+                    tocSidebar.classList.add('scrolling');
+
+                    // 스크롤 멈춘 후 2초 뒤 다시 투명하게
+                    clearTimeout(scrollTimeout);
+                    scrollTimeout = setTimeout(() => {
+                        tocSidebar.classList.remove('scrolling');
+                    }, 2000);
+                }
+
                 ticking = false;
             });
             ticking = true;

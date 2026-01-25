@@ -55,7 +55,7 @@ function addCopyButtonsToCodeBlocks() {
         header.className = 'code-header';
         header.innerHTML = `
             <span class="code-lang">${language}</span>
-            <button class="copy-btn" data-code-id="${codeId}" aria-label="코드 복사">
+            <button class="copy-btn" data-code-id="${codeId}" data-tooltip="복사" aria-label="코드 복사">
                 <span class="copy-icon">📋</span>
                 <span class="copy-text">복사</span>
             </button>
@@ -125,22 +125,21 @@ function fallbackCopyToClipboard(text, button) {
 // 성공 피드백
 function showCopySuccess(button) {
     const icon = button.querySelector('.copy-icon');
-    const text = button.querySelector('.copy-text');
 
     // 원래 내용 저장
     const originalIcon = icon.textContent;
-    const originalText = text.textContent;
+    const originalTooltip = button.getAttribute('data-tooltip');
 
     // 성공 표시
     icon.textContent = '✅';
-    text.textContent = '복사됨!';
+    button.setAttribute('data-tooltip', '복사됨!');
     button.classList.add('copied');
     button.disabled = true;
 
     // 2초 후 원래대로
     setTimeout(() => {
         icon.textContent = originalIcon;
-        text.textContent = originalText;
+        button.setAttribute('data-tooltip', originalTooltip);
         button.classList.remove('copied');
         button.disabled = false;
     }, 2000);
@@ -149,18 +148,17 @@ function showCopySuccess(button) {
 // 에러 피드백
 function showCopyError(button) {
     const icon = button.querySelector('.copy-icon');
-    const text = button.querySelector('.copy-text');
 
     const originalIcon = icon.textContent;
-    const originalText = text.textContent;
+    const originalTooltip = button.getAttribute('data-tooltip');
 
     icon.textContent = '❌';
-    text.textContent = '실패';
+    button.setAttribute('data-tooltip', '실패');
     button.classList.add('error');
 
     setTimeout(() => {
         icon.textContent = originalIcon;
-        text.textContent = originalText;
+        button.setAttribute('data-tooltip', originalTooltip);
         button.classList.remove('error');
     }, 2000);
 }
