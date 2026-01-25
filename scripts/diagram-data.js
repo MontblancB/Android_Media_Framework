@@ -200,6 +200,21 @@ const NODE_ID_MAPPING = {
     'CAM2': 'Camera API 2',
     'CAMX': 'CameraX',
     'OPENSL': 'OpenSL ES',
+    'AAUDIO': 'AAudio',
+    'AR': 'AudioRecord',
+    'AT': 'AudioTrack',
+    'OMX': 'OMX IL',
+    'L1': 'Lollipop',
+    'M1': 'Marshmallow',
+    'M2': 'Marshmallow',
+    'F1': 'Features - Lollipop',
+    'F2': 'Features - Marshmallow',
+    'FEAT_AAUDIO': 'Features - AAudio',
+    'FEAT_AT': 'Features - AudioTrack',
+    'FEAT_OPENSL': 'Features - OpenSL ES',
+    'CAM1_FEAT': 'Camera1 Features',
+    'CAM2_FEAT': 'Camera2 Features',
+    'CAMX_FEAT': 'CameraX Features',
 
     // GAS (gas.html)
     'GAS': 'Google Automotive Services',
@@ -2882,6 +2897,155 @@ Process.start(
             'RenderThread'
         ],
         doc: 'https://developer.android.com/guide/topics/ui/how-android-draws'
+    },
+
+    // ========================================
+    // Android 버전별 미디어 진화 (android-version-history.html) - Card 2
+    // ========================================
+
+    'AAudio': {
+        title: 'AAudio',
+        layer: 'Framework API',
+        description: 'Android 8.0+에서 도입된 고성능 저지연 오디오 API입니다.',
+        components: [
+            'Low Latency (<10ms)',
+            'Exclusive Mode',
+            'Shared Mode',
+            'Callback-driven',
+            'MMAP (Memory-Mapped Audio)'
+        ],
+        path: 'frameworks/av/media/libaaudio/',
+        doc: 'https://developer.android.com/ndk/guides/audio/aaudio',
+        codeExample: `
+// C++ AAudio 스트림 생성
+AAudioStreamBuilder* builder;
+AAudio_createStreamBuilder(&builder);
+
+AAudioStreamBuilder_setDirection(builder, AAUDIO_DIRECTION_OUTPUT);
+AAudioStreamBuilder_setPerformanceMode(builder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
+
+AAudioStream* stream;
+AAudioStreamBuilder_openStream(builder, &stream);
+AAudioStream_requestStart(stream);
+        `.trim()
+    },
+
+    'Lollipop': {
+        title: 'Android 5.0 Lollipop',
+        layer: 'Android Version',
+        description: 'ART 런타임 기본 적용, Camera2 API 도입 (2014)',
+        components: [
+            'ART (Dalvik 대체)',
+            'Camera2 API',
+            'AudioAttributes',
+            'Material Design',
+            '64-bit Support'
+        ],
+        doc: 'https://developer.android.com/about/versions/lollipop'
+    },
+
+    'Marshmallow': {
+        title: 'Android 6.0 Marshmallow',
+        layer: 'Android Version',
+        description: '런타임 권한, MIDI API 추가 (2015)',
+        components: [
+            'Runtime Permissions',
+            'MIDI API',
+            'Doze Mode',
+            'App Standby',
+            'Adoptable Storage'
+        ],
+        doc: 'https://developer.android.com/about/versions/marshmallow'
+    },
+
+    'Features - AAudio': {
+        title: 'AAudio 기능',
+        layer: 'Features',
+        description: 'AAudio API의 주요 기능들',
+        components: [
+            'Low Latency',
+            'Exclusive Mode',
+            'MMAP',
+            'Callback-driven'
+        ]
+    },
+
+    'Features - AudioTrack': {
+        title: 'AudioTrack 기능',
+        layer: 'Features',
+        description: 'AudioTrack API의 주요 기능들',
+        components: [
+            'PCM Playback',
+            'Static/Streaming',
+            'Volume Control',
+            'Playback Rate'
+        ]
+    },
+
+    'Features - OpenSL ES': {
+        title: 'OpenSL ES 기능',
+        layer: 'Features',
+        description: 'OpenSL ES API의 주요 기능들',
+        components: [
+            'Native Audio',
+            'Low Latency',
+            'Buffer Queue',
+            'Effects'
+        ]
+    },
+
+    'Camera1 Features': {
+        title: 'Camera API 1 기능',
+        layer: 'Features',
+        description: 'Camera API 1의 주요 기능들 (Deprecated)',
+        components: [
+            'Simple Camera Access',
+            'Preview',
+            'Capture',
+            'Auto-focus',
+            'Deprecated in Android 5.0'
+        ]
+    },
+
+    'Camera2 Features': {
+        title: 'Camera API 2 기능',
+        layer: 'Features',
+        description: 'Camera API 2의 주요 기능들',
+        components: [
+            'Manual Camera Control',
+            'RAW Capture',
+            'Burst Capture',
+            'Camera2 Session',
+            'CaptureRequest'
+        ]
+    },
+
+    'CameraX Features': {
+        title: 'CameraX 기능',
+        layer: 'Features',
+        description: 'CameraX Jetpack 라이브러리의 주요 기능들',
+        components: [
+            'Simplified API',
+            'Use Case-based',
+            'Lifecycle-aware',
+            'Extensions API',
+            'Backward Compatibility'
+        ]
+    },
+
+    'OMX IL': {
+        title: 'OpenMAX IL',
+        layer: 'Codec API',
+        description: 'Android 4.x~9.x에서 사용된 코덱 인터페이스입니다. (Deprecated)',
+        components: [
+            'OMX Component',
+            'Port-based Architecture',
+            'Buffer Management',
+            'State Machine',
+            'Replaced by Codec2'
+        ],
+        path: 'frameworks/av/media/libstagefright/omx/',
+        doc: 'https://source.android.com/docs/core/media/compat'
     }
 };
 
