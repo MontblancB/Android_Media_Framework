@@ -1043,7 +1043,7 @@ footer {
 /* Issue Cards (common-media-issues.html) */
 .issue-card {
     background: var(--color-surface);
-    border-left: 4px solid var(--color-accent);
+    border-left: 4px solid rgba(255, 255, 255, 0.2);
     padding: var(--spacing-lg);
     margin: var(--spacing-md) 0;
     border-radius: 8px;
@@ -1051,7 +1051,7 @@ footer {
 }
 
 .issue-card:hover {
-    box-shadow: 0 4px 20px var(--color-glow);
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
 }
 
 .severity-badge {
@@ -1066,21 +1066,21 @@ footer {
 }
 
 .severity-critical {
-    background: rgba(0, 212, 255, 0.2);
-    color: var(--color-accent);
-    border: 1px solid var(--color-accent);
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--color-text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .severity-high {
-    background: rgba(0, 212, 255, 0.15);
-    color: var(--color-accent);
-    border: 1px solid var(--color-accent);
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--color-text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .severity-medium {
-    background: rgba(0, 212, 255, 0.1);
-    color: var(--color-accent);
-    border: 1px solid var(--color-accent);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .issue-section {
@@ -1089,7 +1089,7 @@ footer {
 
 .issue-label {
     font-weight: 600;
-    color: var(--color-accent);
+    color: var(--color-text-primary);
     margin-bottom: var(--spacing-xs);
 }
 
@@ -1103,8 +1103,8 @@ footer {
 }
 
 .tool-card:hover {
-    border-color: var(--color-accent);
-    box-shadow: 0 4px 20px var(--color-glow);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
 }
 
 .tool-grid {
@@ -1124,21 +1124,21 @@ footer {
 }
 
 .badge-tool {
-    background: rgba(0, 212, 255, 0.2);
-    color: var(--color-accent);
-    border: 1px solid var(--color-accent);
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--color-text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .badge-command {
-    background: rgba(0, 212, 255, 0.15);
-    color: var(--color-accent);
-    border: 1px solid var(--color-accent);
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--color-text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 /* API Cards (api-quick-reference.html) */
 .api-card {
     background: var(--color-surface);
-    border-left: 4px solid var(--color-accent);
+    border-left: 4px solid rgba(255, 255, 255, 0.2);
     padding: var(--spacing-lg);
     margin: var(--spacing-md) 0;
     border-radius: 8px;
@@ -1146,7 +1146,7 @@ footer {
 }
 
 .api-card:hover {
-    box-shadow: 0 4px 20px var(--color-glow);
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
 }
 
 .api-signature {
@@ -1155,8 +1155,8 @@ footer {
     border-radius: 8px;
     font-family: var(--font-mono);
     font-size: 0.9rem;
-    color: var(--color-accent);
-    border: 1px solid rgba(0, 212, 255, 0.2);
+    color: var(--color-text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     margin: var(--spacing-sm) 0;
     overflow-x: auto;
 }
@@ -1167,7 +1167,7 @@ footer {
 
 .param-list dt {
     font-family: var(--font-mono);
-    color: var(--color-accent);
+    color: var(--color-text-primary);
     font-weight: 600;
     margin-top: var(--spacing-sm);
 }
@@ -1202,31 +1202,31 @@ footer {
 }
 
 .code-block-before {
-    background: rgba(0, 212, 255, 0.08);
-    border-left-color: var(--color-accent);
+    background: rgba(255, 255, 255, 0.05);
+    border-left-color: rgba(255, 255, 255, 0.2);
 }
 
 .code-block-after {
-    background: rgba(0, 212, 255, 0.08);
-    border-left-color: var(--color-accent);
+    background: rgba(255, 255, 255, 0.05);
+    border-left-color: rgba(255, 255, 255, 0.2);
 }
 
 .badge-deprecated {
-    background: rgba(0, 212, 255, 0.2);
-    color: var(--color-accent);
-    border: 1px solid var(--color-accent);
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--color-text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .badge-new {
-    background: rgba(0, 212, 255, 0.2);
-    color: var(--color-accent);
-    border: 1px solid var(--color-accent);
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--color-text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .badge-breaking {
-    background: rgba(0, 212, 255, 0.15);
-    color: var(--color-accent);
-    border: 1px solid var(--color-accent);
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--color-text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 /* ========================================
@@ -1257,15 +1257,25 @@ footer {
 [data-theme="light"] .api-card,
 [data-theme="light"] .migration-card {
     background: #ffffff;
-    border-color: rgba(41, 37, 36, 0.15);
     box-shadow: 0 2px 8px rgba(41, 37, 36, 0.08);
 }
 
-[data-theme="light"] .term-card:hover,
-[data-theme="light"] .api-card:hover {
-    box-shadow: 0 4px 16px rgba(41, 37, 36, 0.12);
+[data-theme="light"] .term-card,
+[data-theme="light"] .tool-card,
+[data-theme="light"] .migration-card {
+    border-color: rgba(41, 37, 36, 0.15);
 }
 
+[data-theme="light"] .issue-card {
+    border-left-color: #d6d3d1;
+}
+
+[data-theme="light"] .api-card {
+    border-left-color: #d6d3d1;
+}
+
+[data-theme="light"] .term-card:hover,
+[data-theme="light"] .api-card:hover,
 [data-theme="light"] .issue-card:hover {
     box-shadow: 0 4px 16px rgba(41, 37, 36, 0.12);
 }
@@ -1291,47 +1301,47 @@ footer {
 }
 
 [data-theme="light"] .severity-critical {
-    background: rgba(3, 105, 161, 0.15);
-    color: #0369a1;
-    border-color: #0369a1;
+    background: #e7e5e4;
+    color: var(--color-text-primary);
+    border-color: #d6d3d1;
 }
 
 [data-theme="light"] .severity-high {
-    background: rgba(3, 105, 161, 0.12);
-    color: #0369a1;
-    border-color: #0369a1;
+    background: #f5f5f4;
+    color: var(--color-text-primary);
+    border-color: #e7e5e4;
 }
 
 [data-theme="light"] .severity-medium {
-    background: rgba(3, 105, 161, 0.08);
-    color: #0369a1;
-    border-color: #0369a1;
+    background: #fafaf9;
+    color: var(--color-text-primary);
+    border-color: #f5f5f4;
 }
 
 [data-theme="light"] .issue-label {
-    color: var(--color-accent);
+    color: var(--color-text-primary);
 }
 
 [data-theme="light"] .badge-tool {
-    background: rgba(3, 105, 161, 0.15);
-    color: #0369a1;
-    border-color: #0369a1;
+    background: #e7e5e4;
+    color: var(--color-text-primary);
+    border-color: #d6d3d1;
 }
 
 [data-theme="light"] .badge-command {
-    background: rgba(3, 105, 161, 0.12);
-    color: #0369a1;
-    border-color: #0369a1;
+    background: #f5f5f4;
+    color: var(--color-text-primary);
+    border-color: #e7e5e4;
 }
 
 [data-theme="light"] .api-signature {
     background: var(--color-bg-secondary);
-    color: var(--color-accent);
-    border-color: rgba(3, 105, 161, 0.25);
+    color: var(--color-text-primary);
+    border-color: #e7e5e4;
 }
 
 [data-theme="light"] .param-list dt {
-    color: var(--color-accent);
+    color: var(--color-text-primary);
 }
 
 [data-theme="light"] .param-list dd {
@@ -1339,29 +1349,29 @@ footer {
 }
 
 [data-theme="light"] .code-block-before {
-    background: rgba(3, 105, 161, 0.08);
-    border-left-color: #0369a1;
+    background: #fafaf9;
+    border-left-color: #d6d3d1;
 }
 
 [data-theme="light"] .code-block-after {
-    background: rgba(3, 105, 161, 0.08);
-    border-left-color: #0369a1;
+    background: #fafaf9;
+    border-left-color: #d6d3d1;
 }
 
 [data-theme="light"] .badge-deprecated {
-    background: rgba(3, 105, 161, 0.15);
-    color: #0369a1;
-    border-color: #0369a1;
+    background: #e7e5e4;
+    color: var(--color-text-primary);
+    border-color: #d6d3d1;
 }
 
 [data-theme="light"] .badge-new {
-    background: rgba(3, 105, 161, 0.15);
-    color: #0369a1;
-    border-color: #0369a1;
+    background: #e7e5e4;
+    color: var(--color-text-primary);
+    border-color: #d6d3d1;
 }
 
 [data-theme="light"] .badge-breaking {
-    background: rgba(3, 105, 161, 0.12);
-    color: #0369a1;
-    border-color: #0369a1;
+    background: #f5f5f4;
+    color: var(--color-text-primary);
+    border-color: #e7e5e4;
 }
