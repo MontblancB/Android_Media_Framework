@@ -476,6 +476,24 @@ const NODE_ID_MAPPING = {
     'OTHER': 'Other Google Apps',
     'THIRD_PARTY': '3rd Party Apps',
 
+    // Media App Layer (media-app-layer.html)
+    'APP_UI': 'App UI',
+    'AUDIOHAL': 'Audio HAL',
+    'AUDIOMANAGER': 'AudioManager',
+    'AUDIORECORD': 'AudioRecord',
+    'AUDIOTRACK': 'AudioTrack',
+    'CAMERAHAL': 'Camera HAL',
+    'LOAD': 'LoadControl',
+    'LOCKSCREEN': 'Lock Screen',
+    'MCONTROLLER': 'MediaController',
+    'MEDIAPLAYER': 'MediaPlayer',
+    'MEDIASERVICE': 'MediaService',
+    'MS': 'MediaSession',
+    'MSESSION': 'MediaSession',
+    'RENDERER': 'Renderer',
+    'TRACK': 'Track',
+    'UI': 'User Interface',
+
     // Power Policy (power-policy-suspend.html)
     'VMCU': 'Vehicle MCU',
     'POWER_POLICY': 'Power Policy',
