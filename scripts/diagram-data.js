@@ -153,7 +153,71 @@ const NODE_ID_MAPPING = {
     'WEAR': 'Wear OS',
     'ASSISTANT': 'Google Assistant',
     'BUTTON': 'Media Button',
-    'EXTERNAL': 'External Device'
+    'EXTERNAL': 'External Device',
+
+    // AAOS (aaos.html)
+    'VHAL': 'Vehicle HAL',
+    'CAR_SERVICE': 'Car Service',
+    'CAR_API': 'Car API',
+    'CAR_SVC': 'Car Service',
+    'ECU': 'Electronic Control Unit',
+    'CAN': 'CAN Bus',
+    'CAR_AUDIO': 'Car Audio Service',
+    'CAR_CONTROLS': 'Car Controls',
+    'CAR_DISPLAY': 'Car Display',
+    'AAOS_OS': 'AAOS Operating System',
+    'AA_APP': 'Android Auto App',
+    'VHAL_IF': 'VHAL Interface',
+    'CPM': 'Car Property Manager',
+    'PROPS': 'Vehicle Properties',
+
+    // Media Playback (media-playback.html)
+    'PLAYER_API': 'Player API',
+    'V_DEC': 'Video Decoder',
+    'A_DEC': 'Audio Decoder',
+    'V_RENDER': 'Video Renderer',
+    'A_RENDER': 'Audio Renderer',
+    'DEMUX': 'Demuxer',
+    'DECRYPT': 'Decryptor',
+
+    // MediaProvider (mediaprovider.html)
+    'MP': 'MediaProvider',
+    'MS_API': 'MediaStore API',
+    'SCANNER': 'Media Scanner',
+    'DB': 'Media Database',
+    'CR': 'ContentResolver',
+    'GALLERY': 'Gallery App',
+    'CAMERA': 'Camera App',
+    'MUSIC': 'Music App',
+
+    // MediaExtractor (media-extractor.html)
+    'EXTRACTOR': 'MediaExtractor',
+    'PARSER': 'Container Parser',
+    'SOURCE': 'Data Source',
+
+    // Android Version History (android-version-history.html)
+    'CAM1': 'Camera API 1',
+    'CAM2': 'Camera API 2',
+    'CAMX': 'CameraX',
+    'OPENSL': 'OpenSL ES',
+
+    // GAS (gas.html)
+    'GAS': 'Google Automotive Services',
+    'GEARHEAD': 'Android Auto (Gearhead)',
+    'GMAPS': 'Google Maps',
+    'GASSISTANT': 'Google Assistant',
+
+    // Power Policy (power-policy-suspend.html)
+    'VMCU': 'Vehicle MCU',
+    'POWER_POLICY': 'Power Policy',
+    'SUSPEND': 'Suspend Manager',
+
+    // CTS/CDD (cts.html, cdd.html)
+    'CTS': 'Compatibility Test Suite',
+    'VTS': 'Vendor Test Suite',
+    'GTS': 'GMS Test Suite',
+    'CDD': 'Compatibility Definition Document',
+    'CDD_MEDIA': 'CDD Media Requirements'
 };
 
 const DIAGRAM_NODE_DATA = {
@@ -1679,6 +1743,554 @@ session.isActive = true
             'Content Deep Links'
         ],
         doc: 'https://developers.google.com/assistant/app/media'
+    },
+
+    // ========================================
+    // AAOS 노드 (aaos.html) - Card 3
+    // ========================================
+
+    'Vehicle HAL': {
+        title: 'Vehicle HAL (VHAL)',
+        layer: 'HAL',
+        description: '차량의 하드웨어를 추상화하는 HAL입니다. ECU와 Android 간의 인터페이스 역할을 합니다.',
+        components: [
+            'Vehicle Properties (속도, RPM, 기어 등)',
+            'CAN Bus Communication',
+            'Property Get/Set/Subscribe',
+            'Area 기반 Property (Zone별)',
+            'Property Change Event'
+        ],
+        path: 'hardware/interfaces/automotive/vehicle/',
+        doc: 'https://source.android.com/docs/automotive/vhal',
+        codeExample: `
+// Vehicle Property 조회
+val carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+
+// 차량 속도 읽기
+val speed = carPropertyManager.getFloatProperty(
+    VehiclePropertyIds.PERF_VEHICLE_SPEED,
+    VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL
+)
+
+// Property 변경 리스너
+carPropertyManager.registerCallback(callback,
+    VehiclePropertyIds.PERF_VEHICLE_SPEED,
+    CarPropertyManager.SENSOR_RATE_NORMAL)
+        `.trim()
+    },
+
+    'Car Service': {
+        title: 'Car Service',
+        layer: 'Framework',
+        description: 'AAOS의 핵심 시스템 서비스입니다. 차량 특화 기능을 제공합니다.',
+        components: [
+            'CarAudioService - 오디오 관리',
+            'CarPowerManagementService - 전원 관리',
+            'CarUserService - 사용자 전환',
+            'CarInputService - 입력 이벤트',
+            'CarPropertyService - Vehicle Property',
+            'CarDrivingStateService - 주행 상태'
+        ],
+        path: 'packages/services/Car/service/',
+        doc: 'https://source.android.com/docs/automotive/start/car-service',
+        codeExample: `
+// Car API 초기화
+val car = Car.createCar(context)
+
+// Car Service 접근
+val carAudioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+val carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+        `.trim()
+    },
+
+    'Car API': {
+        title: 'Car API',
+        layer: 'Framework API',
+        description: '앱 개발자가 사용하는 차량용 Android API입니다.',
+        components: [
+            'CarAudioManager',
+            'CarPropertyManager',
+            'CarAppFocusManager',
+            'CarNavigationManager',
+            'CarSensorManager'
+        ],
+        path: 'packages/services/Car/car-lib/',
+        doc: 'https://developer.android.com/reference/android/car/package-summary',
+        codeExample: `
+// build.gradle
+dependencies {
+    implementation 'androidx.car.app:app:1.3.0'
+}
+
+// Car API 사용
+class MyCarActivity : Activity() {
+    private lateinit var car: Car
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        car = Car.createCar(this)
+    }
+}
+        `.trim()
+    },
+
+    'Electronic Control Unit': {
+        title: 'ECU (Electronic Control Unit)',
+        layer: 'Hardware',
+        description: '차량의 전자 제어 장치입니다. 엔진, 변속기, 브레이크 등을 제어합니다.',
+        components: [
+            'Engine Control Module (ECM)',
+            'Transmission Control Unit (TCU)',
+            'Body Control Module (BCM)',
+            'CAN Bus Protocol',
+            'LIN Bus Protocol'
+        ],
+        doc: 'https://source.android.com/docs/automotive/vhal'
+    },
+
+    'CAN Bus': {
+        title: 'CAN Bus',
+        layer: 'Hardware',
+        description: 'Controller Area Network. 차량 내 ECU 간 통신을 위한 네트워크 버스입니다.',
+        components: [
+            'CAN High/Low 신호',
+            'Message ID 기반 우선순위',
+            'CAN 2.0A/B 프로토콜',
+            '최대 1Mbps 전송 속도',
+            'Multi-master 통신'
+        ],
+        doc: 'https://en.wikipedia.org/wiki/CAN_bus'
+    },
+
+    'AAOS Operating System': {
+        title: 'Android Automotive OS',
+        layer: 'OS',
+        description: '차량 인포테인먼트 시스템을 위한 Android OS입니다.',
+        components: [
+            'AOSP Base + Car Extensions',
+            'Multi-user Support',
+            'Boot Animation',
+            'System UI (Car Launcher)',
+            'Google Automotive Services (선택사항)'
+        ],
+        path: 'platform/packages/services/Car/',
+        doc: 'https://source.android.com/docs/automotive'
+    },
+
+    'Android Auto App': {
+        title: 'Android Auto Projection',
+        layer: 'Application',
+        description: '스마트폰의 Android Auto 앱을 차량 디스플레이에 투사합니다.',
+        components: [
+            'Phone Projection',
+            'Media Browsing',
+            'Navigation',
+            'Voice Control',
+            'Messaging (제한적)'
+        ],
+        doc: 'https://www.android.com/auto/'
+    },
+
+    'Car Property Manager': {
+        title: 'CarPropertyManager',
+        layer: 'Framework',
+        description: 'Vehicle Property를 조회하고 변경하는 매니저입니다.',
+        components: [
+            'Property Get/Set',
+            'Subscribe to Changes',
+            'Area-based Access',
+            'Permission Check'
+        ],
+        path: 'packages/services/Car/car-lib/src/android/car/hardware/property/',
+        doc: 'https://developer.android.com/reference/android/car/hardware/property/CarPropertyManager'
+    },
+
+    'Vehicle Properties': {
+        title: 'Vehicle Properties',
+        layer: 'Data',
+        description: '차량의 상태와 설정을 나타내는 속성들입니다.',
+        components: [
+            'PERF_VEHICLE_SPEED - 속도',
+            'ENGINE_RPM - 엔진 RPM',
+            'GEAR_SELECTION - 기어',
+            'NIGHT_MODE - 야간 모드',
+            'HVAC_TEMPERATURE - 온도',
+            '400+ Properties 정의'
+        ],
+        path: 'hardware/interfaces/automotive/vehicle/aidl/',
+        doc: 'https://source.android.com/docs/automotive/vhal/property-configuration'
+    },
+
+    // ========================================
+    // Media Playback 노드 (media-playback.html) - Card 7
+    // ========================================
+
+    'Player API': {
+        title: 'Media Player API',
+        layer: 'Framework API',
+        description: '미디어 재생을 위한 상위 레벨 API입니다.',
+        components: [
+            'MediaPlayer',
+            'ExoPlayer',
+            'Media3 Player',
+            'MediaSession Integration'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media/media3'
+    },
+
+    'Video Decoder': {
+        title: 'Video Decoder',
+        layer: 'Codec',
+        description: '압축된 비디오를 디코딩합니다.',
+        components: [
+            'H.264/AVC Decoder',
+            'H.265/HEVC Decoder',
+            'VP9 Decoder',
+            'AV1 Decoder',
+            'Hardware/Software Decoder'
+        ],
+        path: 'frameworks/av/media/codec2/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'Audio Decoder': {
+        title: 'Audio Decoder',
+        layer: 'Codec',
+        description: '압축된 오디오를 디코딩합니다.',
+        components: [
+            'AAC Decoder',
+            'MP3 Decoder',
+            'Opus Decoder',
+            'Vorbis Decoder',
+            'PCM Output'
+        ],
+        path: 'frameworks/av/media/codec2/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'Video Renderer': {
+        title: 'Video Renderer',
+        layer: 'Renderer',
+        description: '디코딩된 비디오 프레임을 화면에 렌더링합니다.',
+        components: [
+            'Surface Rendering',
+            'SurfaceView',
+            'TextureView',
+            'MediaCodec Output',
+            'A/V Sync'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media/media3/exoplayer'
+    },
+
+    'Audio Renderer': {
+        title: 'Audio Renderer',
+        layer: 'Renderer',
+        description: '디코딩된 오디오를 출력합니다.',
+        components: [
+            'AudioTrack Output',
+            'AAudio Output',
+            'Resampling',
+            'A/V Sync',
+            'Volume Control'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media/media3/exoplayer'
+    },
+
+    'Demuxer': {
+        title: 'Demuxer',
+        layer: 'Parser',
+        description: '컨테이너에서 오디오/비디오 트랙을 분리합니다.',
+        components: [
+            'MP4 Demuxer',
+            'MKV Demuxer',
+            'WebM Demuxer',
+            'TS Demuxer',
+            'Track Selection'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'Decryptor': {
+        title: 'Content Decryptor',
+        layer: 'Security',
+        description: 'DRM으로 보호된 콘텐츠를 복호화합니다.',
+        components: [
+            'MediaDrm Integration',
+            'Key Management',
+            'Sample Decryption',
+            'Widevine/PlayReady Support'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media/media3/getting-started/migration-guide#drm_and_decryption'
+    },
+
+    // ========================================
+    // MediaProvider 노드 (mediaprovider.html) - Card 10
+    // ========================================
+
+    'MediaProvider': {
+        title: 'MediaProvider',
+        layer: 'Content Provider',
+        description: '미디어 파일의 메타데이터를 관리하는 Content Provider입니다.',
+        components: [
+            'Media Database (SQLite)',
+            'File Scanning',
+            'Thumbnail Generation',
+            'MediaStore API',
+            'Storage Access Framework'
+        ],
+        path: 'packages/providers/MediaProvider/',
+        doc: 'https://source.android.com/docs/core/storage/mediaprovider',
+        codeExample: `
+// MediaStore 쿼리
+val projection = arrayOf(
+    MediaStore.Audio.Media._ID,
+    MediaStore.Audio.Media.DISPLAY_NAME,
+    MediaStore.Audio.Media.DURATION
+)
+
+val cursor = contentResolver.query(
+    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+    projection,
+    null,
+    null,
+    "${MediaStore.Audio.Media.DISPLAY_NAME} ASC"
+)
+        `.trim()
+    },
+
+    'MediaStore API': {
+        title: 'MediaStore',
+        layer: 'Framework API',
+        description: '미디어 파일에 접근하는 Android API입니다.',
+        components: [
+            'MediaStore.Images',
+            'MediaStore.Audio',
+            'MediaStore.Video',
+            'MediaStore.Files',
+            'Scoped Storage (Android 10+)'
+        ],
+        path: 'frameworks/base/core/java/android/provider/MediaStore.java',
+        doc: 'https://developer.android.com/reference/android/provider/MediaStore'
+    },
+
+    'Media Scanner': {
+        title: 'MediaScanner',
+        layer: 'Service',
+        description: '파일 시스템을 스캔하여 미디어 파일을 찾고 데이터베이스에 추가합니다.',
+        components: [
+            'File Discovery',
+            'Metadata Extraction',
+            'Database Update',
+            'Thumbnail Generation',
+            'Broadcast on Complete'
+        ],
+        path: 'packages/providers/MediaProvider/src/com/android/providers/media/',
+        doc: 'https://source.android.com/docs/core/storage/mediaprovider'
+    },
+
+    'Media Database': {
+        title: 'Media Database',
+        layer: 'Storage',
+        description: '미디어 파일의 메타데이터를 저장하는 SQLite 데이터베이스입니다.',
+        components: [
+            'files 테이블 (모든 파일)',
+            'audio_meta 테이블 (오디오)',
+            'video 테이블 (비디오)',
+            'images 테이블 (이미지)',
+            'Indexed Columns (빠른 검색)'
+        ],
+        path: 'packages/providers/MediaProvider/src/com/android/providers/media/MediaProvider.java',
+        doc: 'https://source.android.com/docs/core/storage/mediaprovider'
+    },
+
+    'ContentResolver': {
+        title: 'ContentResolver',
+        layer: 'Framework',
+        description: 'Content Provider에 접근하는 클라이언트 API입니다.',
+        components: [
+            'query() - 데이터 조회',
+            'insert() - 데이터 삽입',
+            'update() - 데이터 수정',
+            'delete() - 데이터 삭제',
+            'registerContentObserver() - 변경 감지'
+        ],
+        path: 'frameworks/base/core/java/android/content/ContentResolver.java',
+        doc: 'https://developer.android.com/reference/android/content/ContentResolver'
+    },
+
+    // ========================================
+    // Camera API 노드 (android-version-history.html) - Card 2
+    // ========================================
+
+    'Camera API 1': {
+        title: 'Camera API 1 (Deprecated)',
+        layer: 'Framework API',
+        description: 'Android 초기 카메라 API입니다. (Android 5.0에서 deprecated)',
+        components: [
+            'Camera.open()',
+            'Camera.Parameters',
+            'Preview Callback',
+            'Auto Focus',
+            'Simple API'
+        ],
+        path: 'frameworks/base/core/java/android/hardware/Camera.java',
+        doc: 'https://developer.android.com/reference/android/hardware/Camera'
+    },
+
+    'Camera API 2': {
+        title: 'Camera2 API',
+        layer: 'Framework API',
+        description: 'Android 5.0에서 도입된 고급 카메라 API입니다.',
+        components: [
+            'CameraManager',
+            'CameraDevice',
+            'CaptureRequest',
+            'CaptureResult',
+            'Manual Control (ISO, 노출 등)',
+            'RAW 촬영 지원'
+        ],
+        path: 'frameworks/base/core/java/android/hardware/camera2/',
+        doc: 'https://developer.android.com/training/camera2',
+        codeExample: `
+val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+val cameraId = cameraManager.cameraIdList[0]
+
+cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
+    override fun onOpened(camera: CameraDevice) {
+        // 카메라 사용 가능
+    }
+    override fun onDisconnected(camera: CameraDevice) {}
+    override fun onError(camera: CameraDevice, error: Int) {}
+}, handler)
+        `.trim()
+    },
+
+    'CameraX': {
+        title: 'CameraX',
+        layer: 'Jetpack Library',
+        description: 'Camera2의 복잡성을 감춘 고수준 Jetpack 라이브러리입니다.',
+        components: [
+            'Preview - 미리보기',
+            'ImageCapture - 사진 촬영',
+            'ImageAnalysis - 이미지 분석',
+            'VideoCapture - 동영상 촬영',
+            'Lifecycle-aware',
+            'Device 호환성 자동 처리'
+        ],
+        doc: 'https://developer.android.com/training/camerax',
+        codeExample: `
+val preview = Preview.Builder().build()
+val imageCapture = ImageCapture.Builder().build()
+
+val cameraProvider = ProcessCameraProvider.getInstance(context).get()
+cameraProvider.bindToLifecycle(
+    lifecycleOwner,
+    CameraSelector.DEFAULT_BACK_CAMERA,
+    preview,
+    imageCapture
+)
+        `.trim()
+    },
+
+    'OpenSL ES': {
+        title: 'OpenSL ES',
+        layer: 'NDK Audio API',
+        description: 'Android NDK의 오디오 API입니다. C/C++에서 저수준 오디오 제어가 가능합니다.',
+        components: [
+            'Audio Playback',
+            'Audio Recording',
+            'Buffer Queue',
+            'Effects',
+            'Low Latency (Fast Track)'
+        ],
+        path: 'frameworks/wilhelm/',
+        doc: 'https://developer.android.com/ndk/guides/audio/opensl',
+        codeExample: `
+// C++ OpenSL ES 오디오 재생
+SLObjectItf engineObject;
+slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);
+(*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
+
+SLEngineItf engine;
+(*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engine);
+        `.trim()
+    },
+
+    // ========================================
+    // CTS/CDD 노드 (cts.html, cdd.html) - Card 20
+    // ========================================
+
+    'Compatibility Test Suite': {
+        title: 'CTS (Compatibility Test Suite)',
+        layer: 'Testing',
+        description: 'Android 호환성을 검증하는 자동화 테스트 스위트입니다.',
+        components: [
+            'API Tests',
+            'Media Tests',
+            'Audio Tests',
+            'Camera Tests',
+            'Performance Tests',
+            '10,000+ Test Cases'
+        ],
+        doc: 'https://source.android.com/docs/compatibility/cts',
+        codeExample: `
+# CTS 실행
+./cts-tradefed run cts
+
+# 특정 모듈만 실행
+./cts-tradefed run cts -m CtsMediaTestCases
+
+# 실패한 테스트 재실행
+./cts-tradefed run retry --retry <session_id>
+        `.trim()
+    },
+
+    'Vendor Test Suite': {
+        title: 'VTS (Vendor Test Suite)',
+        layer: 'Testing',
+        description: 'HAL 구현을 검증하는 테스트 스위트입니다.',
+        components: [
+            'HAL Interface Tests',
+            'Kernel Tests',
+            'Performance Tests',
+            'Security Tests'
+        ],
+        doc: 'https://source.android.com/docs/compatibility/vts'
+    },
+
+    'GMS Test Suite': {
+        title: 'GTS (GMS Test Suite)',
+        layer: 'Testing',
+        description: 'Google Mobile Services 호환성을 테스트합니다.',
+        components: [
+            'Google Play Services Tests',
+            'Google Apps Tests',
+            'GMS Core Tests'
+        ],
+        doc: 'https://source.android.com/docs/compatibility'
+    },
+
+    'Compatibility Definition Document': {
+        title: 'CDD (Compatibility Definition Document)',
+        layer: 'Policy',
+        description: 'Android 호환 기기가 충족해야 하는 요구사항을 정의합니다.',
+        components: [
+            'Hardware Requirements',
+            'Software Requirements',
+            'Performance Requirements',
+            'Security Requirements',
+            'Media Codec Requirements'
+        ],
+        doc: 'https://source.android.com/docs/compatibility/cdd',
+        codeExample: `
+# CDD 주요 요구사항 예시
+
+[7.5/H-1-1] 최소 1개의 H.264 디코더 지원 필수
+[7.5/H-1-2] AAC 디코더 지원 필수
+[5.1/C-1-1] 최소 44.1kHz 샘플 레이트 지원
+[5.4/H-1-1] 오디오 지연시간 < 100ms (Pro Audio)
+        `.trim()
     }
 };
 
