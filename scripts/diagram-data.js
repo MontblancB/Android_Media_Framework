@@ -259,6 +259,10 @@ const NODE_ID_MAPPING = {
     'ASSISTANT': 'Google Assistant',
     'BUTTON': 'Media Button',
     'EXTERNAL': 'External Device',
+    'AUTO_SYS': 'Android Auto System',
+    'AUTO_UI': 'Android Auto UI',
+    'WEAR_SYS': 'Wear OS System',
+    'WEAR_UI': 'Wear OS UI',
 
     // AAOS (aaos.html)
     'VHAL': 'Vehicle HAL',
@@ -3436,6 +3440,125 @@ httpDataSource.open(dataSpec)
 
 val buffer = ByteArray(1024 * 1024)
 var bytesRead = httpDataSource.read(buffer, 0, buffer.size)
+        `.trim()
+    },
+
+    // ========================================
+    // MediaSession 노드 (mediasession.html)
+    // ========================================
+
+    'Android Auto System': {
+        title: 'Android Auto System Service',
+        layer: 'System',
+        description: 'Android Auto의 시스템 서비스로, MediaSession을 관리합니다.',
+        components: [
+            'Session Discovery',
+            'Priority Management',
+            'Projection Service',
+            'Display Integration'
+        ],
+        path: 'packages/apps/Car/',
+        doc: 'https://developer.android.com/training/cars/media'
+    },
+
+    'Android Auto UI': {
+        title: 'Android Auto UI',
+        layer: 'Application',
+        description: 'Android Auto의 미디어 UI로, MediaSession 정보를 표시합니다.',
+        components: [
+            'Media Browser',
+            'Playback Controls',
+            'Queue Display',
+            'Album Art',
+            'Voice Commands'
+        ],
+        doc: 'https://developer.android.com/training/cars/media',
+        codeExample: `
+// Android Auto MediaBrowserService 구현
+class MyMusicService : MediaBrowserServiceCompat() {
+
+    override fun onGetRoot(
+        clientPackageName: String,
+        clientUid: Int,
+        rootHints: Bundle?
+    ): BrowserRoot? {
+
+        // Android Auto 클라이언트 인증
+        if (clientPackageName == "com.google.android.projection.gearhead") {
+            return BrowserRoot(MEDIA_ROOT_ID, null)
+        }
+        return null
+    }
+
+    override fun onLoadChildren(
+        parentId: String,
+        result: Result<MutableList<MediaBrowserCompat.MediaItem>>
+    ) {
+        // 미디어 아이템 목록 반환
+        result.sendResult(mediaItems)
+    }
+}
+        `.trim()
+    },
+
+    'Wear OS System': {
+        title: 'Wear OS System Service',
+        layer: 'System',
+        description: 'Wear OS의 시스템 서비스로, MediaSession을 관리합니다.',
+        components: [
+            'Session Discovery',
+            'Notification Sync',
+            'Companion App Link',
+            'Bluetooth Control'
+        ],
+        path: 'frameworks/base/services/core/',
+        doc: 'https://developer.android.com/training/wearables/apps/media'
+    },
+
+    'Wear OS UI': {
+        title: 'Wear OS UI',
+        layer: 'Application',
+        description: 'Wear OS의 미디어 UI로, MediaSession 정보를 표시합니다.',
+        components: [
+            'Media Controls',
+            'Notification Card',
+            'Volume Control',
+            'Complication (Watch Face)'
+        ],
+        doc: 'https://developer.android.com/training/wearables/apps/media',
+        codeExample: `
+// Wear OS MediaSession 컨트롤
+class WearMediaActivity : ComponentActivity() {
+    private lateinit var mediaController: MediaControllerCompat
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // MediaSession 연결
+        val mediaBrowser = MediaBrowserCompat(
+            this,
+            ComponentName(this, MyMusicService::class.java),
+            object : MediaBrowserCompat.ConnectionCallback() {
+                override fun onConnected() {
+                    val sessionToken = mediaBrowser.sessionToken
+                    mediaController = MediaControllerCompat(
+                        this@WearMediaActivity, sessionToken
+                    )
+
+                    MediaControllerCompat.setMediaController(
+                        this@WearMediaActivity, mediaController
+                    )
+                }
+            },
+            null
+        )
+        mediaBrowser.connect()
+
+        setContent {
+            MediaControlScreen(mediaController)
+        }
+    }
+}
         `.trim()
     },
 
