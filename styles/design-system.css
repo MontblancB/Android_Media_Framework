@@ -180,16 +180,6 @@ body::before {
     box-shadow: 0 4px 20px rgba(0, 212, 255, 0.2);
 }
 
-.nav-button::before {
-    content: '←';
-    font-size: 1.2rem;
-    transition: transform 0.3s ease;
-}
-
-.nav-button:hover::before {
-    transform: translateX(-3px);
-}
-
 /* Theme Toggle Button */
 .theme-toggle {
     display: inline-flex;
