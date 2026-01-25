@@ -24,11 +24,11 @@
 :root,
 [data-theme="dark"] {
     /* Base Colors */
-    --color-bg-primary: #0a0e1a;
-    --color-bg-secondary: #0f1419;
-    --color-bg-tertiary: #161b26;
-    --color-surface: #1a2030;
-    --color-surface-elevated: #212838;
+    --color-bg-primary: #1a1d2e;
+    --color-bg-secondary: #1f2333;
+    --color-bg-tertiary: #252936;
+    --color-surface: #2a2f42;
+    --color-surface-elevated: #323749;
 
     /* Text Colors */
     --color-text-primary: #e8eaed;
@@ -42,6 +42,8 @@
     --color-drm: #26de81;
     --color-car: #a55eea;
     --color-test: #fc5c65;
+    --color-reference: #ffd93d;
+    --color-dev-tools: #45aaf2;
 
     /* Accents */
     --color-accent: #00d4ff;
@@ -75,6 +77,8 @@
     --color-drm: #047857;
     --color-car: #6d28d9;
     --color-test: #be123c;
+    --color-reference: #ca8a04;
+    --color-dev-tools: #0369a1;
 
     /* Accents - Stronger blue for clear differentiation */
     --color-accent: #0369a1;
