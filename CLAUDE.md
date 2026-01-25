@@ -89,6 +89,22 @@ Android_Media_Framework/
 - **Vercel**: 정적 사이트 호스팅
 - **Git**: 버전 관리
 
+## 🎨 UI/UX 디자인 가이드라인
+
+**UI/UX 개선 작업 시 반드시 다음 리소스를 참조하세요:**
+
+- **UI/UX Pro Max Skill**: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill
+  - 67개 디자인 스타일, 96개 컬러 팔레트, 56개 폰트 페어링
+  - 다크 테마 최적화 및 반응형 디자인 패턴
+  - Glassmorphism, Neumorphism, Brutalism 등 모던 스타일
+  - 접근성 및 사용성 모범 사례
+
+**적용 원칙**:
+- UI/UX 개선, 디자인 시스템 변경, 새 페이지 추가 시 위 가이드라인 준수
+- 기존 다크 테마와 일관성 유지
+- 모바일 반응형 우선 (최소 320px 너비)
+- 접근성 표준 준수 (WCAG 2.1)
+
 ## 📊 주요 페이지 분석
 
 ### index.html (메인 랜딩 페이지)
