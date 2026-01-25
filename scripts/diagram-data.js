@@ -217,7 +217,48 @@ const NODE_ID_MAPPING = {
     'VTS': 'Vendor Test Suite',
     'GTS': 'GMS Test Suite',
     'CDD': 'Compatibility Definition Document',
-    'CDD_MEDIA': 'CDD Media Requirements'
+    'CDD_MEDIA': 'CDD Media Requirements',
+
+    // AOSP 아키텍처 (aosp.html)
+    'SERVICES': 'System Services',
+    'APP_LAYER': 'Application Layer',
+    'HAL_LAYER': 'HAL Layer',
+    'SURFACE_FLINGER': 'SurfaceFlinger',
+    'AUDIO_FLINGER': 'AudioFlinger',
+    'BINDER': 'Binder IPC',
+    'PROXY': 'Proxy',
+    'STUB': 'Stub',
+    'SERVICE_MGR': 'ServiceManager',
+    'HIDL': 'HIDL',
+    'STABLE_AIDL': 'Stable AIDL',
+    'CAMERA_SERVICE': 'Camera Service',
+    'CODEC_SERVICE': 'Codec Service',
+    'VNDK': 'VNDK',
+    'VENDOR_IMPL': 'Vendor Implementation',
+    'VENDOR_LIBS': 'Vendor Libraries',
+    'SYSTEM': 'System Partition',
+    'VENDOR': 'Vendor Partition',
+    'BOOTROM': 'Boot ROM',
+    'BOOTLOADER': 'Bootloader',
+    'INIT': 'Init Process',
+    'ZYGOTE': 'Zygote',
+    'SYSSERVER': 'System Server',
+    'LAUNCHER': 'Launcher',
+    'DAEMONS': 'Daemons',
+    'SURFACE': 'Surface',
+    'BUFFER_QUEUE': 'BufferQueue',
+    'HWC': 'Hardware Composer',
+    'DISPLAY': 'Display',
+    'MEDIA_ROUTER': 'Media Router',
+    'MEDIA_API': 'Media API',
+    'STAGEFRIGHT': 'Stagefright',
+    'CLIENT': 'Client',
+    'SERVER': 'Server',
+    'HAL_INTERFACE': 'HAL Interface',
+    'APP_VIEW': 'App View',
+    'AUDIO_HAL': 'Audio HAL',
+    'CAMERA_HAL': 'Camera HAL',
+    'CODEC_HAL': 'Codec HAL'
 };
 
 const DIAGRAM_NODE_DATA = {
@@ -2291,6 +2332,556 @@ SLEngineItf engine;
 [5.1/C-1-1] 최소 44.1kHz 샘플 레이트 지원
 [5.4/H-1-1] 오디오 지연시간 < 100ms (Pro Audio)
         `.trim()
+    },
+
+    // ========================================
+    // AOSP 추가 노드 (aosp.html) - Card 1
+    // ========================================
+
+    'System Services': {
+        title: 'System Services',
+        layer: 'Framework',
+        description: 'system_server 프로세스에서 실행되는 핵심 시스템 서비스들입니다.',
+        components: [
+            'ActivityManagerService (AMS)',
+            'WindowManagerService (WMS)',
+            'PackageManagerService (PMS)',
+            'NotificationManagerService',
+            'PowerManagerService',
+            'LocationManagerService'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/',
+        doc: 'https://source.android.com/docs/core/architecture/services'
+    },
+
+    'Application Layer': {
+        title: 'Application Layer',
+        layer: 'Application',
+        description: 'Android 앱이 실행되는 최상위 레이어입니다.',
+        components: [
+            'System Apps',
+            'Third-party Apps',
+            'Activity',
+            'Service',
+            'Broadcast Receiver',
+            'Content Provider'
+        ],
+        doc: 'https://developer.android.com/guide/components/fundamentals'
+    },
+
+    'HAL Layer': {
+        title: 'HAL Layer',
+        layer: 'HAL',
+        description: '하드웨어 추상화 레이어로, 벤더별 하드웨어 구현을 추상화합니다.',
+        components: [
+            'Audio HAL',
+            'Camera HAL',
+            'Sensors HAL',
+            'Graphics HAL',
+            'Codec HAL',
+            'Vehicle HAL (AAOS)'
+        ],
+        path: 'hardware/interfaces/',
+        doc: 'https://source.android.com/docs/core/architecture/hal'
+    },
+
+    'SurfaceFlinger': {
+        title: 'SurfaceFlinger',
+        layer: 'Native Service',
+        description: '모든 화면 레이어를 합성하여 최종 화면을 생성하는 시스템 서비스입니다.',
+        components: [
+            'Layer Composition',
+            'VSync Handling',
+            'Buffer Management',
+            'HWC Integration',
+            'Display Management'
+        ],
+        path: 'frameworks/native/services/surfaceflinger/',
+        doc: 'https://source.android.com/docs/core/graphics/surfaceflinger-windowmanager',
+        codeExample: `
+// Surface 생성 및 사용
+val surfaceView = SurfaceView(context)
+val holder = surfaceView.holder
+
+holder.addCallback(object : SurfaceHolder.Callback {
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        val canvas = holder.lockCanvas()
+        // 그리기 작업
+        holder.unlockCanvasAndPost(canvas)
+    }
+})
+        `.trim()
+    },
+
+    'AudioFlinger': {
+        title: 'AudioFlinger',
+        layer: 'Native Service',
+        description: '모든 오디오 스트림을 믹싱하고 오디오 HAL로 전달하는 핵심 서비스입니다.',
+        components: [
+            'Audio Mixing',
+            'Playback Threads',
+            'Recording Threads',
+            'Effects Processing',
+            'Volume Control'
+        ],
+        path: 'frameworks/av/services/audioflinger/',
+        doc: 'https://source.android.com/docs/core/audio/audioflinger'
+    },
+
+    'Binder IPC': {
+        title: 'Binder IPC',
+        layer: 'IPC Mechanism',
+        description: 'Android의 프로세스 간 통신(IPC) 메커니즘입니다.',
+        components: [
+            'Binder Driver (Kernel)',
+            'Proxy (Client)',
+            'Stub (Server)',
+            'ServiceManager',
+            'Parcelable'
+        ],
+        path: 'frameworks/native/libs/binder/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl/binder-ipc',
+        codeExample: `
+// Binder Service 등록
+val myService = object : IMyService.Stub() {
+    override fun doSomething(): String {
+        return "Hello from Binder"
+    }
+}
+
+ServiceManager.addService("my_service", myService)
+
+// Client에서 사용
+val service = ServiceManager.getService("my_service") as IMyService
+val result = service.doSomething()
+        `.trim()
+    },
+
+    'Proxy': {
+        title: 'Binder Proxy',
+        layer: 'IPC',
+        description: 'Binder IPC의 클라이언트 측 프록시 객체입니다.',
+        components: [
+            'Method Call Forwarding',
+            'Parcel Serialization',
+            'Transaction',
+            'Death Recipient'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture/aidl/binder-ipc'
+    },
+
+    'Stub': {
+        title: 'Binder Stub',
+        layer: 'IPC',
+        description: 'Binder IPC의 서버 측 스텁 객체입니다.',
+        components: [
+            'Method Implementation',
+            'Parcel Deserialization',
+            'onTransact()',
+            'Thread Pool'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture/aidl/binder-ipc'
+    },
+
+    'ServiceManager': {
+        title: 'Service Manager',
+        layer: 'System Service',
+        description: 'Binder 서비스를 등록하고 조회하는 중앙 레지스트리입니다.',
+        components: [
+            'Service Registration',
+            'Service Lookup',
+            'Binder Context Manager',
+            'Access Control (SELinux)'
+        ],
+        path: 'frameworks/native/cmds/servicemanager/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl/binder-ipc'
+    },
+
+    'HIDL': {
+        title: 'HIDL (HAL Interface Definition Language)',
+        layer: 'HAL Interface',
+        description: 'Android 8.0에서 도입된 HAL 인터페이스 정의 언어입니다.',
+        components: [
+            'HAL Interface Definition',
+            'Binderized HAL',
+            'Passthrough HAL',
+            'hwservicemanager',
+            'Code Generation'
+        ],
+        path: 'system/libhidl/',
+        doc: 'https://source.android.com/docs/core/architecture/hidl'
+    },
+
+    'Stable AIDL': {
+        title: 'Stable AIDL',
+        layer: 'HAL Interface',
+        description: 'Android 11+에서 HIDL을 대체하는 안정적인 AIDL 인터페이스입니다.',
+        components: [
+            'Versioned Interfaces',
+            'Backward Compatibility',
+            'Binder IPC',
+            'Code Generation (.aidl)'
+        ],
+        path: 'system/hardware/interfaces/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl/stable-aidl'
+    },
+
+    'Camera Service': {
+        title: 'Camera Service',
+        layer: 'Native Service',
+        description: '카메라 장치를 관리하고 앱에 카메라 접근을 제공하는 시스템 서비스입니다.',
+        components: [
+            'Camera Device Management',
+            'Camera Session',
+            'Preview Stream',
+            'Capture Request',
+            'Camera Metadata'
+        ],
+        path: 'frameworks/av/services/camera/',
+        doc: 'https://source.android.com/docs/core/camera'
+    },
+
+    'Codec Service': {
+        title: 'Codec Service',
+        layer: 'Native Service',
+        description: 'MediaCodec을 위한 코덱 서비스입니다.',
+        components: [
+            'Codec Resource Management',
+            'Codec Component Store',
+            'Buffer Management',
+            'Codec2 Support'
+        ],
+        path: 'frameworks/av/services/mediacodec/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'VNDK': {
+        title: 'Vendor Native Development Kit',
+        layer: 'System-Vendor Interface',
+        description: '시스템과 벤더 파티션 간의 안정적인 Native 라이브러리 인터페이스입니다.',
+        components: [
+            'VNDK-core (LL-NDK)',
+            'VNDK-SP (Same-Process)',
+            'Vendor Libraries',
+            'ABI Stability'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture/vndk'
+    },
+
+    'Vendor Implementation': {
+        title: 'Vendor Implementation',
+        layer: 'Vendor',
+        description: '벤더별 HAL 및 하드웨어 구현입니다.',
+        components: [
+            'HAL Implementation',
+            'Hardware Drivers',
+            'Vendor Libraries',
+            'Device-specific Code'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture/hal'
+    },
+
+    'Vendor Libraries': {
+        title: 'Vendor Libraries',
+        layer: 'Vendor',
+        description: '벤더가 제공하는 Native 라이브러리입니다.',
+        components: [
+            'Hardware-specific Libraries',
+            'Codec Libraries',
+            'GPU Libraries',
+            'Camera ISP Libraries'
+        ]
+    },
+
+    'System Partition': {
+        title: 'System Partition',
+        layer: 'System',
+        description: 'AOSP 코드가 포함된 읽기 전용 파티션입니다.',
+        components: [
+            'Framework',
+            'System Apps',
+            'Native Libraries',
+            'System Services'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture'
+    },
+
+    'Vendor Partition': {
+        title: 'Vendor Partition',
+        layer: 'Vendor',
+        description: '벤더별 HAL 구현이 포함된 파티션입니다.',
+        components: [
+            'HAL Implementations',
+            'Vendor Libraries',
+            'Firmware',
+            'Device Config'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture'
+    },
+
+    'Boot ROM': {
+        title: 'Boot ROM',
+        layer: 'Hardware',
+        description: 'SoC에 내장된 읽기 전용 메모리로, 부팅 프로세스를 시작합니다.',
+        components: [
+            'Primary Boot Loader',
+            'Security Check',
+            'Bootloader Loading',
+            'Hardware Initialization'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture/bootloader'
+    },
+
+    'Bootloader': {
+        title: 'Bootloader',
+        layer: 'Boot',
+        description: 'Linux 커널을 로드하고 실행하는 부트로더입니다.',
+        components: [
+            'U-Boot / LK',
+            'Fastboot Mode',
+            'Kernel Loading',
+            'Device Tree',
+            'Verified Boot'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture/bootloader'
+    },
+
+    'Init Process': {
+        title: 'Init Process',
+        layer: 'System',
+        description: 'Linux 커널 부팅 후 첫 번째로 실행되는 프로세스입니다. (PID 1)',
+        components: [
+            'init.rc Parsing',
+            'Service Management',
+            'Property Service',
+            'SELinux Enforcement',
+            'Zygote Startup'
+        ],
+        path: 'system/core/init/',
+        doc: 'https://source.android.com/docs/core/architecture/bootloader/init'
+    },
+
+    'Zygote': {
+        title: 'Zygote Process',
+        layer: 'Runtime',
+        description: '모든 Android 앱 프로세스의 부모 프로세스입니다.',
+        components: [
+            'ART Preloading',
+            'Class Preloading',
+            'Fork App Processes',
+            'Socket Listener',
+            'Copy-on-Write Optimization'
+        ],
+        path: 'frameworks/base/core/java/com/android/internal/os/Zygote.java',
+        doc: 'https://source.android.com/docs/core/runtime/zygote',
+        codeExample: `
+// Zygote에서 앱 프로세스 생성
+Process.start(
+    "android.app.ActivityThread",
+    niceName,
+    uid,
+    gid,
+    gids,
+    runtimeFlags,
+    targetSdkVersion,
+    seInfo,
+    abi,
+    instructionSet,
+    appDataDir,
+    invokeWith,
+    packageName,
+    zygoteArgs
+)
+        `.trim()
+    },
+
+    'System Server': {
+        title: 'System Server',
+        layer: 'System Service',
+        description: 'Android의 핵심 시스템 서비스들을 호스팅하는 프로세스입니다.',
+        components: [
+            'ActivityManagerService',
+            'WindowManagerService',
+            'PackageManagerService',
+            'PowerManagerService',
+            '60+ System Services'
+        ],
+        path: 'frameworks/base/services/java/com/android/server/SystemServer.java',
+        doc: 'https://source.android.com/docs/core/architecture/services'
+    },
+
+    'Launcher': {
+        title: 'Launcher (Home Screen)',
+        layer: 'Application',
+        description: 'Android 홈 화면 앱입니다.',
+        components: [
+            'App Grid',
+            'Widgets',
+            'App Shortcuts',
+            'Wallpaper',
+            'Recent Apps'
+        ],
+        doc: 'https://developer.android.com/guide/components/activities/index.html'
+    },
+
+    'Daemons': {
+        title: 'Native Daemons',
+        layer: 'Native Service',
+        description: 'C/C++로 작성된 백그라운드 데몬 프로세스들입니다.',
+        components: [
+            'vold (Volume Daemon)',
+            'netd (Network Daemon)',
+            'installd (Install Daemon)',
+            'logd (Log Daemon)',
+            'adbd (ADB Daemon)'
+        ],
+        path: 'system/core/',
+        doc: 'https://source.android.com/docs/core/architecture'
+    },
+
+    'Surface': {
+        title: 'Surface',
+        layer: 'Graphics',
+        description: '화면에 그릴 수 있는 버퍼를 나타내는 객체입니다.',
+        components: [
+            'Canvas Drawing',
+            'OpenGL Rendering',
+            'Vulkan Rendering',
+            'BufferQueue Producer'
+        ],
+        path: 'frameworks/native/libs/gui/',
+        doc: 'https://source.android.com/docs/core/graphics'
+    },
+
+    'BufferQueue': {
+        title: 'BufferQueue',
+        layer: 'Graphics',
+        description: 'Producer와 Consumer 간의 버퍼 교환을 관리합니다.',
+        components: [
+            'Buffer Allocation',
+            'Queue/Dequeue',
+            'Triple Buffering',
+            'VSync Synchronization'
+        ],
+        path: 'frameworks/native/libs/gui/BufferQueue.cpp',
+        doc: 'https://source.android.com/docs/core/graphics/arch-bq-gralloc'
+    },
+
+    'Hardware Composer': {
+        title: 'HWC (Hardware Composer)',
+        layer: 'HAL',
+        description: '하드웨어 가속 화면 합성을 담당하는 HAL입니다.',
+        components: [
+            'Layer Composition',
+            'Display Configuration',
+            'VSync Events',
+            'HWC 2.x / 3.x API'
+        ],
+        path: 'hardware/interfaces/graphics/composer/',
+        doc: 'https://source.android.com/docs/core/graphics/hwc'
+    },
+
+    'Display': {
+        title: 'Display Driver',
+        layer: 'Kernel Driver',
+        description: '디스플레이 하드웨어를 제어하는 커널 드라이버입니다.',
+        components: [
+            'Display Controller',
+            'DRM/KMS',
+            'Framebuffer',
+            'HDMI/DP/MIPI'
+        ],
+        doc: 'https://source.android.com/docs/core/graphics'
+    },
+
+    'Media Router': {
+        title: 'Media Router',
+        layer: 'Framework',
+        description: '미디어를 여러 출력 장치로 라우팅하는 프레임워크입니다.',
+        components: [
+            'Route Discovery',
+            'Chromecast Support',
+            'Audio Output Selection',
+            'Video Output Selection'
+        ],
+        path: 'frameworks/base/media/java/android/media/',
+        doc: 'https://developer.android.com/guide/topics/media/routing'
+    },
+
+    'Media API': {
+        title: 'Media API',
+        layer: 'Framework',
+        description: 'Android의 미디어 재생/녹음 API입니다.',
+        components: [
+            'MediaPlayer',
+            'MediaRecorder',
+            'MediaCodec',
+            'AudioTrack',
+            'AudioRecord'
+        ],
+        path: 'frameworks/base/media/java/android/media/',
+        doc: 'https://developer.android.com/guide/topics/media'
+    },
+
+    'Stagefright': {
+        title: 'Stagefright',
+        layer: 'Native Library',
+        description: 'Android의 Native 미디어 프레임워크입니다.',
+        components: [
+            'MediaExtractor',
+            'MediaMuxer',
+            'OMX IL',
+            'Codec2 Wrapper',
+            'Container Parsing'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'Client': {
+        title: 'Binder Client',
+        layer: 'IPC',
+        description: 'Binder IPC를 통해 서비스를 호출하는 클라이언트입니다.',
+        components: [
+            'Proxy Object',
+            'Method Invocation',
+            'IPC Transaction'
+        ]
+    },
+
+    'Server': {
+        title: 'Binder Server',
+        layer: 'IPC',
+        description: 'Binder IPC를 통해 서비스를 제공하는 서버입니다.',
+        components: [
+            'Stub Object',
+            'Method Implementation',
+            'Thread Pool'
+        ]
+    },
+
+    'HAL Interface': {
+        title: 'HAL Interface',
+        layer: 'HAL',
+        description: 'HIDL 또는 AIDL로 정의된 HAL 인터페이스입니다.',
+        components: [
+            'Interface Definition',
+            'Generated Code',
+            'Version Management'
+        ]
+    },
+
+    'App View': {
+        title: 'App View/Canvas',
+        layer: 'Application',
+        description: '앱의 UI를 그리는 View 계층입니다.',
+        components: [
+            'View Tree',
+            'Canvas API',
+            'Hardware Acceleration',
+            'RenderThread'
+        ],
+        doc: 'https://developer.android.com/guide/topics/ui/how-android-draws'
     }
 };
 
