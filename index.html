@@ -355,6 +355,42 @@
             transform: translateY(-2px);
         }
 
+        /* Light Theme Card Enhancements */
+        [data-theme="light"] .card {
+            background: var(--color-surface);
+            border-color: rgba(41, 37, 36, 0.12);
+            box-shadow: 0 2px 8px rgba(41, 37, 36, 0.06),
+                        0 1px 3px rgba(41, 37, 36, 0.04);
+        }
+
+        [data-theme="light"] .card:hover {
+            background: var(--color-surface-elevated);
+            box-shadow: 0 12px 32px rgba(41, 37, 36, 0.15),
+                        0 4px 12px rgba(var(--category-rgb), 0.15),
+                        0 0 0 1px var(--category-color);
+        }
+
+        [data-theme="light"] .card-badge {
+            background: rgba(41, 37, 36, 0.04);
+            border-color: rgba(var(--category-rgb), 0.2);
+        }
+
+        [data-theme="light"] .btn-card-link {
+            background: rgba(41, 37, 36, 0.04);
+            border-color: rgba(41, 37, 36, 0.12);
+        }
+
+        [data-theme="light"] .btn-card-link:hover {
+            box-shadow: 0 2px 8px rgba(var(--category-rgb), 0.2);
+        }
+
+        [data-theme="light"] .hero-title {
+            background: linear-gradient(135deg, #292524 0%, var(--color-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
         /* Footer */
         footer {
             text-align: center;
@@ -364,6 +400,10 @@
             font-family: var(--font-mono);
             font-size: 0.85rem;
             letter-spacing: 0.03em;
+        }
+
+        [data-theme="light"] footer {
+            border-top-color: rgba(41, 37, 36, 0.1);
         }
 
         /* Animations */
