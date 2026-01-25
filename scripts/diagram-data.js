@@ -237,16 +237,35 @@ const NODE_ID_MAPPING = {
     'CDM_LIB': 'CDM Library',
     'CDM_CORE': 'CDM Core',
     'CDM_SESSION': 'CDM Session',
+    'CDM_PARSER': 'PSSH Parser',
     'OEMCRYPTO': 'OEMCrypto',
     'OEMCRYPTO_LIB': 'OEMCrypto Library',
     'TEE': 'Trusted Execution Environment',
     'TEE_OS': 'TEE OS',
     'TRUSTLET': 'Trustlet',
     'L1_TEE': 'Widevine L1 TEE',
+    'L1_CRYPT': 'L1 Encryption',
+    'L1_DEC': 'L1 Decoding',
+    'L1_RENDER': 'L1 Rendering',
+    'L1_OUT': 'L1 Output',
     'L2_TEE': 'Widevine L2 TEE',
+    'L2_CRYPT': 'L2 Encryption',
+    'L2_DEC': 'L2 Decoding',
+    'L2_OUT': 'L2 Output',
     'L3_SW': 'Widevine L3 Software',
+    'L3_CRYPT': 'L3 Encryption',
+    'L3_DEC': 'L3 Decoding',
+    'L3_OUT': 'L3 Output',
     'LICENSE_SRV': 'License Server',
+    'AUTH': 'Authentication',
+    'KEY_GEN': 'Key Generation',
     'KEY_STORE': 'Key Storage',
+    'KEYS': 'Secure Key Storage',
+    'EME': 'Encrypted Media Extensions',
+    'EXOPLAYER': 'ExoPlayer',
+    'DECODER': 'Decoder',
+    'RENDER': 'Renderer',
+    'A': 'Certification Step 1',
 
     // Car Media Service (carmedia.html)
     'CMS': 'CarMediaService',
@@ -4254,6 +4273,414 @@ OEMCrypto_DecryptCTR(session, encryptedData, iv, outputBuffer);
             'Device Authentication'
         ],
         doc: 'https://www.widevine.com/'
+    },
+
+    'PSSH Parser': {
+        title: 'PSSH Parser',
+        layer: 'CDM Component',
+        description: 'Protection System Specific Header를 파싱합니다. 미디어 컨테이너에서 DRM 메타데이터를 추출합니다.',
+        components: [
+            'PSSH Box Parsing',
+            'System ID Detection',
+            'Init Data Extraction',
+            'KID (Key ID) Extraction',
+            'Multi-DRM Support'
+        ],
+        doc: 'https://w3c.github.io/encrypted-media/',
+        codeExample: `
+// PSSH Box 구조 (ISO BMFF)
+/*
+PSSH (Protection System Specific Header):
+- System ID: Widevine UUID (edef8ba9-79d6-4ace-a3c8-27dcd51d21ed)
+- Data: Base64 encoded init data
+*/
+
+// Android MediaDrm에서 PSSH 처리
+val mediaDrm = MediaDrm(widevineUUID)
+val psshData = extractPsshFromMp4(mediaFile)
+val keyRequest = mediaDrm.getKeyRequest(
+    session,
+    psshData,  // PSSH에서 추출한 init data
+    "video/mp4",
+    MediaDrm.KEY_TYPE_STREAMING,
+    null
+)
+        `.trim()
+    },
+
+    'Encrypted Media Extensions': {
+        title: 'EME (Encrypted Media Extensions)',
+        layer: 'Web API',
+        description: 'W3C 표준 웹 브라우저 DRM API입니다. HTML5 비디오에서 DRM 콘텐츠를 재생합니다.',
+        components: [
+            'MediaKeys',
+            'MediaKeySession',
+            'Key Request/Response',
+            'License Management',
+            'Multi-DRM Support'
+        ],
+        doc: 'https://www.w3.org/TR/encrypted-media/',
+        codeExample: `
+// EME (JavaScript)
+const video = document.querySelector('video');
+const config = [{
+    initDataTypes: ['cenc'],
+    videoCapabilities: [{
+        contentType: 'video/mp4; codecs="avc1.42E01E"'
+    }]
+}];
+
+navigator.requestMediaKeySystemAccess('com.widevine.alpha', config)
+    .then(keySystemAccess => keySystemAccess.createMediaKeys())
+    .then(mediaKeys => {
+        video.setMediaKeys(mediaKeys);
+        const session = mediaKeys.createSession();
+        session.addEventListener('message', event => {
+            // 라이선스 서버에 요청
+            fetch(licenseUrl, {
+                method: 'POST',
+                body: event.message
+            }).then(response => response.arrayBuffer())
+              .then(license => session.update(license));
+        });
+        return session.generateRequest('cenc', initData);
+    });
+        `.trim()
+    },
+
+    'ExoPlayer': {
+        title: 'ExoPlayer (with DRM)',
+        layer: 'Application',
+        description: 'Google의 오픈소스 미디어 플레이어로, Widevine DRM을 지원합니다.',
+        components: [
+            'DRM Session Manager',
+            'MediaDrm Integration',
+            'License Acquisition',
+            'Key Rotation',
+            'Offline License Support'
+        ],
+        path: 'androidx.media3.exoplayer.drm',
+        doc: 'https://developer.android.com/media/media3/exoplayer/drm',
+        codeExample: `
+// ExoPlayer with Widevine DRM
+val drmSessionManager = DefaultDrmSessionManager.Builder()
+    .setUuidAndExoMediaDrmProvider(
+        C.WIDEVINE_UUID,
+        FrameworkMediaDrm.DEFAULT_PROVIDER
+    )
+    .build(HttpMediaDrmCallback(licenseUrl, httpDataSourceFactory))
+
+val player = ExoPlayer.Builder(context)
+    .setMediaSourceFactory(
+        DefaultMediaSourceFactory(context)
+            .setDrmSessionManagerProvider { drmSessionManager }
+    )
+    .build()
+
+val mediaItem = MediaItem.Builder()
+    .setUri(videoUrl)
+    .setDrmConfiguration(
+        MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
+            .setLicenseUri(licenseUrl)
+            .build()
+    )
+    .build()
+
+player.setMediaItem(mediaItem)
+player.prepare()
+        `.trim()
+    },
+
+    'Authentication': {
+        title: 'Authentication (License Server)',
+        layer: 'License Server',
+        description: '라이선스 요청 시 디바이스/사용자 인증을 수행합니다.',
+        components: [
+            'Device Provisioning',
+            'User Authentication',
+            'Token Validation',
+            'Certificate Verification',
+            'Anti-Piracy Checks'
+        ],
+        doc: 'https://www.widevine.com/',
+        codeExample: `
+// License Request with Authentication
+POST /widevine/license
+Headers:
+  Content-Type: application/octet-stream
+  Authorization: Bearer <user_token>
+  X-Device-ID: <device_id>
+
+Body: (Binary Key Request from MediaDrm)
+
+Response:
+  - Success: License (binary)
+  - Failure: HTTP 401/403
+        `.trim()
+    },
+
+    'Key Generation': {
+        title: 'Key Generation (License Server)',
+        layer: 'License Server',
+        description: '콘텐츠 암호화 키를 생성하고 라이선스에 포함시킵니다.',
+        components: [
+            'Content Key Generation',
+            'Key Wrapping (Encryption)',
+            'Usage Rules Encoding',
+            'Signature Generation',
+            'Multi-Key Support (HD/SD)'
+        ],
+        doc: 'https://www.widevine.com/',
+        codeExample: `
+// License Server Key Generation (Pseudo-code)
+function generateLicense(keyRequest, contentId) {
+    // 1. Content Key 생성 (AES-128)
+    const contentKey = crypto.randomBytes(16);
+
+    // 2. Device Public Key로 Content Key 암호화
+    const deviceCert = extractCertificate(keyRequest);
+    const wrappedKey = rsaEncrypt(contentKey, deviceCert.publicKey);
+
+    // 3. Usage Rules 추가
+    const license = {
+        contentId: contentId,
+        keys: [{
+            keyId: contentKeyId,
+            key: wrappedKey,
+            type: 'CONTENT'
+        }],
+        policy: {
+            canPlay: true,
+            canPersist: false,
+            renewalDelaySeconds: 300,
+            playbackDurationSeconds: 7200
+        }
+    };
+
+    // 4. 서명 및 직렬화
+    return signAndSerialize(license);
+}
+        `.trim()
+    },
+
+    'Secure Key Storage': {
+        title: 'Secure Key Storage (TEE)',
+        layer: 'Hardware',
+        description: 'TEE 내부의 보안 키 저장소입니다. 하드웨어 보호된 영역에 키를 저장합니다.',
+        components: [
+            'Hardware-backed Keystore',
+            'Key Derivation',
+            'Device-bound Keys',
+            'Anti-Tamper Protection',
+            'Key Provisioning'
+        ],
+        doc: 'https://source.android.com/docs/security/features/keystore',
+        codeExample: `
+// OEMCrypto Level Key Storage (L1)
+/*
+Widevine L1에서 모든 키는 TEE 내부에만 존재:
+- Content Keys
+- Device Private Key
+- Keybox (Device Certificate)
+
+일반 Android 코드에서는 키 자체에 접근 불가능.
+복호화는 TEE 내부에서만 수행됨.
+*/
+
+// L3 (Software)에서는 Android Keystore 사용
+val keyStore = KeyStore.getInstance("AndroidKeyStore")
+keyStore.load(null)
+        `.trim()
+    },
+
+    'Decoder': {
+        title: 'Decoder (in Pipeline)',
+        layer: 'Media Pipeline',
+        description: '복호화된 비디오/오디오를 디코딩합니다.',
+        components: [
+            'Video Decoder (H.264, H.265)',
+            'Audio Decoder (AAC, AC-3)',
+            'Hardware Acceleration',
+            'Secure Decoder (L1)',
+            'Buffer Management'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'Renderer': {
+        title: 'Renderer (in Pipeline)',
+        layer: 'Media Pipeline',
+        description: '디코딩된 미디어를 화면/스피커로 렌더링합니다.',
+        components: [
+            'Video Renderer (SurfaceFlinger)',
+            'Audio Renderer (AudioFlinger)',
+            'Synchronization',
+            'Frame Dropping',
+            'Secure Output (HDCP)'
+        ],
+        doc: 'https://source.android.com/docs/core/graphics'
+    },
+
+    'L1 Encryption': {
+        title: 'Widevine L1 - Encryption (TEE)',
+        layer: 'Security Level 1',
+        description: 'TEE 내부에서 수행되는 암호화 작업입니다. (Widevine L1)',
+        components: [
+            'AES-CTR Decryption',
+            'Hardware-backed',
+            'Secure Memory',
+            'Key Isolation',
+            'Sample Decryption'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm',
+        codeExample: `
+// Widevine L1 Decryption Flow (TEE 내부)
+/*
+1. Encrypted Sample → TEE
+2. OEMCrypto_DecryptCTR() in TEE
+3. Decrypted Sample → Secure Video Path
+4. 일반 Android 코드에서는 접근 불가
+
+모든 작업이 하드웨어 보호된 영역에서 수행됨.
+*/
+        `.trim()
+    },
+
+    'L1 Decoding': {
+        title: 'Widevine L1 - Video Decoding (TEE)',
+        layer: 'Security Level 1',
+        description: 'TEE 내부에서 수행되는 비디오 디코딩입니다. (Widevine L1)',
+        components: [
+            'Secure Video Decoder',
+            'Hardware Decoder in TEE',
+            'Encrypted Frame Buffer',
+            'Secure Pipeline',
+            'HD/4K/HDR Support'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'L1 Rendering': {
+        title: 'Widevine L1 - Secure Rendering',
+        layer: 'Security Level 1',
+        description: '하드웨어 보호된 렌더링 경로입니다. (Widevine L1)',
+        components: [
+            'Secure Video Path (SVP)',
+            'Protected Frame Buffer',
+            'HDCP Enforcement',
+            'Hardware Overlay',
+            'Direct Display Output'
+        ],
+        doc: 'https://source.android.com/docs/core/media/drm'
+    },
+
+    'L1 Output': {
+        title: 'Widevine L1 - HD/4K/HDR Output',
+        layer: 'Security Level 1',
+        description: 'Widevine L1이 지원하는 고화질 출력입니다.',
+        components: [
+            'Full HD (1080p)',
+            '4K UHD (2160p)',
+            'HDR (HDR10, Dolby Vision)',
+            'HDCP 2.2+ Required',
+            'Secure Display Pipeline'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'L2 Encryption': {
+        title: 'Widevine L2 - Encryption (TEE)',
+        layer: 'Security Level 2',
+        description: 'TEE에서 암호화 작업만 수행합니다. (Widevine L2)',
+        components: [
+            'AES-CTR Decryption in TEE',
+            'Decrypted Output to Android',
+            'Software Decoder',
+            'SD Resolution Only',
+            'Lower Security than L1'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'L2 Decoding': {
+        title: 'Widevine L2 - Software Decoding',
+        layer: 'Security Level 2',
+        description: '일반 Android 영역에서 소프트웨어 디코딩합니다. (Widevine L2)',
+        components: [
+            'Software Video Decoder',
+            'Unprotected Frame Buffer',
+            'MediaCodec (Non-Secure)',
+            'SD Resolution Only'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'L2 Output': {
+        title: 'Widevine L2 - SD Output',
+        layer: 'Security Level 2',
+        description: 'Widevine L2는 SD 해상도만 지원합니다.',
+        components: [
+            'Standard Definition (480p/576p)',
+            'No HD/4K Support',
+            'HDCP 1.x',
+            'Software Pipeline'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'L3 Encryption': {
+        title: 'Widevine L3 - Software Encryption',
+        layer: 'Security Level 3',
+        description: '모든 작업이 소프트웨어로 수행됩니다. (Widevine L3)',
+        components: [
+            'Software Decryption',
+            'No Hardware Security',
+            'Extractable Keys',
+            'Lower Security',
+            'SD Resolution Only'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'L3 Decoding': {
+        title: 'Widevine L3 - Software Decoding',
+        layer: 'Security Level 3',
+        description: '소프트웨어 비디오 디코딩입니다. (Widevine L3)',
+        components: [
+            'Software Video Decoder',
+            'Unprotected Memory',
+            'MediaCodec (Non-Secure)',
+            'SD Resolution Only'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'L3 Output': {
+        title: 'Widevine L3 - SD Output',
+        layer: 'Security Level 3',
+        description: 'Widevine L3는 SD 해상도만 지원합니다.',
+        components: [
+            'Standard Definition (480p)',
+            'No HD Support',
+            'No HDCP Required',
+            'Software Pipeline'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'Certification Step 1': {
+        title: 'Widevine Certification - Step 1',
+        layer: 'Certification',
+        description: 'Widevine 인증 프로세스의 첫 번째 단계입니다.',
+        components: [
+            'NDA 체결',
+            'Widevine Portal 접근',
+            'Device Info 제출',
+            'OEMCrypto 라이브러리 다운로드',
+            'Integration Guide 확인'
+        ],
+        doc: 'https://www.widevine.com/product'
     },
 
     // ========================================
