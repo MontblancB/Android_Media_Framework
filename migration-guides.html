@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migration Guides - Android Media Framework</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #1a1f35;
+            --bg-tertiary: #252b45;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --accent-red: #ef4444;
+            --border-color: rgba(148, 163, 184, 0.1);
+            --code-bg: #1e293b;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1420 100%);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 300;
+        }
+
+        section {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 2rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 3px;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin: 2rem 0 1rem 0;
+            color: var(--accent-purple);
+            font-weight: 600;
+        }
+
+        h4 {
+            font-size: 1.25rem;
+            margin: 1.5rem 0 1rem 0;
+            color: var(--accent-green);
+            font-weight: 500;
+        }
+
+        p, li {
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        ul, ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            background: var(--code-bg);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: var(--accent-green);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            border: none;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .migration-card {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .code-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .code-block-before {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--accent-red);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .code-block-after {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--accent-green);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .code-block-before h4::before {
+            content: '❌ ';
+        }
+
+        .code-block-after h4::before {
+            content: '✅ ';
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid var(--accent-blue);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+        }
+
+        .warning-box {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--accent-yellow);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+        }
+
+        .success-box {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--accent-green);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+        }
+
+        .badge-deprecated {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+        }
+
+        .badge-new {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+        }
+
+        .badge-breaking {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-yellow);
+        }
+
+        @media (max-width: 1024px) {
+            .code-comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            section {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔄 Migration Guides</h1>
+            <p class="subtitle">레거시 API에서 최신 API로의 마이그레이션 가이드</p>
+        </header>
+
+        <!-- TOC -->
+        <section>
+            <h2>목차 (Table of Contents)</h2>
+            <ol>
+                <li><a href="#mediaplayer-to-exoplayer">MediaPlayer → ExoPlayer 마이그레이션</a></li>
+                <li><a href="#exoplayer-to-media3">ExoPlayer 2.x → Media3 마이그레이션</a></li>
+                <li><a href="#audio-focus">Legacy Audio Focus → AudioFocusRequest</a></li>
+                <li><a href="#mediasession">MediaSession → MediaBrowserService</a></li>
+                <li><a href="#android-versions">Android 버전별 주요 변경사항</a></li>
+                <li><a href="#deprecated-apis">Deprecated API 대체 가이드</a></li>
+            </ol>
+        </section>
+
+        <!-- Section 1: MediaPlayer to ExoPlayer -->
+        <section id="mediaplayer-to-exoplayer">
+            <h2>1. MediaPlayer → ExoPlayer 마이그레이션</h2>
+
+            <div class="info-box">
+                <strong>💡 왜 ExoPlayer로 마이그레이션해야 하나요?</strong>
+                <ul>
+                    <li><strong>유연성</strong>: 커스텀 렌더러, 데이터 소스, DRM 지원</li>
+                    <li><strong>최신 기능</strong>: DASH/HLS/SmoothStreaming, ABR (Adaptive Bitrate)</li>
+                    <li><strong>디버깅</strong>: 상세한 이벤트 콜백, 로깅</li>
+                    <li><strong>성능</strong>: 효율적인 버퍼 관리, 프리로딩</li>
+                    <li><strong>확장성</strong>: 플러그인 아키텍처</li>
+                </ul>
+            </div>
+
+            <h3>1.1 기본 재생 마이그레이션</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>MediaPlayer (기존)</h4>
+                    <pre><code class="language-kotlin">// MediaPlayer
+val mediaPlayer = MediaPlayer().apply {
+    setDataSource(context, uri)
+    setOnPreparedListener { mp ->
+        mp.start()
+    }
+    setOnCompletionListener { mp ->
+        Log.d(TAG, "재생 완료")
+    }
+    setOnErrorListener { mp, what, extra ->
+        Log.e(TAG, "에러: $what")
+        true
+    }
+    prepareAsync()
+}
+
+// 일시정지
+mediaPlayer.pause()
+
+// Seek
+mediaPlayer.seekTo(30000)
+
+// 리소스 해제
+mediaPlayer.release()</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>ExoPlayer / Media3 (신규)</h4>
+                    <pre><code class="language-kotlin">// ExoPlayer (Media3)
+val player = ExoPlayer.Builder(context).build()
+
+player.addListener(object : Player.Listener {
+    override fun onPlaybackStateChanged(state: Int) {
+        when (state) {
+            Player.STATE_READY -> Log.d(TAG, "준비 완료")
+            Player.STATE_ENDED -> Log.d(TAG, "재생 완료")
+        }
+    }
+
+    override fun onPlayerError(error: PlaybackException) {
+        Log.e(TAG, "에러: ${error.errorCode}", error)
+    }
+})
+
+val mediaItem = MediaItem.fromUri(uri)
+player.setMediaItem(mediaItem)
+player.prepare()
+player.play()
+
+// 일시정지
+player.pause()
+
+// Seek
+player.seekTo(30_000)
+
+// 리소스 해제
+player.release()</code></pre>
+                </div>
+            </div>
+
+            <h3>1.2 리스너 매핑</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>MediaPlayer</th>
+                        <th>ExoPlayer / Media3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>OnPreparedListener</code></td>
+                        <td><code>Player.Listener.onPlaybackStateChanged(STATE_READY)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>OnCompletionListener</code></td>
+                        <td><code>Player.Listener.onPlaybackStateChanged(STATE_ENDED)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>OnErrorListener</code></td>
+                        <td><code>Player.Listener.onPlayerError()</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>OnSeekCompleteListener</code></td>
+                        <td><code>Player.Listener.onPositionDiscontinuity()</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>OnBufferingUpdateListener</code></td>
+                        <td><code>Player.Listener.onPlaybackStateChanged(STATE_BUFFERING)</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>1.3 플레이리스트 마이그레이션</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>MediaPlayer (기존)</h4>
+                    <pre><code class="language-kotlin">// MediaPlayer는 플레이리스트 미지원
+// 수동으로 관리 필요
+val playlist = listOf(uri1, uri2, uri3)
+var currentIndex = 0
+
+fun playNext() {
+    if (currentIndex < playlist.size - 1) {
+        currentIndex++
+        mediaPlayer.reset()
+        mediaPlayer.setDataSource(context, playlist[currentIndex])
+        mediaPlayer.prepareAsync()
+    }
+}
+
+mediaPlayer.setOnCompletionListener {
+    playNext()
+}</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>ExoPlayer / Media3 (신규)</h4>
+                    <pre><code class="language-kotlin">// ExoPlayer는 네이티브 플레이리스트 지원
+val mediaItems = listOf(
+    MediaItem.fromUri(uri1),
+    MediaItem.fromUri(uri2),
+    MediaItem.fromUri(uri3)
+)
+
+player.setMediaItems(mediaItems)
+player.prepare()
+player.play()
+
+// 자동으로 다음 트랙 재생
+// 또는 수동 제어
+player.seekToNext()
+player.seekToPrevious()</code></pre>
+                </div>
+            </div>
+
+            <h3>1.4 DRM 마이그레이션</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>MediaPlayer (기존)</h4>
+                    <pre><code class="language-kotlin">// MediaPlayer DRM (복잂)
+val mediaDrm = MediaDrm(C.WIDEVINE_UUID)
+val sessionId = mediaDrm.openSession()
+
+mediaDrm.setOnEventListener { drm, sessionId, event, extra, data ->
+    // 수동 라이선스 처리
+}
+
+val mediaCrypto = MediaCrypto(C.WIDEVINE_UUID, sessionId)
+
+// MediaCodec에 직접 전달
+decoder.configure(format, surface, mediaCrypto, 0)</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>ExoPlayer / Media3 (신규)</h4>
+                    <pre><code class="language-kotlin">// ExoPlayer DRM (간단)
+val mediaItem = MediaItem.Builder()
+    .setUri(videoUri)
+    .setDrmConfiguration(
+        MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
+            .setLicenseUri("https://license.example.com/widevine")
+            .build()
+    )
+    .build()
+
+player.setMediaItem(mediaItem)
+player.prepare()
+player.play()
+
+// DRM 세션 자동 관리!</code></pre>
+                </div>
+            </div>
+
+            <h3>1.5 UI 통합</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>MediaPlayer (기존)</h4>
+                    <pre><code class="language-xml">&lt;!-- VideoView (제한적 커스터마이징) --&gt;
+&lt;VideoView
+    android:id="@+id/video_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" /&gt;</code></pre>
+                    <pre><code class="language-kotlin">val videoView = findViewById&lt;VideoView&gt;(R.id.video_view)
+videoView.setVideoURI(uri)
+videoView.start()</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>ExoPlayer / Media3 (신규)</h4>
+                    <pre><code class="language-xml">&lt;!-- PlayerView (완전 커스터마이징 가능) --&gt;
+&lt;androidx.media3.ui.PlayerView
+    android:id="@+id/player_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:show_buffering="when_playing"
+    app:resize_mode="fit"
+    app:controller_layout_id="@layout/custom_controls" /&gt;</code></pre>
+                    <pre><code class="language-kotlin">val playerView = findViewById&lt;PlayerView&gt;(R.id.player_view)
+playerView.player = player</code></pre>
+                </div>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ 마이그레이션 체크리스트</strong>
+                <ol>
+                    <li>Gradle 의존성 추가: <code>androidx.media3:media3-exoplayer:1.2.0</code></li>
+                    <li>MediaPlayer 리스너를 Player.Listener로 변환</li>
+                    <li>prepare()/prepareAsync() → prepare() + play()</li>
+                    <li>VideoView → PlayerView</li>
+                    <li>DRM 설정을 MediaItem.DrmConfiguration으로 간소화</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- Section 2: ExoPlayer to Media3 -->
+        <section id="exoplayer-to-media3">
+            <h2>2. ExoPlayer 2.x → Media3 마이그레이션</h2>
+
+            <div class="info-box">
+                <strong>💡 Media3란?</strong>
+                <p>Media3는 ExoPlayer 2.x의 <strong>AndroidX 마이그레이션 버전</strong>입니다. 패키지 이름과 일부 API가 변경되었지만 대부분의 기능은 동일합니다.</p>
+            </div>
+
+            <h3>2.1 패키지 이름 변경</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ExoPlayer 2.x</th>
+                        <th>Media3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>com.google.android.exoplayer2.*</code></td>
+                        <td><code>androidx.media3.*</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>com.google.android.exoplayer2.ExoPlayer</code></td>
+                        <td><code>androidx.media3.exoplayer.ExoPlayer</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>com.google.android.exoplayer2.ui.PlayerView</code></td>
+                        <td><code>androidx.media3.ui.PlayerView</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>com.google.android.exoplayer2.source.MediaSource</code></td>
+                        <td><code>androidx.media3.exoplayer.source.MediaSource</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>2.2 Gradle 의존성 변경</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>ExoPlayer 2.x (기존)</h4>
+                    <pre><code class="language-groovy">// build.gradle
+dependencies {
+    implementation 'com.google.android.exoplayer:exoplayer:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-dash:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-hls:2.18.7'
+}</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>Media3 (신규)</h4>
+                    <pre><code class="language-groovy">// build.gradle
+dependencies {
+    implementation 'androidx.media3:media3-exoplayer:1.2.0'
+    implementation 'androidx.media3:media3-ui:1.2.0'
+    implementation 'androidx.media3:media3-exoplayer-dash:1.2.0'
+    implementation 'androidx.media3:media3-exoplayer-hls:1.2.0'
+    implementation 'androidx.media3:media3-session:1.2.0'  // NEW!
+}</code></pre>
+                </div>
+            </div>
+
+            <h3>2.3 SimpleExoPlayer → ExoPlayer</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>ExoPlayer 2.x (기존)</h4>
+                    <pre><code class="language-kotlin">import com.google.android.exoplayer2.SimpleExoPlayer
+
+val player = SimpleExoPlayer.Builder(context).build()</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>Media3 (신규)</h4>
+                    <pre><code class="language-kotlin">import androidx.media3.exoplayer.ExoPlayer
+
+val player = ExoPlayer.Builder(context).build()
+// SimpleExoPlayer는 ExoPlayer로 통합됨</code></pre>
+                </div>
+            </div>
+
+            <h3>2.4 MediaSource → MediaItem</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>ExoPlayer 2.x (기존)</h4>
+                    <pre><code class="language-kotlin">// MediaSource 수동 생성
+val dataSourceFactory = DefaultHttpDataSource.Factory()
+val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+    .createMediaSource(MediaItem.fromUri(uri))
+
+player.setMediaSource(mediaSource)
+player.prepare()</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>Media3 (신규)</h4>
+                    <pre><code class="language-kotlin">// MediaItem으로 간소화 (자동 MediaSource 생성)
+val mediaItem = MediaItem.fromUri(uri)
+player.setMediaItem(mediaItem)
+player.prepare()
+
+// 또는 커스텀 MediaSource 계속 사용 가능
+val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+    .createMediaSource(MediaItem.fromUri(uri))
+player.setMediaSource(mediaSource)</code></pre>
+                </div>
+            </div>
+
+            <h3>2.5 EventListener → Player.Listener</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>ExoPlayer 2.x (기존)</h4>
+                    <pre><code class="language-kotlin">import com.google.android.exoplayer2.Player
+
+player.addListener(object : Player.EventListener {
+    override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
+        // 처리
+    }
+})</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>Media3 (신규)</h4>
+                    <pre><code class="language-kotlin">import androidx.media3.common.Player
+
+player.addListener(object : Player.Listener {
+    override fun onPlaybackStateChanged(playbackState: Int) {
+        // onPlayerStateChanged → onPlaybackStateChanged
+        // playWhenReady는 onPlayWhenReadyChanged로 분리
+    }
+
+    override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+        // 새 콜백
+    }
+})</code></pre>
+                </div>
+            </div>
+
+            <h3>2.6 자동 마이그레이션 스크립트</h3>
+
+            <pre><code class="language-bash"># Android Studio: Replace in Path (Ctrl+Shift+R / Cmd+Shift+R)
+
+# 1. 패키지 이름 변경
+com.google.android.exoplayer2 → androidx.media3
+
+# 2. SimpleExoPlayer → ExoPlayer
+SimpleExoPlayer.Builder → ExoPlayer.Builder
+
+# 3. EventListener → Listener
+Player.EventListener → Player.Listener
+
+# 4. onPlayerStateChanged → onPlaybackStateChanged
+onPlayerStateChanged → onPlaybackStateChanged</code></pre>
+
+            <div class="warning-box">
+                <strong>⚠️ Breaking Changes</strong>
+                <ul>
+                    <li><code>Player.EventListener</code>의 일부 메소드 시그니처 변경</li>
+                    <li><code>SimpleExoPlayer</code> 클래스 제거 (ExoPlayer로 통합)</li>
+                    <li>일부 Deprecated API 제거</li>
+                </ul>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ 마이그레이션 단계</strong>
+                <ol>
+                    <li>Gradle 의존성을 <code>androidx.media3:media3-*</code>로 변경</li>
+                    <li>Android Studio의 "Replace in Path"로 패키지 이름 일괄 변경</li>
+                    <li><code>SimpleExoPlayer</code> → <code>ExoPlayer</code></li>
+                    <li><code>Player.EventListener</code> → <code>Player.Listener</code></li>
+                    <li>컴파일 에러 수정 및 테스트</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- Section 3: Audio Focus -->
+        <section id="audio-focus">
+            <h2>3. Legacy Audio Focus → AudioFocusRequest</h2>
+
+            <div class="info-box">
+                <strong>💡 Android 8.0 (API 26)부터 AudioFocusRequest 사용 권장</strong>
+                <p>레거시 <code>requestAudioFocus(OnAudioFocusChangeListener, int, int)</code>는 Deprecated되었습니다.</p>
+            </div>
+
+            <h3>3.1 기본 Audio Focus 마이그레이션</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>Legacy (기존)</h4>
+                    <pre><code class="language-kotlin">val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+val focusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+    when (focusChange) {
+        AudioManager.AUDIOFOCUS_GAIN -> player.play()
+        AudioManager.AUDIOFOCUS_LOSS -> player.pause()
+    }
+}
+
+val result = audioManager.requestAudioFocus(
+    focusChangeListener,
+    AudioManager.STREAM_MUSIC,
+    AudioManager.AUDIOFOCUS_GAIN
+)
+
+if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+    player.play()
+}</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>AudioFocusRequest (신규)</h4>
+                    <pre><code class="language-kotlin">val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+val audioAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_MEDIA)
+    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+    .build()
+
+val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+    .setAudioAttributes(audioAttributes)
+    .setAcceptsDelayedFocusGain(true)  // NEW!
+    .setWillPauseWhenDucked(false)     // NEW!
+    .setOnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> player.play()
+            AudioManager.AUDIOFOCUS_LOSS -> player.pause()
+        }
+    }
+    .build()
+
+val result = audioManager.requestAudioFocus(focusRequest)
+if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+    player.play()
+}</code></pre>
+                </div>
+            </div>
+
+            <h3>3.2 AudioAttributes 매핑</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Legacy StreamType</th>
+                        <th>AudioAttributes.USAGE_*</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>STREAM_MUSIC</code></td>
+                        <td><code>USAGE_MEDIA</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>STREAM_ALARM</code></td>
+                        <td><code>USAGE_ALARM</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>STREAM_NOTIFICATION</code></td>
+                        <td><code>USAGE_NOTIFICATION</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>STREAM_VOICE_CALL</code></td>
+                        <td><code>USAGE_VOICE_COMMUNICATION</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>STREAM_RING</code></td>
+                        <td><code>USAGE_NOTIFICATION_RINGTONE</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>3.3 Delayed Focus Gain (새 기능)</h3>
+
+            <pre><code class="language-kotlin">// API 26+: Delayed Focus 지원
+val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+    .setAudioAttributes(audioAttributes)
+    .setAcceptsDelayedFocusGain(true)  // 포커스를 나중에 받을 수 있음
+    .setOnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                // 즉시 또는 지연된 포커스 획득
+                player.play()
+            }
+        }
+    }
+    .build()
+
+val result = audioManager.requestAudioFocus(focusRequest)
+when (result) {
+    AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> {
+        // 즉시 포커스 획득
+        player.play()
+    }
+    AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> {
+        // 포커스를 나중에 획득 (OnAudioFocusChangeListener에서 GAIN 받음)
+        showBuffering()
+    }
+    AudioManager.AUDIOFOCUS_REQUEST_FAILED -> {
+        // 실패
+        showError()
+    }
+}</code></pre>
+
+            <h3>3.4 호환성 코드</h3>
+
+            <pre><code class="language-kotlin">fun requestAudioFocusCompat(audioManager: AudioManager): Int {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        // API 26+: AudioFocusRequest
+        val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(audioAttributes)
+            .setOnAudioFocusChangeListener(focusChangeListener)
+            .build()
+        audioManager.requestAudioFocus(focusRequest)
+    } else {
+        // API 25 이하: Legacy
+        @Suppress("DEPRECATION")
+        audioManager.requestAudioFocus(
+            focusChangeListener,
+            AudioManager.STREAM_MUSIC,
+            AudioManager.AUDIOFOCUS_GAIN
+        )
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 4: MediaSession -->
+        <section id="mediasession">
+            <h2>4. MediaSession → MediaBrowserService</h2>
+
+            <div class="info-box">
+                <strong>💡 Car Media / Wear OS 통합</strong>
+                <p><code>MediaBrowserService</code>를 구현하면 Android Auto, Wear OS, Google Assistant에서 자동으로 미디어 앱을 인식합니다.</p>
+            </div>
+
+            <h3>4.1 기본 MediaSession → MediaBrowserService</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>MediaSession만 (기존)</h4>
+                    <pre><code class="language-kotlin">// Activity에서만 사용
+class MusicPlayerActivity : AppCompatActivity() {
+    private lateinit var mediaSession: MediaSession
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        mediaSession = MediaSession(this, "MyMediaSession")
+        mediaSession.isActive = true
+
+        mediaSession.setCallback(object : MediaSession.Callback() {
+            override fun onPlay() {
+                player.play()
+            }
+        })
+    }
+}</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>MediaBrowserService (신규)</h4>
+                    <pre><code class="language-kotlin">// Service로 분리 (백그라운드 재생)
+class MusicService : MediaBrowserServiceCompat() {
+    private lateinit var mediaSession: MediaSessionCompat
+
+    override fun onCreate() {
+        super.onCreate()
+
+        mediaSession = MediaSessionCompat(this, "MusicService")
+        mediaSession.isActive = true
+        sessionToken = mediaSession.sessionToken
+
+        mediaSession.setCallback(object : MediaSessionCompat.Callback() {
+            override fun onPlay() {
+                player.play()
+            }
+        })
+    }
+
+    override fun onGetRoot(
+        clientPackageName: String,
+        clientUid: Int,
+        rootHints: Bundle?
+    ): BrowserRoot? {
+        return BrowserRoot("root", null)
+    }
+
+    override fun onLoadChildren(
+        parentId: String,
+        result: Result&lt;List&lt;MediaBrowserCompat.MediaItem&gt;&gt;
+    ) {
+        val mediaItems = buildMediaItems()
+        result.sendResult(mediaItems)
+    }
+}</code></pre>
+                </div>
+            </div>
+
+            <h3>4.2 AndroidManifest.xml 설정</h3>
+
+            <pre><code class="language-xml">&lt;service
+    android:name=".MusicService"
+    android:exported="true"&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="android.media.browse.MediaBrowserService" /&gt;
+    &lt;/intent-filter&gt;
+&lt;/service&gt;</code></pre>
+
+            <h3>4.3 MediaBrowser 클라이언트 (Activity)</h3>
+
+            <pre><code class="language-kotlin">class MusicPlayerActivity : AppCompatActivity() {
+    private lateinit var mediaBrowser: MediaBrowserCompat
+    private lateinit var mediaController: MediaControllerCompat
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        mediaBrowser = MediaBrowserCompat(
+            this,
+            ComponentName(this, MusicService::class.java),
+            object : MediaBrowserCompat.ConnectionCallback() {
+                override fun onConnected() {
+                    val sessionToken = mediaBrowser.sessionToken
+                    mediaController = MediaControllerCompat(this@MusicPlayerActivity, sessionToken)
+                    MediaControllerCompat.setMediaController(this@MusicPlayerActivity, mediaController)
+
+                    buildTransportControls()
+                }
+            },
+            null
+        )
+
+        mediaBrowser.connect()
+    }
+
+    private fun buildTransportControls() {
+        val transportControls = mediaController.transportControls
+
+        findViewById&lt;Button&gt;(R.id.play_button).setOnClickListener {
+            transportControls.play()
+        }
+
+        findViewById&lt;Button&gt;(R.id.pause_button).setOnClickListener {
+            transportControls.pause()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaBrowser.disconnect()
+    }
+}</code></pre>
+
+            <h3>4.4 Media3 MediaSession (최신)</h3>
+
+            <div class="success-box">
+                <strong>✅ Media3 1.x부터 새로운 MediaSession API 제공</strong>
+                <pre><code class="language-kotlin">import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSessionService
+
+class MusicService : MediaSessionService() {
+    private var mediaSession: MediaSession? = null
+
+    override fun onCreate() {
+        super.onCreate()
+
+        val player = ExoPlayer.Builder(this).build()
+        mediaSession = MediaSession.Builder(this, player).build()
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
+        return mediaSession
+    }
+
+    override fun onDestroy() {
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
+        }
+        super.onDestroy()
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 5: Android Versions -->
+        <section id="android-versions">
+            <h2>5. Android 버전별 주요 변경사항</h2>
+
+            <h3>5.1 Android 14 (API 34)</h3>
+            <ul>
+                <li><span class="badge badge-new">NEW</span> <strong>Ultra HDR</strong>: 10-bit HDR 이미지 지원</li>
+                <li><span class="badge badge-new">NEW</span> <strong>Lossless USB Audio</strong>: USB 오디오 무손실 전송</li>
+                <li><span class="badge badge-breaking">BREAKING</span> <strong>Foreground Service 권한</strong>: 미디어 재생 시 <code>FOREGROUND_SERVICE_MEDIA_PLAYBACK</code> 권한 필요</li>
+            </ul>
+
+            <pre><code class="language-xml">&lt;!-- AndroidManifest.xml --&gt;
+&lt;uses-permission android:name="android.permission.FOREGROUND_SERVICE" /&gt;
+&lt;uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" /&gt;
+
+&lt;service
+    android:name=".MusicService"
+    android:foregroundServiceType="mediaPlayback" /&gt;</code></pre>
+
+            <h3>5.2 Android 13 (API 33)</h3>
+            <ul>
+                <li><span class="badge badge-new">NEW</span> <strong>POST_NOTIFICATIONS 권한</strong>: 알림 표시 시 런타임 권한 필요</li>
+                <li><span class="badge badge-new">NEW</span> <strong>Photo Picker</strong>: 미디어 선택 UI 개선</li>
+            </ul>
+
+            <pre><code class="language-kotlin">// Android 13+: 알림 권한 요청
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+        != PackageManager.PERMISSION_GRANTED) {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+            REQUEST_CODE
+        )
+    }
+}</code></pre>
+
+            <h3>5.3 Android 12 (API 31)</h3>
+            <ul>
+                <li><span class="badge badge-new">NEW</span> <strong>Performance Class</strong>: 미디어 성능 등급 (Class 11/12/13/14)</li>
+                <li><span class="badge badge-new">NEW</span> <strong>Transcoding</strong>: HEVC → AVC 자동 변환</li>
+                <li><span class="badge badge-new">NEW</span> <strong>Compat Media Transcoding</strong>: 레거시 앱 호환성</li>
+            </ul>
+
+            <pre><code class="language-kotlin">// Performance Class 확인
+val perfClass = Build.VERSION.MEDIA_PERFORMANCE_CLASS
+when {
+    perfClass >= 31 -> enableHighEndFeatures()  // Class 11+
+    perfClass >= 32 -> enableUltraHighEndFeatures()  // Class 12+
+}</code></pre>
+
+            <h3>5.4 Android 11 (API 30)</h3>
+            <ul>
+                <li><span class="badge badge-new">NEW</span> <strong>Scoped Storage 강제</strong>: <code>MANAGE_EXTERNAL_STORAGE</code> 권한 필요</li>
+                <li><span class="badge badge-new">NEW</span> <strong>Auto-resume on Bluetooth</strong>: 블루투스 재연결 시 자동 재생</li>
+            </ul>
+
+            <h3>5.5 Android 10 (API 29)</h3>
+            <ul>
+                <li><span class="badge badge-new">NEW</span> <strong>Scoped Storage</strong>: MediaStore API 필수</li>
+                <li><span class="badge badge-new">NEW</span> <strong>AV1 Codec</strong>: AV1 디코더 지원</li>
+                <li><span class="badge badge-deprecated">DEPRECATED</span> <code>ACTION_OPEN_DOCUMENT</code> 대신 <code>ACTION_GET_CONTENT</code></li>
+            </ul>
+
+            <h3>5.6 Android 9 (API 28)</h3>
+            <ul>
+                <li><span class="badge badge-new">NEW</span> <strong>HDR VP9 Video</strong>: VP9 Profile 2 (10-bit)</li>
+                <li><span class="badge badge-new">NEW</span> <strong>HEIF Image</strong>: HEIF/HEIC 포맷 지원</li>
+                <li><span class="badge badge-breaking">BREAKING</span> <strong>Clear-text Traffic 차단</strong>: HTTPS 강제 (HTTP → HTTPS)</li>
+            </ul>
+
+            <pre><code class="language-xml">&lt;!-- HTTP 허용 (개발 환경만) --&gt;
+&lt;application
+    android:usesCleartextTraffic="true"&gt;</code></pre>
+
+            <h3>5.7 Android 8.0 (API 26)</h3>
+            <ul>
+                <li><span class="badge badge-new">NEW</span> <strong>AudioFocusRequest</strong>: 새로운 Audio Focus API</li>
+                <li><span class="badge badge-new">NEW</span> <strong>Notification Channels</strong>: 알림 채널 필수</li>
+                <li><span class="badge badge-breaking">BREAKING</span> <strong>Background Service 제한</strong>: Foreground Service 필수</li>
+            </ul>
+
+            <pre><code class="language-kotlin">// Notification Channel 생성 (Android 8.0+)
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    val channel = NotificationChannel(
+        CHANNEL_ID,
+        "Music Playback",
+        NotificationManager.IMPORTANCE_LOW
+    )
+    val notificationManager = getSystemService(NotificationManager::class.java)
+    notificationManager.createNotificationChannel(channel)
+}</code></pre>
+        </section>
+
+        <!-- Section 6: Deprecated APIs -->
+        <section id="deprecated-apis">
+            <h2>6. Deprecated API 대체 가이드</h2>
+
+            <h3>6.1 MediaPlayer Deprecated 메소드</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Deprecated</th>
+                        <th>대체</th>
+                        <th>비고</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>setAudioStreamType(int)</code></td>
+                        <td><code>setAudioAttributes(AudioAttributes)</code></td>
+                        <td>API 21+</td>
+                    </tr>
+                    <tr>
+                        <td><code>attachAuxEffect(int)</code></td>
+                        <td><code>AudioEffect API</code></td>
+                        <td>직접 AudioEffect 사용</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>Deprecated</h4>
+                    <pre><code class="language-kotlin">mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC)</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>대체</h4>
+                    <pre><code class="language-kotlin">val audioAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_MEDIA)
+    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+    .build()
+
+mediaPlayer.setAudioAttributes(audioAttributes)</code></pre>
+                </div>
+            </div>
+
+            <h3>6.2 AudioManager Deprecated 메소드</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Deprecated</th>
+                        <th>대체</th>
+                        <th>비고</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>requestAudioFocus(OnAudioFocusChangeListener, int, int)</code></td>
+                        <td><code>requestAudioFocus(AudioFocusRequest)</code></td>
+                        <td>API 26+</td>
+                    </tr>
+                    <tr>
+                        <td><code>abandonAudioFocus(OnAudioFocusChangeListener)</code></td>
+                        <td><code>abandonAudioFocus(AudioFocusRequest)</code></td>
+                        <td>API 26+</td>
+                    </tr>
+                    <tr>
+                        <td><code>setStreamVolume(int, int, int)</code></td>
+                        <td><code>AudioAttributes 사용</code></td>
+                        <td>직접 제어 지양</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>6.3 MediaCodec Deprecated 상수</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Deprecated</th>
+                        <th>대체</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>INFO_OUTPUT_BUFFERS_CHANGED</code></td>
+                        <td><code>getOutputBuffer(index)</code> 사용</td>
+                    </tr>
+                    <tr>
+                        <td><code>INFO_OUTPUT_FORMAT_CHANGED</code></td>
+                        <td><code>getOutputFormat()</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>6.4 Scoped Storage 마이그레이션</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>Legacy (Android 9 이하)</h4>
+                    <pre><code class="language-kotlin">// 직접 파일 경로 접근
+val file = File("/sdcard/Music/song.mp3")
+val uri = Uri.fromFile(file)
+mediaPlayer.setDataSource(uri.toString())</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>Scoped Storage (Android 10+)</h4>
+                    <pre><code class="language-kotlin">// MediaStore를 통한 접근
+val projection = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.DATA)
+val cursor = contentResolver.query(
+    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+    projection,
+    "${MediaStore.Audio.Media.TITLE} = ?",
+    arrayOf("song"),
+    null
+)
+
+cursor?.use {
+    if (it.moveToFirst()) {
+        val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
+        val uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
+        mediaPlayer.setDataSource(applicationContext, uri)
+    }
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ Android 11부터 Scoped Storage 강제</strong>
+                <p><code>requestLegacyExternalStorage</code> 플래그가 무시됩니다. 모든 파일 접근은 MediaStore 또는 SAF(Storage Access Framework)를 통해야 합니다.</p>
+            </div>
+        </section>
+
+        <!-- Back to Home -->
+        <section style="text-align: center; padding: 3rem;">
+            <a href="index.html" style="display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; transition: transform 0.3s ease;">
+                ← Back to Main Page
+            </a>
+        </section>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#3b82f6',
+                primaryTextColor: '#e2e8f0',
+                primaryBorderColor: '#1e293b',
+                lineColor: '#94a3b8',
+                secondaryColor: '#8b5cf6',
+                tertiaryColor: '#ec4899',
+                background: '#1a1f35',
+                mainBkg: '#1a1f35',
+                secondBkg: '#252b45',
+                textColor: '#e2e8f0',
+                border1: '#475569',
+                border2: '#64748b'
+            }
+        });
+    </script>
+</body>
+</html>
