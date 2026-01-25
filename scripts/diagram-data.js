@@ -205,6 +205,43 @@ const NODE_ID_MAPPING = {
     'Zone1': 'Audio Zone 1',
     'Zone2': 'Audio Zone 2',
 
+    // Media Framework Core (media-framework-core.html)
+    'APP_LAYER': 'Application Layer',
+    'HAL_LAYER': 'HAL Layer',
+    'B1': 'Binder IPC',
+    'M3': 'Media3',
+    'M3_EXO': 'ExoPlayer',
+    'M3_SESSION': 'Media3 Session',
+    'M3_UI': 'Media3 UI',
+    'EXO1': 'ExoPlayer',
+    'MC1': 'MediaCodec 1',
+    'MC2': 'MediaCodec 2',
+    'MC3': 'MediaCodec 3',
+    'MD': 'MediaDrm',
+    'MDSERVICE': 'MediaDrm Service',
+    'KM': 'KeyMaster',
+    'WV': 'Widevine',
+    'SD': 'Secure Decoder',
+    'MSS': 'MediaSession Service',
+    'MS_FW': 'MediaSession Framework',
+    'COMPONENTS': 'Components',
+    'HAL_INTF': 'Codec HAL Interface',
+    'C2_CORE': 'Codec2 Core',
+    'C2_COMP': 'Codec2 Component',
+    'C2_PARAM': 'Codec2 Parameter',
+    'C2_HW': 'Codec2 Hardware',
+    'C2_SW': 'Codec2 Software',
+    'C2_STORE': 'Codec2 Store',
+    'C2_IMPL': 'Codec2 Implementation',
+    'C2_HAL': 'Codec2 API',
+    'GALLERY': 'Gallery App',
+    'MUSIC': 'Music App',
+    'FILES': 'Media Files',
+    'DB': 'Media Database',
+    'SCANNER': 'Media Scanner',
+    'PLAYER': 'Media Player',
+    'AUDIO': 'Audio',
+
     // Media Playback (media-playback.html)
     'PLAYER_API': 'Player API',
     'V_DEC': 'Video Decoder',
@@ -3785,6 +3822,411 @@ player.play()
             'Independent Media',
             'Headphone Support'
         ]
+    },
+
+    // ========================================
+    // Media Framework Core 노드 (media-framework-core.html) - Card 4
+    // ========================================
+
+    'Application Layer': {
+        title: 'Application Layer',
+        layer: 'Layer 1',
+        description: '미디어 앱이 실행되는 애플리케이션 레이어입니다.',
+        components: [
+            'YouTube',
+            'Spotify',
+            'Camera',
+            'Gallery',
+            'Music Player'
+        ]
+    },
+
+    'Java API Framework': {
+        title: 'Java API Framework',
+        layer: 'Layer 2',
+        description: 'Android 미디어 Java API 프레임워크입니다.',
+        components: [
+            'MediaPlayer',
+            'MediaCodec',
+            'MediaRecorder',
+            'MediaSession',
+            'MediaDrm'
+        ],
+        path: 'frameworks/base/media/java/android/media/'
+    },
+
+    'Native Libraries & Runtime': {
+        title: 'Native Libraries & Runtime',
+        layer: 'Layer 3',
+        description: 'Native C++ 미디어 라이브러리와 런타임입니다.',
+        components: [
+            'libmedia',
+            'libstagefright',
+            'NuPlayer',
+            'MediaExtractor',
+            'ART'
+        ],
+        path: 'frameworks/av/'
+    },
+
+    'Binder IPC': {
+        title: 'Binder IPC',
+        layer: 'IPC',
+        description: 'Client-Server 간 프로세스 간 통신입니다.',
+        components: [
+            'IMediaPlayer',
+            'IMediaCodec',
+            'IMediaDrm',
+            'Parcel'
+        ]
+    },
+
+    'Media3': {
+        title: 'Media3 (Jetpack)',
+        layer: 'App Library',
+        description: 'ExoPlayer를 포함하는 Jetpack 미디어 라이브러리입니다.',
+        components: [
+            'ExoPlayer',
+            'MediaSession',
+            'UI Components',
+            'Casting'
+        ],
+        path: 'androidx.media3',
+        doc: 'https://developer.android.com/media/media3'
+    },
+
+    'ExoPlayer': {
+        title: 'ExoPlayer',
+        layer: 'Media Player',
+        description: 'Media3의 핵심 플레이어 엔진입니다.',
+        components: [
+            'Adaptive Streaming',
+            'Codec Support',
+            'DRM Support',
+            'Customizable'
+        ],
+        doc: 'https://exoplayer.dev/'
+    },
+
+    'Media3 Session': {
+        title: 'Media3 MediaSession',
+        layer: 'Session Management',
+        description: 'Media3의 MediaSession 구현입니다.',
+        components: [
+            'Session Management',
+            'Media Button',
+            'Notification',
+            'Background Playback'
+        ]
+    },
+
+    'Media3 UI': {
+        title: 'Media3 UI',
+        layer: 'UI Components',
+        description: 'Media3의 UI 컴포넌트입니다.',
+        components: [
+            'PlayerView',
+            'PlayerControlView',
+            'StyledPlayerView',
+            'Custom Controls'
+        ]
+    },
+
+    'MediaCodec 1': {
+        title: 'MediaCodec (Input)',
+        layer: 'Framework API',
+        description: 'MediaCodec 입력 버퍼 처리입니다.',
+        components: [
+            'Input Buffer',
+            'Queue Input',
+            'Feed Data'
+        ]
+    },
+
+    'MediaCodec 2': {
+        title: 'MediaCodec (Processing)',
+        layer: 'Framework API',
+        description: 'MediaCodec 처리 단계입니다.',
+        components: [
+            'Decode/Encode',
+            'Hardware Acceleration',
+            'Buffer Processing'
+        ]
+    },
+
+    'MediaCodec 3': {
+        title: 'MediaCodec (Output)',
+        layer: 'Framework API',
+        description: 'MediaCodec 출력 버퍼 처리입니다.',
+        components: [
+            'Output Buffer',
+            'Dequeue Output',
+            'Release Buffer'
+        ]
+    },
+
+    'MediaDrm': {
+        title: 'MediaDrm',
+        layer: 'Framework API',
+        description: 'DRM(Digital Rights Management) Framework API입니다.',
+        components: [
+            'License Management',
+            'Key Request/Response',
+            'Crypto Session',
+            'Widevine/PlayReady Support'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaDrm.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaDrm'
+    },
+
+    'MediaDrm Service': {
+        title: 'MediaDrm Service',
+        layer: 'Native Service',
+        description: 'DRM을 처리하는 Native 서비스입니다.',
+        components: [
+            'DRM Plugin Management',
+            'License Storage',
+            'Crypto Operations',
+            'TEE Communication'
+        ],
+        path: 'frameworks/av/drm/'
+    },
+
+    'KeyMaster': {
+        title: 'KeyMaster',
+        layer: 'Security',
+        description: '암호화 키를 안전하게 관리하는 HAL입니다.',
+        components: [
+            'Key Generation',
+            'Key Storage',
+            'Cryptographic Operations',
+            'Hardware-backed Keys'
+        ],
+        path: 'hardware/interfaces/keymaster/',
+        doc: 'https://source.android.com/docs/security/features/keystore'
+    },
+
+    'Widevine': {
+        title: 'Widevine DRM',
+        layer: 'DRM System',
+        description: 'Google의 DRM 솔루션입니다.',
+        components: [
+            'Widevine L1 (TEE)',
+            'Widevine L2 (TEE)',
+            'Widevine L3 (Software)',
+            'License Server'
+        ],
+        doc: 'https://www.widevine.com/'
+    },
+
+    'Secure Decoder': {
+        title: 'Secure Decoder',
+        layer: 'Hardware Codec',
+        description: 'TEE에서 실행되는 보안 디코더입니다.',
+        components: [
+            'Encrypted Input',
+            'TEE Decryption',
+            'Secure Pipeline',
+            'Protected Output'
+        ]
+    },
+
+    'MediaSession Service': {
+        title: 'MediaSession Service',
+        layer: 'System Service',
+        description: 'MediaSession을 관리하는 시스템 서비스입니다.',
+        components: [
+            'Session Management',
+            'Priority Control',
+            'Media Button Routing',
+            'Volume Control'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/media/'
+    },
+
+    'MediaSession Framework': {
+        title: 'MediaSession Framework',
+        layer: 'Framework',
+        description: 'MediaSession 프레임워크 컴포넌트입니다.',
+        components: [
+            'MediaSession',
+            'MediaController',
+            'MediaBrowser',
+            'MediaBrowserService'
+        ],
+        path: 'frameworks/base/media/java/android/media/session/'
+    },
+
+    'Components': {
+        title: 'Codec Components',
+        layer: 'Codec',
+        description: '코덱 컴포넌트입니다.',
+        components: [
+            'Encoder',
+            'Decoder',
+            'Filters',
+            'Muxers'
+        ]
+    },
+
+    'Codec HAL Interface': {
+        title: 'Codec HAL Interface',
+        layer: 'HAL Interface',
+        description: 'Codec2 HAL 인터페이스입니다.',
+        components: [
+            'IComponent',
+            'IComponentStore',
+            'IConfigurable',
+            'HIDL/AIDL'
+        ],
+        path: 'hardware/interfaces/media/c2/'
+    },
+
+    'Codec2 Core': {
+        title: 'Codec2 Core',
+        layer: 'HAL Implementation',
+        description: 'Codec2 코어 구현입니다.',
+        components: [
+            'C2Component',
+            'C2Allocator',
+            'C2Buffer',
+            'C2Param'
+        ],
+        path: 'frameworks/av/media/codec2/'
+    },
+
+    'Codec2 Component': {
+        title: 'Codec2 Component',
+        layer: 'Codec Component',
+        description: '개별 코덱 컴포넌트입니다.',
+        components: [
+            'Component Interface',
+            'Work Queue',
+            'Buffer Management',
+            'Parameter Configuration'
+        ]
+    },
+
+    'Codec2 Parameter': {
+        title: 'Codec2 Parameter',
+        layer: 'Configuration',
+        description: 'Codec2 파라미터 시스템입니다.',
+        components: [
+            'C2Param',
+            'C2Setting',
+            'C2Info',
+            'Reflector'
+        ]
+    },
+
+    'Codec2 Hardware': {
+        title: 'Codec2 Hardware Codec',
+        layer: 'Hardware',
+        description: '하드웨어 가속 코덱입니다.',
+        components: [
+            'HW Encoder',
+            'HW Decoder',
+            'Video Processor',
+            'Vendor Implementation'
+        ]
+    },
+
+    'Codec2 Software': {
+        title: 'Codec2 Software Codec',
+        layer: 'Software',
+        description: '소프트웨어 코덱입니다.',
+        components: [
+            'SW Encoder',
+            'SW Decoder',
+            'libvpx (VP9)',
+            'dav1d (AV1)'
+        ]
+    },
+
+    'Codec2 Store': {
+        title: 'Codec2 Component Store',
+        layer: 'Codec Store',
+        description: '코덱 컴포넌트를 관리하는 스토어입니다.',
+        components: [
+            'Component Query',
+            'Component Creation',
+            'Trait Management',
+            'Interface Discovery'
+        ]
+    },
+
+    'Codec2 Implementation': {
+        title: 'Codec2 Implementation',
+        layer: 'HAL Implementation',
+        description: 'Codec2 HAL의 실제 구현입니다.',
+        components: [
+            'Vendor Codecs',
+            'Software Codecs',
+            'Component Store',
+            'Allocator Service'
+        ]
+    },
+
+    'Gallery App': {
+        title: 'Gallery',
+        layer: 'Application',
+        description: '사진/비디오 갤러리 앱입니다.',
+        components: [
+            'Image Viewer',
+            'Video Player',
+            'Slideshow',
+            'Editing'
+        ]
+    },
+
+    'Music App': {
+        title: 'Music',
+        layer: 'Application',
+        description: '음악 플레이어 앱입니다.',
+        components: [
+            'Audio Playback',
+            'Playlist',
+            'Audio Focus',
+            'MediaSession'
+        ]
+    },
+
+    'Media Files': {
+        title: 'Media Files',
+        layer: 'Storage',
+        description: '저장소의 미디어 파일입니다.',
+        components: [
+            'Audio Files',
+            'Video Files',
+            'Images',
+            'Playlists'
+        ]
+    },
+
+    'Media Database': {
+        title: 'Media Database',
+        layer: 'Storage',
+        description: '미디어 메타데이터 데이터베이스입니다.',
+        components: [
+            'MediaStore DB',
+            'Metadata',
+            'Thumbnails',
+            'Content URI'
+        ],
+        path: 'packages/providers/MediaProvider/'
+    },
+
+    'Media Scanner': {
+        title: 'Media Scanner',
+        layer: 'System Service',
+        description: '미디어 파일을 스캔하고 인덱싱하는 서비스입니다.',
+        components: [
+            'File Discovery',
+            'Metadata Extraction',
+            'DB Update',
+            'Thumbnail Generation'
+        ],
+        path: 'packages/providers/MediaProvider/src/com/android/providers/media/scan/'
     }
 };
 
