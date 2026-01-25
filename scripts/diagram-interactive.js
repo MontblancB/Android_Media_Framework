@@ -118,7 +118,7 @@ function attachInteractiveHandlers(container, diagramIndex) {
             });
 
             node.addEventListener('mouseleave', () => {
-                handleNodeLeave();
+                handleNodeLeave(node);
             });
         }
 
@@ -295,8 +295,9 @@ function handleNodeHover(event, nodeId, node) {
         return;
     }
 
-    // 노드 스케일 효과
-    node.style.transform = 'scale(1.05)';
+    // 노드 효과 (스케일 대신 opacity와 shadow 사용하여 떨림 방지)
+    node.style.opacity = '0.8';
+    node.style.filter = 'drop-shadow(0 0 6px rgba(59, 130, 246, 0.6))';
 
     // 툴팁 표시
     showTooltip(event, nodeData);
@@ -305,11 +306,13 @@ function handleNodeHover(event, nodeId, node) {
 /**
  * 노드 떠날 때 핸들러
  */
-function handleNodeLeave() {
-    // 모든 노드의 transform 초기화
-    document.querySelectorAll('.mermaid svg .node').forEach(n => {
-        n.style.transform = '';
-    });
+function handleNodeLeave(node) {
+    // 해당 노드만 효과 초기화 (떨림 방지)
+    if (node) {
+        node.style.transform = '';
+        node.style.opacity = '';
+        node.style.filter = '';
+    }
 
     // 툴팁 숨기기
     hideTooltip();
