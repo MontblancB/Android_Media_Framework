@@ -202,6 +202,20 @@ const NODE_ID_MAPPING = {
     'BT': 'Bluetooth Audio',
     'USB_DAC': 'USB DAC',
 
+    // media-extractor.html - MediaExtractor & Container Parsing
+    'DATA_SRC': 'Data Source',
+    'EXTRACTOR_FACTORY': 'Extractor Factory',
+    'FD': 'File Descriptor',
+    'META_DATA': 'Metadata',
+    'ME_API': 'MediaExtractor API',
+    'ME_IMPL': 'MediaExtractor Implementation',
+    'MKV_PARSER': 'MKV Parser',
+    'MP4_PARSER': 'MP4 Parser',
+    'OTHER_PARSER': 'Other Parser',
+    'SAMPLE_READER': 'Sample Reader',
+    'STREAM': 'Stream Source',
+    'WEBM_PARSER': 'WebM Parser',
+
     // Widevine DRM (widevine.html)
     'CDM': 'Content Decryption Module',
     'MEDIADRM': 'MediaDRM API',
@@ -3022,6 +3036,407 @@ sync->getSyncMode(&mode);
             'Scoped Storage',
             'File Access via URI'
         ]
+    },
+
+    // ========================================
+    // MediaExtractor & Container Parsing 노드 (media-extractor.html)
+    // ========================================
+
+    'Data Source': {
+        title: 'Data Source',
+        layer: 'Framework',
+        description: '미디어 데이터를 읽어오는 소스 추상화 레이어입니다.',
+        components: [
+            'File Descriptor',
+            'Content URI',
+            'HTTP/HTTPS Stream',
+            'RTSP Stream',
+            'Asset File'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media',
+        codeExample: `
+// MediaExtractor에 데이터 소스 설정
+val extractor = MediaExtractor()
+
+// 방법 1: 파일 경로
+extractor.setDataSource(filePath)
+
+// 방법 2: Content URI
+extractor.setDataSource(context, uri, null)
+
+// 방법 3: File Descriptor
+val pfd = contentResolver.openFileDescriptor(uri, "r")
+extractor.setDataSource(pfd!!.fileDescriptor)
+
+// 방법 4: HTTP URL
+extractor.setDataSource(httpUrl, headers)
+        `.trim()
+    },
+
+    'Extractor Factory': {
+        title: 'MediaExtractor Factory',
+        layer: 'Framework',
+        description: '컨테이너 형식에 맞는 적절한 파서를 선택하는 팩토리입니다.',
+        components: [
+            'Format Detection',
+            'Parser Selection',
+            'Plugin Loading',
+            'Extractor Creation'
+        ],
+        path: 'frameworks/av/media/libstagefright/MediaExtractorFactory.cpp',
+        doc: 'https://source.android.com/docs/core/media',
+        codeExample: `
+// MediaExtractorFactory 내부 동작 (C++)
+sp<IMediaExtractor> MediaExtractorFactory::Create(
+    const sp<IDataSource>& dataSource) {
+
+    // 컨테이너 형식 탐지
+    float confidence = 0;
+    sp<IMediaExtractor> ret;
+
+    // 등록된 모든 extractor 플러그인 시도
+    for (auto& plugin : mExtractorPlugins) {
+        float thisConfidence = plugin->sniff(dataSource);
+        if (thisConfidence > confidence) {
+            confidence = thisConfidence;
+            ret = plugin->create(dataSource);
+        }
+    }
+
+    return ret;  // 가장 높은 confidence의 extractor 반환
+}
+        `.trim()
+    },
+
+    'File Descriptor': {
+        title: 'File Descriptor',
+        layer: 'OS',
+        description: '파일 시스템에서 미디어 파일을 가리키는 파일 디스크립터입니다.',
+        components: [
+            'FD Number',
+            'Offset & Length',
+            'Seekable',
+            'Parcelable'
+        ],
+        doc: 'https://developer.android.com/reference/android/os/ParcelFileDescriptor',
+        codeExample: `
+// ParcelFileDescriptor로 미디어 파일 열기
+val contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+val cursor = contentResolver.query(contentUri, null, null, null, null)
+cursor?.use {
+    if (it.moveToFirst()) {
+        val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
+        val uri = ContentUris.withAppendedId(contentUri, id)
+
+        val pfd = contentResolver.openFileDescriptor(uri, "r")
+        val fd = pfd!!.fileDescriptor
+
+        mediaPlayer.setDataSource(fd)
+        pfd.close()
+    }
+}
+        `.trim()
+    },
+
+    'Metadata': {
+        title: 'Media Metadata',
+        layer: 'Framework',
+        description: '미디어 파일의 메타데이터 정보입니다.',
+        components: [
+            'Duration',
+            'Track Count',
+            'MIME Type',
+            'Bitrate',
+            'Frame Rate',
+            'Sample Rate',
+            'Album Art'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://developer.android.com/reference/android/media/MediaMetadataRetriever',
+        codeExample: `
+// MediaMetadataRetriever로 메타데이터 추출
+val retriever = MediaMetadataRetriever()
+retriever.setDataSource(context, uri)
+
+val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+val title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+val artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+val album = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
+val albumArt = retriever.embeddedPicture  // Bitmap
+
+retriever.release()
+        `.trim()
+    },
+
+    'MediaExtractor API': {
+        title: 'MediaExtractor API',
+        layer: 'Framework',
+        description: 'Android의 MediaExtractor Java/Kotlin API입니다.',
+        components: [
+            'setDataSource()',
+            'getTrackCount()',
+            'getTrackFormat()',
+            'selectTrack()',
+            'readSampleData()',
+            'getSampleTime()',
+            'seekTo()'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaExtractor.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaExtractor',
+        codeExample: `
+// MediaExtractor 사용 예제
+val extractor = MediaExtractor()
+extractor.setDataSource(context, uri, null)
+
+// 트랙 선택
+for (i in 0 until extractor.trackCount) {
+    val format = extractor.getTrackFormat(i)
+    val mime = format.getString(MediaFormat.KEY_MIME) ?: continue
+
+    if (mime.startsWith("video/")) {
+        extractor.selectTrack(i)
+        break
+    }
+}
+
+// 샘플 읽기
+val buffer = ByteBuffer.allocate(1024 * 1024)
+while (true) {
+    val sampleSize = extractor.readSampleData(buffer, 0)
+    if (sampleSize < 0) break
+
+    val presentationTimeUs = extractor.sampleTime
+    val flags = extractor.sampleFlags
+
+    // 샘플 처리...
+
+    extractor.advance()
+}
+
+extractor.release()
+        `.trim()
+    },
+
+    'MediaExtractor Implementation': {
+        title: 'MediaExtractor Native Implementation',
+        layer: 'Native',
+        description: 'MediaExtractor의 네이티브 C++ 구현체입니다.',
+        components: [
+            'NuMediaExtractor',
+            'MPEG4Extractor',
+            'MatroskaExtractor',
+            'WebMExtractor',
+            'Track Management',
+            'Sample Buffer'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'MKV Parser': {
+        title: 'Matroska (MKV) Parser',
+        layer: 'Native',
+        description: 'Matroska/MKV 컨테이너 파서입니다.',
+        components: [
+            'EBML Parser',
+            'Cluster Reading',
+            'Track Parsing',
+            'Segment Info',
+            'Cue Points (Seek)',
+            'Subtitle Support'
+        ],
+        path: 'frameworks/av/media/libstagefright/matroska/',
+        doc: 'https://www.matroska.org/technical/specs/index.html',
+        codeExample: `
+// MKV 컨테이너 구조
+/*
+EBML Header
+  - DocType: "matroska"
+  - DocTypeVersion: 4
+
+Segment
+  - SeekHead (인덱스)
+  - Info (duration, timescale)
+  - Tracks
+    - TrackEntry (video)
+      - CodecID: "V_MPEG4/ISO/AVC"
+    - TrackEntry (audio)
+      - CodecID: "A_AAC"
+  - Cluster
+    - SimpleBlock (video frames)
+    - SimpleBlock (audio frames)
+  - Cues (seek points)
+*/
+        `.trim()
+    },
+
+    'MP4 Parser': {
+        title: 'MP4 (ISO BMFF) Parser',
+        layer: 'Native',
+        description: 'MPEG-4 Part 14 (MP4) 컨테이너 파서입니다.',
+        components: [
+            'Box (Atom) Parser',
+            'ftyp (File Type)',
+            'moov (Movie Header)',
+            'mdat (Media Data)',
+            'trak (Track)',
+            'stbl (Sample Table)',
+            'Fast Start Support'
+        ],
+        path: 'frameworks/av/media/libstagefright/MPEG4Extractor.cpp',
+        doc: 'https://www.iso.org/standard/68960.html',
+        codeExample: `
+// MP4 Box 구조 (ISO BMFF)
+/*
+ftyp: File Type Box
+  - major_brand: "isom"
+  - compatible_brands: ["isom", "iso2", "avc1", "mp41"]
+
+moov: Movie Box
+  - mvhd: Movie Header (duration, timescale)
+  - trak: Track Box (video)
+    - tkhd: Track Header
+    - mdia: Media Box
+      - mdhd: Media Header
+      - hdlr: Handler (vide)
+      - minf: Media Info
+        - stbl: Sample Table
+          - stsd: Sample Description (avc1)
+          - stts: Time-to-Sample
+          - stss: Sync Sample (I-frames)
+          - stsc: Sample-to-Chunk
+          - stsz: Sample Size
+          - stco: Chunk Offset
+  - trak: Track Box (audio)
+    - ... (similar structure)
+
+mdat: Media Data Box
+  - Raw audio/video samples
+*/
+        `.trim()
+    },
+
+    'WebM Parser': {
+        title: 'WebM Parser',
+        layer: 'Native',
+        description: 'WebM 컨테이너 파서입니다 (MKV 기반).',
+        components: [
+            'EBML Parser',
+            'VP8/VP9 Video',
+            'Vorbis/Opus Audio',
+            'Web Optimized',
+            'Streaming Support'
+        ],
+        path: 'frameworks/av/media/libstagefright/webm/',
+        doc: 'https://www.webmproject.org/docs/container/',
+        codeExample: `
+// WebM은 Matroska의 서브셋
+/*
+제약 사항:
+- DocType: "webm"
+- Video Codec: VP8, VP9, AV1만 허용
+- Audio Codec: Vorbis, Opus만 허용
+- 스트리밍 최적화 (Cues 필수)
+- 단순화된 구조
+*/
+
+// Android에서 WebM 지원
+val format = MediaFormat()
+format.setString(MediaFormat.KEY_MIME, "video/x-vnd.on2.vp9")
+format.setInteger(MediaFormat.KEY_WIDTH, 1920)
+format.setInteger(MediaFormat.KEY_HEIGHT, 1080)
+        `.trim()
+    },
+
+    'Other Parser': {
+        title: 'Other Container Parsers',
+        layer: 'Native',
+        description: '기타 컨테이너 포맷 파서입니다.',
+        components: [
+            '3GP Parser',
+            'FLV Parser',
+            'OGG Parser',
+            'TS Parser (MPEG-TS)',
+            'FLAC Parser',
+            'WAV Parser'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'Sample Reader': {
+        title: 'Sample Reader',
+        layer: 'Native',
+        description: '컨테이너에서 오디오/비디오 샘플을 읽어오는 컴포넌트입니다.',
+        components: [
+            'Sample Extraction',
+            'Buffer Management',
+            'Timestamp Calculation',
+            'Flag Processing (Sync, EOS)',
+            'Seek Support'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media',
+        codeExample: `
+// Sample 읽기 흐름 (내부 구현)
+class SampleReader {
+    MediaBufferBase* buffer;
+    int64_t timeUs;
+    uint32_t flags;
+
+    status_t readSample() {
+        // 1. 다음 샘플의 위치 계산 (Sample Table 참조)
+        off64_t offset = getSampleOffset(mCurrentSample);
+        size_t size = getSampleSize(mCurrentSample);
+
+        // 2. mdat box에서 샘플 데이터 읽기
+        mDataSource->readAt(offset, buffer->data(), size);
+
+        // 3. 타임스탬프 계산
+        timeUs = getSampleTime(mCurrentSample);
+
+        // 4. 플래그 설정 (Sync Sample 여부)
+        flags = isSyncSample(mCurrentSample) ?
+                MediaExtractor::SAMPLE_FLAG_SYNC : 0;
+
+        mCurrentSample++;
+        return OK;
+    }
+};
+        `.trim()
+    },
+
+    'Stream Source': {
+        title: 'Stream Source',
+        layer: 'Network',
+        description: 'HTTP/RTSP 등 스트리밍 소스에서 데이터를 가져옵니다.',
+        components: [
+            'HTTP Client',
+            'Progressive Download',
+            'Adaptive Streaming (DASH/HLS)',
+            'Buffer Caching',
+            'Range Requests'
+        ],
+        path: 'frameworks/av/media/libstagefright/httplive/',
+        doc: 'https://source.android.com/docs/core/media',
+        codeExample: `
+// HTTP 스트리밍 DataSource 설정
+val httpDataSource = DefaultHttpDataSource.Factory()
+    .setUserAgent("MyApp/1.0")
+    .setConnectTimeoutMs(30000)
+    .setReadTimeoutMs(30000)
+    .setAllowCrossProtocolRedirects(true)
+    .createDataSource()
+
+// Progressive Download
+val uri = Uri.parse("https://example.com/video.mp4")
+val dataSpec = DataSpec(uri)
+httpDataSource.open(dataSpec)
+
+val buffer = ByteArray(1024 * 1024)
+var bytesRead = httpDataSource.read(buffer, 0, buffer.size)
+        `.trim()
     },
 
     // ========================================
