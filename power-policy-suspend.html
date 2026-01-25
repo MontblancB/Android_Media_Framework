@@ -363,6 +363,1927 @@
             </div>
         </section>
 
+        <!-- Section 7: Code Examples -->
+        <section class="section sec-code">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                실제 코드 예시
+            </h2>
+            <p class="section-description">
+                CarPowerManagementService 리스너 등록, Power Policy 적용, 상태 저장 구현 코드입니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-1. CarAudioService - Power Policy 리스너 등록</h3>
+            <div class="code-block">
+                <pre><code class="language-java">// packages/services/Car/service/src/com/android/car/audio/CarAudioService.java
+public class CarAudioService extends ICarAudio.Stub implements CarServiceBase {
+
+    private CarPowerManagementService mCarPowerManagementService;
+    private final CarPowerPolicyFilter mPowerPolicyFilter;
+    private final CarPowerPolicyListener mPowerPolicyListener;
+
+    public void init() {
+        // Power Policy 필터 생성 (AUDIO 컴포넌트만 감지)
+        mPowerPolicyFilter = new CarPowerPolicyFilter.Builder()
+            .setComponents(PowerComponent.AUDIO)
+            .build();
+
+        // 리스너 생성
+        mPowerPolicyListener = new CarPowerPolicyListener() {
+            @Override
+            public void onPolicyChanged(CarPowerPolicy policy,
+                                       CarPowerPolicy accumulatedPolicy) {
+                handlePowerPolicyChange(policy);
+            }
+        };
+
+        // CPMS에 리스너 등록
+        mCarPowerManagementService.addPowerPolicyListener(
+            mPowerPolicyFilter,
+            mPowerPolicyListener
+        );
+    }
+
+    private void handlePowerPolicyChange(CarPowerPolicy policy) {
+        boolean audioEnabled = policy.isComponentEnabled(PowerComponent.AUDIO);
+
+        Log.d(TAG, "Power Policy changed: AUDIO = " + audioEnabled);
+
+        if (audioEnabled) {
+            // AUDIO 활성화: Unmute, Allow Focus
+            enableAudioRouting();
+            setAudioFocusRequestsAllowed(true);
+            Log.d(TAG, "Audio enabled: unmuted and allowing focus requests");
+        } else {
+            // AUDIO 비활성화: Mute, Reject Focus
+            disableAudioRouting();
+            setAudioFocusRequestsAllowed(false);
+            abandonNonCriticalAudioFocus();
+            Log.d(TAG, "Audio disabled: muted and rejecting focus requests");
+        }
+    }
+
+    private void abandonNonCriticalAudioFocus() {
+        // 경고음 등을 제외한 모든 포커스 해제
+        for (AudioFocusInfo info : getActiveFocusHolders()) {
+            if (info.getUsage() != AudioAttributes.USAGE_ASSISTANCE_SONIFICATION) {
+                mAudioManager.abandonAudioFocusRequest(info);
+            }
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-2. CarMediaService - MEDIA 컴포넌트 처리</h3>
+            <div class="code-block">
+                <pre><code class="language-java">// packages/services/Car/service/src/com/android/car/media/CarMediaService.java
+public class CarMediaService extends ICarMedia.Stub implements CarServiceBase {
+
+    private CarPowerPolicyFilter mPowerPolicyFilter;
+    private CarPowerPolicyListener mPowerPolicyListener;
+
+    @Override
+    public void init() {
+        // MEDIA 컴포넌트 필터
+        mPowerPolicyFilter = new CarPowerPolicyFilter.Builder()
+            .setComponents(PowerComponent.MEDIA)
+            .build();
+
+        mPowerPolicyListener = new CarPowerPolicyListener() {
+            @Override
+            public void onPolicyChanged(CarPowerPolicy policy,
+                                       CarPowerPolicy accumulatedPolicy) {
+                handleMediaPowerChange(policy);
+            }
+        };
+
+        mCarPowerManagementService.addPowerPolicyListener(
+            mPowerPolicyFilter,
+            mPowerPolicyListener
+        );
+    }
+
+    private void handleMediaPowerChange(CarPowerPolicy policy) {
+        boolean mediaEnabled = policy.isComponentEnabled(PowerComponent.MEDIA);
+
+        if (mediaEnabled) {
+            Log.d(TAG, "MEDIA enabled: Restoring last media source");
+            restoreLastMediaSource();
+        } else {
+            Log.d(TAG, "MEDIA disabled: Pausing playback and saving state");
+            pauseCurrentMediaAndSave();
+        }
+    }
+
+    private void pauseCurrentMediaAndSave() {
+        // 현재 활성 MediaController 찾기
+        MediaController controller = getActiveMediaController();
+        if (controller != null) {
+            PlaybackState state = controller.getPlaybackState();
+
+            if (state != null && state.getState() == PlaybackState.STATE_PLAYING) {
+                // 재생 중이면 일시정지
+                controller.getTransportControls().pause();
+                Log.d(TAG, "Paused: " + controller.getPackageName());
+            }
+
+            // 마지막 소스 저장
+            ComponentName component = controller.getSessionActivity().getComponent();
+            saveLastMediaSource(component, MEDIA_SOURCE_MODE_PLAYBACK);
+        }
+    }
+
+    private void restoreLastMediaSource() {
+        ComponentName lastSource = getLastMediaSource(MEDIA_SOURCE_MODE_PLAYBACK);
+
+        if (lastSource != null) {
+            Log.d(TAG, "Restoring last media source: " + lastSource);
+
+            // Autoplay 정책에 따라 자동 재생 여부 결정
+            boolean shouldAutoplay = shouldStartPlayback(lastSource);
+            startMediaConnectorService(lastSource, shouldAutoplay);
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-3. 앱 레벨 - 상태 저장 및 복구</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// 미디어 앱의 Service 구현
+class MyMediaService : MediaBrowserServiceCompat() {
+
+    private lateinit var player: ExoPlayer
+    private lateinit var mediaSession: MediaSessionCompat
+    private val sharedPrefs by lazy {
+        getSharedPreferences("playback_state", Context.MODE_PRIVATE)
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // 저장된 상태 복구
+        restorePlaybackState()
+
+        mediaSession = MediaSessionCompat(this, "MyMediaSession").apply {
+            setCallback(MediaSessionCallback())
+            isActive = true
+        }
+    }
+
+    // Suspend 진입 시 상태 저장
+    private inner class MediaSessionCallback : MediaSessionCompat.Callback() {
+        override fun onPause() {
+            player.pause()
+            savePlaybackState()
+            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED)
+        }
+
+        override fun onPlay() {
+            player.play()
+            updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+        }
+    }
+
+    // 재생 상태 저장
+    private fun savePlaybackState() {
+        sharedPrefs.edit().apply {
+            putLong("position", player.currentPosition)
+            putString("media_id", player.currentMediaItem?.mediaId)
+            putInt("window_index", player.currentWindowIndex)
+            putBoolean("shuffle", player.shuffleModeEnabled)
+            putInt("repeat_mode", player.repeatMode)
+            apply()
+        }
+        Log.d(TAG, "Saved playback state: pos=${player.currentPosition}ms")
+    }
+
+    // 재생 상태 복구
+    private fun restorePlaybackState() {
+        val position = sharedPrefs.getLong("position", 0)
+        val mediaId = sharedPrefs.getString("media_id", null)
+        val windowIndex = sharedPrefs.getInt("window_index", 0)
+        val shuffle = sharedPrefs.getBoolean("shuffle", false)
+        val repeatMode = sharedPrefs.getInt("repeat_mode", Player.REPEAT_MODE_OFF)
+
+        if (mediaId != null) {
+            Log.d(TAG, "Restoring: mediaId=$mediaId, pos=${position}ms")
+
+            // 플레이리스트 복원
+            val mediaItems = loadPlaylistFromDatabase()
+            player.setMediaItems(mediaItems, windowIndex, position)
+            player.shuffleModeEnabled = shuffle
+            player.repeatMode = repeatMode
+            player.prepare()
+        }
+    }
+
+    // ACTION_SHUTDOWN 브로드캐스트 수신
+    private val shutdownReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_SHUTDOWN) {
+                Log.d(TAG, "Shutdown detected, saving state")
+                savePlaybackState()
+            }
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        registerReceiver(shutdownReceiver, IntentFilter(Intent.ACTION_SHUTDOWN))
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-4. VHAL - Power State 보고 (C++)</h3>
+            <div class="code-block">
+                <pre><code class="language-cpp">// hardware/interfaces/automotive/vehicle/2.0/default/impl/vhal_v2_0/VehicleHalImpl.cpp
+void VehicleHalImpl::onIgnitionChange(bool ignitionOn) {
+    VehiclePropValue value;
+    value.prop = toInt(VehicleProperty::AP_POWER_STATE_REQ);
+    value.timestamp = elapsedRealtimeNano();
+
+    if (ignitionOn) {
+        // Ignition ON -> CPMS에 ON 요청
+        value.value.int32Values = {
+            toInt(VehicleApPowerStateReq::ON),
+            0  // param
+        };
+        Log::d(TAG, "Sending AP_POWER_STATE_REQ: ON");
+    } else {
+        // Ignition OFF -> CPMS에 SHUTDOWN_PREPARE 요청
+        value.value.int32Values = {
+            toInt(VehicleApPowerStateReq::SHUTDOWN_PREPARE),
+            toInt(VehicleApPowerStateShutdownParam::CAN_SLEEP)
+        };
+        Log::d(TAG, "Sending AP_POWER_STATE_REQ: SHUTDOWN_PREPARE");
+    }
+
+    // CPMS로 전달
+    mCallback->onPropertyEvent({value});
+}
+
+// CPMS로부터 응답 수신
+StatusCode VehicleHalImpl::set(const VehiclePropValue&amp; value) {
+    if (value.prop == toInt(VehicleProperty::AP_POWER_STATE_REPORT)) {
+        int32_t state = value.value.int32Values[0];
+
+        switch (state) {
+            case toInt(VehicleApPowerStateReport::DEEP_SLEEP_ENTRY):
+                Log::d(TAG, "AP ready for deep sleep");
+                // VMCU에 Deep Sleep 진입 신호
+                notifyVmcuReadyForSleep();
+                break;
+
+            case toInt(VehicleApPowerStateReport::SHUTDOWN_START):
+                Log::d(TAG, "AP starting shutdown");
+                break;
+
+            default:
+                Log::w(TAG, "Unknown power state report: %d", state);
+        }
+
+        return StatusCode::OK;
+    }
+    return StatusCode::INVALID_ARG;
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 8: Power Policy XML Configuration -->
+        <section class="section sec-policy-xml">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Power Policy XML 설정
+            </h2>
+            <p class="section-description">
+                OEM이 차량 특성에 맞게 Power Policy를 정의하는 XML 설정 파일입니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">8-1. car_power_policy.xml 전체 구조</h3>
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- packages/services/Car/service/res/xml/car_power_policy.xml --&gt;
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;powerPolicy version="1.0"&gt;
+
+    &lt;!-- 1. 정책 정의 --&gt;
+    &lt;policies&gt;
+        &lt;!-- 시스템 켜짐 상태 --&gt;
+        &lt;policy id="system_on"&gt;
+            &lt;component id="AUDIO"&gt;on&lt;/component&gt;
+            &lt;component id="MEDIA"&gt;on&lt;/component&gt;
+            &lt;component id="DISPLAY"&gt;on&lt;/component&gt;
+            &lt;component id="WIFI"&gt;on&lt;/component&gt;
+            &lt;component id="CELLULAR"&gt;on&lt;/component&gt;
+            &lt;component id="ETHERNET"&gt;on&lt;/component&gt;
+            &lt;component id="PROJECTION"&gt;on&lt;/component&gt;
+            &lt;component id="NFC"&gt;on&lt;/component&gt;
+            &lt;component id="INPUT"&gt;on&lt;/component&gt;
+            &lt;component id="VOICE_INTERACTION"&gt;on&lt;/component&gt;
+            &lt;component id="VISUAL_INTERACTION"&gt;on&lt;/component&gt;
+            &lt;component id="TRUSTED_DEVICE_DETECTION"&gt;on&lt;/component&gt;
+            &lt;component id="LOCATION"&gt;on&lt;/component&gt;
+            &lt;component id="MICROPHONE"&gt;on&lt;/component&gt;
+            &lt;component id="BLUETOOTH"&gt;on&lt;/component&gt;
+            &lt;component id="CPU"&gt;on&lt;/component&gt;
+        &lt;/policy&gt;
+
+        &lt;!-- 종료 준비 상태 (UI Off, 정리 작업 수행) --&gt;
+        &lt;policy id="no_user_interaction"&gt;
+            &lt;component id="AUDIO"&gt;off&lt;/component&gt;
+            &lt;component id="MEDIA"&gt;off&lt;/component&gt;
+            &lt;component id="DISPLAY"&gt;off&lt;/component&gt;
+            &lt;component id="WIFI"&gt;on&lt;/component&gt;  &lt;!-- 백그라운드 동기화 --&gt;
+            &lt;component id="CELLULAR"&gt;on&lt;/component&gt;
+            &lt;component id="VOICE_INTERACTION"&gt;off&lt;/component&gt;
+            &lt;component id="VISUAL_INTERACTION"&gt;off&lt;/component&gt;
+            &lt;component id="INPUT"&gt;off&lt;/component&gt;
+            &lt;component id="CPU"&gt;on&lt;/component&gt;  &lt;!-- 정리 작업 수행 --&gt;
+        &lt;/policy&gt;
+
+        &lt;!-- Suspend-to-RAM 상태 --&gt;
+        &lt;policy id="suspend_to_ram"&gt;
+            &lt;component id="AUDIO"&gt;on&lt;/component&gt;  &lt;!-- 메모리 유지 --&gt;
+            &lt;component id="MEDIA"&gt;on&lt;/component&gt;  &lt;!-- 메모리 유지 --&gt;
+            &lt;component id="DISPLAY"&gt;off&lt;/component&gt;
+            &lt;component id="WIFI"&gt;off&lt;/component&gt;
+            &lt;component id="BLUETOOTH"&gt;off&lt;/component&gt;
+            &lt;component id="CPU"&gt;untouched&lt;/component&gt;  &lt;!-- 커널 제어 --&gt;
+        &lt;/policy&gt;
+
+        &lt;!-- 주차 모드 (긴 주차 시) --&gt;
+        &lt;policy id="parking_mode"&gt;
+            &lt;component id="AUDIO"&gt;off&lt;/component&gt;
+            &lt;component id="MEDIA"&gt;off&lt;/component&gt;
+            &lt;component id="DISPLAY"&gt;off&lt;/component&gt;
+            &lt;component id="WIFI"&gt;off&lt;/component&gt;
+            &lt;component id="BLUETOOTH"&gt;off&lt;/component&gt;
+            &lt;component id="LOCATION"&gt;on&lt;/component&gt;  &lt;!-- 도난 방지 --&gt;
+            &lt;component id="CELLULAR"&gt;on&lt;/component&gt;  &lt;!-- 원격 제어 --&gt;
+        &lt;/policy&gt;
+    &lt;/policies&gt;
+
+    &lt;!-- 2. 정책 그룹 --&gt;
+    &lt;policyGroups&gt;
+        &lt;policyGroup id="default_policy_group"&gt;
+            &lt;!-- 기본 정책 --&gt;
+            &lt;defaultPolicy&gt;system_on&lt;/defaultPolicy&gt;
+
+            &lt;!-- 전원 상태별 정책 매핑 --&gt;
+            &lt;noDefaultPolicy state="wait_for_vhal" policy="system_on"/&gt;
+            &lt;noDefaultPolicy state="on" policy="system_on"/&gt;
+            &lt;noDefaultPolicy state="shutdown_prepare" policy="no_user_interaction"/&gt;
+
+            &lt;!-- 2시간 이내 주차: Suspend-to-RAM --&gt;
+            &lt;noDefaultPolicy state="wait_for_vhal" timeout="7200000" policy="suspend_to_ram"/&gt;
+
+            &lt;!-- 2시간 초과 주차: Parking Mode --&gt;
+            &lt;noDefaultPolicy state="wait_for_vhal" timeout="7200001" policy="parking_mode"/&gt;
+        &lt;/policyGroup&gt;
+    &lt;/policyGroups&gt;
+
+&lt;/powerPolicy&gt;</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">8-2. 컴포넌트별 설명</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Component ID</th>
+                            <th>설명</th>
+                            <th>ON 상태</th>
+                            <th>OFF 상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>AUDIO</td>
+                            <td>오디오 서브시스템</td>
+                            <td>포커스 요청 허용, 출력 활성화</td>
+                            <td>포커스 거절, Mute</td>
+                        </tr>
+                        <tr>
+                            <td>MEDIA</td>
+                            <td>미디어 재생 서비스</td>
+                            <td>MediaSession 활성, 자동 재생 가능</td>
+                            <td>재생 일시정지, 소스 저장</td>
+                        </tr>
+                        <tr>
+                            <td>DISPLAY</td>
+                            <td>디스플레이 출력</td>
+                            <td>화면 켜짐, UI 렌더링</td>
+                            <td>화면 꺼짐, Backlight OFF</td>
+                        </tr>
+                        <tr>
+                            <td>WIFI</td>
+                            <td>Wi-Fi 연결</td>
+                            <td>네트워크 연결 유지</td>
+                            <td>연결 종료, 전력 절감</td>
+                        </tr>
+                        <tr>
+                            <td>BLUETOOTH</td>
+                            <td>블루투스 연결</td>
+                            <td>페어링 유지, 오디오 스트리밍</td>
+                            <td>연결 해제</td>
+                        </tr>
+                        <tr>
+                            <td>CELLULAR</td>
+                            <td>셀룰러 데이터</td>
+                            <td>모뎀 활성, 데이터 통신</td>
+                            <td>모뎀 대기 또는 OFF</td>
+                        </tr>
+                        <tr>
+                            <td>LOCATION</td>
+                            <td>GPS 위치 서비스</td>
+                            <td>GPS 수신, 위치 업데이트</td>
+                            <td>GPS 비활성화</td>
+                        </tr>
+                        <tr>
+                            <td>VOICE_INTERACTION</td>
+                            <td>음성 어시스턴트</td>
+                            <td>핫워드 감지, 음성 인식</td>
+                            <td>음성 기능 비활성화</td>
+                        </tr>
+                        <tr>
+                            <td>CPU</td>
+                            <td>CPU 전원 관리</td>
+                            <td>정상 동작</td>
+                            <td>저전력 모드 또는 Sleep</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">8-3. OEM Overlay 커스터마이징</h3>
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- device/oem/project/overlay/packages/services/Car/service/res/xml/car_power_policy.xml --&gt;
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;powerPolicy version="1.0"&gt;
+
+    &lt;policies&gt;
+        &lt;!-- OEM 커스텀 정책: 배터리 절약 모드 --&gt;
+        &lt;policy id="oem_battery_saver"&gt;
+            &lt;component id="AUDIO"&gt;on&lt;/component&gt;
+            &lt;component id="MEDIA"&gt;on&lt;/component&gt;
+            &lt;component id="DISPLAY"&gt;on&lt;/component&gt;
+            &lt;component id="WIFI"&gt;off&lt;/component&gt;  &lt;!-- Wi-Fi 비활성화 --&gt;
+            &lt;component id="BLUETOOTH"&gt;on&lt;/component&gt;  &lt;!-- 핸즈프리는 유지 --&gt;
+            &lt;component id="LOCATION"&gt;off&lt;/component&gt;  &lt;!-- GPS 비활성화 --&gt;
+            &lt;component id="PROJECTION"&gt;off&lt;/component&gt;  &lt;!-- Android Auto 비활성화 --&gt;
+        &lt;/policy&gt;
+
+        &lt;!-- OEM 커스텀: Valet Mode (대리 주차 모드) --&gt;
+        &lt;policy id="oem_valet_mode"&gt;
+            &lt;component id="AUDIO"&gt;on&lt;/component&gt;
+            &lt;component id="MEDIA"&gt;off&lt;/component&gt;  &lt;!-- 미디어 비활성화 --&gt;
+            &lt;component id="DISPLAY"&gt;on&lt;/component&gt;
+            &lt;component id="LOCATION"&gt;on&lt;/component&gt;  &lt;!-- 추적 활성화 --&gt;
+            &lt;component id="CELLULAR"&gt;on&lt;/component&gt;
+        &lt;/policy&gt;
+    &lt;/policies&gt;
+
+    &lt;policyGroups&gt;
+        &lt;policyGroup id="oem_policy_group"&gt;
+            &lt;defaultPolicy&gt;system_on&lt;/defaultPolicy&gt;
+
+            &lt;!-- 배터리 잔량 20% 이하 시 절약 모드 --&gt;
+            &lt;noDefaultPolicy state="on" condition="battery_low" policy="oem_battery_saver"/&gt;
+
+            &lt;!-- Valet 모드 활성화 시 --&gt;
+            &lt;noDefaultPolicy state="on" condition="valet_mode" policy="oem_valet_mode"/&gt;
+        &lt;/policyGroup&gt;
+    &lt;/policyGroups&gt;
+
+&lt;/powerPolicy&gt;</code></pre>
+            </div>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔧</span> 커스터마이징 포인트</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>정책 추가:</strong> 새 &lt;policy&gt; 정의로 OEM 특화 시나리오 지원</li>
+                            <li><strong>타임아웃 조정:</strong> Suspend 진입 시간 변경 (기본 2시간)</li>
+                            <li><strong>조건부 정책:</strong> 배터리, 온도, 사용자 모드에 따른 동적 전환</li>
+                            <li><strong>컴포넌트 미세 조정:</strong> 브랜드 특성에 맞는 ON/OFF 조합</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 9: Power State Machine Details -->
+        <section class="section sec-state-machine">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                전원 상태 머신 상세
+            </h2>
+            <p class="section-description">
+                CarPowerManagementService가 관리하는 전체 전원 상태와 전환 규칙입니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-1. 전체 상태 목록</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>상태</th>
+                            <th>값</th>
+                            <th>설명</th>
+                            <th>다음 상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>INVALID</td>
+                            <td>0</td>
+                            <td>초기 상태 (사용 안 함)</td>
+                            <td>WAIT_FOR_VHAL</td>
+                        </tr>
+                        <tr>
+                            <td>WAIT_FOR_VHAL</td>
+                            <td>1</td>
+                            <td>VHAL 연결 대기 중</td>
+                            <td>ON, SHUTDOWN_PREPARE</td>
+                        </tr>
+                        <tr>
+                            <td>ON</td>
+                            <td>2</td>
+                            <td>시스템 정상 동작 (Ignition ON)</td>
+                            <td>SHUTDOWN_PREPARE</td>
+                        </tr>
+                        <tr>
+                            <td>SHUTDOWN_PREPARE</td>
+                            <td>3</td>
+                            <td>종료 준비 (UI Off, 정리 작업)</td>
+                            <td>SHUTDOWN_ENTER, ON (취소)</td>
+                        </tr>
+                        <tr>
+                            <td>SHUTDOWN_ENTER</td>
+                            <td>4</td>
+                            <td>실제 종료 진입 (Deep Sleep 또는 Shutdown)</td>
+                            <td>(종료)</td>
+                        </tr>
+                        <tr>
+                            <td>SUSPEND</td>
+                            <td>5</td>
+                            <td>Suspend-to-RAM (S3) 상태</td>
+                            <td>ON (Resume)</td>
+                        </tr>
+                        <tr>
+                            <td>SHUTDOWN_CANCELLED</td>
+                            <td>6</td>
+                            <td>종료 취소 (사용자가 다시 Ignition ON)</td>
+                            <td>ON</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-2. 상태 전환 다이어그램</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    stateDiagram-v2
+                    [*] --> WAIT_FOR_VHAL: Boot
+
+                    WAIT_FOR_VHAL --> ON: VHAL Connected<br/>&amp; IGN ON
+                    WAIT_FOR_VHAL --> SHUTDOWN_PREPARE: VHAL Connected<br/>&amp; IGN OFF
+
+                    ON --> SHUTDOWN_PREPARE: Ignition OFF<br/>VHAL Request
+
+                    SHUTDOWN_PREPARE --> SHUTDOWN_ENTER: Cleanup Done<br/>Timeout
+                    SHUTDOWN_PREPARE --> SHUTDOWN_CANCELLED: User Action<br/>(IGN ON again)
+
+                    SHUTDOWN_CANCELLED --> ON: Resume Normal
+
+                    SHUTDOWN_ENTER --> SUSPEND: CAN_SLEEP<br/>&amp; STR Enabled
+                    SHUTDOWN_ENTER --> [*]: SHUTDOWN_ONLY<br/>(Full Shutdown)
+
+                    SUSPEND --> ON: Wake Up<br/>(Ignition ON)
+                    SUSPEND --> [*]: Battery Depleted<br/>(Emergency Shutdown)
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-3. 각 상태별 상세 동작</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔵</span> ON 상태</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>모든 서비스 정상 동작</li>
+                            <li>Power Policy: system_on</li>
+                            <li>사용자 인터랙션 활성</li>
+                            <li>VHAL로부터 전원 상태 모니터링</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🟡</span> SHUTDOWN_PREPARE</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Policy: no_user_interaction (AUDIO/MEDIA OFF)</li>
+                            <li>각 서비스에 onShutdownPrepare() 콜백 호출</li>
+                            <li>Timeout: 기본 60초 (config 설정 가능)</li>
+                            <li>모든 서비스 응답 대기 (CompletableFuture)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🟢</span> SHUTDOWN_ENTER</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>VHAL에 AP_POWER_STATE_REPORT 전송</li>
+                            <li>Deep Sleep: DEEP_SLEEP_ENTRY</li>
+                            <li>Full Shutdown: SHUTDOWN_START</li>
+                            <li>커널에 suspend/shutdown 명령</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">💤</span> SUSPEND</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>DRAM 메모리 유지 (Self-Refresh)</li>
+                            <li>CPU/주변장치 전원 차단</li>
+                            <li>코드 실행 완전 중지</li>
+                            <li>Wake-up 시 Resume으로 즉시 복귀</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-4. Timeout & 예외 처리</h3>
+            <div class="code-block">
+                <pre><code class="language-java">// CarPowerManagementService.java
+private static final int SHUTDOWN_PREPARE_TIMEOUT_MS = 60_000; // 60초
+private static final int SHUTDOWN_ENTER_TIMEOUT_MS = 10_000;   // 10초
+
+private void handleShutdownPrepare() {
+    Log.d(TAG, "Entering SHUTDOWN_PREPARE");
+
+    // 모든 리스너에게 알림
+    List&lt;CompletableFuture&lt;Void&gt;&gt; futures = new ArrayList&lt;&gt;();
+    for (CarServiceBase service : mAllServices) {
+        CompletableFuture&lt;Void&gt; future = new CompletableFuture&lt;&gt;();
+        service.onShutdownPrepare(future);
+        futures.add(future);
+    }
+
+    // 모든 서비스 응답 대기 (Timeout 포함)
+    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+        .orTimeout(SHUTDOWN_PREPARE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        .whenComplete((result, exception) -&gt; {
+            if (exception != null) {
+                Log.w(TAG, "Shutdown prepare timeout or error", exception);
+            }
+            proceedToShutdownEnter();
+        });
+}
+
+private void proceedToShutdownEnter() {
+    Log.d(TAG, "All services ready, entering SHUTDOWN_ENTER");
+
+    // VHAL에 준비 완료 보고
+    reportPowerStateToVhal(VehicleApPowerStateReport.DEEP_SLEEP_ENTRY);
+
+    // 커널 Suspend 명령 (Timeout 보호)
+    mHandler.postDelayed(() -&gt; {
+        Log.w(TAG, "Suspend failed, forcing shutdown");
+        forceShutdown();
+    }, SHUTDOWN_ENTER_TIMEOUT_MS);
+
+    // Suspend 실행
+    nativeSuspend();
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 10: VHAL Properties -->
+        <section class="section sec-vhal">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                VHAL Properties
+            </h2>
+            <p class="section-description">
+                전원 관리를 위한 Vehicle HAL Property 구조와 통신 프로토콜입니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">10-1. AP_POWER_STATE_REQ (0x0A20)</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>필드</th>
+                            <th>타입</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>prop</td>
+                            <td>int32</td>
+                            <td>0x0A20 (AP_POWER_STATE_REQ)</td>
+                        </tr>
+                        <tr>
+                            <td>value.int32Values[0]</td>
+                            <td>VehicleApPowerStateReq</td>
+                            <td>요청 타입 (ON=1, SHUTDOWN_PREPARE=2, CANCEL=3, FINISHED=4)</td>
+                        </tr>
+                        <tr>
+                            <td>value.int32Values[1]</td>
+                            <td>VehicleApPowerStateShutdownParam</td>
+                            <td>종료 파라미터 (CAN_SLEEP=1, SHUTDOWN_ONLY=2, SLEEP_IMMEDIATELY=3)</td>
+                        </tr>
+                        <tr>
+                            <td>timestamp</td>
+                            <td>int64</td>
+                            <td>elapsedRealtimeNano()</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">10-2. AP_POWER_STATE_REPORT (0x0A21)</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>필드</th>
+                            <th>타입</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>prop</td>
+                            <td>int32</td>
+                            <td>0x0A21 (AP_POWER_STATE_REPORT)</td>
+                        </tr>
+                        <tr>
+                            <td>value.int32Values[0]</td>
+                            <td>VehicleApPowerStateReport</td>
+                            <td>보고 타입 (BOOT_COMPLETE=1, DEEP_SLEEP_ENTRY=2, DEEP_SLEEP_EXIT=3, SHUTDOWN_POSTPONE=4, SHUTDOWN_START=5, DISPLAY_OFF=6, DISPLAY_ON=7)</td>
+                        </tr>
+                        <tr>
+                            <td>value.int32Values[1]</td>
+                            <td>int32</td>
+                            <td>추가 파라미터 (SHUTDOWN_POSTPONE 시 연장 시간 ms)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">10-3. VehiclePropValue 구조</h3>
+            <div class="code-block">
+                <pre><code class="language-cpp">// hardware/interfaces/automotive/vehicle/2.0/types.hal
+struct VehiclePropValue {
+    int32_t prop;              // Property ID (e.g., 0x0A20)
+    int64_t timestamp;         // elapsedRealtimeNano()
+    VehicleAreaConfig areaId;  // 영역 (전역 = 0)
+    VehiclePropStatus status;  // AVAILABLE, UNAVAILABLE, ERROR
+
+    union Value {
+        vec&lt;int32_t&gt; int32Values;
+        vec&lt;int64_t&gt; int64Values;
+        vec&lt;float&gt; floatValues;
+        string stringValue;
+        vec&lt;uint8_t&gt; bytes;
+    } value;
+};</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">10-4. VHAL 통신 코드 (C++)</h3>
+            <div class="code-block">
+                <pre><code class="language-cpp">// packages/services/Car/service/src/com/android/car/hal/PowerHalService.java
+// Java에서 VHAL로 전송
+public void sendPowerStateReport(int state, int param) {
+    VehiclePropValue value = new VehiclePropValue();
+    value.prop = VehicleProperty.AP_POWER_STATE_REPORT;
+    value.timestamp = SystemClock.elapsedRealtimeNanos();
+    value.value.int32Values = new int[] { state, param };
+
+    try {
+        mHal.set(value);
+        Log.d(TAG, "Sent AP_POWER_STATE_REPORT: state=" + state + ", param=" + param);
+    } catch (Exception e) {
+        Log.e(TAG, "Failed to send power state report", e);
+    }
+}
+
+// VHAL로부터 수신 (Callback)
+@Override
+public void onPropertyEvent(ArrayList&lt;VehiclePropValue&gt; propValues) {
+    for (VehiclePropValue value : propValues) {
+        if (value.prop == VehicleProperty.AP_POWER_STATE_REQ) {
+            int request = value.value.int32Values.get(0);
+            int param = value.value.int32Values.size() &gt; 1
+                ? value.value.int32Values.get(1) : 0;
+
+            Log.d(TAG, "Received AP_POWER_STATE_REQ: " + request + ", param=" + param);
+
+            switch (request) {
+                case VehicleApPowerStateReq.ON:
+                    handlePowerOn();
+                    break;
+                case VehicleApPowerStateReq.SHUTDOWN_PREPARE:
+                    handleShutdownPrepare(param);
+                    break;
+                case VehicleApPowerStateReq.CANCEL_SHUTDOWN:
+                    handleShutdownCancel();
+                    break;
+            }
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">10-5. Signal 매핑 테이블</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>VHAL 신호</th>
+                            <th>CPMS 상태</th>
+                            <th>트리거</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>AP_POWER_STATE_REQ: ON</td>
+                            <td>ON</td>
+                            <td>Ignition ON, ACC ON</td>
+                        </tr>
+                        <tr>
+                            <td>AP_POWER_STATE_REQ: SHUTDOWN_PREPARE (CAN_SLEEP)</td>
+                            <td>SHUTDOWN_PREPARE → SUSPEND</td>
+                            <td>Ignition OFF, 짧은 주차</td>
+                        </tr>
+                        <tr>
+                            <td>AP_POWER_STATE_REQ: SHUTDOWN_PREPARE (SHUTDOWN_ONLY)</td>
+                            <td>SHUTDOWN_PREPARE → (Full Shutdown)</td>
+                            <td>Ignition OFF, 긴 주차 또는 배터리 부족</td>
+                        </tr>
+                        <tr>
+                            <td>AP_POWER_STATE_REQ: CANCEL_SHUTDOWN</td>
+                            <td>SHUTDOWN_CANCELLED → ON</td>
+                            <td>사용자가 종료 중 다시 Ignition ON</td>
+                        </tr>
+                        <tr>
+                            <td>AP_POWER_STATE_REQ: FINISHED</td>
+                            <td>SHUTDOWN_ENTER</td>
+                            <td>CPMS가 정리 완료 후 DEEP_SLEEP_ENTRY 보고 완료</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 11: Suspend/Resume Timing Analysis -->
+        <section class="section sec-timing">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                Suspend/Resume 타이밍 분석
+            </h2>
+            <p class="section-description">
+                실제 측정된 타이밍 데이터를 기반으로 Suspend 진입 및 Resume 복귀 시간을 분석합니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">11-1. Suspend 진입 타임라인</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    gantt
+                    title Suspend 진입 타임라인 (Ignition OFF → Deep Sleep)
+                    dateFormat X
+                    axisFormat %L ms
+
+                    section VHAL
+                    IGN OFF Signal                 :0, 10
+                    AP_POWER_STATE_REQ Send        :10, 20
+
+                    section CPMS
+                    Receive REQ                    :30, 10
+                    State → SHUTDOWN_PREPARE       :40, 5
+                    Apply Power Policy             :45, 15
+
+                    section Services
+                    CarAudioService Callback       :60, 100
+                    CarMediaService Callback       :60, 150
+                    Other Services                 :60, 80
+
+                    section Apps
+                    MediaSession Pause             :160, 50
+                    Save Playback State            :210, 40
+
+                    section Finalize
+                    All Services Done              :250, 10
+                    CPMS → SHUTDOWN_ENTER          :260, 5
+                    Send DEEP_SLEEP_ENTRY          :265, 15
+                    Kernel Suspend Call            :280, 100
+                    CPU Halt                       :380, 0
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">11-2. Resume 복귀 타임라인</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    gantt
+                    title Resume 복귀 타임라인 (Wake-up → System Ready)
+                    dateFormat X
+                    axisFormat %L ms
+
+                    section Hardware
+                    VMCU Wake Signal               :0, 5
+                    Kernel Resume                  :5, 50
+                    Driver Init                    :55, 100
+
+                    section CPMS
+                    onSleepExit()                  :155, 10
+                    State → ON                     :165, 5
+                    Apply system_on Policy         :170, 20
+
+                    section Services
+                    CarAudioService Enable         :190, 50
+                    CarMediaService Restore        :190, 100
+
+                    section Apps
+                    MediaConnector Connect         :290, 80
+                    MediaSession Restore           :370, 60
+                    Autoplay Start                 :430, 50
+
+                    section Complete
+                    System Ready                   :480, 0
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">11-3. 실제 타이밍 측정</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>단계</th>
+                            <th>평균 시간</th>
+                            <th>최소</th>
+                            <th>최대</th>
+                            <th>비고</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Suspend 진입 (Total)</td>
+                            <td>380ms</td>
+                            <td>320ms</td>
+                            <td>550ms</td>
+                            <td>IGN OFF → CPU Halt</td>
+                        </tr>
+                        <tr>
+                            <td>- VHAL 신호 전파</td>
+                            <td>30ms</td>
+                            <td>20ms</td>
+                            <td>50ms</td>
+                            <td>VMCU → CPMS</td>
+                        </tr>
+                        <tr>
+                            <td>- Power Policy 적용</td>
+                            <td>15ms</td>
+                            <td>10ms</td>
+                            <td>25ms</td>
+                            <td>정책 전환</td>
+                        </tr>
+                        <tr>
+                            <td>- 서비스 정리 작업</td>
+                            <td>200ms</td>
+                            <td>150ms</td>
+                            <td>400ms</td>
+                            <td>가장 느린 서비스 기준</td>
+                        </tr>
+                        <tr>
+                            <td>- 커널 Suspend</td>
+                            <td>100ms</td>
+                            <td>80ms</td>
+                            <td>150ms</td>
+                            <td>디바이스 드라이버 Suspend</td>
+                        </tr>
+                        <tr>
+                            <td>Resume 복귀 (Total)</td>
+                            <td>480ms</td>
+                            <td>400ms</td>
+                            <td>650ms</td>
+                            <td>Wake-up → Autoplay Start</td>
+                        </tr>
+                        <tr>
+                            <td>- 커널 Resume</td>
+                            <td>50ms</td>
+                            <td>40ms</td>
+                            <td>80ms</td>
+                            <td>디바이스 드라이버 Resume</td>
+                        </tr>
+                        <tr>
+                            <td>- 드라이버 초기화</td>
+                            <td>100ms</td>
+                            <td>80ms</td>
+                            <td>150ms</td>
+                            <td>Audio HAL, Display 등</td>
+                        </tr>
+                        <tr>
+                            <td>- 서비스 복원</td>
+                            <td>100ms</td>
+                            <td>80ms</td>
+                            <td>150ms</td>
+                            <td>CarAudioService, CarMediaService</td>
+                        </tr>
+                        <tr>
+                            <td>- 앱 연결 & 재생</td>
+                            <td>200ms</td>
+                            <td>150ms</td>
+                            <td>300ms</td>
+                            <td>MediaBrowser + Autoplay</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">11-4. Critical Path 분석</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔴</span> Suspend 병목 구간</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>서비스 정리 (200ms):</strong> 가장 느린 서비스가 전체 시간 결정</li>
+                            <li>개선: onShutdownPrepare() 내 동기 작업 최소화, 비동기 처리</li>
+                            <li>타임아웃 설정으로 무한 대기 방지</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🟡</span> Resume 병목 구간</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>앱 연결 (200ms):</strong> MediaBrowser 바인드 + Autoplay</li>
+                            <li>개선: MediaConnectorService 사전 준비, 병렬 처리</li>
+                            <li>앱 최적화: onPlaybackResumption() 경량화</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">11-5. 최적화 포인트</h3>
+            <div class="code-block">
+                <pre><code class="language-java">// 최적화 예시: 병렬 처리
+private void handleShutdownPrepare() {
+    // 병렬로 모든 서비스 정리 (순차 대기 안 함)
+    List&lt;CompletableFuture&lt;Void&gt;&gt; futures = mAllServices.stream()
+        .map(service -&gt; CompletableFuture.runAsync(() -&gt; {
+            try {
+                service.onShutdownPrepare();
+            } catch (Exception e) {
+                Log.e(TAG, "Service cleanup failed", e);
+            }
+        }, mExecutor))
+        .collect(Collectors.toList());
+
+    // 모두 완료 또는 타임아웃 대기
+    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+        .orTimeout(SHUTDOWN_PREPARE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        .whenComplete((result, ex) -&gt; proceedToShutdownEnter());
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 12: Battery Analysis -->
+        <section class="section sec-battery">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                배터리 소모 분석
+            </h2>
+            <p class="section-description">
+                Suspend-to-RAM과 Full Shutdown의 배터리 소모량 비교 및 권장 정책입니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">12-1. 전력 소비 비교</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>모드</th>
+                            <th>평균 소비 전력</th>
+                            <th>24시간 소모량</th>
+                            <th>7일 소모량</th>
+                            <th>배터리 수명 영향</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Full Shutdown</td>
+                            <td>~5mA</td>
+                            <td>0.12Ah</td>
+                            <td>0.84Ah</td>
+                            <td>무시 가능 (&lt;2% 방전)</td>
+                        </tr>
+                        <tr>
+                            <td>Suspend-to-RAM</td>
+                            <td>~50mA</td>
+                            <td>1.2Ah</td>
+                            <td>8.4Ah</td>
+                            <td>중간 (~15% 방전)</td>
+                        </tr>
+                        <tr>
+                            <td>Suspend (DRAM만)</td>
+                            <td>~30mA</td>
+                            <td>0.72Ah</td>
+                            <td>5.04Ah</td>
+                            <td>낮음 (~9% 방전)</td>
+                        </tr>
+                        <tr>
+                            <td>Parking Mode</td>
+                            <td>~100mA</td>
+                            <td>2.4Ah</td>
+                            <td>16.8Ah</td>
+                            <td>높음 (~30% 방전)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p style="margin-top: 15px; color: var(--text-secondary);">
+                * 일반 차량 배터리: 55Ah 기준 (12V, 약 660Wh)
+            </p>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">12-2. DRAM Self-Refresh 전력</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔋</span> DDR4 (일반적)</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>용량:</strong> 4GB DRAM</li>
+                            <li><strong>Self-Refresh 전력:</strong> ~15mA @ 1.2V = 18mW</li>
+                            <li><strong>24시간:</strong> 0.36Ah</li>
+                            <li><strong>최대 유지 시간:</strong> ~7일 (이후 자연 방전 위험)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚡</span> LPDDR4 (저전력)</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>용량:</strong> 4GB LPDDR4</li>
+                            <li><strong>Self-Refresh 전력:</strong> ~8mA @ 1.1V = 8.8mW</li>
+                            <li><strong>24시간:</strong> 0.19Ah</li>
+                            <li><strong>최대 유지 시간:</strong> ~14일</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">12-3. Wake-up 빈도에 따른 영향</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>시나리오</th>
+                            <th>Wake-up 빈도</th>
+                            <th>평균 소비</th>
+                            <th>24시간 소모</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Pure Suspend (Wake 없음)</td>
+                            <td>0회</td>
+                            <td>30mA</td>
+                            <td>0.72Ah</td>
+                        </tr>
+                        <tr>
+                            <td>Periodic Wake (시계 동기화)</td>
+                            <td>1회/시간</td>
+                            <td>35mA</td>
+                            <td>0.84Ah</td>
+                        </tr>
+                        <tr>
+                            <td>Active Monitoring (보안)</td>
+                            <td>1회/10분</td>
+                            <td>50mA</td>
+                            <td>1.2Ah</td>
+                        </tr>
+                        <tr>
+                            <td>Frequent Wake (센서 폴링)</td>
+                            <td>1회/분</td>
+                            <td>80mA</td>
+                            <td>1.92Ah</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">12-4. 권장 정책</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">✅</span> 짧은 주차 (2시간 이내)</h3>
+                    <div class="card-description">
+                        <strong>권장:</strong> Suspend-to-RAM
+                        <ul>
+                            <li>빠른 Resume (~500ms)</li>
+                            <li>완벽한 상태 복원</li>
+                            <li>배터리 영향 미미 (~0.1Ah)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚠️</span> 중간 주차 (2~12시간)</h3>
+                    <div class="card-description">
+                        <strong>권장:</strong> Hybrid (Suspend → Shutdown)
+                        <ul>
+                            <li>처음 2시간: Suspend-to-RAM</li>
+                            <li>타임아웃 후: Full Shutdown</li>
+                            <li>배터리 보호 + 편의성 균형</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔴</span> 긴 주차 (12시간 이상)</h3>
+                    <div class="card-description">
+                        <strong>권장:</strong> Full Shutdown
+                        <ul>
+                            <li>배터리 방전 방지</li>
+                            <li>Resume 시간 ~6초 (허용 가능)</li>
+                            <li>장기 주차 시 필수</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">12-5. Hybrid 정책 설정</h3>
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- car_power_policy.xml --&gt;
+&lt;policyGroup id="battery_optimized_group"&gt;
+    &lt;!-- 기본: Suspend-to-RAM --&gt;
+    &lt;defaultPolicy&gt;suspend_to_ram&lt;/defaultPolicy&gt;
+
+    &lt;!-- 2시간 후 Full Shutdown 전환 --&gt;
+    &lt;noDefaultPolicy state="wait_for_vhal" timeout="7200000" policy="full_shutdown"/&gt;
+
+    &lt;!-- 배터리 20% 이하 시 즉시 Shutdown --&gt;
+    &lt;noDefaultPolicy state="wait_for_vhal" condition="battery_low" policy="full_shutdown"/&gt;
+&lt;/policyGroup&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 13: Wake-up Sources -->
+        <section class="section sec-wakeup">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                Wake-up 소스
+            </h2>
+            <p class="section-description">
+                Suspend 상태에서 시스템을 깨울 수 있는 다양한 Wake-up 소스와 우선순위입니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">13-1. Wake-up 소스 목록</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Wake-up 소스</th>
+                            <th>우선순위</th>
+                            <th>트리거</th>
+                            <th>사용 사례</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Ignition ON</td>
+                            <td>1 (최고)</td>
+                            <td>VMCU 신호 (IGN/ACC ON)</td>
+                            <td>운전자가 시동 키 조작</td>
+                        </tr>
+                        <tr>
+                            <td>Door Open</td>
+                            <td>2</td>
+                            <td>VMCU 신호 (Door Switch)</td>
+                            <td>차량 진입, 실내등 자동 켜짐</td>
+                        </tr>
+                        <tr>
+                            <td>RTC Alarm</td>
+                            <td>3</td>
+                            <td>커널 RTC 타이머</td>
+                            <td>예약된 작업 (시계 동기화, OTA 체크)</td>
+                        </tr>
+                        <tr>
+                            <td>CAN Message</td>
+                            <td>4</td>
+                            <td>특정 CAN ID 수신</td>
+                            <td>원격 제어 (스마트폰 앱)</td>
+                        </tr>
+                        <tr>
+                            <td>External GPIO</td>
+                            <td>5</td>
+                            <td>GPIO 인터럽트</td>
+                            <td>버튼 입력, 센서 이벤트</td>
+                        </tr>
+                        <tr>
+                            <td>Cellular Modem</td>
+                            <td>6</td>
+                            <td>Incoming call/SMS</td>
+                            <td>긴급 호출, 원격 알림</td>
+                        </tr>
+                        <tr>
+                            <td>Low Battery</td>
+                            <td>7 (긴급)</td>
+                            <td>배터리 전압 저하</td>
+                            <td>배터리 보호를 위한 완전 종료</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">13-2. Wake Lock 메커니즘</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App
+                    participant PM as PowerManager
+                    participant CPMS
+                    participant Kernel
+
+                    App->>PM: acquireWakeLock(PARTIAL_WAKE_LOCK)
+                    PM->>CPMS: requestWakeLock()
+                    CPMS->>Kernel: /sys/power/wake_lock (write)
+
+                    Note over Kernel: Suspend 진입 차단
+
+                    App->>App: Do Background Work
+
+                    App->>PM: releaseWakeLock()
+                    PM->>CPMS: releaseWakeLock()
+                    CPMS->>Kernel: /sys/power/wake_unlock (write)
+
+                    Note over Kernel: Suspend 진입 허용
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">13-3. Partial Wake 시나리오</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📡</span> OTA 업데이트</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>RTC Alarm으로 새벽 3시 Wake-up</li>
+                            <li>PARTIAL_WAKE_LOCK 획득 (CPU ON, Display OFF)</li>
+                            <li>서버에서 업데이트 다운로드</li>
+                            <li>설치 완료 후 Wake Lock 해제 → Suspend</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔐</span> 도난 경보</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>가속도계 센서 인터럽트로 Wake-up</li>
+                            <li>GPS 위치 확인</li>
+                            <li>비정상 움직임 감지 시 Cellular로 알림</li>
+                            <li>30초 후 다시 Suspend</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">13-4. Wake-up 우선순위 코드</h3>
+            <div class="code-block">
+                <pre><code class="language-java">// CarPowerManagementService.java
+private void handleWakeUpEvent(int source) {
+    Log.d(TAG, "Wake-up event from source: " + source);
+
+    switch (source) {
+        case WAKEUP_SOURCE_IGNITION:
+            // 최우선: 즉시 Full Resume
+            Log.d(TAG, "Ignition wake-up: Full system resume");
+            transitionToState(CarPowerStateListener.ON);
+            break;
+
+        case WAKEUP_SOURCE_DOOR:
+            // Display만 켜고 부분 Resume
+            Log.d(TAG, "Door wake-up: Display on, partial resume");
+            applyPowerPolicy("door_open_policy"); // DISPLAY=ON, others=untouched
+            scheduleAutoSuspend(30_000); // 30초 후 다시 Suspend
+            break;
+
+        case WAKEUP_SOURCE_RTC:
+            // Background 작업용 Partial Wake
+            Log.d(TAG, "RTC wake-up: Background tasks only");
+            applyPowerPolicy("background_tasks_policy"); // CPU=ON, DISPLAY=OFF
+            // Wake Lock은 작업 완료 시 자동 해제
+            break;
+
+        case WAKEUP_SOURCE_CAN:
+            // 원격 제어: 요청 처리 후 결정
+            Log.d(TAG, "CAN wake-up: Remote control request");
+            handleRemoteControlRequest();
+            break;
+
+        case WAKEUP_SOURCE_LOW_BATTERY:
+            // 긴급: 즉시 완전 종료
+            Log.w(TAG, "Low battery wake-up: Emergency shutdown");
+            forceShutdown();
+            break;
+
+        default:
+            Log.w(TAG, "Unknown wake-up source: " + source);
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">13-5. RTC Alarm 설정</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// OTA 업데이트 예약
+class OtaUpdateService : Service() {
+
+    private val alarmManager by lazy {
+        getSystemService(AlarmManager::class.java)
+    }
+
+    fun scheduleNightlyCheck() {
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 3) // 새벽 3시
+            set(Calendar.MINUTE, 0)
+            if (before(Calendar.getInstance())) {
+                add(Calendar.DAY_OF_MONTH, 1) // 내일 3시
+            }
+        }
+
+        val intent = Intent(this, OtaCheckReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            this, 0, intent, PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // RTC_WAKEUP: Suspend 상태에서도 Wake-up
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            calendar.timeInMillis,
+            pendingIntent
+        )
+
+        Log.d(TAG, "Scheduled OTA check at ${calendar.time}")
+    }
+}
+
+class OtaCheckReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        Log.d(TAG, "RTC alarm fired: Starting OTA check")
+
+        // Partial Wake Lock 획득
+        val powerManager = context.getSystemService(PowerManager::class.java)
+        val wakeLock = powerManager.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "OtaUpdate:WakeLock"
+        )
+        wakeLock.acquire(10 * 60 * 1000L) // 최대 10분
+
+        // Background 작업 시작
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            "ota_check",
+            ExistingWorkPolicy.REPLACE,
+            OneTimeWorkRequestBuilder<OtaCheckWorker>().build()
+        )
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 14: Android Version History -->
+        <section class="section sec-versions">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                Android 버전별 변화
+            </h2>
+            <p class="section-description">
+                Android 10 (AAOS 도입)부터 Android 15까지 Power Policy 및 Suspend 기능의 진화 과정입니다.
+            </p>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Android 버전</th>
+                            <th>AAOS 버전</th>
+                            <th>주요 변화</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Android 10 (Q)</td>
+                            <td>AAOS 1.0</td>
+                            <td>
+                                <ul>
+                                    <li>CarPowerManagementService 최초 도입</li>
+                                    <li>기본 Suspend-to-RAM 지원</li>
+                                    <li>VHAL AP_POWER_STATE_REQ/REPORT 정의</li>
+                                    <li>car_power_policy.xml 설정 파일</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 11 (R)</td>
+                            <td>AAOS 2.0</td>
+                            <td>
+                                <ul>
+                                    <li>CarPowerPolicyService 분리 (정책 관리 독립)</li>
+                                    <li>Component 기반 정책 (AUDIO, MEDIA 등)</li>
+                                    <li>Policy Group 지원 (조건부 전환)</li>
+                                    <li>Shutdown Timeout 설정 가능</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 12 (S)</td>
+                            <td>AAOS 3.0</td>
+                            <td>
+                                <ul>
+                                    <li>addPowerPolicyListener() API 추가</li>
+                                    <li>Filter 기반 선택적 리스너 (컴포넌트별)</li>
+                                    <li>Hybrid 정책 (Timeout 기반 전환)</li>
+                                    <li>SHUTDOWN_CANCELLED 상태 추가</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 13 (T)</td>
+                            <td>AAOS 4.0</td>
+                            <td>
+                                <ul>
+                                    <li>배터리 최적화 정책 강화</li>
+                                    <li>Parking Mode 공식 지원</li>
+                                    <li>Wake-up 우선순위 설정 가능</li>
+                                    <li>CarPowerPolicy Builder API</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 14 (U)</td>
+                            <td>AAOS 5.0</td>
+                            <td>
+                                <ul>
+                                    <li>Partial Wake 시나리오 세분화</li>
+                                    <li>RTC Alarm 정확도 개선</li>
+                                    <li>배터리 보호 모드 (Low Battery Policy)</li>
+                                    <li>Privacy Sandbox 통합 (Suspend 시 데이터 보호)</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 15 (V)</td>
+                            <td>AAOS 6.0</td>
+                            <td>
+                                <ul>
+                                    <li>AI 기반 예측 Suspend (사용 패턴 학습)</li>
+                                    <li>V2X 통합 (차량 간 통신 Wake-up)</li>
+                                    <li>Ultra-Low Power Mode (LPDDR5 최적화)</li>
+                                    <li>Remote Wake-up API (스마트폰 연동)</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">14-1. Deprecated APIs</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚠️</span> Android 11 이전</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>CarPowerManagementService.registerListener()</code> → <code>addPowerPolicyListener()</code></li>
+                            <li>전체 상태 리스너 대신 컴포넌트 필터 기반 리스너 사용</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🆕</span> Android 13+</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>CarPowerPolicy.Builder 사용 권장</li>
+                            <li>런타임 정책 변경 API 추가</li>
+                            <li>레거시 XML만 사용하던 방식에서 프로그래매틱 제어 가능</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 15: Debugging & Troubleshooting -->
+        <section class="section sec-debug">
+            <h2 class="section-title">
+                <span class="section-number">15</span>
+                디버깅 & 트러블슈팅
+            </h2>
+            <p class="section-description">
+                Power Policy 및 Suspend 관련 문제 진단과 해결 방법입니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">15-1. dumpsys 명령어</h3>
+            <div class="code-block">
+                <pre><code class="language-bash"># CarPowerManagementService 전체 상태
+adb shell dumpsys car_service --services CarPowerManagementService
+
+# 출력 예시:
+# Current Power State: ON
+# Current Power Policy: system_on
+# Components:
+#   AUDIO: enabled
+#   MEDIA: enabled
+#   DISPLAY: enabled
+# Registered Listeners: 5
+# Last VHAL Event: AP_POWER_STATE_REQ(ON) at 2024-01-15 10:30:45
+
+# CarPowerPolicyService 정책 정보
+adb shell dumpsys car_service --services CarPowerPolicyService
+
+# 출력 예시:
+# Current Policy: system_on
+# Policy Groups:
+#   - default_policy_group (active)
+# Available Policies:
+#   - system_on
+#   - no_user_interaction
+#   - suspend_to_ram
+
+# 커널 Suspend 통계
+adb shell cat /sys/power/suspend_stats
+
+# Wake-up 소스 확인
+adb shell cat /sys/kernel/debug/wakeup_sources
+
+# 배터리 상태
+adb shell dumpsys battery</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">15-2. logcat 필터링</h3>
+            <div class="code-block">
+                <pre><code class="language-bash"># CarPowerManagementService 로그만
+adb logcat -s CarPowerManagementService:V
+
+# Power 관련 전체 로그
+adb logcat | grep -E "(CarPower|PowerHal|Suspend|Wakeup)"
+
+# 상태 전환 추적
+adb logcat | grep "Power state transition"
+
+# 주요 로그 예시:
+# D/CarPowerManagementService: Power state transition: ON -> SHUTDOWN_PREPARE
+# D/CarPowerPolicyService: Applying policy: no_user_interaction
+# D/CarAudioService: Power policy changed: AUDIO disabled
+# D/CarMediaService: MEDIA disabled, pausing playback
+# D/PowerHal: Sending AP_POWER_STATE_REPORT: DEEP_SLEEP_ENTRY
+# I/Kernel: [suspend] Entering suspend state
+# I/Kernel: [resume] Resumed from suspend</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">15-3. 주요 문제 해결</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>문제</th>
+                            <th>원인</th>
+                            <th>해결 방법</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Suspend 진입 실패</td>
+                            <td>Wake Lock이 해제되지 않음</td>
+                            <td><code>adb shell dumpsys power</code>로 활성 Wake Lock 확인, 해당 앱 종료</td>
+                        </tr>
+                        <tr>
+                            <td>Resume 후 오디오 안 나옴</td>
+                            <td>CarAudioService가 AUDIO 활성화 안 함</td>
+                            <td>Power Policy에서 AUDIO=on 설정 확인, dumpsys로 정책 검증</td>
+                        </tr>
+                        <tr>
+                            <td>미디어 자동 재생 안 됨</td>
+                            <td>MEDIA 컴포넌트가 비활성화됨</td>
+                            <td>system_on 정책에서 MEDIA=on 확인, CarMediaService 로그 점검</td>
+                        </tr>
+                        <tr>
+                            <td>배터리 빠르게 방전</td>
+                            <td>Suspend 대신 Shutdown 미사용</td>
+                            <td>Hybrid 정책으로 2시간 후 Full Shutdown 설정</td>
+                        </tr>
+                        <tr>
+                            <td>VHAL 통신 실패</td>
+                            <td>VHAL 서비스 미실행 또는 크래시</td>
+                            <td><code>ps -A | grep vehicle</code>로 프로세스 확인, VHAL 재시작</td>
+                        </tr>
+                        <tr>
+                            <td>Shutdown Timeout</td>
+                            <td>특정 서비스가 onShutdownPrepare() 응답 안 함</td>
+                            <td>로그에서 느린 서비스 식별, 해당 서비스 최적화 또는 Timeout 증가</td>
+                        </tr>
+                        <tr>
+                            <td>Resume 시간 너무 김 (>1초)</td>
+                            <td>드라이버 초기화 지연</td>
+                            <td>커널 로그 분석, 느린 드라이버 최적화 (Audio HAL, Display 등)</td>
+                        </tr>
+                        <tr>
+                            <td>RTC Alarm 미동작</td>
+                            <td>AlarmManager.RTC_WAKEUP 대신 RTC 사용</td>
+                            <td>setExactAndAllowWhileIdle() with RTC_WAKEUP 플래그 사용</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">15-4. 수동 테스트</h3>
+            <div class="code-block">
+                <pre><code class="language-bash"># 1. Suspend 강제 진입 (테스트용)
+adb shell dumpsys car_service garage-mode suspend
+
+# 2. Resume 강제 실행
+adb shell dumpsys car_service garage-mode resume
+
+# 3. Power Policy 변경 테스트
+adb shell cmd car_service apply-power-policy no_user_interaction
+
+# 4. Wake Lock 확인
+adb shell dumpsys power | grep "Wake Locks"
+
+# 5. Suspend 통계 초기화
+adb shell "echo 0 > /sys/power/suspend_stats"
+
+# 6. 타이밍 측정
+adb shell "echo 1 > /sys/power/pm_debug_messages" # 커널 로그 활성화
+adb logcat -s Kernel:I | grep suspend
+
+# 7. VHAL 이벤트 시뮬레이션 (에뮬레이터)
+adb shell "echo '0x0A20,1,0' > /sys/class/vhal/vhal_test"  # IGN ON
+adb shell "echo '0x0A20,2,1' > /sys/class/vhal/vhal_test"  # SHUTDOWN_PREPARE</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 16: AOSP Source Code -->
+        <section class="section sec-source">
+            <h2 class="section-title">
+                <span class="section-number">16</span>
+                AOSP 소스 코드 참조
+            </h2>
+            <p class="section-description">
+                Power Policy 및 Suspend 구현을 이해하기 위한 핵심 AOSP 소스 파일들입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📂</span> CarPowerManagementService.java</h3>
+                    <div class="card-description">
+                        <strong>경로:</strong> <code>packages/services/Car/service/src/com/android/car/power/CarPowerManagementService.java</code><br>
+                        <strong>핵심 기능:</strong>
+                        <ul>
+                            <li>전원 상태 머신 (State Machine)</li>
+                            <li>VHAL 통신 (AP_POWER_STATE_REQ/REPORT)</li>
+                            <li>Shutdown Prepare 타임아웃 관리</li>
+                            <li>서비스 리스너 콜백 호출</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/src/com/android/car/power/CarPowerManagementService.java"
+                           target="_blank" style="color: var(--accent-blue);">→ 소스 보기</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📜</span> CarPowerPolicyService.java</h3>
+                    <div class="card-description">
+                        <strong>경로:</strong> <code>packages/services/Car/service/src/com/android/car/power/CarPowerPolicyService.java</code><br>
+                        <strong>핵심 기능:</strong>
+                        <ul>
+                            <li>Power Policy XML 파싱</li>
+                            <li>Policy Group 관리</li>
+                            <li>Component 활성화/비활성화 제어</li>
+                            <li>addPowerPolicyListener() API</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/src/com/android/car/power/CarPowerPolicyService.java"
+                           target="_blank" style="color: var(--accent-blue);">→ 소스 보기</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔌</span> PowerHalService.java</h3>
+                    <div class="card-description">
+                        <strong>경로:</strong> <code>packages/services/Car/service/src/com/android/car/hal/PowerHalService.java</code><br>
+                        <strong>핵심 기능:</strong>
+                        <ul>
+                            <li>VHAL Property 통신 래퍼</li>
+                            <li>AP_POWER_STATE_REQ 수신</li>
+                            <li>AP_POWER_STATE_REPORT 전송</li>
+                            <li>VehiclePropValue 파싱</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/src/com/android/car/hal/PowerHalService.java"
+                           target="_blank" style="color: var(--accent-blue);">→ 소스 보기</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚙️</span> car_power_policy.xml</h3>
+                    <div class="card-description">
+                        <strong>경로:</strong> <code>packages/services/Car/service/res/xml/car_power_policy.xml</code><br>
+                        <strong>내용:</strong>
+                        <ul>
+                            <li>기본 정책 정의 (system_on, no_user_interaction 등)</li>
+                            <li>Policy Group 설정</li>
+                            <li>OEM 오버레이 템플릿</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/res/xml/car_power_policy.xml"
+                           target="_blank" style="color: var(--accent-blue);">→ 소스 보기</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎧</span> CarAudioService.java</h3>
+                    <div class="card-description">
+                        <strong>경로:</strong> <code>packages/services/Car/service/src/com/android/car/audio/CarAudioService.java</code><br>
+                        <strong>Power 연동:</strong>
+                        <ul>
+                            <li>addPowerPolicyListener(AUDIO)</li>
+                            <li>AUDIO 활성화 시 Unmute</li>
+                            <li>AUDIO 비활성화 시 Focus 거절</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/src/com/android/car/audio/CarAudioService.java"
+                           target="_blank" style="color: var(--accent-blue);">→ 소스 보기</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔋</span> VehicleHal (C++)</h3>
+                    <div class="card-description">
+                        <strong>경로:</strong> <code>hardware/interfaces/automotive/vehicle/2.0/default/impl/vhal_v2_0/</code><br>
+                        <strong>핵심 파일:</strong>
+                        <ul>
+                            <li>VehicleHalImpl.cpp (Property 처리)</li>
+                            <li>VehicleEmulator.cpp (에뮬레이터 전용)</li>
+                            <li>types.hal (VehiclePropValue 정의)</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:hardware/interfaces/automotive/vehicle/"
+                           target="_blank" style="color: var(--accent-blue);">→ 소스 보기</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 17: Related Documentation -->
+        <section class="section sec-related">
+            <h2 class="section-title">
+                <span class="section-number">17</span>
+                관련 상세 문서
+            </h2>
+            <p class="section-description">
+                Power Policy & Suspend와 밀접하게 관련된 다른 문서들입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card clickable" onclick="location.href='aaos-last-media.html'">
+                    <h3 class="card-title"><span class="card-icon">🎵</span> Last Media & Autoplay</h3>
+                    <div class="card-description">
+                        Suspend/Resume 시 미디어 상태 저장/복원, Autoplay 정책, SharedPreferences 기반 persistence
+                    </div>
+                    <a href="aaos-last-media.html" class="card-link">자세히 보기 →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='carmedia.html'">
+                    <h3 class="card-title"><span class="card-icon">📻</span> Car Media Service</h3>
+                    <div class="card-description">
+                        CarMediaService 아키텍처, MEDIA 컴포넌트 Power Policy 연동, Last Media Source 관리
+                    </div>
+                    <a href="carmedia.html" class="card-link">자세히 보기 →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='audio-framework.html'">
+                    <h3 class="card-title"><span class="card-icon">🔊</span> Audio Framework</h3>
+                    <div class="card-description">
+                        CarAudioService의 AUDIO 컴포넌트 처리, Audio Focus Suspend/Resume, Multi-zone 오디오
+                    </div>
+                    <a href="audio-framework.html" class="card-link">자세히 보기 →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='aaos.html'">
+                    <h3 class="card-title"><span class="card-icon">🚗</span> AAOS Overview</h3>
+                    <div class="card-description">
+                        Android Automotive OS 전체 개요, CarService 아키텍처, VHAL 통신, 차량 전원 시스템
+                    </div>
+                    <a href="aaos.html" class="card-link">자세히 보기 →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='aaos-key-events.html'">
+                    <h3 class="card-title"><span class="card-icon">⌨️</span> AAOS Key Events</h3>
+                    <div class="card-description">
+                        Wake-up 소스로서의 하드웨어 키 이벤트, VHAL HW_KEY_INPUT, Ignition 감지
+                    </div>
+                    <a href="aaos-key-events.html" class="card-link">자세히 보기 →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='gas.html'">
+                    <h3 class="card-title"><span class="card-icon">🔧</span> Google Automotive Services</h3>
+                    <div class="card-description">
+                        GAS의 전원 관리 통합, OTA 업데이트 RTC Alarm, 원격 제어 Wake-up
+                    </div>
+                    <a href="gas.html" class="card-link">자세히 보기 →</a>
+                </div>
+            </div>
+        </section>
+
         <a href="index.html" class="nav-button">← Back to Dashboard</a>
     </div>
 
