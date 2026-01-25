@@ -23,6 +23,11 @@ function generateTOC() {
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
                 </svg>
                 <span>목차</span>
+                <button class="toc-toggle-btn" id="tocToggleBtn" aria-label="목차 접기/펼치기">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                    </svg>
+                </button>
             </div>
             <nav class="toc-nav" id="tocNav"></nav>
         `;
@@ -94,6 +99,32 @@ function generateTOC() {
                 link.classList.add('active');
             }
         });
+    });
+
+    // 토글 버튼 기능
+    setupTOCToggle();
+}
+
+// TOC 접기/펼치기 기능
+function setupTOCToggle() {
+    const tocToggleBtn = document.getElementById('tocToggleBtn');
+    const tocSidebar = document.getElementById('tocSidebar');
+
+    if (!tocToggleBtn || !tocSidebar) return;
+
+    // 로컬 스토리지에서 상태 복원
+    const isCollapsed = localStorage.getItem('tocCollapsed') === 'true';
+    if (isCollapsed) {
+        tocSidebar.classList.add('collapsed');
+    }
+
+    tocToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        tocSidebar.classList.toggle('collapsed');
+
+        // 상태 저장
+        const collapsed = tocSidebar.classList.contains('collapsed');
+        localStorage.setItem('tocCollapsed', collapsed);
     });
 }
 

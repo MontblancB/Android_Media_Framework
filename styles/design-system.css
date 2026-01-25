@@ -1622,8 +1622,8 @@ footer {
 .toc-sidebar {
     position: fixed;
     top: 120px;
-    right: 40px;
-    width: 250px;
+    left: 40px;
+    width: 237.5px;
     max-height: calc(100vh - 200px);
     overflow-y: auto;
     background: var(--color-surface);
@@ -1633,7 +1633,21 @@ footer {
     z-index: 100;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     opacity: 0.3;
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    transition: opacity 0.3s ease, transform 0.3s ease, width 0.3s ease;
+}
+
+/* TOC 접힌 상태 */
+.toc-sidebar.collapsed {
+    width: 50px;
+    overflow: hidden;
+}
+
+.toc-sidebar.collapsed .toc-nav {
+    display: none;
+}
+
+.toc-sidebar.collapsed .toc-header span {
+    display: none;
 }
 
 /* TOC 호버 시 완전히 표시 */
@@ -1657,6 +1671,39 @@ footer {
     margin-bottom: var(--spacing-sm);
     padding-bottom: var(--spacing-xs);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+
+.toc-toggle-btn {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toc-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-accent);
+}
+
+.toc-toggle-btn svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s ease;
+}
+
+.toc-sidebar.collapsed .toc-toggle-btn svg {
+    transform: rotate(180deg);
 }
 
 .toc-icon {
@@ -1691,7 +1738,7 @@ footer {
 .toc-link:hover {
     background: rgba(255, 255, 255, 0.05);
     color: var(--color-text-primary);
-    transform: translateX(4px);
+    transform: translateX(-4px);
 }
 
 .toc-link.active {
@@ -1922,7 +1969,7 @@ footer {
 @media (max-width: 1400px) {
     .toc-sidebar {
         width: 200px;
-        right: 20px;
+        left: 20px;
     }
 }
 
