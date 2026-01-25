@@ -56,7 +56,43 @@ const NODE_ID_MAPPING = {
     'VENDOR_IMPL': 'Vendor Implementation',
     'VENDOR_LIBS': 'Vendor Libraries',
     'HIDL': 'HIDL Interface',
-    'STABLE_AIDL': 'Stable AIDL'
+    'STABLE_AIDL': 'Stable AIDL',
+
+    // Codec2 (codec2.html)
+    'MEDIA_APP': 'Media App',
+    'MEDIACODEC': 'MediaCodec',
+    'CCODEC': 'CCodec',
+    'BUFFER_CH': 'CCodecBufferChannel',
+    'C2_CLIENT': 'Codec2Client',
+    'LISTENER': 'ClientListener',
+    'HIDL_AIDL': 'HIDL/AIDL IPC',
+    'COMP_STORE': 'C2ComponentStore',
+    'C2_COMP': 'C2Component',
+    'C2_INTF': 'C2Component Interface',
+    'C2_ALLOC': 'C2Allocator',
+    'C2_POOL': 'C2BlockPool',
+    'HW_CODEC': 'Hardware Codec',
+    'ION': 'ION Allocator',
+    'GRALLOC': 'Gralloc',
+    'COMP_INTF': 'Component Interface',
+    'COMP_IMPL': 'Component Implementation',
+    'PARAMS': 'C2Param',
+    'QUERY': 'Query',
+
+    // Media Framework Core (media-framework-core.html)
+    'APP': 'Media Apps',
+    'ME': 'MediaExtractor',
+    'NP': 'NuPlayer',
+    'CC': 'CCodec',
+    'AC': 'ACodec',
+    'LM': 'libmedia',
+    'LS': 'libstagefright',
+    'MC': 'MediaCodec API',
+    'CC_MAIN': 'CCodec Entry',
+    'CC_BUFFER': 'CCodecBufferChannel',
+    'CC_CLIENT': 'Codec2Client',
+    'C2_STORE': 'C2ComponentStore',
+    'C2_PARAM': 'C2Params'
 };
 
 const DIAGRAM_NODE_DATA = {
@@ -860,6 +896,298 @@ adb shell dumpsys -l | grep aidl
 # AIDL HAL 버전
 adb shell service list | grep android.hardware
         `.trim()
+    },
+
+    // ========================================
+    // Codec2 노드 (codec2.html)
+    // ========================================
+
+    'Media App': {
+        title: 'Media Application',
+        layer: 'Application',
+        description: '미디어 코덱을 사용하는 애플리케이션입니다. MediaCodec API를 통해 인코딩/디코딩을 수행합니다.',
+        components: [
+            'Video Player',
+            'Camera App',
+            'Video Editor',
+            'Streaming App'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media/mediacodec'
+    },
+
+    'CCodec': {
+        title: 'CCodec',
+        layer: 'Framework',
+        description: 'Codec 2.0의 프레임워크 레벨 진입점입니다. MediaCodec API를 Codec2 HAL로 연결합니다.',
+        components: [
+            'Entry Point',
+            'Buffer Management',
+            'State Machine',
+            'Error Handling'
+        ],
+        path: 'frameworks/av/media/codec2/sfplugin/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'CCodecBufferChannel': {
+        title: 'CCodecBufferChannel',
+        layer: 'Framework',
+        description: 'Zero-copy 버퍼 전달을 담당합니다. 앱과 코덱 사이의 버퍼를 효율적으로 관리합니다.',
+        components: [
+            'Zero-Copy Buffer',
+            'Input Queue',
+            'Output Queue',
+            'Buffer Synchronization'
+        ],
+        path: 'frameworks/av/media/codec2/sfplugin/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'Codec2Client': {
+        title: 'Codec2Client',
+        layer: 'Native',
+        description: 'Codec2 HAL과 통신하는 클라이언트입니다. HIDL/AIDL IPC를 사용합니다.',
+        components: [
+            'HAL Communication',
+            'Component Discovery',
+            'Service Connection',
+            'IPC Management'
+        ],
+        path: 'frameworks/av/media/codec2/core/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'C2ComponentStore': {
+        title: 'C2ComponentStore',
+        layer: 'HAL',
+        description: 'Codec2 컴포넌트를 생성하고 관리하는 팩토리입니다.',
+        components: [
+            'Component Factory',
+            'Library Loading',
+            'Capability Query',
+            'Parameter Support'
+        ],
+        path: 'hardware/interfaces/media/c2/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'C2Component': {
+        title: 'C2Component',
+        layer: 'HAL',
+        description: '실제 인코딩/디코딩을 수행하는 코덱 컴포넌트입니다.',
+        components: [
+            'Encoder/Decoder Logic',
+            'Buffer Processing',
+            'Configuration',
+            'State Management'
+        ],
+        path: 'hardware/google/av/codec2/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+// MediaCodec 사용 예제
+val codec = MediaCodec.createDecoderByType("video/avc")
+val format = MediaFormat.createVideoFormat("video/avc", 1920, 1080)
+codec.configure(format, surface, null, 0)
+codec.start()
+        `.trim()
+    },
+
+    'C2Component Interface': {
+        title: 'C2Component Interface',
+        layer: 'HAL',
+        description: '코덱 파라미터를 설정하고 조회하는 인터페이스입니다.',
+        components: [
+            'Parameter Setting',
+            'Capability Query',
+            'Configuration',
+            'Supported Formats'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'C2Allocator': {
+        title: 'C2Allocator',
+        layer: 'HAL',
+        description: '코덱 버퍼를 위한 메모리를 할당합니다.',
+        components: [
+            'ION Memory',
+            'Gralloc Buffer',
+            'Linear Buffer',
+            'Graphic Buffer'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'C2BlockPool': {
+        title: 'C2BlockPool',
+        layer: 'HAL',
+        description: '재사용 가능한 버퍼 풀을 관리합니다.',
+        components: [
+            'Buffer Pool',
+            'Memory Reuse',
+            'Allocation Cache',
+            'Pool Management'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'Hardware Codec': {
+        title: 'Hardware Codec (DSP/GPU)',
+        layer: 'Hardware',
+        description: '하드웨어 가속 코덱입니다. DSP나 GPU를 사용하여 인코딩/디코딩을 수행합니다.',
+        components: [
+            'Hardware Decoder',
+            'Hardware Encoder',
+            'DSP Acceleration',
+            'GPU Processing'
+        ],
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'ION Allocator': {
+        title: 'ION Memory Allocator',
+        layer: 'Kernel',
+        description: '멀티미디어용 공유 메모리를 할당하는 커널 드라이버입니다.',
+        components: [
+            'Shared Memory',
+            'DMA Buffer',
+            'Heap Management',
+            'Zero-Copy'
+        ],
+        path: 'kernel/drivers/staging/android/ion/',
+        doc: 'https://source.android.com/docs/core/architecture/hidl/memoryblock'
+    },
+
+    'Gralloc': {
+        title: 'Gralloc (Graphics Allocator)',
+        layer: 'HAL',
+        description: '그래픽 버퍼를 할당하는 HAL입니다.',
+        components: [
+            'Graphics Buffer',
+            'Hardware Buffer',
+            'Buffer Metadata',
+            'Lock/Unlock'
+        ],
+        path: 'hardware/interfaces/graphics/allocator/',
+        doc: 'https://source.android.com/docs/core/graphics/arch-bq-gralloc'
+    },
+
+    // ========================================
+    // Media Framework Core 노드
+    // ========================================
+
+    'Media Apps': {
+        title: 'Media Applications',
+        layer: 'Application',
+        description: '미디어를 재생, 녹화, 스트리밍하는 앱입니다.',
+        components: [
+            'YouTube - 동영상 스트리밍',
+            'Spotify - 음악 재생',
+            'Camera - 사진/동영상 촬영',
+            'Video Player - 로컬 재생'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media'
+    },
+
+    'MediaExtractor': {
+        title: 'MediaExtractor (Demuxer)',
+        layer: 'Framework',
+        description: '미디어 컨테이너를 파싱하고 오디오/비디오 트랙을 추출합니다.',
+        components: [
+            'Container Parsing (MP4, MKV, WebM)',
+            'Track Extraction',
+            'Seek Support',
+            'Metadata Reading'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://developer.android.com/reference/android/media/MediaExtractor',
+        codeExample: `
+val extractor = MediaExtractor()
+extractor.setDataSource(filePath)
+val trackCount = extractor.trackCount
+
+for (i in 0 until trackCount) {
+    val format = extractor.getTrackFormat(i)
+    val mime = format.getString(MediaFormat.KEY_MIME)
+    if (mime.startsWith("video/")) {
+        extractor.selectTrack(i)
+        break
+    }
+}
+        `.trim()
+    },
+
+    'NuPlayer': {
+        title: 'NuPlayer',
+        layer: 'Native',
+        description: 'Android의 기본 미디어 재생 엔진입니다. MediaPlayer의 백엔드 구현체입니다.',
+        components: [
+            'Playback State Machine',
+            'Source Management',
+            'Decoder Management',
+            'Renderer Pipeline'
+        ],
+        path: 'frameworks/av/media/libmediaplayerservice/nuplayer/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'ACodec': {
+        title: 'ACodec (OpenMAX)',
+        layer: 'Framework',
+        description: '레거시 OpenMAX IL 코덱을 위한 어댑터입니다. (Android 10 이하)',
+        components: [
+            'OpenMAX IL Adapter',
+            'Legacy Codec Support',
+            'Buffer Management',
+            'State Machine'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'libmedia': {
+        title: 'libmedia',
+        layer: 'Native',
+        description: '프레임워크와 네이티브 서비스를 연결하는 IPC 클라이언트 라이브러리입니다.',
+        components: [
+            'Binder IPC',
+            'MediaPlayer Client',
+            'MediaRecorder Client',
+            'AudioTrack/AudioRecord'
+        ],
+        path: 'frameworks/av/media/libmedia/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'libstagefright': {
+        title: 'libstagefright',
+        layer: 'Native',
+        description: 'Android 미디어 프레임워크의 핵심 로직 라이브러리입니다.',
+        components: [
+            'Codec Pipeline',
+            'Container Parsing',
+            'Buffer Management',
+            'Sync/Timing'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'C2Params': {
+        title: 'C2Params',
+        layer: 'HAL',
+        description: 'Codec2 파라미터 설정 및 조회 시스템입니다.',
+        components: [
+            'Configuration Parameters',
+            'Query Parameters',
+            'Tuning Parameters',
+            'Info Parameters'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec'
     }
 };
 
