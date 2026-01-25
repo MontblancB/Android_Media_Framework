@@ -49,11 +49,6 @@
                     CarService --> InputMgr[InputManagerService]
                     InputMgr --> App[Application]
 
-                    style VHAL fill:#10b981,stroke:#fff,color:#fff
-                    style CarService fill:#3b82f6,stroke:#fff,color:#fff
-                    style HW fill:#1a1f35,stroke:#9ca3af
-                    style InputMgr fill:#1a1f35,stroke:#9ca3af
-                    style App fill:#1a1f35,stroke:#9ca3af
                 </div>
             </div>
             <p style="margin-top: 20px; color: var(--text-secondary);">
@@ -116,11 +111,6 @@
                     State -- No --> Allow[Allow Full Interaction]
                     end
 
-                    style UXR fill:#f43f5e,stroke:#fff,color:#fff
-                    style Sensor fill:#1a1f35,stroke:#9ca3af
-                    style CarInfo fill:#1a1f35,stroke:#9ca3af
-                    style App fill:#1a1f35,stroke:#3b82f6
-                    style App Logic fill:#1a1f35,stroke:#3b82f6
                 </div>
             </div>
 
@@ -213,12 +203,6 @@
                     CAS -- "setGroupVolume(zone, group, index)" --> HAL[Audio Control HAL]
                     HAL -- "Apply Hardware Gain" --> Amp[Hardware Amplifier]
 
-                    style CAS fill:#ec4899,stroke:#fff,color:#fff
-                    style HAL fill:#10b981,stroke:#fff,color:#fff
-                    style HW fill:#1a1f35,stroke:#9ca3af
-                    style VHAL fill:#1a1f35,stroke:#9ca3af
-                    style CIS fill:#1a1f35,stroke:#9ca3af
-                    style Volume Logic fill:#1a1f35,stroke:#3b82f6
                 </div>
             </div>
 
