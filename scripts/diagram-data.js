@@ -166,10 +166,28 @@ const NODE_ID_MAPPING = {
     'CAR_CONTROLS': 'Car Controls',
     'CAR_DISPLAY': 'Car Display',
     'AAOS_OS': 'AAOS Operating System',
+    'AAOS_FULL': 'AAOS Full Stack',
     'AA_APP': 'Android Auto App',
+    'AA': 'Android Auto App',
     'VHAL_IF': 'VHAL Interface',
     'CPM': 'Car Property Manager',
     'PROPS': 'Vehicle Properties',
+    'CAR_APP_LIB': 'Car App Library',
+    'CAR_APP': 'Car App',
+    'CAR_AA': 'Car Android Auto',
+    'CAR_HW': 'Car Hardware',
+    'PHONE': 'Phone',
+    'PHONE_HW': 'Phone Hardware',
+    'SENSORS': 'Sensors',
+    'USER1': 'User 1',
+    'USER2': 'User 2',
+    'ECU1': 'ECU 1',
+    'ECU2': 'ECU 2',
+    'AUDIO1': 'Audio Zone 1',
+    'AUDIO2': 'Audio Zone 2',
+    'HAL_STD': 'Standard HAL',
+    'SYSTEM_APP': 'System Apps',
+    'MEDIA_APP': 'Media App',
 
     // Media Playback (media-playback.html)
     'PLAYER_API': 'Player API',
@@ -3046,6 +3064,259 @@ AAudioStream_requestStart(stream);
         ],
         path: 'frameworks/av/media/libstagefright/omx/',
         doc: 'https://source.android.com/docs/core/media/compat'
+    },
+
+    // ========================================
+    // AAOS 추가 노드 (aaos.html) - Card 3
+    // ========================================
+
+    'AAOS Operating System': {
+        title: 'AAOS (Android Automotive OS)',
+        layer: 'Operating System',
+        description: '차량용으로 특화된 Android 운영체제입니다.',
+        components: [
+            'Car Service Framework',
+            'Vehicle HAL',
+            'Car Audio',
+            'Car Input',
+            'Car Display'
+        ],
+        doc: 'https://source.android.com/docs/automotive'
+    },
+
+    'Android Auto App': {
+        title: 'Android Auto',
+        layer: 'Application',
+        description: '스마트폰을 차량 디스플레이에 미러링하는 앱입니다.',
+        components: [
+            'Phone Projection',
+            'Media Apps',
+            'Navigation Apps',
+            'Messaging Apps',
+            'Google Assistant'
+        ],
+        doc: 'https://developers.google.com/cars/design'
+    },
+
+    'Car App Library': {
+        title: 'Car App Library',
+        layer: 'Framework Library',
+        description: 'AAOS 및 Android Auto용 앱 개발 라이브러리입니다.',
+        components: [
+            'CarAppService',
+            'Navigation Templates',
+            'POI Templates',
+            'Messaging Templates',
+            'Media Templates'
+        ],
+        doc: 'https://developer.android.com/training/cars/apps'
+    },
+
+    'Car Controls': {
+        title: 'Car Controls',
+        layer: 'System UI',
+        description: '차량 제어를 위한 시스템 UI입니다.',
+        components: [
+            'Climate Control',
+            'Seat Control',
+            'Window Control',
+            'Quick Settings'
+        ],
+        path: 'packages/apps/Car/SystemUI/'
+    },
+
+    'Car Display': {
+        title: 'Car Display Service',
+        layer: 'Car Service',
+        description: '차량의 다중 디스플레이를 관리하는 서비스입니다.',
+        components: [
+            'Multi-Display Support',
+            'Display Zones',
+            'Activity Routing',
+            'Display Policy'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/display/'
+    },
+
+    'Car Property Manager': {
+        title: 'Car Property Manager',
+        layer: 'Car API',
+        description: '차량 속성에 접근하는 API입니다.',
+        components: [
+            'Property Get/Set',
+            'Property Subscription',
+            'Area-based Properties',
+            'Permission Control'
+        ],
+        path: 'packages/services/Car/car-lib/src/android/car/hardware/property/',
+        codeExample: `
+val carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+
+// 차량 속도 읽기
+val speed = carPropertyManager.getFloatProperty(
+    VehiclePropertyIds.PERF_VEHICLE_SPEED,
+    VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL
+)
+        `.trim()
+    },
+
+    'Vehicle Properties': {
+        title: 'Vehicle Properties',
+        layer: 'VHAL',
+        description: '차량의 하드웨어 속성들입니다.',
+        components: [
+            'Speed (PERF_VEHICLE_SPEED)',
+            'Gear (GEAR_SELECTION)',
+            'Fuel Level (FUEL_LEVEL)',
+            'Door State (DOOR_LOCK)',
+            'HVAC (HVAC_TEMPERATURE_SET)'
+        ],
+        doc: 'https://source.android.com/docs/automotive/vhal/property-configuration'
+    },
+
+    'VHAL Interface': {
+        title: 'VHAL Interface',
+        layer: 'HAL Interface',
+        description: 'Vehicle HAL과 통신하는 AIDL 인터페이스입니다.',
+        components: [
+            'IVehicle.aidl',
+            'Property Subscribe/Unsubscribe',
+            'Property Get/Set',
+            'VehicleAreaConfig'
+        ],
+        path: 'hardware/interfaces/automotive/vehicle/aidl/'
+    },
+
+    'Sensors': {
+        title: 'Vehicle Sensors',
+        layer: 'Hardware',
+        description: '차량의 각종 센서들입니다.',
+        components: [
+            'Speed Sensor',
+            'Gear Sensor',
+            'Parking Sensor',
+            'Fuel Sensor',
+            'Temperature Sensor'
+        ]
+    },
+
+    'Car Hardware': {
+        title: 'Car Hardware',
+        layer: 'Hardware',
+        description: '차량 하드웨어 컴포넌트입니다.',
+        components: [
+            'Display',
+            'Audio Amplifier',
+            'Microphone',
+            'Camera',
+            'CAN Bus'
+        ]
+    },
+
+    'Phone Hardware': {
+        title: 'Phone Hardware',
+        layer: 'Hardware',
+        description: '스마트폰 하드웨어입니다.',
+        components: [
+            'Display',
+            'Touchscreen',
+            'Microphone',
+            'Speaker',
+            'GPS'
+        ]
+    },
+
+    'Phone': {
+        title: 'Phone (Smartphone)',
+        layer: 'Device',
+        description: 'Android Auto를 실행하는 스마트폰입니다.',
+        components: [
+            'Android Auto App',
+            'USB/Bluetooth Connection',
+            'Media Apps',
+            'Navigation Apps'
+        ]
+    },
+
+    'User 1': {
+        title: 'Driver Profile',
+        layer: 'User Profile',
+        description: '운전자 사용자 프로필입니다.',
+        components: [
+            'User Settings',
+            'App Data',
+            'Media Preferences',
+            'Navigation History'
+        ]
+    },
+
+    'User 2': {
+        title: 'Passenger Profile',
+        layer: 'User Profile',
+        description: '동승자 사용자 프로필입니다.',
+        components: [
+            'User Settings',
+            'App Data',
+            'Media Preferences',
+            'Navigation History'
+        ]
+    },
+
+    'ECU 1': {
+        title: 'ECU 1 (Engine)',
+        layer: 'Hardware',
+        description: '엔진 제어 ECU입니다.',
+        components: [
+            'Engine Control',
+            'Transmission Control',
+            'CAN Bus Communication'
+        ]
+    },
+
+    'ECU 2': {
+        title: 'ECU 2 (Body)',
+        layer: 'Hardware',
+        description: '바디 제어 ECU입니다.',
+        components: [
+            'Body Control',
+            'Climate Control',
+            'CAN Bus Communication'
+        ]
+    },
+
+    'Audio Zone 1': {
+        title: 'Audio Zone 1 (Front)',
+        layer: 'Audio Zone',
+        description: '전방 좌석 오디오 존입니다.',
+        components: [
+            'Front Speakers',
+            'Media Playback',
+            'Navigation Audio',
+            'Phone Calls'
+        ]
+    },
+
+    'Audio Zone 2': {
+        title: 'Audio Zone 2 (Rear)',
+        layer: 'Audio Zone',
+        description: '후방 좌석 오디오 존입니다.',
+        components: [
+            'Rear Speakers',
+            'Independent Media',
+            'Headphones Support'
+        ]
+    },
+
+    'Standard HAL': {
+        title: 'Standard HAL',
+        layer: 'HAL',
+        description: '표준 Android HAL입니다.',
+        components: [
+            'Audio HAL',
+            'Sensor HAL',
+            'Graphics HAL',
+            'Bluetooth HAL'
+        ]
     }
 };
 
