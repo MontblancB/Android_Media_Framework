@@ -64,22 +64,62 @@ function attachInteractiveHandlers(container, diagramIndex) {
             node.style.cursor = 'pointer';
             node.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
 
-            // 클릭 이벤트
+            // 터치 디바이스 감지
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+            // 클릭 이벤트 (마우스)
             node.addEventListener('click', (e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 handleNodeClick(nodeId, node);
             });
 
-            // 호버 이벤트
-            node.addEventListener('mouseenter', (e) => {
-                handleNodeHover(e, nodeId, node);
-            });
+            // 터치 이벤트 (모바일/태블릿)
+            if (isTouchDevice) {
+                let touchStartTime = 0;
 
-            node.addEventListener('mouseleave', () => {
-                handleNodeLeave();
-            });
+                node.addEventListener('touchstart', (e) => {
+                    touchStartTime = Date.now();
+                    // 터치 시작 시 시각적 피드백
+                    node.style.transform = 'scale(1.05)';
+                    node.style.opacity = '0.8';
+                });
 
-            console.log(`    ✓ 노드 "${nodeId}" 인터랙티브 활성화`);
+                node.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // 터치 시간이 500ms 이하면 탭으로 간주
+                    const touchDuration = Date.now() - touchStartTime;
+                    if (touchDuration < 500) {
+                        handleNodeClick(nodeId, node);
+                    }
+
+                    // 시각적 피드백 복원
+                    setTimeout(() => {
+                        node.style.transform = '';
+                        node.style.opacity = '';
+                    }, 100);
+                });
+
+                node.addEventListener('touchcancel', () => {
+                    node.style.transform = '';
+                    node.style.opacity = '';
+                });
+            }
+
+            // 호버 이벤트 (데스크톱만)
+            if (!isTouchDevice) {
+                node.addEventListener('mouseenter', (e) => {
+                    handleNodeHover(e, nodeId, node);
+                });
+
+                node.addEventListener('mouseleave', () => {
+                    handleNodeLeave();
+                });
+            }
+
+            console.log(`    ✓ 노드 "${nodeId}" 인터랙티브 활성화 (${isTouchDevice ? '터치' : '마우스'} 모드)`);
         }
     });
 }
