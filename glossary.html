@@ -1,142 +1,27 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Android Media Glossary - Android Media Framework</title>
-    <link rel="stylesheet" href="styles/design-system.css">
+    <title>Android Media Glossary</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
 
-    <style>
-        /* Page-specific styles for glossary */
-        .alphabet-nav {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            justify-content: center;
-            margin: var(--spacing-xl) 0;
-            padding: var(--spacing-md);
-            background: var(--color-surface);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .alphabet-nav a {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 2.5rem;
-            height: 2.5rem;
-            background: var(--color-bg-tertiary);
-            color: var(--color-accent);
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            cursor: pointer;
-        }
-
-        .alphabet-nav a:hover {
-            background: var(--color-accent);
-            color: var(--color-bg-primary);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px var(--color-glow);
-        }
-
-        .term-card {
-            background: var(--color-surface);
-            border-left: 4px solid var(--color-accent);
-            padding: var(--spacing-lg);
-            margin: var(--spacing-md) 0;
-            border-radius: 8px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .term-card:hover {
-            transform: translateX(4px);
-            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.1);
-        }
-
-        .term-title {
-            font-size: 1.5rem;
-            color: var(--color-accent);
-            font-weight: 600;
-            margin-bottom: var(--spacing-xs);
-            font-family: var(--font-body);
-        }
-
-        .term-pronunciation {
-            font-size: 0.9rem;
-            color: var(--color-text-secondary);
-            font-style: italic;
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .term-definition {
-            color: var(--color-text-primary);
-            margin-bottom: var(--spacing-sm);
-            line-height: 1.8;
-        }
-
-        .term-related {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: var(--spacing-sm);
-        }
-
-        .tag {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            background: rgba(0, 212, 255, 0.15);
-            color: var(--color-accent);
-            font-family: var(--font-mono);
-            border: 1px solid rgba(0, 212, 255, 0.2);
-        }
-
-        code {
-            font-family: var(--font-mono);
-            background: var(--color-bg-tertiary);
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.9em;
-            color: var(--color-accent);
-            border: 1px solid rgba(0, 212, 255, 0.2);
-        }
+        <style>
+        /* Page-specific styles loaded from design-system.css */
     </style>
 </head>
-<body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="index.html" class="nav-brand">Android Media Framework</a>
-            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-                <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="5"></circle>
-                    <line x1="12" y1="1" x2="12" y2="3"></line>
-                    <line x1="12" y1="21" x2="12" y2="23"></line>
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                    <line x1="1" y1="12" x2="3" y2="12"></line>
-                    <line x1="21" y1="12" x2="23" y2="12"></line>
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                </svg>
-                <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                </svg>
-            </button>
-        </div>
-    </nav>
 
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media Framework
+        </a>
+    </nav>
     <div class="container">
         <header>
             <h1 class="page-title">📖 Android Media Glossary</h1>
@@ -890,23 +775,19 @@
         </section>
     </div>
 
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script>
         mermaid.initialize({
             startOnLoad: true,
-            theme: "dark",
+            theme: document.documentElement.getAttribute('data-theme') === 'light' ? 'default' : 'dark',
             themeVariables: {
-                primaryColor: "#00d4ff",
-                primaryTextColor: "#e8eaed",
-                primaryBorderColor: "#1a2030",
-                lineColor: "#9aa0a6",
-                secondaryColor: "#4a9eff",
-                tertiaryColor: "#26de81"
+                primaryColor: '#00d4ff',
+                primaryTextColor: '#e8eaed',
+                primaryBorderColor: '#1a2030',
+                lineColor: '#9aa0a6',
+                secondaryColor: '#4a9eff',
+                tertiaryColor: '#26de81'
             }
         });
     </script>
-    <script src="scripts/theme-toggle.js"></script>
 </body>
 </html>

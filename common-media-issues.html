@@ -1,50 +1,27 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Common Media Issues & Solutions</title>
-    <link rel="stylesheet" href="styles/design-system.css">
+    <title>Common Media Issues</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
 
-    <style>
-        /* Page-specific styles for common media issues */
-        .issue-card { background: var(--color-surface); border-left: 4px solid #ef4444; padding: var(--spacing-lg); margin: var(--spacing-md) 0; border-radius: 8px; transition: all 0.2s ease; }
-        .issue-card:hover { transform: translateX(4px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1); }
-        .severity-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 500; font-family: var(--font-mono); }
-        .severity-critical { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-        .severity-high { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-        code { font-family: var(--font-mono); background: var(--color-bg-tertiary); padding: 0.2rem 0.5rem; border-radius: 4px; color: var(--color-accent); }
-        pre { background: var(--color-bg-secondary); padding: var(--spacing-md); border-radius: 8px; overflow-x: auto; }
-        .mermaid { background: var(--color-surface); padding: var(--spacing-lg); border-radius: 12px; margin: var(--spacing-lg) 0; }
+        <style>
+        /* Page-specific styles loaded from design-system.css */
     </style>
 </head>
-<body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="index.html" class="nav-brand">Android Media Framework</a>
-            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-                <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="5"></circle>
-                    <line x1="12" y1="1" x2="12" y2="3"></line>
-                    <line x1="12" y1="21" x2="12" y2="23"></line>
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                    <line x1="1" y1="12" x2="3" y2="12"></line>
-                    <line x1="21" y1="12" x2="23" y2="12"></line>
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                </svg>
-                <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                </svg>
-            </button>
-        </div>
-    </nav>
 
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media Framework
+        </a>
+    </nav>
     <div class="container">
         <header>
             <h1 class="page-title">🆘 Common Media Issues & Solutions</h1>
@@ -1791,59 +1768,19 @@ adb pull /data/local/tmp/heap.hprof</code></pre>
         </footer>
     </div>
 
-    <script src="scripts/mermaid-theme.js"></script>
-    <script>
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -100px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, observerOptions);
-
-        document.querySelectorAll('.section').forEach(section => {
-            section.style.opacity = '0';
-            section.style.transform = 'translateY(30px)';
-            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
-            observer.observe(section);
-        });
-    </script>
-    <script src="scripts/theme-toggle.js"></script>
-
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script>
         mermaid.initialize({
             startOnLoad: true,
             theme: document.documentElement.getAttribute('data-theme') === 'light' ? 'default' : 'dark',
             themeVariables: {
-                fontSize: '16px',
-                fontFamily: 'IBM Plex Mono, monospace'
+                primaryColor: '#00d4ff',
+                primaryTextColor: '#e8eaed',
+                primaryBorderColor: '#1a2030',
+                lineColor: '#9aa0a6',
+                secondaryColor: '#4a9eff',
+                tertiaryColor: '#26de81'
             }
         });
     </script>
-    <script src="theme-toggle.js"></script>
-    <script>
-        mermaid.initialize({
-            startOnLoad: true,
-            theme: "dark",
-            themeVariables: {
-                primaryColor: "#00d4ff",
-                primaryTextColor: "#e8eaed",
-                primaryBorderColor: "#1a2030",
-                lineColor: "#9aa0a6",
-                secondaryColor: "#4a9eff",
-                tertiaryColor: "#26de81"
-            }
-        });
-    </script>
-    <script src="scripts/theme-toggle.js"></script>
 </body>
 </html>
