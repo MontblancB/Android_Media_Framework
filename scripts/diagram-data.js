@@ -191,6 +191,18 @@ const NODE_ID_MAPPING = {
     'APP': 'Vehicle App',
     'APP1': 'Navigation App',
     'APP2': 'Media App',
+    'AppTypes': 'AAOS App Types',
+    'Layer1': 'Layer 1',
+    'Layer2': 'Layer 2',
+    'Layer3': 'Layer 3',
+    'Layer7': 'Layer 7',
+    'Car_Services': 'Car Services',
+    'VHAL_Layer': 'VHAL Layer',
+    'Vehicle': 'Vehicle',
+    'Hardware': 'Hardware',
+    'Framework': 'Framework',
+    'Zone1': 'Audio Zone 1',
+    'Zone2': 'Audio Zone 2',
 
     // Media Playback (media-playback.html)
     'PLAYER_API': 'Player API',
@@ -236,6 +248,23 @@ const NODE_ID_MAPPING = {
     'CAM1_FEAT': 'Camera1 Features',
     'CAM2_FEAT': 'Camera2 Features',
     'CAMX_FEAT': 'CameraX Features',
+    'App1': 'App1',
+    'App2': 'App2',
+    'MediaCodec1': 'MediaCodec1',
+    'MediaCodec2': 'MediaCodec2',
+    'VendorLib': 'Vendor Codec Library',
+    'Codec2': 'Codec2 API',
+    'Codec2Impl': 'Codec2 Implementation',
+    'Legacy': 'Legacy',
+    'Modern': 'Modern',
+    'Gen1': 'Gen1',
+    'Gen2': 'Gen2',
+    'Gen3': 'Gen3',
+    'Java': 'Java',
+    'Native1': 'Native1',
+    'Native2': 'Native2',
+    'Features': 'Features',
+    'Future': 'Future',
 
     // GAS (gas.html)
     'GAS': 'Google Automotive Services',
@@ -3094,6 +3123,210 @@ AAudioStream_requestStart(stream);
         doc: 'https://source.android.com/docs/core/media/compat'
     },
 
+    'App1': {
+        title: 'App (Legacy)',
+        layer: 'Application',
+        description: 'OpenMAX IL을 사용하는 레거시 앱입니다.',
+        components: [
+            'MediaCodec API',
+            'ACodec',
+            'OpenMAX IL'
+        ]
+    },
+
+    'App2': {
+        title: 'App (Modern)',
+        layer: 'Application',
+        description: 'Codec2를 사용하는 현대적인 앱입니다.',
+        components: [
+            'MediaCodec API',
+            'CCodec',
+            'Codec2 API'
+        ]
+    },
+
+    'MediaCodec1': {
+        title: 'MediaCodec API (Legacy)',
+        layer: 'Framework API',
+        description: 'OpenMAX IL을 사용하는 MediaCodec API입니다.',
+        components: [
+            'ACodec Backend',
+            'Input/Output Buffers',
+            'Async Callback'
+        ],
+        path: 'frameworks/av/media/libstagefright/'
+    },
+
+    'MediaCodec2': {
+        title: 'MediaCodec API (Modern)',
+        layer: 'Framework API',
+        description: 'Codec2를 사용하는 MediaCodec API입니다.',
+        components: [
+            'CCodec Backend',
+            'Input/Output Buffers',
+            'Async Callback',
+            'Better Performance'
+        ],
+        path: 'frameworks/av/media/libstagefright/'
+    },
+
+    'Vendor Codec Library': {
+        title: 'Vendor Codec Library',
+        layer: 'Vendor Implementation',
+        description: '벤더가 제공하는 하드웨어 코덱 구현입니다.',
+        components: [
+            'H.264/H.265 Decoder',
+            'H.264/H.265 Encoder',
+            'VP9/AV1 Decoder',
+            'Hardware Accelerated',
+            'Vendor-specific Optimization'
+        ]
+    },
+
+    'Codec2 Implementation': {
+        title: 'Codec2 Implementation',
+        layer: 'HAL Implementation',
+        description: 'Codec2 HAL의 실제 구현입니다.',
+        components: [
+            'C2Component',
+            'C2ComponentStore',
+            'Software/Hardware Codec',
+            'Modular & Updatable',
+            'Project Mainline Support'
+        ],
+        path: 'hardware/google/av/codec2/',
+        doc: 'https://source.android.com/docs/core/media/codec2'
+    },
+
+    'Codec2 API': {
+        title: 'Codec2 API',
+        layer: 'HAL Interface',
+        description: 'OpenMAX를 대체하는 새로운 코덱 HAL입니다.',
+        components: [
+            'C2Component Interface',
+            'Parameter-based Configuration',
+            'Work-based Processing',
+            'Better Memory Management',
+            'Reduced Overhead'
+        ],
+        path: 'frameworks/av/media/codec2/',
+        doc: 'https://source.android.com/docs/core/media/codec2'
+    },
+
+    'Legacy': {
+        title: 'Legacy Architecture',
+        layer: 'System',
+        description: 'Android 10 이전의 레거시 코덱 아키텍처입니다.',
+        components: [
+            'OpenMAX IL',
+            'ACodec',
+            'Tight Coupling',
+            'Difficult to Update'
+        ]
+    },
+
+    'Modern': {
+        title: 'Modern Architecture',
+        layer: 'System',
+        description: 'Android 10+ 현대 코덱 아키텍처입니다.',
+        components: [
+            'Codec2',
+            'CCodec',
+            'Modular Design',
+            'Project Mainline Support'
+        ]
+    },
+
+    'Gen1': {
+        title: 'Generation 1',
+        layer: 'Evolution',
+        description: '1세대 미디어 아키텍처입니다.',
+        components: [
+            'OpenCore',
+            'PV Player',
+            'Android 1.x - 2.1'
+        ]
+    },
+
+    'Gen2': {
+        title: 'Generation 2',
+        layer: 'Evolution',
+        description: '2세대 미디어 아키텍처입니다.',
+        components: [
+            'Stagefright',
+            'OpenMAX IL',
+            'Android 2.2 - 9.0'
+        ]
+    },
+
+    'Gen3': {
+        title: 'Generation 3',
+        layer: 'Evolution',
+        description: '3세대 미디어 아키텍처입니다.',
+        components: [
+            'NuPlayer',
+            'Codec2',
+            'Android 10+'
+        ]
+    },
+
+    'Java': {
+        title: 'Java Layer',
+        layer: 'Framework',
+        description: 'Java 프레임워크 레이어입니다.',
+        components: [
+            'MediaPlayer API',
+            'MediaCodec API',
+            'MediaRecorder API'
+        ]
+    },
+
+    'Native1': {
+        title: 'Native Layer (Legacy)',
+        layer: 'Native',
+        description: '레거시 Native 레이어입니다.',
+        components: [
+            'Stagefright',
+            'ACodec',
+            'OpenMAX IL'
+        ]
+    },
+
+    'Native2': {
+        title: 'Native Layer (Modern)',
+        layer: 'Native',
+        description: '현대 Native 레이어입니다.',
+        components: [
+            'NuPlayer',
+            'CCodec',
+            'Codec2'
+        ]
+    },
+
+    'Features': {
+        title: 'Current Features',
+        layer: 'Features',
+        description: '현재 사용 가능한 기능들입니다.',
+        components: [
+            'MediaCodec API',
+            'Camera2 API',
+            'AAudio',
+            'Codec2'
+        ]
+    },
+
+    'Future': {
+        title: 'Future Enhancements',
+        layer: 'Roadmap',
+        description: '향후 개선 예정 사항입니다.',
+        components: [
+            'AV1 Hardware Support',
+            'HDR10+ Support',
+            'Spatial Audio',
+            'AI-enhanced Processing'
+        ]
+    },
+
     // ========================================
     // AAOS 추가 노드 (aaos.html) - Card 3
     // ========================================
@@ -3373,6 +3606,151 @@ val speed = carPropertyManager.getFloatProperty(
             'Turn-by-turn Guidance'
         ],
         doc: 'https://developer.android.com/training/cars/navigation'
+    },
+
+    'AAOS App Types': {
+        title: 'AAOS App Types',
+        layer: 'Application Architecture',
+        description: 'AAOS에서 실행 가능한 앱 유형들입니다.',
+        components: [
+            'Car App Library Apps',
+            'Media Apps',
+            'Navigation Apps',
+            'System Apps',
+            'OEM Apps'
+        ]
+    },
+
+    'Layer 1': {
+        title: 'Layer 1: Vehicle Apps',
+        layer: 'Application Layer',
+        description: 'AAOS 앱 레이어입니다.',
+        components: [
+            'Navigation Apps',
+            'Media Apps',
+            'HVAC Apps',
+            'Settings'
+        ]
+    },
+
+    'Layer 2': {
+        title: 'Layer 2: Car Services',
+        layer: 'Framework Layer',
+        description: 'Car Service 프레임워크 레이어입니다.',
+        components: [
+            'Car Service',
+            'Car Audio Service',
+            'Car Display Service',
+            'Car Input Service'
+        ]
+    },
+
+    'Layer 3': {
+        title: 'Layer 3: Android Framework',
+        layer: 'Framework Layer',
+        description: '표준 Android 프레임워크 레이어입니다.',
+        components: [
+            'ActivityManager',
+            'WindowManager',
+            'AudioManager',
+            'PackageManager'
+        ]
+    },
+
+    'Layer 7': {
+        title: 'Layer 7: Hardware',
+        layer: 'Hardware Layer',
+        description: '차량 하드웨어 레이어입니다.',
+        components: [
+            'ECU',
+            'Sensors',
+            'Displays',
+            'Audio Amplifiers'
+        ]
+    },
+
+    'Car Services': {
+        title: 'Car Services',
+        layer: 'Framework',
+        description: 'AAOS Car Service 컴포넌트들입니다.',
+        components: [
+            'Car Audio Service',
+            'Car Display Service',
+            'Car Input Service',
+            'Car Property Service',
+            'Car User Service'
+        ],
+        path: 'packages/services/Car/service/'
+    },
+
+    'VHAL Layer': {
+        title: 'VHAL Layer',
+        layer: 'HAL',
+        description: 'Vehicle HAL 레이어입니다.',
+        components: [
+            'Vehicle HAL',
+            'VHAL Interface',
+            'Property Management',
+            'CAN Bus Communication'
+        ]
+    },
+
+    'Vehicle': {
+        title: 'Vehicle',
+        layer: 'Hardware',
+        description: '실제 차량 하드웨어입니다.',
+        components: [
+            'ECU',
+            'CAN Bus',
+            'Sensors',
+            'Actuators'
+        ]
+    },
+
+    'Hardware': {
+        title: 'Hardware',
+        layer: 'Hardware',
+        description: '차량 하드웨어 컴포넌트입니다.',
+        components: [
+            'Display',
+            'Audio',
+            'Camera',
+            'Sensors'
+        ]
+    },
+
+    'Framework': {
+        title: 'Framework',
+        layer: 'Framework',
+        description: 'Android Framework 레이어입니다.',
+        components: [
+            'System Services',
+            'Car Services',
+            'API Libraries'
+        ]
+    },
+
+    'Audio Zone 1': {
+        title: 'Audio Zone 1 (Front)',
+        layer: 'Audio Zone',
+        description: '전방 좌석 오디오 존입니다.',
+        components: [
+            'Front Speakers',
+            'Navigation Audio',
+            'Media Playback',
+            'Phone Calls'
+        ]
+    },
+
+    'Audio Zone 2': {
+        title: 'Audio Zone 2 (Rear)',
+        layer: 'Audio Zone',
+        description: '후방 좌석 오디오 존입니다.',
+        components: [
+            'Rear Speakers',
+            'Independent Media',
+            'Headphone Support'
+        ]
     }
 };
 
