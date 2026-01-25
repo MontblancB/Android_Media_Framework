@@ -316,6 +316,1366 @@
             </p>
         </section>
 
+        <!-- Section 7: Code Examples -->
+        <section class="section sec-code">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                실제 코드 예시
+            </h2>
+            <p class="section-description">
+                Last Media Source 저장/복원, MediaBrowserService 자동 재생 처리, CarMediaManager API 사용 예시입니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-1. SharedPreferences에서 Last Media Source 저장/복원 (CarMediaService)</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// packages/services/Car/service/src/com/android/car/media/CarMediaService.java
+// Last Media Source를 SharedPreferences에 저장
+private void saveLastMediaSource(
+    @NonNull ComponentName component,
+    @CarMediaManager.MediaSourceMode int mode
+) {
+    if (mUserManager.isUserUnlocked()) {
+        String key = getSharedPrefsKey(mode);
+        String componentString = component.flattenToString();
+
+        // Deque 기반 히스토리 관리
+        Deque&lt;String&gt; lastMediaSources = getLastMediaSources(mode);
+        lastMediaSources.remove(componentString); // 중복 제거
+        lastMediaSources.addFirst(componentString); // 최신 항목을 맨 앞에
+
+        // 최대 10개까지만 유지
+        while (lastMediaSources.size() &gt; MAX_LAST_MEDIA_SOURCES) {
+            lastMediaSources.removeLast();
+        }
+
+        // SharedPreferences에 직렬화하여 저장
+        mSharedPrefs.edit()
+            .putString(key, serializeDeque(lastMediaSources))
+            .apply();
+    }
+}
+
+// Last Media Source 복원
+private ComponentName getLastMediaSource(@CarMediaManager.MediaSourceMode int mode) {
+    if (!mUserManager.isUserUnlocked()) return null;
+
+    String key = getSharedPrefsKey(mode);
+    String serialized = mSharedPrefs.getString(key, null);
+    if (serialized == null) return null;
+
+    Deque&lt;String&gt; lastMediaSources = deserializeDeque(serialized);
+    if (lastMediaSources.isEmpty()) return null;
+
+    // 가장 최근 항목 반환
+    String componentString = lastMediaSources.peekFirst();
+    return ComponentName.unflattenFromString(componentString);
+}
+
+// Per-User, Per-Mode SharedPreferences 키 생성
+private String getSharedPrefsKey(@CarMediaManager.MediaSourceMode int mode) {
+    int userId = ActivityManager.getCurrentUser();
+    return String.format("user_%d_mode_%d_last_media_source", userId, mode);
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-2. MediaBrowserService에서 onPlaybackResumption() 구현 (Media App)</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// 미디어 앱의 MediaBrowserService 구현
+class MyMediaBrowserService : MediaBrowserServiceCompat() {
+
+    private lateinit var mediaSession: MediaSessionCompat
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // MediaSession 초기화
+        mediaSession = MediaSessionCompat(this, "MyMediaSession").apply {
+            setCallback(MediaSessionCallback())
+            setFlags(
+                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+            )
+            setSessionToken(sessionToken)
+        }
+    }
+
+    // AAOS에서 자동 재생을 요청할 때 호출됨
+    override fun onPlaybackResumption(
+        mediaSession: MediaSessionCompat,
+        controller: MediaControllerCompat
+    ) {
+        Log.d(TAG, "onPlaybackResumption: Autoplay requested by system")
+
+        // 마지막 재생 상태를 복원
+        val lastPlaylist = restoreLastPlaylist() // 앱 내부 DB/SharedPreferences
+        val lastPosition = restoreLastPosition()
+
+        if (lastPlaylist != null) {
+            // 큐 복원
+            controller.addQueueItem(lastPlaylist)
+
+            // 마지막 위치로 시크
+            controller.transportControls.seekTo(lastPosition)
+
+            // 자동 재생 시작
+            controller.transportControls.play()
+
+            Log.d(TAG, "Restored and started playback: ${lastPlaylist.description.title}")
+        } else {
+            Log.w(TAG, "No last playlist found, playing default")
+            playDefaultContent()
+        }
+    }
+
+    // MediaSession Callback
+    private inner class MediaSessionCallback : MediaSessionCompat.Callback() {
+        override fun onPlay() {
+            // Audio Focus 요청
+            val result = audioFocusHelper.requestAudioFocus()
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                player.start()
+                updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+            }
+        }
+
+        override fun onPause() {
+            player.pause()
+            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED)
+        }
+    }
+
+    // PlaybackState 업데이트 (CarMediaService가 감지함)
+    private fun updatePlaybackState(@PlaybackStateCompat.State state: Int) {
+        val playbackState = PlaybackStateCompat.Builder()
+            .setState(state, player.currentPosition, 1.0f)
+            .setActions(
+                PlaybackStateCompat.ACTION_PLAY or
+                PlaybackStateCompat.ACTION_PAUSE or
+                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+            )
+            .build()
+
+        mediaSession.setPlaybackState(playbackState)
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-3. CarMediaManager API로 Last Media Source 조회/변경</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// AAOS 앱에서 CarMediaManager를 사용하여 Last Media Source 제어
+class CarMediaActivity : AppCompatActivity() {
+
+    private lateinit var car: Car
+    private lateinit var carMediaManager: CarMediaManager
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Car API 연결
+        car = Car.createCar(this)
+        carMediaManager = car.getCarManager(Car.CAR_MEDIA_SERVICE) as CarMediaManager
+
+        // Last Media Source 조회
+        val lastMediaSource = carMediaManager.lastMediaSource
+        Log.d(TAG, "Last Media Source: ${lastMediaSource?.flattenToShortString()}")
+
+        // MediaSource 변경 (새 앱으로 전환)
+        btnSwitchToSpotify.setOnClickListener {
+            val spotifyComponent = ComponentName(
+                "com.spotify.music",
+                "com.spotify.music.MainActivity"
+            )
+            carMediaManager.setMediaSource(
+                spotifyComponent,
+                CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK
+            )
+        }
+
+        // MediaSource 변경 리스너 등록
+        carMediaManager.addMediaSourceListener(
+            Executor { it.run() },
+            object : CarMediaManager.MediaSourceChangedListener {
+                override fun onMediaSourceChanged(componentName: ComponentName?) {
+                    Log.d(TAG, "Media source changed: ${componentName?.flattenToShortString()}")
+                    updateUI(componentName)
+                }
+            }
+        )
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        car.disconnect()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-4. EXTRA_AUTOPLAY Intent Extra 처리 (MediaConnectorService)</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// MediaConnectorService에서 EXTRA_AUTOPLAY를 처리
+private fun connectToMediaBrowser(component: ComponentName, autoplay: Boolean) {
+    val intent = Intent().apply {
+        setComponent(component)
+        putExtra(MediaConstants.EXTRA_AUTOPLAY, autoplay) // 자동 재생 여부 전달
+    }
+
+    val mediaBrowser = MediaBrowserCompat(
+        context,
+        component,
+        object : MediaBrowserCompat.ConnectionCallback() {
+            override fun onConnected() {
+                Log.d(TAG, "MediaBrowser connected: $component")
+
+                val token = mediaBrowser.sessionToken
+                val controller = MediaControllerCompat(context, token)
+
+                if (autoplay) {
+                    // Autoplay가 true면 자동으로 play() 호출
+                    Log.d(TAG, "Starting autoplay")
+                    controller.transportControls.play()
+                } else {
+                    Log.d(TAG, "Connected without autoplay (ready state)")
+                }
+            }
+
+            override fun onConnectionFailed() {
+                Log.e(TAG, "MediaBrowser connection failed: $component")
+            }
+        },
+        null
+    )
+
+    mediaBrowser.connect()
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 8: Autoplay Policy Configuration -->
+        <section class="section sec-policy">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Autoplay Policy 설정
+            </h2>
+            <p class="section-description">
+                OEM이 차량 특성에 맞게 자동 재생 동작을 제어할 수 있는 config 리소스입니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">8-1. config_mediaSourceAutoplayConfig XML</h3>
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- packages/services/Car/service/res/values/config.xml --&gt;
+&lt;!-- Autoplay Policy 설정 --&gt;
+&lt;integer name="config_mediaSourceAutoplayConfig"&gt;2&lt;/integer&gt;
+
+&lt;!--
+    0 = AUTOPLAY_CONFIG_NEVER (자동 재생 안 함)
+    1 = AUTOPLAY_CONFIG_ALWAYS (무조건 재생)
+    2 = AUTOPLAY_CONFIG_RETAIN_PER_SOURCE (소스별 마지막 상태 유지)
+    3 = AUTOPLAY_CONFIG_RETAIN_PREVIOUS (전역 마지막 상태 유지)
+--&gt;</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">8-2. 4가지 Autoplay Policy 상세</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Policy</th>
+                            <th>값</th>
+                            <th>동작 방식</th>
+                            <th>사용 시나리오</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>AUTOPLAY_CONFIG_NEVER</code></td>
+                            <td>0</td>
+                            <td>차량 시동 시 자동 재생하지 않음. 단순히 마지막 소스만 UI에 표시</td>
+                            <td>운전자가 수동으로 재생 버튼을 눌러야 하는 정책 (안전 중시)</td>
+                        </tr>
+                        <tr>
+                            <td><code>AUTOPLAY_CONFIG_ALWAYS</code></td>
+                            <td>1</td>
+                            <td>마지막 재생 상태와 무관하게 무조건 자동 재생 시도</td>
+                            <td>상업용 차량, 항상 배경 음악이 필요한 환경</td>
+                        </tr>
+                        <tr>
+                            <td><code>RETAIN_PER_SOURCE</code></td>
+                            <td>2</td>
+                            <td>각 미디어 소스별로 마지막 상태를 기억. Spotify가 PLAYING이었으면 Spotify 연결 시 자동 재생</td>
+                            <td>대부분의 AAOS 기본 설정 (소스별 독립적 동작)</td>
+                        </tr>
+                        <tr>
+                            <td><code>RETAIN_PREVIOUS</code></td>
+                            <td>3</td>
+                            <td>CarMediaService가 기억하는 전역 마지막 상태. 어떤 소스든 마지막이 PLAYING이었으면 재생</td>
+                            <td>단순한 UX를 원하는 경우 (전역 동작)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">8-3. OEM Overlay로 정책 변경</h3>
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- OEM overlay: device/oem/project/overlay/packages/services/Car/service/res/values/config.xml --&gt;
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;resources&gt;
+    &lt;!-- Autoplay를 완전히 비활성화 --&gt;
+    &lt;integer name="config_mediaSourceAutoplayConfig"&gt;0&lt;/integer&gt;
+
+    &lt;!-- 기본 미디어 소스 지정 (히스토리 없을 때) --&gt;
+    &lt;string name="config_defaultMediaSource"&gt;com.google.android.apps.youtube.music&lt;/string&gt;
+
+    &lt;!-- Independent Playback Config (라디오 vs 미디어 분리) --&gt;
+    &lt;bool name="config_mediaSourceIndependentPlayback"&gt;true&lt;/bool&gt;
+&lt;/resources&gt;</code></pre>
+            </div>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔧</span> OEM 커스터마이징 포인트</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>config_mediaSourceAutoplayConfig</code>: 자동 재생 정책</li>
+                            <li><code>config_defaultMediaSource</code>: 기본 미디어 앱 (히스토리 없을 때)</li>
+                            <li><code>config_mediaSourceIndependentPlayback</code>: 라디오와 미디어 독립 재생 여부</li>
+                            <li><code>config_allowMediaSourceChange</code>: 소스 변경 허용 여부 (잠금)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 9: Boot Sequence & Timing -->
+        <section class="section sec-boot">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                부팅 시퀀스 & 타이밍
+            </h2>
+            <p class="section-description">
+                차량 시동 후 Last Media 복원이 실제로 어떤 순서로 일어나는지, 주요 이벤트 타이밍을 살펴봅니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-1. Boot Timeline</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    gantt
+                    title AAOS Last Media Restoration Timeline
+                    dateFormat X
+                    axisFormat %L ms
+
+                    section Boot
+                    Vehicle Ignition ON           :0, 0
+                    Kernel Boot                   :0, 1500
+                    Android Init                  :1500, 3000
+
+                    section CarService
+                    CarService.onCreate()         :3000, 500
+                    VHAL Connection               :3500, 500
+                    Power Policy Init             :4000, 300
+
+                    section User
+                    User Unlock (HEAD_USER)       :4300, 700
+
+                    section CarMediaService
+                    CarMediaService.onCreate()    :5000, 200
+                    Load SharedPreferences        :5200, 100
+                    getLastMediaSource()          :5300, 50
+                    shouldStartPlayback()         :5350, 50
+
+                    section Media App
+                    Start MediaConnectorService   :5400, 200
+                    MediaBrowser.connect()        :5600, 300
+                    MediaSession Ready            :5900, 100
+                    Autoplay (if enabled)         :6000, 200
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-2. 주요 이벤트 타이밍</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>타이밍 (ms)</th>
+                            <th>이벤트</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>0</td>
+                            <td>Vehicle Ignition ON</td>
+                            <td>차량 시동 키 온 (IGN_ON VHAL 신호)</td>
+                        </tr>
+                        <tr>
+                            <td>~3000</td>
+                            <td>Android System Boot</td>
+                            <td>Kernel, Init, Zygote, System Server 부팅</td>
+                        </tr>
+                        <tr>
+                            <td>~4000</td>
+                            <td>Power Policy 적용</td>
+                            <td>VHAL에서 전원 정책 수신, 오디오 서브시스템 활성화</td>
+                        </tr>
+                        <tr>
+                            <td>~5000</td>
+                            <td>User Unlock 완료</td>
+                            <td>HEAD_USER (운전자) 잠금 해제, SharedPreferences 접근 가능</td>
+                        </tr>
+                        <tr>
+                            <td>~5300</td>
+                            <td>Last Media Source 복원</td>
+                            <td>CarMediaService가 SharedPreferences에서 마지막 소스 로드</td>
+                        </tr>
+                        <tr>
+                            <td>~5400</td>
+                            <td>Autoplay 결정</td>
+                            <td>shouldStartPlayback() 로직으로 자동 재생 여부 판단</td>
+                        </tr>
+                        <tr>
+                            <td>~6000</td>
+                            <td>MediaBrowser 연결</td>
+                            <td>MediaConnectorService가 앱에 바인드, MediaSession 토큰 획득</td>
+                        </tr>
+                        <tr>
+                            <td>~6200</td>
+                            <td>Autoplay 시작</td>
+                            <td>정책에 따라 transportControls.play() 호출</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-3. Power Policy 통합</h3>
+            <div class="code-block">
+                <pre><code class="language-java">// CarMediaService에서 Power Policy 이벤트 처리
+@Override
+public void onStateChanged(int state, CompletableFuture&lt;Void&gt; future) {
+    switch (state) {
+        case CarPowerManager.STATE_ON:
+            Log.d(TAG, "Vehicle ON: Restoring last media source");
+            restoreLastMediaSource();
+            future.complete(null);
+            break;
+
+        case CarPowerManager.STATE_SHUTDOWN_PREPARE:
+            Log.d(TAG, "Vehicle shutdown: Saving current state");
+            saveCurrentMediaState();
+            future.complete(null);
+            break;
+
+        case CarPowerManager.STATE_SUSPEND:
+            Log.d(TAG, "Vehicle suspend: Preparing snapshot");
+            // Suspend-to-RAM 상태에서는 메모리 유지
+            future.complete(null);
+            break;
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚡</span> Suspend vs Cold Boot</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Suspend-to-RAM:</strong> 메모리 상태 유지, 재개 시 즉시 복원 (~2초)</li>
+                            <li><strong>Cold Boot:</strong> SharedPreferences에서 복원, 전체 부팅 필요 (~6초)</li>
+                            <li><strong>Hybrid Mode:</strong> 짧은 주차는 Suspend, 긴 주차는 Shutdown</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 10: Multi-user Support -->
+        <section class="section sec-multiuser">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                Multi-user 지원
+            </h2>
+            <p class="section-description">
+                AAOS는 여러 운전자가 차량을 공유할 수 있도록 Multi-user를 지원하며, Last Media는 사용자별로 독립적으로 저장됩니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">10-1. 사용자별 저장소</h3>
+            <div class="code-block">
+                <pre><code class="language-java">// CarMediaService에서 사용자별 SharedPreferences 키 생성
+private static final String SHARED_PREF = "com.android.car.media.car_media_service";
+
+private SharedPreferences getSharedPrefsForCurrentUser() {
+    int userId = ActivityManager.getCurrentUser();
+    Context userContext = mContext.createContextAsUser(UserHandle.of(userId), 0);
+    return userContext.getSharedPreferences(SHARED_PREF, Context.MODE_PRIVATE);
+}
+
+// User ID를 포함한 키 생성
+private String getLastMediaSourceKey(@CarMediaManager.MediaSourceMode int mode) {
+    int userId = ActivityManager.getCurrentUser();
+    return String.format("user_%d_mode_%d_source", userId, mode);
+}
+
+// Ephemeral User 체크 (게스트 사용자는 저장 안 함)
+private boolean isCurrentUserEphemeral() {
+    UserManager userManager = mContext.getSystemService(UserManager.class);
+    UserInfo userInfo = userManager.getUserInfo(ActivityManager.getCurrentUser());
+    return userInfo != null &amp;&amp; userInfo.isEphemeral();
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">10-2. User Switching 시나리오</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant User1
+                    participant CarService
+                    participant CMS as CarMediaService
+                    participant Prefs as SharedPreferences
+
+                    Note over User1: Driver 1 listening to Spotify
+                    User1->>CMS: Play Spotify
+                    CMS->>Prefs: Save (user_10_mode_0 = Spotify)
+
+                    Note over User1,CarService: User Switch
+                    CarService->>CMS: onUserSwitching(user_11)
+                    CMS->>CMS: Stop current media
+                    CMS->>Prefs: Load (user_11_mode_0)
+
+                    alt User 11 has history
+                    Prefs-->>CMS: Return YouTube Music
+                    CMS->>CMS: Restore YouTube Music
+                    else No history
+                    Prefs-->>CMS: Return null
+                    CMS->>CMS: Use default source
+                    end
+
+                    Note over User1: Driver 2 listening to YouTube Music
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">10-3. User Type별 동작</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User Type</th>
+                            <th>저장 여부</th>
+                            <th>복원 여부</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>SYSTEM (User 0)</td>
+                            <td>❌</td>
+                            <td>❌</td>
+                            <td>시스템 전용, 미디어 재생 안 함</td>
+                        </tr>
+                        <tr>
+                            <td>HEAD_USER (운전자)</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>메인 운전자, 전체 기능 지원</td>
+                        </tr>
+                        <tr>
+                            <td>SECONDARY_USER</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>보조 운전자 (가족 공유 등)</td>
+                        </tr>
+                        <tr>
+                            <td>GUEST_USER (게스트)</td>
+                            <td>❌</td>
+                            <td>❌</td>
+                            <td>임시 사용자, Ephemeral=true, 저장 안 됨</td>
+                        </tr>
+                        <tr>
+                            <td>PROFILE (Work Profile)</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>업무용 프로파일, 독립 저장소</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">10-4. Multi-user 처리 코드</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// User Switching 이벤트 처리
+class CarMediaService : SystemService() {
+
+    private val userSwitchObserver = object : UserLifecycleListener() {
+        override fun onUserSwitching(from: UserHandle, to: UserHandle) {
+            Log.d(TAG, "User switching: ${from.identifier} -> ${to.identifier}")
+
+            // 현재 재생 중인 미디어 중지
+            stopCurrentMediaSource()
+
+            // 새 사용자의 Last Media Source 복원
+            val lastSource = getLastMediaSourceForUser(to.identifier)
+            if (lastSource != null) {
+                Log.d(TAG, "Restoring last media for user ${to.identifier}: $lastSource")
+                setMediaSource(lastSource, CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK)
+            } else {
+                Log.d(TAG, "No history for user ${to.identifier}, using default")
+                setMediaSource(getDefaultMediaSource(), CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK)
+            }
+        }
+    }
+
+    private fun getLastMediaSourceForUser(userId: Int): ComponentName? {
+        val userContext = context.createContextAsUser(UserHandle.of(userId), 0)
+        val userPrefs = userContext.getSharedPreferences(SHARED_PREF, Context.MODE_PRIVATE)
+
+        // Ephemeral 사용자는 저장소가 없음
+        val userManager = context.getSystemService(UserManager::class.java)
+        val userInfo = userManager.getUserInfo(userId)
+        if (userInfo?.isEphemeral == true) {
+            return null
+        }
+
+        val key = "user_${userId}_mode_0_source"
+        val componentString = userPrefs.getString(key, null) ?: return null
+        return ComponentName.unflattenFromString(componentString)
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 11: MediaConnectorService Details -->
+        <section class="section sec-connector">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                MediaConnectorService 상세
+            </h2>
+            <p class="section-description">
+                MediaConnectorService는 CarMediaService의 지시를 받아 실제로 미디어 앱에 연결하고 자동 재생을 제어하는 핵심 컴포넌트입니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">11-1. EXTRA_AUTOPLAY 메커니즘</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    stateDiagram-v2
+                    [*] --> Idle: Service Created
+                    Idle --> Connecting: startService(EXTRA_AUTOPLAY)
+
+                    Connecting --> Connected: onConnected()
+                    Connecting --> Failed: onConnectionFailed()
+
+                    Connected --> Autoplay_Check: Check EXTRA_AUTOPLAY
+
+                    Autoplay_Check --> Playing: EXTRA_AUTOPLAY=true
+                    Autoplay_Check --> Ready: EXTRA_AUTOPLAY=false
+
+                    Playing --> Ready: User Pause
+                    Ready --> Playing: User Play
+
+                    Failed --> Idle: Retry or Give Up
+                    Ready --> [*]: Service Destroyed
+                    Playing --> [*]: Service Destroyed
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">11-2. Intent 구조</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// CarMediaService에서 MediaConnectorService 시작
+private fun startMediaConnectorService(
+    component: ComponentName,
+    autoplay: Boolean
+) {
+    val intent = Intent(mContext, MediaConnectorService::class.java).apply {
+        putExtra(MediaConstants.EXTRA_MEDIA_COMPONENT, component.flattenToString())
+        putExtra(MediaConstants.EXTRA_AUTOPLAY, autoplay) // 핵심: 자동 재생 여부
+        putExtra(MediaConstants.EXTRA_BROWSE_SERVICE_HINT, getBrowseServiceForComponent(component))
+    }
+
+    Log.d(TAG, "Starting MediaConnectorService: component=$component, autoplay=$autoplay")
+    mContext.startForegroundService(intent)
+}
+
+// MediaConstants 정의
+object MediaConstants {
+    const val EXTRA_MEDIA_COMPONENT = "media_component"
+    const val EXTRA_AUTOPLAY = "autoplay"
+    const val EXTRA_BROWSE_SERVICE_HINT = "browse_service_hint"
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">11-3. MediaBrowser 연결 로직</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// MediaConnectorService.kt (AOSP 기반 간소화)
+class MediaConnectorService : Service() {
+
+    private var mediaBrowser: MediaBrowserCompat? = null
+    private var mediaController: MediaControllerCompat? = null
+    private var shouldAutoplay: Boolean = false
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val componentString = intent?.getStringExtra(EXTRA_MEDIA_COMPONENT) ?: return START_NOT_STICKY
+        val component = ComponentName.unflattenFromString(componentString) ?: return START_NOT_STICKY
+
+        shouldAutoplay = intent.getBooleanExtra(EXTRA_AUTOPLAY, false)
+
+        Log.d(TAG, "Connecting to $component with autoplay=$shouldAutoplay")
+        connectToMediaBrowser(component)
+
+        return START_STICKY
+    }
+
+    private fun connectToMediaBrowser(component: ComponentName) {
+        val connectionCallback = object : MediaBrowserCompat.ConnectionCallback() {
+            override fun onConnected() {
+                Log.d(TAG, "MediaBrowser connected")
+
+                val browser = mediaBrowser ?: return
+                val token = browser.sessionToken
+
+                mediaController = MediaControllerCompat(this@MediaConnectorService, token).also {
+                    it.registerCallback(controllerCallback)
+                }
+
+                // EXTRA_AUTOPLAY=true면 자동 재생
+                if (shouldAutoplay) {
+                    Log.d(TAG, "Triggering autoplay")
+                    mediaController?.transportControls?.play()
+                } else {
+                    Log.d(TAG, "Connected without autoplay (ready state)")
+                }
+            }
+
+            override fun onConnectionFailed() {
+                Log.e(TAG, "MediaBrowser connection failed")
+                stopSelf()
+            }
+
+            override fun onConnectionSuspended() {
+                Log.w(TAG, "MediaBrowser connection suspended")
+                mediaController?.unregisterCallback(controllerCallback)
+                mediaController = null
+            }
+        }
+
+        mediaBrowser = MediaBrowserCompat(this, component, connectionCallback, null)
+        mediaBrowser?.connect()
+    }
+
+    private val controllerCallback = object : MediaControllerCompat.Callback() {
+        override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
+            Log.d(TAG, "Playback state changed: ${state?.state}")
+
+            // CarMediaService에 상태 전파 (Broadcast 또는 Binder)
+            val intent = Intent(ACTION_PLAYBACK_STATE_CHANGED).apply {
+                putExtra(EXTRA_PLAYBACK_STATE, state?.state)
+            }
+            sendBroadcast(intent)
+        }
+    }
+
+    override fun onDestroy() {
+        mediaController?.unregisterCallback(controllerCallback)
+        mediaBrowser?.disconnect()
+        super.onDestroy()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">11-4. 주요 시나리오</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>시나리오</th>
+                            <th>EXTRA_AUTOPLAY</th>
+                            <th>동작</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>차량 시동 + RETAIN_PER_SOURCE + 마지막 PLAYING</td>
+                            <td>true</td>
+                            <td>MediaBrowser 연결 → play() 호출 → 자동 재생</td>
+                        </tr>
+                        <tr>
+                            <td>차량 시동 + RETAIN_PER_SOURCE + 마지막 PAUSED</td>
+                            <td>false</td>
+                            <td>MediaBrowser 연결 → Ready 상태만 유지</td>
+                        </tr>
+                        <tr>
+                            <td>차량 시동 + AUTOPLAY_CONFIG_NEVER</td>
+                            <td>false</td>
+                            <td>연결만 하고 재생 안 함</td>
+                        </tr>
+                        <tr>
+                            <td>차량 시동 + AUTOPLAY_CONFIG_ALWAYS</td>
+                            <td>true</td>
+                            <td>무조건 자동 재생</td>
+                        </tr>
+                        <tr>
+                            <td>음성 명령 "Play last media"</td>
+                            <td>true</td>
+                            <td>강제 자동 재생 (설정 무시)</td>
+                        </tr>
+                        <tr>
+                            <td>User Switching</td>
+                            <td>false</td>
+                            <td>새 사용자의 마지막 소스 연결, 재생 안 함</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 12: State Persistence -->
+        <section class="section sec-persistence">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                State Persistence
+            </h2>
+            <p class="section-description">
+                Suspend-to-RAM vs Cold Boot 시나리오에서 상태가 어떻게 유지되고 복원되는지 비교합니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">12-1. Suspend-to-RAM (S3)</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">💾</span> 상태 유지 방식</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>메모리:</strong> DRAM에 전원 유지, 모든 인메모리 상태 보존</li>
+                            <li><strong>CarService:</strong> Snapshot 기반 복원 (VHAL 재연결 불필요)</li>
+                            <li><strong>MediaSession:</strong> 앱 프로세스가 살아있으면 그대로 유지</li>
+                            <li><strong>재개 시간:</strong> ~2초 (빠른 재개)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚡</span> 장점 & 단점</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>✅ 빠른 재개, 완벽한 상태 복원</li>
+                            <li>✅ 사용자가 재생 중이던 위치 정확히 유지</li>
+                            <li>❌ DRAM 전력 소모 (배터리 방전 위험)</li>
+                            <li>❌ 긴 주차 시 부적합</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">12-2. Cold Boot (Full Shutdown)</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔄</span> 상태 복원 방식</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>저장소:</strong> SharedPreferences (ComponentName만 저장)</li>
+                            <li><strong>CarService:</strong> 전체 부팅, VHAL 재연결</li>
+                            <li><strong>MediaSession:</strong> 앱 재시작, onPlaybackResumption() 호출</li>
+                            <li><strong>재개 시간:</strong> ~6초 (전체 부팅)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📝</span> 앱의 책임</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>큐(Queue) 복원: 앱 내부 DB/SharedPreferences</li>
+                            <li>재생 위치(Position): 마지막 저장된 시점</li>
+                            <li>메타데이터: 곡 정보, 앨범 아트 등</li>
+                            <li>정확도: 앱 구현에 따라 다름</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">12-3. 비교표</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>항목</th>
+                            <th>Suspend-to-RAM</th>
+                            <th>Cold Boot</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>전원 상태</td>
+                            <td>DRAM 전원 유지 (S3)</td>
+                            <td>완전 종료 (S5)</td>
+                        </tr>
+                        <tr>
+                            <td>재개 시간</td>
+                            <td>~2초</td>
+                            <td>~6초</td>
+                        </tr>
+                        <tr>
+                            <td>CarService 상태</td>
+                            <td>Snapshot 기반 복원</td>
+                            <td>완전 재시작</td>
+                        </tr>
+                        <tr>
+                            <td>MediaSession 상태</td>
+                            <td>메모리 유지</td>
+                            <td>재생성 (onPlaybackResumption)</td>
+                        </tr>
+                        <tr>
+                            <td>재생 위치 정확도</td>
+                            <td>100% 정확</td>
+                            <td>앱 구현에 따라 다름</td>
+                        </tr>
+                        <tr>
+                            <td>배터리 소모</td>
+                            <td>있음 (DRAM)</td>
+                            <td>없음</td>
+                        </tr>
+                        <tr>
+                            <td>적합한 시나리오</td>
+                            <td>짧은 주차 (5분~2시간)</td>
+                            <td>긴 주차 (2시간 이상)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">12-4. Hybrid Power Policy</h3>
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- car_power_policy.xml --&gt;
+&lt;powerPolicy id="suspend_to_ram"&gt;
+    &lt;component id="AUDIO"&gt;on&lt;/component&gt;
+    &lt;component id="MEDIA"&gt;on&lt;/component&gt;
+    &lt;component id="DISPLAY"&gt;off&lt;/component&gt;
+    &lt;component id="WIFI"&gt;off&lt;/component&gt;
+&lt;/powerPolicy&gt;
+
+&lt;powerPolicy id="full_shutdown"&gt;
+    &lt;component id="AUDIO"&gt;off&lt;/component&gt;
+    &lt;component id="MEDIA"&gt;off&lt;/component&gt;
+    &lt;component id="DISPLAY"&gt;off&lt;/component&gt;
+    &lt;component id="WIFI"&gt;off&lt;/component&gt;
+&lt;/powerPolicy&gt;
+
+&lt;!-- 조건: 2시간 이내는 Suspend, 이후는 Shutdown --&gt;
+&lt;policyGroup id="default_policy_group"&gt;
+    &lt;defaultPolicy&gt;suspend_to_ram&lt;/defaultPolicy&gt;
+    &lt;noDefaultPolicy state="wait_for_vhal" timeout="7200000"&gt;full_shutdown&lt;/noDefaultPolicy&gt;
+&lt;/policyGroup&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 13: Android Version History -->
+        <section class="section sec-versions">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                Android 버전별 변화
+            </h2>
+            <p class="section-description">
+                Android 10 (AAOS 처음 도입)부터 Android 15까지 Last Media 기능의 진화 과정입니다.
+            </p>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Android 버전</th>
+                            <th>AAOS 버전</th>
+                            <th>주요 변화</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Android 10 (Q)</td>
+                            <td>AAOS 1.0</td>
+                            <td>
+                                <ul>
+                                    <li>CarMediaService 최초 도입</li>
+                                    <li>기본 Last Media Source 저장/복원</li>
+                                    <li>SharedPreferences 기반 저장</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 11 (R)</td>
+                            <td>AAOS 2.0</td>
+                            <td>
+                                <ul>
+                                    <li>AUTOPLAY_CONFIG_RETAIN_PER_SOURCE 정책 추가</li>
+                                    <li>Per-User 저장소 지원 강화</li>
+                                    <li>MediaBrowser.onPlaybackResumption() API 추가</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 12 (S)</td>
+                            <td>AAOS 3.0</td>
+                            <td>
+                                <ul>
+                                    <li>EXTRA_AUTOPLAY Intent Extra 표준화</li>
+                                    <li>Multi-user 동기화 개선</li>
+                                    <li>Power Policy 통합 (Suspend-to-RAM 최적화)</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 13 (T)</td>
+                            <td>AAOS 4.0</td>
+                            <td>
+                                <ul>
+                                    <li>Media3 (Jetpack Media) 통합</li>
+                                    <li>MediaSession 성능 개선 (지연 감소)</li>
+                                    <li>config_mediaSourceIndependentPlayback 추가 (라디오 분리)</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 14 (U)</td>
+                            <td>AAOS 5.0</td>
+                            <td>
+                                <ul>
+                                    <li>CarMediaManager.addMediaSourceListener() API 개선</li>
+                                    <li>Ephemeral User 처리 강화</li>
+                                    <li>Privacy Sandbox 통합 (사용자 데이터 보호)</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 15 (V)</td>
+                            <td>AAOS 6.0</td>
+                            <td>
+                                <ul>
+                                    <li>AI 기반 추천 통합 (Gemini Nano)</li>
+                                    <li>재생 컨텍스트 인식 (날씨, 시간대 기반)</li>
+                                    <li>Multi-zone Audio 개선 (독립적 Autoplay)</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">13-1. Deprecated APIs</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚠️</span> Android 12 이전</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>CarMediaManager.setMediaSource(String)</code> → <code>setMediaSource(ComponentName)</code></li>
+                            <li>String 기반 패키지명 대신 ComponentName 사용 필수</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🆕</span> Android 13+</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>MediaSessionCompat → Media3 MediaSession 권장</li>
+                            <li>androidx.media3:media3-session 라이브러리 사용</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 14: Debugging & Troubleshooting -->
+        <section class="section sec-debug">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                디버깅 & 트러블슈팅
+            </h2>
+            <p class="section-description">
+                Last Media 기능이 제대로 동작하지 않을 때 사용할 수 있는 디버깅 도구와 일반적인 문제 해결법입니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">14-1. dumpsys 명령어</h3>
+            <div class="code-block">
+                <pre><code class="language-bash"># CarMediaService 전체 상태 덤프
+adb shell dumpsys car_service --services CarMediaService
+
+# 출력 예시:
+# Primary Media Component (PLAYBACK): com.spotify.music/.MainActivity
+# Primary Media Component (BROWSE): com.spotify.music/.MediaBrowserService
+# Last Media Source (user_10_mode_0): com.spotify.music/.MainActivity
+# Autoplay Config: RETAIN_PER_SOURCE (2)
+# Independent Playback: false
+
+# 현재 MediaSession 정보
+adb shell dumpsys media_session
+
+# 출력 예시:
+# Sessions Stack - have 1 sessions:
+#   com.spotify.music (userId=10)
+#     state=PlaybackState {state=3(STATE_PLAYING), position=125000ms, ...}
+
+# SharedPreferences 직접 확인
+adb shell run-as com.android.car.media cat /data/data/com.android.car.media/shared_prefs/com.android.car.media.car_media_service.xml
+
+# Power Policy 상태
+adb shell dumpsys car_service --services CarPowerManagementService</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">14-2. logcat 필터링</h3>
+            <div class="code-block">
+                <pre><code class="language-bash"># CarMediaService 로그만 필터
+adb logcat -s CarMediaService:V
+
+# MediaConnectorService 포함
+adb logcat -s CarMediaService:V MediaConnectorService:V
+
+# MediaSession 상태 변화 추적
+adb logcat | grep -E "(PlaybackState|MediaSession|CarMedia)"
+
+# Autoplay 관련 로그만
+adb logcat | grep -i autoplay
+
+# 주요 로그 예시:
+# D/CarMediaService: setPlaybackMediaSource: com.spotify.music/.MainActivity
+# D/CarMediaService: saveLastMediaSource: mode=0, component=com.spotify.music
+# D/CarMediaService: shouldStartPlayback: config=RETAIN_PER_SOURCE, lastState=PLAYING -> true
+# D/MediaConnectorService: Starting with EXTRA_AUTOPLAY=true</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">14-3. 주요 문제 해결</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>문제</th>
+                            <th>원인</th>
+                            <th>해결 방법</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Last Media Source가 저장 안 됨</td>
+                            <td>User가 Unlocked 상태가 아님</td>
+                            <td><code>adb shell dumpsys user</code>로 user state 확인, Direct Boot 후 unlock 필요</td>
+                        </tr>
+                        <tr>
+                            <td>Autoplay가 동작하지 않음</td>
+                            <td>config_mediaSourceAutoplayConfig=0 (NEVER)</td>
+                            <td>OEM overlay에서 값을 2 (RETAIN_PER_SOURCE)로 변경</td>
+                        </tr>
+                        <tr>
+                            <td>게스트 사용자에서 저장 안 됨</td>
+                            <td>isCurrentUserEphemeral()=true</td>
+                            <td>의도된 동작, Ephemeral user는 저장 안 됨</td>
+                        </tr>
+                        <tr>
+                            <td>MediaBrowser 연결 실패</td>
+                            <td>앱이 MediaBrowserService 미구현</td>
+                            <td>AndroidManifest.xml에 <code>&lt;service android:name=".MediaBrowserService"&gt;</code> 확인</td>
+                        </tr>
+                        <tr>
+                            <td>재생 위치가 복원 안 됨</td>
+                            <td>앱이 내부 상태 저장 안 함</td>
+                            <td>onPlaybackResumption()에서 앱 내부 DB/SharedPrefs로 위치 복원 구현</td>
+                        </tr>
+                        <tr>
+                            <td>User Switching 후 이전 소스 재생</td>
+                            <td>Per-User 저장소 미사용</td>
+                            <td>getSharedPrefsForCurrentUser() 사용 확인</td>
+                        </tr>
+                        <tr>
+                            <td>Suspend 후 상태 유실</td>
+                            <td>Power Policy가 SHUTDOWN으로 설정됨</td>
+                            <td>car_power_policy.xml에서 suspend_to_ram 정책 확인</td>
+                        </tr>
+                        <tr>
+                            <td>특정 앱만 자동 재생 안 됨</td>
+                            <td>해당 앱이 Audio Focus 요청 실패</td>
+                            <td>앱의 AudioFocusRequest 구현 확인, AUDIOFOCUS_GAIN 요청 필수</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">14-4. 수동 테스트 시나리오</h3>
+            <div class="code-block">
+                <pre><code class="language-bash"># 1. Last Media Source 강제 설정
+adb shell am broadcast -a com.android.car.media.SET_MEDIA_SOURCE \
+  --es component "com.spotify.music/.MainActivity"
+
+# 2. Autoplay Config 런타임 변경 (루팅 필요)
+adb shell setprop persist.car.media.autoplay 2
+
+# 3. SharedPreferences 직접 수정 (테스트용)
+adb shell
+run-as com.android.car.media
+vi /data/data/com.android.car.media/shared_prefs/com.android.car.media.car_media_service.xml
+# user_10_mode_0_source 값 수정
+
+# 4. User Switching 시뮬레이션
+adb shell am switch-user 11
+
+# 5. Suspend/Resume 시뮬레이션
+adb shell dumpsys car_service suspend  # Suspend
+adb shell dumpsys car_service resume   # Resume</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 15: AOSP Source Code -->
+        <section class="section sec-source">
+            <h2 class="section-title">
+                <span class="section-number">15</span>
+                AOSP 소스 코드 참조
+            </h2>
+            <p class="section-description">
+                Last Media 기능 구현을 이해하기 위한 핵심 AOSP 소스 파일들입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📂</span> CarMediaService.java</h3>
+                    <div class="card-description">
+                        <strong>경로:</strong> <code>packages/services/Car/service/src/com/android/car/media/CarMediaService.java</code><br>
+                        <strong>핵심 기능:</strong>
+                        <ul>
+                            <li>Last Media Source 저장/복원 (<code>saveLastMediaSource()</code>)</li>
+                            <li>Autoplay 결정 로직 (<code>shouldStartPlayback()</code>)</li>
+                            <li>Per-User SharedPreferences 관리</li>
+                            <li>MediaController.Callback 처리 (PlaybackState 감지)</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/src/com/android/car/media/CarMediaService.java"
+                           target="_blank" style="color: var(--accent-blue);">→ 소스 보기</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔌</span> MediaConnectorService.java</h3>
+                    <div class="card-description">
+                        <strong>경로:</strong> <code>packages/apps/Car/Media/src/com/android/car/media/MediaConnectorService.java</code><br>
+                        <strong>핵심 기능:</strong>
+                        <ul>
+                            <li>EXTRA_AUTOPLAY Intent 처리</li>
+                            <li>MediaBrowser 연결 관리</li>
+                            <li>MediaController.play() 자동 호출</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/apps/Car/Media/src/com/android/car/media/"
+                           target="_blank" style="color: var(--accent-blue);">→ 소스 보기</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎛️</span> CarMediaManager.java</h3>
+                    <div class="card-description">
+                        <strong>경로:</strong> <code>packages/services/Car/car-lib/src/android/car/media/CarMediaManager.java</code><br>
+                        <strong>핵심 기능:</strong>
+                        <ul>
+                            <li>Public API: <code>getLastMediaSource()</code></li>
+                            <li>Public API: <code>setMediaSource(ComponentName, int mode)</code></li>
+                            <li>MediaSourceChangedListener 인터페이스</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/car-lib/src/android/car/media/CarMediaManager.java"
+                           target="_blank" style="color: var(--accent-blue);">→ 소스 보기</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚙️</span> config.xml</h3>
+                    <div class="card-description">
+                        <strong>경로:</strong> <code>packages/services/Car/service/res/values/config.xml</code><br>
+                        <strong>핵심 설정:</strong>
+                        <ul>
+                            <li><code>config_mediaSourceAutoplayConfig</code></li>
+                            <li><code>config_defaultMediaSource</code></li>
+                            <li><code>config_mediaSourceIndependentPlayback</code></li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/res/values/config.xml"
+                           target="_blank" style="color: var(--accent-blue);">→ 소스 보기</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔋</span> CarPowerManagementService.java</h3>
+                    <div class="card-description">
+                        <strong>경로:</strong> <code>packages/services/Car/service/src/com/android/car/power/CarPowerManagementService.java</code><br>
+                        <strong>연관 기능:</strong>
+                        <ul>
+                            <li>Suspend-to-RAM 상태 관리</li>
+                            <li>Power Policy 적용</li>
+                            <li>CarMediaService에 전원 상태 전파</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/src/com/android/car/power/"
+                           target="_blank" style="color: var(--accent-blue);">→ 소스 보기</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📱</span> MediaBrowserServiceCompat.java</h3>
+                    <div class="card-description">
+                        <strong>경로:</strong> <code>frameworks/support/media/media/src/main/java/androidx/media/MediaBrowserServiceCompat.java</code><br>
+                        <strong>앱 측 구현:</strong>
+                        <ul>
+                            <li><code>onGetRoot()</code> 오버라이드</li>
+                            <li><code>onLoadChildren()</code> 오버라이드</li>
+                            <li><code>onPlaybackResumption()</code> (Android 11+)</li>
+                        </ul>
+                        <a href="https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:media/media/src/main/java/androidx/media/MediaBrowserServiceCompat.java"
+                           target="_blank" style="color: var(--accent-blue);">→ 소스 보기</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 16: Related Documentation -->
+        <section class="section sec-related">
+            <h2 class="section-title">
+                <span class="section-number">16</span>
+                관련 상세 문서
+            </h2>
+            <p class="section-description">
+                Last Media & Autoplay와 밀접하게 관련된 다른 문서들입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card clickable" onclick="location.href='carmedia.html'">
+                    <h3 class="card-title"><span class="card-icon">📻</span> Car Media Service</h3>
+                    <div class="card-description">
+                        CarMediaService 전체 아키텍처, Active Media Source 관리, Audio Focus 통합, Last Media Service 메커니즘
+                    </div>
+                    <a href="carmedia.html" class="card-link">자세히 보기 →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='mediasession.html'">
+                    <h3 class="card-title"><span class="card-icon">🎛️</span> MediaSession Framework</h3>
+                    <div class="card-description">
+                        MediaSession/MediaController 아키텍처, PlaybackState 전파, TransportControls API, Callback 메커니즘
+                    </div>
+                    <a href="mediasession.html" class="card-link">자세히 보기 →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='audio-framework.html'">
+                    <h3 class="card-title"><span class="card-icon">🔊</span> Audio Framework</h3>
+                    <div class="card-description">
+                        Audio Focus 시스템, AudioManager API, AAOS Car Audio Zone, Multi-zone 오디오 라우팅
+                    </div>
+                    <a href="audio-framework.html" class="card-link">자세히 보기 →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='power-policy-suspend.html'">
+                    <h3 class="card-title"><span class="card-icon">🔋</span> Power Policy & Suspend</h3>
+                    <div class="card-description">
+                        Suspend-to-RAM (S3) 메커니즘, Deep Sleep 타이밍, Power Policy 설정, Snapshot 기반 복원
+                    </div>
+                    <a href="power-policy-suspend.html" class="card-link">자세히 보기 →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='media-app-layer.html'">
+                    <h3 class="card-title"><span class="card-icon">📱</span> Media App Layer</h3>
+                    <div class="card-description">
+                        MediaPlayer/ExoPlayer/Media3 API, MediaBrowserService 구현 가이드, AAOS 앱 개발 모범 사례
+                    </div>
+                    <a href="media-app-layer.html" class="card-link">자세히 보기 →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='aaos.html'">
+                    <h3 class="card-title"><span class="card-icon">🚗</span> AAOS Overview</h3>
+                    <div class="card-description">
+                        Android Automotive OS 전체 개요, CarService 아키텍처, Multi-user 시스템, Vehicle HAL 통합
+                    </div>
+                    <a href="aaos.html" class="card-link">자세히 보기 →</a>
+                </div>
+            </div>
+        </section>
+
         <a href="index.html" class="nav-button">← Back to Dashboard</a>
     </div>
 
