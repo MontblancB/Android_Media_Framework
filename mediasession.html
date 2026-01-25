@@ -531,6 +531,1719 @@
             </div>
         </section>
 
+        <!-- Section 7: Code Examples -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                실제 코드 예시
+            </h2>
+            <p class="section-description">
+                MediaSession을 사용한 실제 구현 코드를 Legacy와 Media3 두 가지 방식으로 제공합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📱 Legacy: MediaSessionCompat + MediaBrowserServiceCompat
+            </h3>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                1. MediaBrowserServiceCompat 구현
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// MusicService.kt (Legacy)
+class MusicService : MediaBrowserServiceCompat() {
+    private var mediaSession: MediaSessionCompat? = null
+    private lateinit var stateBuilder: PlaybackStateCompat.Builder
+    private lateinit var player: MediaPlayer
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // MediaSession 생성
+        mediaSession = MediaSessionCompat(baseContext, "MusicService").apply {
+            // Callback 설정
+            setCallback(MediaSessionCallback())
+
+            // Flags 설정
+            setFlags(
+                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+            )
+
+            // PlaybackState 초기화
+            stateBuilder = PlaybackStateCompat.Builder()
+                .setActions(
+                    PlaybackStateCompat.ACTION_PLAY or
+                    PlaybackStateCompat.ACTION_PAUSE or
+                    PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                    PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                )
+            setPlaybackState(stateBuilder.build())
+
+            // Session 활성화
+            isActive = true
+        }
+
+        // SessionToken 설정
+        sessionToken = mediaSession?.sessionToken
+
+        // Player 초기화
+        player = MediaPlayer()
+    }
+
+    override fun onGetRoot(
+        clientPackageName: String,
+        clientUid: Int,
+        rootHints: Bundle?
+    ): BrowserRoot? {
+        // Android Auto/Wear OS 접근 허용
+        return BrowserRoot("root", null)
+    }
+
+    override fun onLoadChildren(
+        parentId: String,
+        result: Result<MutableList<MediaBrowserCompat.MediaItem>>
+    ) {
+        val mediaItems = mutableListOf<MediaBrowserCompat.MediaItem>()
+
+        when (parentId) {
+            "root" -> {
+                // 최상위 메뉴
+                mediaItems.add(
+                    MediaBrowserCompat.MediaItem(
+                        MediaDescriptionCompat.Builder()
+                            .setMediaId("albums")
+                            .setTitle("Albums")
+                            .setSubtitle("Browse by album")
+                            .build(),
+                        MediaBrowserCompat.MediaItem.FLAG_BROWSABLE
+                    )
+                )
+                mediaItems.add(
+                    MediaBrowserCompat.MediaItem(
+                        MediaDescriptionCompat.Builder()
+                            .setMediaId("artists")
+                            .setTitle("Artists")
+                            .build(),
+                        MediaBrowserCompat.MediaItem.FLAG_BROWSABLE
+                    )
+                )
+            }
+            "albums" -> {
+                // 앨범 목록
+                mediaItems.add(
+                    MediaBrowserCompat.MediaItem(
+                        MediaDescriptionCompat.Builder()
+                            .setMediaId("album_1")
+                            .setTitle("Album Title")
+                            .setSubtitle("Artist Name")
+                            .setIconUri(Uri.parse("android.resource://..."))
+                            .build(),
+                        MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
+                    )
+                )
+            }
+        }
+
+        result.sendResult(mediaItems)
+    }
+
+    inner class MediaSessionCallback : MediaSessionCompat.Callback() {
+        override fun onPlay() {
+            player.start()
+            updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+            showNotification()
+        }
+
+        override fun onPause() {
+            player.pause()
+            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED)
+        }
+
+        override fun onStop() {
+            player.stop()
+            updatePlaybackState(PlaybackStateCompat.STATE_STOPPED)
+            stopForeground(true)
+        }
+
+        override fun onSkipToNext() {
+            // 다음 트랙 재생
+            loadNextTrack()
+            onPlay()
+        }
+
+        override fun onSeekTo(pos: Long) {
+            player.seekTo(pos.toInt())
+            updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+        }
+    }
+
+    private fun updatePlaybackState(state: Int) {
+        val position = if (player.isPlaying) player.currentPosition.toLong() else 0
+        mediaSession?.setPlaybackState(
+            stateBuilder.setState(state, position, 1.0f).build()
+        )
+    }
+
+    private fun showNotification() {
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Song Title")
+            .setContentText("Artist Name")
+            .setSmallIcon(R.drawable.ic_music)
+            .setLargeIcon(albumArtBitmap)
+            .setStyle(
+                androidx.media.app.NotificationCompat.MediaStyle()
+                    .setMediaSession(mediaSession?.sessionToken)
+                    .setShowActionsInCompactView(0, 1, 2)
+            )
+            .addAction(R.drawable.ic_skip_previous, "Previous", previousPendingIntent)
+            .addAction(R.drawable.ic_pause, "Pause", pausePendingIntent)
+            .addAction(R.drawable.ic_skip_next, "Next", nextPendingIntent)
+            .build()
+
+        startForeground(NOTIFICATION_ID, notification)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaSession?.release()
+        player.release()
+    }
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                2. Activity에서 MediaController 연결
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// MainActivity.kt (Legacy)
+class MainActivity : AppCompatActivity() {
+    private lateinit var mediaBrowser: MediaBrowserCompat
+    private var mediaController: MediaControllerCompat? = null
+
+    private val connectionCallbacks = object : MediaBrowserCompat.ConnectionCallback() {
+        override fun onConnected() {
+            mediaController = MediaControllerCompat(
+                this@MainActivity,
+                mediaBrowser.sessionToken
+            ).apply {
+                // Controller를 Activity에 연결
+                MediaControllerCompat.setMediaController(this@MainActivity, this)
+
+                // Callback 등록
+                registerCallback(controllerCallback)
+
+                // 현재 상태 가져오기
+                playbackState?.let { controllerCallback.onPlaybackStateChanged(it) }
+                metadata?.let { controllerCallback.onMetadataChanged(it) }
+            }
+        }
+
+        override fun onConnectionSuspended() {
+            mediaController = null
+        }
+
+        override fun onConnectionFailed() {
+            // 연결 실패 처리
+        }
+    }
+
+    private val controllerCallback = object : MediaControllerCompat.Callback() {
+        override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
+            state?.let {
+                when (it.state) {
+                    PlaybackStateCompat.STATE_PLAYING -> {
+                        playPauseButton.setImageResource(R.drawable.ic_pause)
+                    }
+                    PlaybackStateCompat.STATE_PAUSED -> {
+                        playPauseButton.setImageResource(R.drawable.ic_play)
+                    }
+                }
+            }
+        }
+
+        override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
+            metadata?.let {
+                titleTextView.text = it.getString(MediaMetadataCompat.METADATA_KEY_TITLE)
+                artistTextView.text = it.getString(MediaMetadataCompat.METADATA_KEY_ARTIST)
+                albumArtImageView.setImageBitmap(
+                    it.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART)
+                )
+            }
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        // MediaBrowser 생성
+        mediaBrowser = MediaBrowserCompat(
+            this,
+            ComponentName(this, MusicService::class.java),
+            connectionCallbacks,
+            null
+        )
+
+        // UI 버튼 리스너
+        playPauseButton.setOnClickListener {
+            val controller = MediaControllerCompat.getMediaController(this)
+            val state = controller.playbackState?.state
+
+            if (state == PlaybackStateCompat.STATE_PLAYING) {
+                controller.transportControls.pause()
+            } else {
+                controller.transportControls.play()
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        mediaBrowser.connect()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        mediaController?.unregisterCallback(controllerCallback)
+        mediaBrowser.disconnect()
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🚀 Media3: MediaSessionService + MediaSession
+            </h3>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                1. MediaSessionService 구현
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// MusicService.kt (Media3)
+class MusicService : MediaSessionService() {
+    private var mediaSession: MediaSession? = null
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // ExoPlayer 생성
+        val player = ExoPlayer.Builder(this).build()
+
+        // MediaSession 생성
+        mediaSession = MediaSession.Builder(this, player)
+            .setCallback(MediaSessionCallback())
+            .build()
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
+        return mediaSession
+    }
+
+    private inner class MediaSessionCallback : MediaSession.Callback {
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): MediaSession.ConnectionResult {
+            val connectionResult = super.onConnect(session, controller)
+
+            // Session Commands 설정
+            val sessionCommands = connectionResult.availableSessionCommands.buildUpon()
+                .add(SessionCommand("CUSTOM_COMMAND", Bundle()))
+                .build()
+
+            return MediaSession.ConnectionResult.accept(
+                sessionCommands,
+                connectionResult.availablePlayerCommands
+            )
+        }
+
+        override fun onAddMediaItems(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: List<MediaItem>
+        ): ListenableFuture<List<MediaItem>> {
+            // 미디어 아이템 처리
+            val updatedMediaItems = mediaItems.map { mediaItem ->
+                mediaItem.buildUpon()
+                    .setUri(getMediaUri(mediaItem.mediaId))
+                    .build()
+            }
+            return Futures.immediateFuture(updatedMediaItems)
+        }
+    }
+
+    override fun onDestroy() {
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
+        }
+        super.onDestroy()
+    }
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                2. Activity에서 MediaController 연결
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// MainActivity.kt (Media3)
+class MainActivity : AppCompatActivity() {
+    private var controller: MediaController? = null
+    private lateinit var controllerFuture: ListenableFuture<MediaController>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        // UI 버튼 리스너
+        playPauseButton.setOnClickListener {
+            controller?.let {
+                if (it.isPlaying) {
+                    it.pause()
+                } else {
+                    it.play()
+                }
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        initializeController()
+    }
+
+    private fun initializeController() {
+        controllerFuture = MediaController.Builder(
+            this,
+            SessionToken(this, ComponentName(this, MusicService::class.java))
+        ).buildAsync()
+
+        controllerFuture.addListener({
+            controller = controllerFuture.get().apply {
+                // Listener 등록
+                addListener(object : Player.Listener {
+                    override fun onIsPlayingChanged(isPlaying: Boolean) {
+                        if (isPlaying) {
+                            playPauseButton.setImageResource(R.drawable.ic_pause)
+                        } else {
+                            playPauseButton.setImageResource(R.drawable.ic_play)
+                        }
+                    }
+
+                    override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+                        titleTextView.text = mediaMetadata.title
+                        artistTextView.text = mediaMetadata.artist
+                        // 앨범 아트는 자동으로 처리됨
+                    }
+                })
+            }
+        }, MoreExecutors.directExecutor())
+    }
+
+    override fun onStop() {
+        super.onStop()
+        controller?.let {
+            MediaController.releaseFuture(controllerFuture)
+            controller = null
+        }
+    }
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 코드 예시 핵심 차이점:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Legacy</strong>: MediaBrowserServiceCompat, MediaSessionCompat.Callback, 수동 PlaybackState 관리</li>
+                    <li><strong>Media3</strong>: MediaSessionService, ExoPlayer 통합, 자동 상태 동기화, Player.Listener</li>
+                    <li><strong>코드 간결성</strong>: Media3가 약 40% 더 짧고 간결함</li>
+                    <li><strong>유지보수</strong>: Media3는 ExoPlayer와 통합되어 버퍼링, 에러 처리 자동화</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 8: Media3 vs Legacy Comparison -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Media3 vs Legacy 비교
+            </h2>
+            <p class="section-description">
+                Media3와 Legacy MediaSession API의 차이점을 상세히 비교합니다.
+            </p>
+
+            <div class="highlight-box">
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">항목</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Legacy (MediaSessionCompat)</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Media3 (androidx.media3)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>패키지</strong></td>
+                            <td style="padding: 10px;">android.support.v4.media<br />androidx.media</td>
+                            <td style="padding: 10px;">androidx.media3.session<br />androidx.media3.exoplayer</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>서비스 클래스</strong></td>
+                            <td style="padding: 10px;">MediaBrowserServiceCompat</td>
+                            <td style="padding: 10px;">MediaSessionService (간소화됨)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>세션 클래스</strong></td>
+                            <td style="padding: 10px;">MediaSessionCompat</td>
+                            <td style="padding: 10px;">MediaSession</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>콜백 방식</strong></td>
+                            <td style="padding: 10px;">MediaSessionCompat.Callback<br />수동으로 상태 업데이트</td>
+                            <td style="padding: 10px;">MediaSession.Callback<br />Player가 자동 동기화</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>플레이어 통합</strong></td>
+                            <td style="padding: 10px;">MediaPlayer 또는 ExoPlayer 수동 연동</td>
+                            <td style="padding: 10px;">ExoPlayer 네이티브 통합</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>상태 관리</strong></td>
+                            <td style="padding: 10px;">PlaybackStateCompat.Builder<br />수동 setState() 호출</td>
+                            <td style="padding: 10px;">Player.Listener<br />자동 상태 전파</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>메타데이터 설정</strong></td>
+                            <td style="padding: 10px;">MediaMetadataCompat.Builder<br />수동 setMetadata()</td>
+                            <td style="padding: 10px;">MediaMetadata<br />자동 동기화</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Queue 관리</strong></td>
+                            <td style="padding: 10px;">수동 setQueue()</td>
+                            <td style="padding: 10px;">Player.setMediaItems() 자동 처리</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>컨트롤러 연결</strong></td>
+                            <td style="padding: 10px;">MediaBrowserCompat<br />ConnectionCallback</td>
+                            <td style="padding: 10px;">ListenableFuture&lt;MediaController&gt;<br />비동기 연결</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Notification</strong></td>
+                            <td style="padding: 10px;">NotificationCompat.MediaStyle<br />수동 빌드</td>
+                            <td style="padding: 10px;">MediaNotification<br />자동 생성</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>유지보수 상태</strong></td>
+                            <td style="padding: 10px;">⚠️ 유지보수 모드 (버그 수정만)</td>
+                            <td style="padding: 10px;">✅ 활발한 개발 및 업데이트</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>코드 복잡도</strong></td>
+                            <td style="padding: 10px;">높음 (Boilerplate 많음)</td>
+                            <td style="padding: 10px;">낮음 (간결하고 선언적)</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px;"><strong>권장 사항</strong></td>
+                            <td style="padding: 10px;">⚠️ 새 프로젝트 비권장</td>
+                            <td style="padding: 10px;">✅ 모든 새 프로젝트 권장</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 마이그레이션 가이드
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        Dependency 변경
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.8rem; margin-top: 10px;"><code>// build.gradle.kts
+// Legacy 제거
+// implementation("androidx.media:media:1.x.x")
+
+// Media3 추가
+implementation("androidx.media3:media3-session:1.2.0")
+implementation("androidx.media3:media3-exoplayer:1.2.0")</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        Service 마이그레이션
+                    </h3>
+                    <div class="card-description">
+                        <ul style="margin-top: 10px;">
+                            <li><code>MediaBrowserServiceCompat</code> → <code>MediaSessionService</code></li>
+                            <li><code>onGetRoot()</code>, <code>onLoadChildren()</code> 제거</li>
+                            <li><code>onGetSession()</code> 구현</li>
+                            <li>ExoPlayer 생성 및 연결</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">3️⃣</span>
+                        Callback 단순화
+                    </h3>
+                    <div class="card-description">
+                        <ul style="margin-top: 10px;">
+                            <li><code>onPlay()</code>, <code>onPause()</code> 제거 가능</li>
+                            <li>Player가 자동으로 명령 처리</li>
+                            <li>커스텀 로직만 override</li>
+                            <li><code>PlaybackStateCompat</code> 수동 업데이트 제거</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">4️⃣</span>
+                        Controller 변경
+                    </h3>
+                    <div class="card-description">
+                        <ul style="margin-top: 10px;">
+                            <li><code>MediaBrowserCompat</code> → <code>ListenableFuture&lt;MediaController&gt;</code></li>
+                            <li><code>transportControls.play()</code> → <code>controller.play()</code></li>
+                            <li><code>MediaControllerCompat.Callback</code> → <code>Player.Listener</code></li>
+                            <li>비동기 연결 패턴 적용</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>🚀 마이그레이션 권장 시기:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>새 프로젝트</strong>: 반드시 Media3 사용</li>
+                    <li><strong>기존 프로젝트</strong>: 중대한 리팩토링 시 마이그레이션 고려</li>
+                    <li><strong>ExoPlayer 사용 중</strong>: Media3로 마이그레이션 시 통합 이점 큼</li>
+                    <li><strong>MediaPlayer 사용 중</strong>: Legacy로 유지 가능하나 Media3 + ExoPlayer 권장</li>
+                    <li>Google은 2024년부터 Media3를 공식 권장 라이브러리로 지정</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: Audio Focus & Session Management -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                오디오 포커스 & 세션 관리
+            </h2>
+            <p class="section-description">
+                AudioFocus를 통한 다중 앱 간 오디오 재생 조율 및 세션 우선순위 관리 방법을 설명합니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App as Music App
+                    participant AM as AudioManager
+                    participant Phone as Phone Call
+                    participant Nav as Navigation
+
+                    App->>AM: requestAudioFocus()<br />AUDIOFOCUS_GAIN
+                    AM-->>App: AUDIOFOCUS_REQUEST_GRANTED
+                    App->>App: player.play()
+
+                    Note over Phone: 전화 수신
+                    Phone->>AM: requestAudioFocus()<br />AUDIOFOCUS_GAIN_TRANSIENT
+                    AM->>App: onAudioFocusChange()<br />AUDIOFOCUS_LOSS_TRANSIENT
+                    App->>App: player.pause()
+                    AM-->>Phone: AUDIOFOCUS_REQUEST_GRANTED
+
+                    Note over Phone: 통화 종료
+                    Phone->>AM: abandonAudioFocus()
+                    AM->>App: onAudioFocusChange()<br />AUDIOFOCUS_GAIN
+                    App->>App: player.play() (재개)
+
+                    Note over Nav: 네비게이션 안내
+                    Nav->>AM: requestAudioFocus()<br />AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+                    AM->>App: onAudioFocusChange()<br />AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK
+                    App->>App: player.setVolume(0.2f) (Ducking)
+                    AM-->>Nav: AUDIOFOCUS_REQUEST_GRANTED
+
+                    Nav->>AM: abandonAudioFocus()
+                    AM->>App: onAudioFocusChange()<br />AUDIOFOCUS_GAIN
+                    App->>App: player.setVolume(1.0f) (볼륨 복원)
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎧 AudioFocus 요청 및 처리
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// AudioFocus 관리
+class MusicService : MediaBrowserServiceCompat() {
+    private lateinit var audioManager: AudioManager
+    private lateinit var audioFocusRequest: AudioFocusRequest
+
+    private val afChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                // Focus 획득: 재생 재개 및 볼륨 복원
+                player.volume = 1.0f
+                if (shouldResumeOnFocusGain) {
+                    player.play()
+                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                // Focus 영구 손실: 재생 정지
+                player.pause()
+                shouldResumeOnFocusGain = false
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                // Focus 일시 손실 (전화 등): 일시정지, 나중에 재개
+                if (player.isPlaying) {
+                    player.pause()
+                    shouldResumeOnFocusGain = true
+                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                // Focus 일시 손실 (Ducking 가능, 네비게이션 등): 볼륨 낮춤
+                player.volume = 0.2f
+            }
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+        // AudioAttributes 설정
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .build()
+
+        // AudioFocusRequest 생성 (Android O+)
+        audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(audioAttributes)
+            .setOnAudioFocusChangeListener(afChangeListener)
+            .setAcceptsDelayedFocusGain(true)  // 지연된 Focus 허용
+            .build()
+    }
+
+    private fun requestAudioFocus(): Boolean {
+        val result = audioManager.requestAudioFocus(audioFocusRequest)
+        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    }
+
+    private fun abandonAudioFocus() {
+        audioManager.abandonAudioFocusRequest(audioFocusRequest)
+    }
+
+    inner class MediaSessionCallback : MediaSessionCompat.Callback() {
+        override fun onPlay() {
+            if (requestAudioFocus()) {
+                // MediaSession 활성화
+                mediaSession?.isActive = true
+                // 재생 시작
+                player.play()
+                // Notification 표시
+                showNotification()
+            }
+        }
+
+        override fun onStop() {
+            // AudioFocus 해제
+            abandonAudioFocus()
+            // MediaSession 비활성화
+            mediaSession?.isActive = false
+            // 재생 정지
+            player.stop()
+            // Notification 제거
+            stopForeground(true)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        abandonAudioFocus()
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 AudioFocus 타입 비교
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        AUDIOFOCUS_GAIN
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>영구적 Focus 획득</strong></p>
+                        <ul>
+                            <li><strong>사용 사례</strong>: 음악 재생, 팟캐스트</li>
+                            <li><strong>다른 앱 영향</strong>: 재생 중단 또는 Ducking</li>
+                            <li><strong>손실 시</strong>: 재생 정지</li>
+                            <li><strong>재획득 시</strong>: 재생 재개</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📞</span>
+                        AUDIOFOCUS_GAIN_TRANSIENT
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>일시적 Focus (중단 불가)</strong></p>
+                        <ul>
+                            <li><strong>사용 사례</strong>: 전화 통화, 알람</li>
+                            <li><strong>다른 앱 영향</strong>: 일시정지 강제</li>
+                            <li><strong>손실 시</strong>: 일시정지</li>
+                            <li><strong>재획득 시</strong>: 자동 재개</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🗺️</span>
+                        AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>일시적 Focus (Ducking 허용)</strong></p>
+                        <ul>
+                            <li><strong>사용 사례</strong>: 네비게이션 안내, 알림음</li>
+                            <li><strong>다른 앱 영향</strong>: 볼륨 낮춤 (20%)</li>
+                            <li><strong>손실 시</strong>: Ducking (계속 재생)</li>
+                            <li><strong>재획득 시</strong>: 볼륨 복원</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔕</span>
+                        AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>독점적 일시 Focus</strong></p>
+                        <ul>
+                            <li><strong>사용 사례</strong>: 음성 녹음, 음성 인식</li>
+                            <li><strong>다른 앱 영향</strong>: 모든 오디오 중단</li>
+                            <li><strong>손실 시</strong>: 즉시 정지</li>
+                            <li><strong>특징</strong>: 배타적 오디오 사용</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ AudioFocus Best Practices:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>필수 사항</strong>: 미디어 재생 전 반드시 AudioFocus 요청</li>
+                    <li><strong>적절한 타입 선택</strong>: USAGE_MEDIA, CONTENT_TYPE_MUSIC 등 정확히 설정</li>
+                    <li><strong>LOSS vs LOSS_TRANSIENT 구분</strong>: LOSS는 재개 안 함, LOSS_TRANSIENT는 재개</li>
+                    <li><strong>Ducking 처리</strong>: LOSS_TRANSIENT_CAN_DUCK에서는 일시정지 대신 볼륨 낮춤 (사용자 경험 향상)</li>
+                    <li><strong>Focus 해제</strong>: 재생 완료/정지 시 반드시 abandonAudioFocus() 호출</li>
+                    <li><strong>Media3 자동 처리</strong>: Media3 + ExoPlayer는 AudioFocus를 자동으로 관리 (수동 구현 불필요)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 10: Media Buttons & Custom Commands -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                미디어 버튼 & 커스텀 명령
+            </h2>
+            <p class="section-description">
+                헤드폰 버튼, 블루투스 컨트롤 처리 및 커스텀 명령 추가 방법을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                🎧 MediaButtonReceiver 설정
+            </h3>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                1. AndroidManifest.xml 설정
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">&lt;!-- AndroidManifest.xml --&gt;
+&lt;manifest&gt;
+    &lt;application&gt;
+        &lt;!-- MediaBrowserService 선언 --&gt;
+        &lt;service
+            android:name=".MusicService"
+            android:exported="true"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.media.browse.MediaBrowserService" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/service&gt;
+
+        &lt;!-- MediaButtonReceiver 선언 --&gt;
+        &lt;receiver
+            android:name="androidx.media.session.MediaButtonReceiver"
+            android:exported="true"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.MEDIA_BUTTON" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/receiver&gt;
+    &lt;/application&gt;
+
+    &lt;!-- 필요한 권한 --&gt;
+    &lt;uses-permission android:name="android.permission.FOREGROUND_SERVICE" /&gt;
+    &lt;uses-permission android:name="android.permission.WAKE_LOCK" /&gt;
+&lt;/manifest&gt;</code></pre>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                2. Service에서 MediaButton 처리
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// MusicService.kt
+class MusicService : MediaBrowserServiceCompat() {
+
+    override fun onCreate() {
+        super.onCreate()
+
+        val mediaSession = MediaSessionCompat(this, "MusicService").apply {
+            // Flags 설정 (MediaButton 처리 활성화)
+            setFlags(
+                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+            )
+
+            // Callback 설정
+            setCallback(mediaSessionCallback)
+
+            // MediaButton Intent 설정
+            val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON, null, this@MusicService,
+                MediaButtonReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(
+                this@MusicService, 0, mediaButtonIntent,
+                PendingIntent.FLAG_IMMUTABLE
+            )
+            setMediaButtonReceiver(pendingIntent)
+
+            isActive = true
+        }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // MediaButtonReceiver가 전달한 Intent 처리
+        MediaButtonReceiver.handleIntent(mediaSession, intent)
+        return super.onStartCommand(intent, flags, startId)
+    }
+
+    private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
+        // 헤드폰 재생 버튼
+        override fun onPlay() {
+            player.play()
+            updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+        }
+
+        // 헤드폰 일시정지 버튼
+        override fun onPause() {
+            player.pause()
+            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED)
+        }
+
+        // 헤드폰 다음 트랙 버튼
+        override fun onSkipToNext() {
+            playNextTrack()
+        }
+
+        // 헤드폰 이전 트랙 버튼
+        override fun onSkipToPrevious() {
+            playPreviousTrack()
+        }
+
+        // 미디어 버튼 이벤트 (더블 클릭, 트리플 클릭 등)
+        override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
+            val keyEvent = mediaButtonEvent?.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
+
+            if (keyEvent?.action == KeyEvent.ACTION_DOWN) {
+                when (keyEvent.keyCode) {
+                    KeyEvent.KEYCODE_MEDIA_PLAY -> onPlay()
+                    KeyEvent.KEYCODE_MEDIA_PAUSE -> onPause()
+                    KeyEvent.KEYCODE_MEDIA_NEXT -> onSkipToNext()
+                    KeyEvent.KEYCODE_MEDIA_PREVIOUS -> onSkipToPrevious()
+                    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
+                        if (player.isPlaying) onPause() else onPlay()
+                    }
+                    KeyEvent.KEYCODE_HEADSETHOOK -> {
+                        // 싱글/더블/트리플 클릭 처리
+                        handleHeadsetHook()
+                        return true
+                    }
+                }
+            }
+            return super.onMediaButtonEvent(mediaButtonEvent)
+        }
+    }
+
+    private fun handleHeadsetHook() {
+        val now = SystemClock.elapsedRealtime()
+
+        if (now - lastClickTime < DOUBLE_CLICK_INTERVAL) {
+            // 더블 클릭: 다음 트랙
+            clickCount++
+            if (clickCount == 2) {
+                onSkipToNext()
+                clickCount = 0
+            }
+        } else {
+            // 싱글 클릭: 재생/일시정지
+            clickCount = 1
+            handler.postDelayed({
+                if (clickCount == 1) {
+                    if (player.isPlaying) onPause() else onPlay()
+                }
+                clickCount = 0
+            }, DOUBLE_CLICK_INTERVAL)
+        }
+
+        lastClickTime = now
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎛️ Custom Actions 추가
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Custom Actions 추가
+private fun updatePlaybackState(state: Int) {
+    val stateBuilder = PlaybackStateCompat.Builder()
+        .setState(state, player.currentPosition.toLong(), 1.0f)
+        .setActions(
+            PlaybackStateCompat.ACTION_PLAY or
+            PlaybackStateCompat.ACTION_PAUSE or
+            PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
+            PlaybackStateCompat.ACTION_SEEK_TO
+        )
+
+    // Custom Action 1: 좋아요
+    val likeAction = PlaybackStateCompat.CustomAction.Builder(
+        "ACTION_LIKE",
+        "Like",
+        R.drawable.ic_favorite
+    ).build()
+
+    // Custom Action 2: 재생 속도 조절
+    val speedAction = PlaybackStateCompat.CustomAction.Builder(
+        "ACTION_SPEED",
+        "Speed",
+        R.drawable.ic_speed
+    ).build()
+
+    // Custom Action 3: 반복 모드
+    val repeatAction = PlaybackStateCompat.CustomAction.Builder(
+        "ACTION_REPEAT",
+        "Repeat",
+        R.drawable.ic_repeat
+    ).build()
+
+    stateBuilder.addCustomAction(likeAction)
+    stateBuilder.addCustomAction(speedAction)
+    stateBuilder.addCustomAction(repeatAction)
+
+    mediaSession?.setPlaybackState(stateBuilder.build())
+}
+
+// Custom Action 처리
+private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
+    override fun onCustomAction(action: String?, extras: Bundle?) {
+        when (action) {
+            "ACTION_LIKE" -> {
+                // 좋아요 토글
+                val currentTrack = getCurrentTrack()
+                currentTrack.isFavorite = !currentTrack.isFavorite
+                saveFavorite(currentTrack)
+                updateNotification()
+            }
+            "ACTION_SPEED" -> {
+                // 재생 속도 순환 (1.0x → 1.25x → 1.5x → 2.0x)
+                playbackSpeed = when (playbackSpeed) {
+                    1.0f -> 1.25f
+                    1.25f -> 1.5f
+                    1.5f -> 2.0f
+                    else -> 1.0f
+                }
+                player.setPlaybackParams(player.playbackParams.setSpeed(playbackSpeed))
+            }
+            "ACTION_REPEAT" -> {
+                // 반복 모드 순환 (OFF → ONE → ALL)
+                repeatMode = when (repeatMode) {
+                    Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ONE
+                    Player.REPEAT_MODE_ONE -> Player.REPEAT_MODE_ALL
+                    else -> Player.REPEAT_MODE_OFF
+                }
+                player.repeatMode = repeatMode
+            }
+        }
+    }
+
+    override fun onSetRepeatMode(repeatMode: Int) {
+        // 반복 모드 설정
+        player.repeatMode = repeatMode
+    }
+
+    override fun onSetShuffleMode(shuffleMode: Int) {
+        // 셔플 모드 설정
+        player.shuffleModeEnabled = (shuffleMode == PlaybackStateCompat.SHUFFLE_MODE_ALL)
+    }
+
+    override fun onSetRating(rating: RatingCompat?) {
+        // 별점/좋아요 처리
+        rating?.let {
+            if (it.isRated) {
+                saveRating(getCurrentTrack(), it)
+            }
+        }
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📋 Queue 관리
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Queue 관리
+private fun updateQueue(tracks: List<Track>) {
+    val queue = tracks.mapIndexed { index, track ->
+        MediaSessionCompat.QueueItem(
+            MediaDescriptionCompat.Builder()
+                .setMediaId(track.id)
+                .setTitle(track.title)
+                .setSubtitle(track.artist)
+                .setIconUri(track.albumArtUri)
+                .build(),
+            index.toLong()
+        )
+    }
+
+    mediaSession?.setQueue(queue)
+    mediaSession?.setQueueTitle("Now Playing")
+}
+
+// Queue 탐색
+private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
+    override fun onSkipToQueueItem(id: Long) {
+        // Queue 내 특정 아이템으로 이동
+        val track = playlist[id.toInt()]
+        playTrack(track)
+    }
+
+    override fun onAddQueueItem(description: MediaDescriptionCompat?) {
+        // Queue에 트랙 추가
+        description?.let {
+            val track = getTrackFromDescription(it)
+            playlist.add(track)
+            updateQueue(playlist)
+        }
+    }
+
+    override fun onRemoveQueueItem(description: MediaDescriptionCompat?) {
+        // Queue에서 트랙 제거
+        description?.let {
+            playlist.removeAll { track -> track.id == it.mediaId }
+            updateQueue(playlist)
+        }
+    }
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 미디어 버튼 및 커스텀 명령 핵심 포인트:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>MediaButtonReceiver</strong>: AndroidManifest.xml 등록 필수, handleIntent()로 처리</li>
+                    <li><strong>헤드셋 버튼</strong>: KEYCODE_HEADSETHOOK으로 싱글/더블/트리플 클릭 구분</li>
+                    <li><strong>Custom Actions</strong>: Notification 및 Auto/Wear에 자동 표시, 최대 5개 권장</li>
+                    <li><strong>Queue 관리</strong>: setQueue()로 재생 목록 노출, Auto/Wear에서 탐색 가능</li>
+                    <li><strong>Media3 자동화</strong>: Media3는 미디어 버튼 및 Queue를 자동으로 처리</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 11: Performance Profiling & Debugging -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                성능 프로파일링 및 디버깅
+            </h2>
+            <p class="section-description">
+                MediaSession의 성능 분석 및 문제 해결을 위한 도구와 방법을 소개합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📊 dumpsys 명령어
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># 모든 MediaSession 정보 조회
+adb shell dumpsys media.session
+
+# 활성화된 MediaSession만 보기
+adb shell dumpsys media.session | grep -A 20 "Active sessions"
+
+# 특정 앱의 MediaSession
+adb shell dumpsys media.session | grep -A 30 "com.example.musicapp"
+
+# MediaController 정보
+adb shell cmd media_session list-sessions
+
+# 볼륨 및 AudioFocus 상태
+adb shell dumpsys audio | grep -i "focus"</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 adb 미디어 제어 명령어
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># MediaSession 목록 조회
+adb shell cmd media_session list-sessions
+
+# 재생/일시정지 토글
+adb shell cmd media_session dispatch play
+adb shell cmd media_session dispatch pause
+
+# 다음/이전 트랙
+adb shell cmd media_session dispatch next
+adb shell cmd media_session dispatch previous
+
+# 볼륨 조절
+adb shell cmd media_session volume --show
+adb shell cmd media_session volume --set 10
+
+# 미디어 버튼 시뮬레이션
+adb shell input keyevent KEYCODE_MEDIA_PLAY_PAUSE
+adb shell input keyevent KEYCODE_MEDIA_NEXT
+adb shell input keyevent KEYCODE_HEADSETHOOK</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🐛 트러블슈팅 가이드
+            </h3>
+
+            <div class="highlight-box">
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">증상</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">원인</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">해결 방법</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Notification에 재생 컨트롤이 안 보임</strong></td>
+                            <td style="padding: 10px;">MediaStyle 미설정 또는 setMediaSession() 누락</td>
+                            <td style="padding: 10px;">1. NotificationCompat.MediaStyle() 사용<br>2. setMediaSession(token) 호출<br>3. addAction()으로 버튼 추가</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Android Auto에 앱이 안 나타남</strong></td>
+                            <td style="padding: 10px;">MediaBrowserService 미구현 또는 onGetRoot() null 반환</td>
+                            <td style="padding: 10px;">1. MediaBrowserServiceCompat 상속<br>2. onGetRoot()에서 BrowserRoot 반환<br>3. AndroidManifest.xml에 intent-filter 추가</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>헤드폰 버튼이 작동 안 함</strong></td>
+                            <td style="padding: 10px;">MediaButtonReceiver 미등록 또는 FLAG 누락</td>
+                            <td style="padding: 10px;">1. AndroidManifest.xml에 receiver 등록<br>2. FLAG_HANDLES_MEDIA_BUTTONS 설정<br>3. setMediaButtonReceiver() 호출</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>백그라운드에서 재생이 멈춤</strong></td>
+                            <td style="padding: 10px;">Foreground Service 미사용</td>
+                            <td style="padding: 10px;">1. startForeground(id, notification) 호출<br>2. FOREGROUND_SERVICE 권한 추가<br>3. Android 12+ FOREGROUND_SERVICE_MEDIA_PLAYBACK 타입 설정</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>다른 앱이 재생 중일 때 소리가 겹침</strong></td>
+                            <td style="padding: 10px;">AudioFocus 미요청</td>
+                            <td style="padding: 10px;">1. requestAudioFocus() 호출<br>2. OnAudioFocusChangeListener 구현<br>3. AUDIOFOCUS_LOSS 시 재생 정지</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>PlaybackState 업데이트가 UI에 반영 안 됨</strong></td>
+                            <td style="padding: 10px;">setPlaybackState() 미호출 또는 Callback 미등록</td>
+                            <td style="padding: 10px;">1. setState() 후 setPlaybackState() 호출<br>2. MediaController.Callback 등록<br>3. onPlaybackStateChanged() 구현</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>앨범 아트가 표시 안 됨</strong></td>
+                            <td style="padding: 10px;">MediaMetadata에 METADATA_KEY_ALBUM_ART 누락</td>
+                            <td style="padding: 10px;">1. MediaMetadata.Builder.putBitmap() 사용<br>2. Bitmap 크기 적절히 조정 (512x512 권장)<br>3. setMetadata() 호출</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px;"><strong>Service가 즉시 종료됨</strong></td>
+                            <td style="padding: 10px;">MediaSession isActive = false 또는 Foreground Service 미설정</td>
+                            <td style="padding: 10px;">1. mediaSession.isActive = true 설정<br>2. 재생 시작 시 startForeground()<br>3. onTaskRemoved()에서 stopSelf() 방지</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📈 성능 메트릭
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏱️</span>
+                        Latency
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>명령 응답 시간</strong></p>
+                        <ul>
+                            <li><strong>Play 명령</strong>: &lt;100ms</li>
+                            <li><strong>Pause 명령</strong>: &lt;50ms</li>
+                            <li><strong>Seek 명령</strong>: &lt;200ms</li>
+                            <li>Binder IPC 오버헤드 측정</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💾</span>
+                        Memory Usage
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>메모리 사용량</strong></p>
+                        <ul>
+                            <li><strong>MediaSession</strong>: ~500KB</li>
+                            <li><strong>MediaController</strong>: ~200KB</li>
+                            <li><strong>Notification</strong>: ~1MB (Bitmap 포함)</li>
+                            <li>Android Profiler로 모니터링</li>
+                        </ul>
+                    </div>
+                </card>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔋</span>
+                        Battery Impact
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>배터리 영향</strong></p>
+                        <ul>
+                            <li>Foreground Service 와케락</li>
+                            <li>Notification 업데이트 빈도 최적화</li>
+                            <li>AudioFocus 적절히 해제</li>
+                            <li>Battery Historian 분석</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Binder Transactions
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>IPC 트랜잭션</strong></p>
+                        <ul>
+                            <li>Systrace에서 binder_transaction 확인</li>
+                            <li>대량 메타데이터 전송 시 주의</li>
+                            <li>Bitmap은 1MB 이하 권장</li>
+                            <li>과도한 상태 업데이트 방지</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>💡 디버깅 Best Practices:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>dumpsys media.session으로 활성 세션 상태 실시간 확인</li>
+                    <li>adb cmd media_session으로 명령 테스트 (UI 없이 디버깅 가능)</li>
+                    <li>Android Auto Desktop Head Unit (DHU)로 Auto 환경 시뮬레이션</li>
+                    <li>Logcat 필터: <code>adb logcat -s MediaSession MediaController</code></li>
+                    <li>Media3는 자세한 로그 제공, ExoPlayer 로그도 함께 확인</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 12: AOSP Source Code Reference -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                AOSP 소스 코드 참조
+            </h2>
+            <p class="section-description">
+                MediaSession 구현을 이해하기 위한 AOSP 소스 코드 위치와 핵심 로직을 소개합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📂 주요 소스 파일 위치
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Framework (Java)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Public API</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>frameworks/base/media/java/android/media/session/
+├── MediaSession.java
+├── MediaController.java
+├── MediaSessionManager.java
+├── PlaybackState.java
+└── MediaMetadata.java</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        System Service (Java)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaSessionService</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>frameworks/base/services/core/java/com/android/server/media/
+├── MediaSessionService.java
+├── MediaSessionRecord.java
+└── MediaSessionStack.java</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📚</span>
+                        AndroidX (Legacy)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaSessionCompat</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>androidx/media/media/src/main/java/androidx/media/
+├── MediaSessionCompat.java
+├── MediaControllerCompat.java
+└── MediaBrowserServiceCompat.java</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        Media3
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>androidx.media3.session</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>androidx/media3/libraries/session/src/main/java/
+├── MediaSession.kt
+├── MediaController.kt
+└── MediaSessionService.kt</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                💻 핵심 코드 스니펫
+            </h3>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                1. MediaSessionService.java (System Service)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// frameworks/base/services/core/java/com/android/server/media/MediaSessionService.java
+
+public class MediaSessionService extends SystemService {
+    private final SessionManagerImpl mSessionManagerImpl;
+
+    @Override
+    public void onStart() {
+        publishBinderService(Context.MEDIA_SESSION_SERVICE, mSessionManagerImpl);
+    }
+
+    // MediaSession 생성 요청 처리
+    public ISession createSession(String packageName, ISessionCallback cb, String tag) {
+        final int uid = Binder.getCallingUid();
+        final int pid = Binder.getCallingPid();
+
+        // MediaSessionRecord 생성 (실제 세션 객체)
+        MediaSessionRecord session = new MediaSessionRecord(uid, pid, packageName, cb, tag);
+
+        // MediaSessionStack에 추가 (우선순위 관리)
+        mSessionStack.addSession(session);
+
+        return session.getSessionBinder();
+    }
+
+    // 활성 MediaSession 목록 관리
+    private final class MediaSessionStack {
+        private final ArrayList<MediaSessionRecord> mSessions = new ArrayList<>();
+
+        public void addSession(MediaSessionRecord record) {
+            mSessions.add(record);
+            clearCache();
+            mHandler.post(MessageHandler.MSG_UPDATE_SESSIONS);
+        }
+
+        // 미디어 버튼 이벤트 라우팅
+        public MediaSessionRecord getDefaultMediaButtonSession() {
+            // 가장 최근 활성화된 세션 반환
+            for (MediaSessionRecord record : mSessions) {
+                if (record.isActive() && record.isPlaybackActive()) {
+                    return record;
+                }
+            }
+            return null;
+        }
+    }
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                2. MediaSession.java (Framework API)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// frameworks/base/media/java/android/media/session/MediaSession.java
+
+public final class MediaSession {
+    private final MediaSessionLegacyHelper mLegacyHelper;
+    private final ISession mBinder;
+    private final CallbackStub mCbStub;
+
+    public void setCallback(Callback callback) {
+        if (callback == null) {
+            mCbStub.setMediaButtonReceiver(null);
+        } else {
+            mCbStub.setMediaButtonReceiver(
+                callback.mMediaButtonReceiverComponentName, callback.mMediaButtonReceiverIntent);
+        }
+        mCallback = callback;
+    }
+
+    public void setPlaybackState(PlaybackState state) {
+        mPlaybackState = state;
+        try {
+            // Binder IPC로 System Service에 전달
+            mBinder.setPlaybackState(state);
+        } catch (RemoteException e) {
+            Log.wtf(TAG, "Dead object in setPlaybackState.", e);
+        }
+    }
+
+    public void setMetadata(MediaMetadata metadata) {
+        // Bitmap 크기 검증 (TransactionTooLargeException 방지)
+        if (metadata != null) {
+            metadata = new MediaMetadata.Builder(metadata, mMaxBitmapSize).build();
+        }
+        try {
+            mBinder.setMetadata(metadata);
+        } catch (RemoteException e) {
+            Log.wtf(TAG, "Dead object in setMetadata.", e);
+        }
+    }
+
+    // Callback Stub (Binder IPC 수신)
+    private static final class CallbackStub extends ISessionCallback.Stub {
+        @Override
+        public void onPlay() {
+            mCallback.onPlay();
+        }
+
+        @Override
+        public void onPause() {
+            mCallback.onPause();
+        }
+
+        @Override
+        public void onCommand(String command, Bundle args, ResultReceiver cb) {
+            mCallback.onCommand(command, args, cb);
+        }
+    }
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                3. MediaController.java (Framework API)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// frameworks/base/media/java/android/media/session/MediaController.java
+
+public final class MediaController {
+    private final ISessionController mSessionBinder;
+    private final TransportControls mTransportControls;
+
+    // Transport Controls (재생 제어)
+    public final class TransportControls {
+        public void play() {
+            try {
+                mSessionBinder.play();
+            } catch (RemoteException e) {
+                Log.wtf(TAG, "Error calling play.", e);
+            }
+        }
+
+        public void pause() {
+            try {
+                mSessionBinder.pause();
+            } catch (RemoteException e) {
+                Log.wtf(TAG, "Error calling pause.", e);
+            }
+        }
+
+        public void seekTo(long pos) {
+            try {
+                mSessionBinder.seekTo(pos);
+            } catch (RemoteException e) {
+                Log.wtf(TAG, "Error calling seekTo.", e);
+            }
+        }
+    }
+
+    // Callback 등록 (상태 업데이트 수신)
+    public void registerCallback(Callback callback) {
+        if (callback == null) {
+            throw new IllegalArgumentException("callback must not be null");
+        }
+        try {
+            mSessionBinder.registerCallbackListener(callback.mIControllerCallback);
+        } catch (RemoteException e) {
+            Log.e(TAG, "Dead object in registerCallback.", e);
+        }
+    }
+
+    public static abstract class Callback {
+        public void onPlaybackStateChanged(PlaybackState state) {}
+        public void onMetadataChanged(MediaMetadata metadata) {}
+        public void onQueueChanged(List<QueueItem> queue) {}
+    }
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔗 AOSP 소스 코드 탐색 링크:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/base/media/java/android/media/session/" target="_blank" style="color: var(--accent-primary);">MediaSession Framework (Java)</a></li>
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/android/server/media/" target="_blank" style="color: var(--accent-primary);">MediaSessionService (System Server)</a></li>
+                    <li><a href="https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:media/media/src/main/java/androidx/media/" target="_blank" style="color: var(--accent-primary);">MediaSessionCompat (AndroidX Legacy)</a></li>
+                    <li><a href="https://github.com/androidx/media/tree/release/libraries/session/src/main/java/androidx/media3/session" target="_blank" style="color: var(--accent-primary);">Media3 Session (GitHub)</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 13: Related Documentation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                관련 상세 문서
+            </h2>
+            <p class="section-description">
+                MediaSession과 관련된 다른 상세 문서 페이지로 이동할 수 있습니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        <p>Android 미디어 프레임워크의 전체 아키텍처와 계층 구조를 설명합니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>Framework → Native 계층 상호작용</li>
+                            <li>MediaPlayer, MediaRecorder API</li>
+                            <li>Binder IPC 통신</li>
+                        </ul>
+                        <a href="media-framework-core.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        Media Playback Pipeline
+                    </h3>
+                    <div class="card-description">
+                        <p>미디어 재생 파이프라인, NuPlayer, 버퍼 관리를 설명합니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>NuPlayer 아키텍처</li>
+                            <li>버퍼 관리 및 Zero-Copy</li>
+                            <li>PTS 기반 A/V Sync</li>
+                        </ul>
+                        <a href="media-playback.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>AudioFlinger, AudioPolicyService를 포함한 오디오 스택을 다룹니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>AudioTrack/AudioRecord API</li>
+                            <li>AudioFlinger 믹싱 파이프라인</li>
+                            <li>오디오 라우팅 정책</li>
+                        </ul>
+                        <a href="audio-framework.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Car Media Service
+                    </h3>
+                    <div class="card-description">
+                        <p>Android Automotive의 Car Media Service와 MediaSession 통합을 설명합니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>CarMediaService 아키텍처</li>
+                            <li>MediaSession 우선순위</li>
+                            <li>Last Media & Autoplay</li>
+                        </ul>
+                        <a href="carmedia.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📁</span>
+                        MediaProvider
+                    </h3>
+                    <div class="card-description">
+                        <p>미디어 스토리지 접근, MediaStore, Scoped Storage를 설명합니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>MediaStore API</li>
+                            <li>Scoped Storage 메커니즘</li>
+                            <li>FUSE Passthrough</li>
+                        </ul>
+                        <a href="mediaprovider.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Media App Layer
+                    </h3>
+                    <div class="card-description">
+                        <p>MediaPlayer, ExoPlayer, Media3 등 앱 레이어 API를 비교합니다.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>MediaPlayer vs ExoPlayer</li>
+                            <li>Media3 통합 라이브러리</li>
+                            <li>Best Practices</li>
+                        </ul>
+                        <a href="media-app-layer.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            상세 보기 →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 40px;">
+                <h3 style="color: var(--accent-primary); font-size: 1.2rem; margin-bottom: 15px;">
+                    📚 추가 학습 리소스
+                </h3>
+                <ul style="padding-left: 20px;">
+                    <li><strong>Android Developer - MediaSession</strong>: <a href="https://developer.android.com/guide/topics/media-apps/working-with-a-media-session" target="_blank" style="color: var(--accent-primary);">developer.android.com/guide/topics/media-apps</a></li>
+                    <li><strong>Media3 공식 문서</strong>: <a href="https://developer.android.com/jetpack/androidx/releases/media3" target="_blank" style="color: var(--accent-primary);">androidx.media3</a></li>
+                    <li><strong>Android Auto Developer 가이드</strong>: <a href="https://developer.android.com/training/cars/media" target="_blank" style="color: var(--accent-primary);">developer.android.com/training/cars/media</a></li>
+                    <li><strong>Universal Android Music Player (UAMP) 샘플</strong>: <a href="https://github.com/android/uamp" target="_blank" style="color: var(--accent-primary);">github.com/android/uamp</a></li>
+                </ul>
+            </div>
+        </section>
+
         <!-- Footer -->
         <footer
             style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
