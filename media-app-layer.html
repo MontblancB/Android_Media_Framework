@@ -649,6 +649,1637 @@
 
         </section>
 
+        <!-- Section 10: MediaPlayer 실제 코드 예시 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                MediaPlayer 실제 코드 예시
+            </h2>
+            <p class="section-description">
+                MediaPlayer API를 사용한 기본적인 미디어 재생 구현 방법을 코드로 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎵 기본 사용법
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// MainActivity.kt - MediaPlayer 기본 사용
+class MainActivity : AppCompatActivity() {
+    private var mediaPlayer: MediaPlayer? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        // 로컬 파일 재생
+        playLocalFile()
+
+        // 또는 스트리밍 URL 재생
+        // playStreamUrl("https://example.com/audio.mp3")
+    }
+
+    private fun playLocalFile() {
+        mediaPlayer = MediaPlayer.create(this, R.raw.sample_audio)
+
+        mediaPlayer?.apply {
+            setOnPreparedListener {
+                start() // 재생 시작
+                Log.d("MediaPlayer", "Duration: ${duration}ms")
+            }
+
+            setOnCompletionListener {
+                Log.d("MediaPlayer", "재생 완료")
+            }
+
+            setOnErrorListener { mp, what, extra ->
+                Log.e("MediaPlayer", "Error: what=$what, extra=$extra")
+                true // 에러 처리됨
+            }
+        }
+    }
+
+    private fun playStreamUrl(url: String) {
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(url)
+            setOnPreparedListener {
+                start()
+            }
+            prepareAsync() // 비동기 준비 (네트워크 파일용)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mediaPlayer?.pause()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer?.release()
+        mediaPlayer = null
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 상태 머신 관리
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    stateDiagram-v2
+                    [*] --> Idle
+                    Idle --> Initialized: setDataSource()
+                    Initialized --> Preparing: prepareAsync()
+                    Initialized --> Prepared: prepare()
+                    Preparing --> Prepared: onPrepared()
+                    Prepared --> Started: start()
+                    Started --> Paused: pause()
+                    Paused --> Started: start()
+                    Started --> PlaybackCompleted: 재생 완료
+                    Started --> Stopped: stop()
+                    Paused --> Stopped: stop()
+                    Stopped --> Prepared: prepare()
+                    PlaybackCompleted --> [*]: release()
+                    Stopped --> [*]: release()
+                </div>
+            </div>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// 상태별 허용 메서드 확인
+private fun safePlay() {
+    mediaPlayer?.let { mp ->
+        if (!mp.isPlaying) {
+            mp.start()
+        }
+    }
+}
+
+private fun safePause() {
+    mediaPlayer?.let { mp ->
+        if (mp.isPlaying) {
+            mp.pause()
+        }
+    }
+}
+
+private fun safeSeekTo(position: Int) {
+    mediaPlayer?.let { mp ->
+        // Prepared, Started, Paused, PlaybackCompleted 상태에서만 가능
+        try {
+            mp.seekTo(position)
+        } catch (e: IllegalStateException) {
+            Log.e("MediaPlayer", "Cannot seek in current state")
+        }
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        주의사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>항상 <code>release()</code> 호출 필수</li>
+                            <li>상태 전환 순서 준수</li>
+                            <li>네트워크 파일은 <code>prepareAsync()</code> 사용</li>
+                            <li>에러 리스너 반드시 설정</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚫</span>
+                        제한사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>DASH/HLS 미지원</li>
+                            <li>복잡한 DRM 처리 어려움</li>
+                            <li>커스터마이징 제한적</li>
+                            <li>Android 버전별 동작 차이</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 11: ExoPlayer 상세 구현 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                ExoPlayer 상세 구현
+            </h2>
+            <p class="section-description">
+                ExoPlayer를 사용한 고급 미디어 재생 구현 방법을 단계별로 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📦 Gradle 의존성
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-groovy">// build.gradle (app level)
+dependencies {
+    // ExoPlayer (레거시)
+    implementation 'com.google.android.exoplayer:exoplayer:2.19.1'
+
+    // 또는 특정 모듈만
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.19.1'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.19.1'
+    implementation 'com.google.android.exoplayer:exoplayer-dash:2.19.1'
+    implementation 'com.google.android.exoplayer:exoplayer-hls:2.19.1'
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎬 기본 ExoPlayer 구현
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// PlayerActivity.kt
+class PlayerActivity : AppCompatActivity() {
+    private lateinit var player: ExoPlayer
+    private lateinit var playerView: PlayerView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_player)
+
+        playerView = findViewById(R.id.player_view)
+
+        // ExoPlayer 초기화
+        player = ExoPlayer.Builder(this)
+            .setLoadControl(
+                DefaultLoadControl.Builder()
+                    .setBufferDurationsMs(
+                        15000, // minBufferMs
+                        50000, // maxBufferMs
+                        1500,  // bufferForPlaybackMs
+                        5000   // bufferForPlaybackAfterRebufferMs
+                    )
+                    .build()
+            )
+            .build()
+
+        playerView.player = player
+
+        // MediaItem 준비
+        val mediaItem = MediaItem.fromUri("https://example.com/video.mp4")
+        player.setMediaItem(mediaItem)
+
+        // 이벤트 리스너
+        player.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                when (playbackState) {
+                    Player.STATE_IDLE -> Log.d("ExoPlayer", "IDLE")
+                    Player.STATE_BUFFERING -> Log.d("ExoPlayer", "BUFFERING")
+                    Player.STATE_READY -> Log.d("ExoPlayer", "READY")
+                    Player.STATE_ENDED -> Log.d("ExoPlayer", "ENDED")
+                }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                Log.e("ExoPlayer", "Error: ${error.message}")
+            }
+        })
+
+        // 재생 시작
+        player.prepare()
+        player.play()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        player.release()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📺 DASH/HLS 적응형 스트리밍
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// DASH 재생
+private fun playDash(url: String) {
+    val dataSourceFactory = DefaultHttpDataSource.Factory()
+
+    val dashMediaSource = DashMediaSource.Factory(dataSourceFactory)
+        .createMediaSource(MediaItem.fromUri(url))
+
+    player.setMediaSource(dashMediaSource)
+    player.prepare()
+    player.play()
+}
+
+// HLS 재생
+private fun playHls(url: String) {
+    val dataSourceFactory = DefaultHttpDataSource.Factory()
+
+    val hlsMediaSource = HlsMediaSource.Factory(dataSourceFactory)
+        .createMediaSource(MediaItem.fromUri(url))
+
+    player.setMediaSource(hlsMediaSource)
+    player.prepare()
+    player.play()
+}
+
+// 재생 목록 (Playlist)
+private fun playPlaylist(urls: List<String>) {
+    val mediaItems = urls.map { MediaItem.fromUri(it) }
+
+    player.setMediaItems(mediaItems)
+    player.prepare()
+    player.play()
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎛️ 커스텀 TrackSelector
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// 특정 화질 선택
+private fun setupCustomTrackSelector() {
+    val trackSelector = DefaultTrackSelector(this).apply {
+        parameters = buildUponParameters()
+            // 최대 720p로 제한
+            .setMaxVideoSizeSd()
+            // Wi-Fi에서만 HD 재생
+            .setForceHighestSupportedBitrate(isWifi())
+            .build()
+    }
+
+    player = ExoPlayer.Builder(this)
+        .setTrackSelector(trackSelector)
+        .build()
+}
+
+private fun isWifi(): Boolean {
+    val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE)
+        as ConnectivityManager
+    val network = connectivityManager.activeNetwork ?: return false
+    val capabilities = connectivityManager.getNetworkCapabilities(network)
+    return capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✨</span>
+                        ExoPlayer 장점
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>DASH, HLS, SmoothStreaming 지원</li>
+                            <li>모듈형 아키텍처</li>
+                            <li>OS 버전 독립적</li>
+                            <li>풍부한 커스터마이징</li>
+                            <li>DRM 통합 용이</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        성능 최적화
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>LoadControl로 버퍼링 조정</li>
+                            <li>TrackSelector로 비트레이트 제한</li>
+                            <li>캐시로 네트워크 사용량 절감</li>
+                            <li>오프로드 디코딩 활성화</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 12: Media3 상세 구현 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                Media3 상세 구현
+            </h2>
+            <p class="section-description">
+                Media3 라이브러리를 사용한 최신 미디어 앱 개발 방법을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📦 Gradle 의존성
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-groovy">// build.gradle (app level)
+dependencies {
+    // Media3 (권장)
+    def media3_version = "1.2.0"
+
+    implementation "androidx.media3:media3-exoplayer:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-dash:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-hls:$media3_version"
+    implementation "androidx.media3:media3-ui:$media3_version"
+    implementation "androidx.media3:media3-session:$media3_version"
+    implementation "androidx.media3:media3-common:$media3_version"
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎬 Media3 ExoPlayer 구현
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// PlayerActivity.kt - Media3
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
+
+class PlayerActivity : AppCompatActivity() {
+    private lateinit var player: ExoPlayer
+    private lateinit var playerView: PlayerView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_player)
+
+        playerView = findViewById(R.id.player_view)
+
+        // Media3 ExoPlayer 초기화
+        player = ExoPlayer.Builder(this)
+            .build()
+            .also { exoPlayer ->
+                playerView.player = exoPlayer
+
+                // MediaItem 생성
+                val mediaItem = MediaItem.Builder()
+                    .setUri("https://example.com/video.mp4")
+                    .setMediaMetadata(
+                        androidx.media3.common.MediaMetadata.Builder()
+                            .setTitle("Sample Video")
+                            .setArtist("Artist Name")
+                            .build()
+                    )
+                    .build()
+
+                exoPlayer.setMediaItem(mediaItem)
+                exoPlayer.prepare()
+                exoPlayer.playWhenReady = true
+            }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        player.pause()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        player.release()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎵 MediaSession 자동 통합
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// PlaybackService.kt - Media3 MediaSession
+import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSessionService
+
+class PlaybackService : MediaSessionService() {
+    private var mediaSession: MediaSession? = null
+
+    override fun onCreate() {
+        super.onCreate()
+
+        val player = ExoPlayer.Builder(this).build()
+
+        mediaSession = MediaSession.Builder(this, player)
+            .build()
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
+        return mediaSession
+    }
+
+    override fun onDestroy() {
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
+        }
+        super.onDestroy()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 ExoPlayer → Media3 마이그레이션
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>ExoPlayer (구버전)</th>
+                        <th>Media3 (신버전)</th>
+                        <th>변경사항</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>com.google.android.exoplayer2</code></td>
+                        <td><code>androidx.media3</code></td>
+                        <td>패키지 이름 변경</td>
+                    </tr>
+                    <tr>
+                        <td><code>SimpleExoPlayer</code></td>
+                        <td><code>ExoPlayer</code></td>
+                        <td>클래스 통합</td>
+                    </tr>
+                    <tr>
+                        <td><code>MediaSource</code></td>
+                        <td><code>MediaItem</code></td>
+                        <td>간소화된 API</td>
+                    </tr>
+                    <tr>
+                        <td>수동 MediaSession 연결</td>
+                        <td>자동 통합</td>
+                        <td>보일러플레이트 제거</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        Media3 선택 이유
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>간소화된 API</li>
+                            <li>Jetpack 통합</li>
+                            <li>자동 MediaSession 연결</li>
+                            <li>UI 컴포넌트 제공</li>
+                            <li>지속적인 업데이트</li>
+                        </ul>
+                    </div>
+                </card>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        권장 사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>새 프로젝트는 Media3 사용</li>
+                            <li>기존 ExoPlayer 앱은 점진적 마이그레이션</li>
+                            <li>MediaSession 필수 구현</li>
+                            <li>Jetpack Compose 호환</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 13: MediaSession 완전 가이드 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                MediaSession 완전 가이드
+            </h2>
+            <p class="section-description">
+                MediaSession을 사용한 백그라운드 재생 및 외부 제어 구현 방법을 상세히 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎵 MediaSessionService 구현
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// MusicService.kt - MediaSession 서비스
+import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSessionService
+import androidx.media3.exoplayer.ExoPlayer
+
+class MusicService : MediaSessionService() {
+    private var mediaSession: MediaSession? = null
+
+    override fun onCreate() {
+        super.onCreate()
+
+        val player = ExoPlayer.Builder(this).build()
+
+        mediaSession = MediaSession.Builder(this, player)
+            .setCallback(MediaSessionCallback())
+            .build()
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
+        return mediaSession
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        val player = mediaSession?.player
+        if (player?.playWhenReady == false) {
+            // 재생 중이 아니면 서비스 중단
+            stopSelf()
+        }
+    }
+
+    override fun onDestroy() {
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
+        }
+        super.onDestroy()
+    }
+
+    // MediaSession Callback
+    private inner class MediaSessionCallback : MediaSession.Callback {
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): MediaSession.ConnectionResult {
+            val sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
+                // 커스텀 명령 추가 가능
+                .build()
+
+            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                .setAvailableSessionCommands(sessionCommands)
+                .build()
+        }
+
+        override fun onAddMediaItems(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: List<MediaItem>
+        ): ListenableFuture<List<MediaItem>> {
+            val updatedMediaItems = mediaItems.map { mediaItem ->
+                mediaItem.buildUpon()
+                    .setUri(mediaItem.requestMetadata.mediaUri)
+                    .build()
+            }
+            return Futures.immediateFuture(updatedMediaItems)
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔔 Notification MediaStyle
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- AndroidManifest.xml --&gt;
+&lt;service
+    android:name=".MusicService"
+    android:foregroundServiceType="mediaPlayback"
+    android:exported="true"&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="androidx.media3.session.MediaSessionService" /&gt;
+    &lt;/intent-filter&gt;
+&lt;/service&gt;</code></pre>
+            </div>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Notification은 Media3가 자동으로 생성하지만 커스터마이징 가능
+private fun createNotification(): Notification {
+    val channelId = "music_playback"
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(
+            channelId,
+            "Music Playback",
+            NotificationManager.IMPORTANCE_LOW
+        )
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    return NotificationCompat.Builder(this, channelId)
+        .setContentTitle("Now Playing")
+        .setContentText(currentSong.title)
+        .setSmallIcon(R.drawable.ic_music_note)
+        .setStyle(
+            androidx.media.app.NotificationCompat.MediaStyle()
+                .setMediaSession(mediaSession.sessionCompatToken)
+                .setShowActionsInCompactView(0, 1, 2)
+        )
+        .addAction(R.drawable.ic_skip_previous, "Previous", previousPendingIntent)
+        .addAction(R.drawable.ic_pause, "Pause", pausePendingIntent)
+        .addAction(R.drawable.ic_skip_next, "Next", nextPendingIntent)
+        .build()
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎮 Activity에서 MediaController 연결
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// MainActivity.kt - MediaController 연결
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+
+class MainActivity : AppCompatActivity() {
+    private var mediaController: MediaController? = null
+
+    override fun onStart() {
+        super.onStart()
+
+        val sessionToken = SessionToken(
+            this,
+            ComponentName(this, MusicService::class.java)
+        )
+
+        val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
+
+        controllerFuture.addListener({
+            mediaController = controllerFuture.get()
+
+            // 재생 상태 리스너
+            mediaController?.addListener(object : Player.Listener {
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    updatePlayPauseButton(isPlaying)
+                }
+
+                override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+                    updateUI(mediaMetadata)
+                }
+            })
+        }, MoreExecutors.directExecutor())
+    }
+
+    private fun playPause() {
+        mediaController?.let { controller ->
+            if (controller.isPlaying) {
+                controller.pause()
+            } else {
+                controller.play()
+            }
+        }
+    }
+
+    private fun skipToNext() {
+        mediaController?.seekToNext()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        mediaController?.release()
+        mediaController = null
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        MediaSession 필수 이유
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>백그라운드 재생</li>
+                            <li>잠금 화면 컨트롤</li>
+                            <li>Notification 미디어 버튼</li>
+                            <li>Android Auto/Wear OS 지원</li>
+                            <li>Google Assistant 음성 제어</li>
+                        </ul>
+                    </div>
+                </card>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        구현 체크리스트
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>MediaSessionService 상속</li>
+                            <li>Foreground Service 등록</li>
+                            <li>MediaMetadata 설정</li>
+                            <li>onTaskRemoved 처리</li>
+                            <li>release() 호출 보장</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 14: AudioTrack/AudioRecord 실습 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                AudioTrack/AudioRecord 실습
+            </h2>
+            <p class="section-description">
+                Low-level 오디오 API를 사용한 PCM 오디오 재생 및 녹음 구현 방법을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔊 AudioTrack 재생
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// AudioTrackPlayer.kt - PCM 오디오 재생
+class AudioTrackPlayer {
+    private var audioTrack: AudioTrack? = null
+    private var playbackThread: Thread? = null
+
+    fun start() {
+        val sampleRate = 44100
+        val channelConfig = AudioFormat.CHANNEL_OUT_STEREO
+        val audioFormat = AudioFormat.ENCODING_PCM_16BIT
+
+        val bufferSize = AudioTrack.getMinBufferSize(
+            sampleRate,
+            channelConfig,
+            audioFormat
+        )
+
+        audioTrack = AudioTrack.Builder()
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            )
+            .setAudioFormat(
+                AudioFormat.Builder()
+                    .setSampleRate(sampleRate)
+                    .setChannelMask(channelConfig)
+                    .setEncoding(audioFormat)
+                    .build()
+            )
+            .setBufferSizeInBytes(bufferSize)
+            .setTransferMode(AudioTrack.MODE_STREAM)
+            .build()
+
+        audioTrack?.play()
+
+        // 별도 스레드에서 오디오 데이터 쓰기
+        playbackThread = Thread {
+            val buffer = ShortArray(bufferSize / 2)
+
+            while (!Thread.currentThread().isInterrupted) {
+                // PCM 데이터 생성 (예: 사인파)
+                generateSineWave(buffer, 440.0) // 440Hz A음
+
+                audioTrack?.write(buffer, 0, buffer.size)
+            }
+        }
+        playbackThread?.start()
+    }
+
+    private fun generateSineWave(buffer: ShortArray, frequency: Double) {
+        val sampleRate = 44100.0
+        for (i in buffer.indices) {
+            val value = (Math.sin(2.0 * Math.PI * i * frequency / sampleRate) * 32767).toInt()
+            buffer[i] = value.toShort()
+        }
+    }
+
+    fun stop() {
+        playbackThread?.interrupt()
+        audioTrack?.stop()
+        audioTrack?.release()
+        audioTrack = null
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎤 AudioRecord 녹음
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// AudioRecorder.kt - PCM 오디오 녹음
+class AudioRecorder {
+    private var audioRecord: AudioRecord? = null
+    private var recordingThread: Thread? = null
+    private var isRecording = false
+
+    fun startRecording() {
+        val sampleRate = 44100
+        val channelConfig = AudioFormat.CHANNEL_IN_MONO
+        val audioFormat = AudioFormat.ENCODING_PCM_16BIT
+
+        val bufferSize = AudioRecord.getMinBufferSize(
+            sampleRate,
+            channelConfig,
+            audioFormat
+        )
+
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // 권한 요청
+            return
+        }
+
+        audioRecord = AudioRecord(
+            MediaRecorder.AudioSource.MIC,
+            sampleRate,
+            channelConfig,
+            audioFormat,
+            bufferSize
+        )
+
+        audioRecord?.startRecording()
+        isRecording = true
+
+        recordingThread = Thread {
+            val buffer = ShortArray(bufferSize / 2)
+            val outputStream = FileOutputStream("/sdcard/recorded_audio.pcm")
+
+            while (isRecording) {
+                val readSize = audioRecord?.read(buffer, 0, buffer.size) ?: 0
+
+                if (readSize > 0) {
+                    // PCM 데이터 파일로 저장
+                    val byteBuffer = ByteBuffer.allocate(readSize * 2)
+                    byteBuffer.order(ByteOrder.LITTLE_ENDIAN)
+                    for (i in 0 until readSize) {
+                        byteBuffer.putShort(buffer[i])
+                    }
+                    outputStream.write(byteBuffer.array())
+
+                    // 실시간 오디오 분석 가능
+                    analyzeAudio(buffer, readSize)
+                }
+            }
+
+            outputStream.close()
+        }
+        recordingThread?.start()
+    }
+
+    private fun analyzeAudio(buffer: ShortArray, size: Int) {
+        // RMS (Root Mean Square) 계산 - 볼륨 레벨
+        var sum = 0.0
+        for (i in 0 until size) {
+            sum += buffer[i] * buffer[i]
+        }
+        val rms = Math.sqrt(sum / size)
+        val db = 20 * Math.log10(rms)
+
+        Log.d("AudioRecord", "Volume: ${db}dB")
+    }
+
+    fun stopRecording() {
+        isRecording = false
+        recordingThread?.join()
+        audioRecord?.stop()
+        audioRecord?.release()
+        audioRecord = null
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        사용 사례
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>AudioTrack:</strong> 음악 합성, 게임 효과음, VoIP</li>
+                            <li><strong>AudioRecord:</strong> 음성 분석, 실시간 이펙트, 시각화</li>
+                            <li>Low-latency 오디오 필요 시</li>
+                            <li>DSP 처리 필요 시</li>
+                        </ul>
+                    </div>
+                </card>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        주의사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>별도 스레드에서 처리 필수</li>
+                            <li>버퍼 크기 적절히 설정</li>
+                            <li>언더런/오버런 방지</li>
+                            <li>권한 확인 (RECORD_AUDIO)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 15: Camera2 실습 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">15</span>
+                Camera2 실습
+            </h2>
+            <p class="section-description">
+                Camera2 API를 사용한 고급 카메라 제어 구현 방법을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📷 카메라 초기화
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// CameraActivity.kt - Camera2 기본 사용
+class CameraActivity : AppCompatActivity() {
+    private lateinit var cameraManager: CameraManager
+    private var cameraDevice: CameraDevice? = null
+    private var captureSession: CameraCaptureSession? = null
+    private lateinit var textureView: TextureView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_camera)
+
+        textureView = findViewById(R.id.texture_view)
+        cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+
+        textureView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+            override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
+                openCamera()
+            }
+
+            override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {}
+            override fun onSurfaceTextureDestroyed(surface: SurfaceTexture) = true
+            override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
+        }
+    }
+
+    private fun openCamera() {
+        val cameraId = cameraManager.cameraIdList[0] // 후면 카메라
+
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.CAMERA
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // 권한 요청
+            return
+        }
+
+        cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
+            override fun onOpened(camera: CameraDevice) {
+                cameraDevice = camera
+                startPreview()
+            }
+
+            override fun onDisconnected(camera: CameraDevice) {
+                camera.close()
+                cameraDevice = null
+            }
+
+            override fun onError(camera: CameraDevice, error: Int) {
+                camera.close()
+                cameraDevice = null
+                Log.e("Camera2", "Error: $error")
+            }
+        }, null)
+    }
+
+    private fun startPreview() {
+        val surfaceTexture = textureView.surfaceTexture
+        val surface = Surface(surfaceTexture)
+
+        val captureRequestBuilder = cameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+        captureRequestBuilder?.addTarget(surface)
+
+        cameraDevice?.createCaptureSession(
+            listOf(surface),
+            object : CameraCaptureSession.StateCallback() {
+                override fun onConfigured(session: CameraCaptureSession) {
+                    captureSession = session
+
+                    // 연속 프리뷰
+                    val captureRequest = captureRequestBuilder?.build()
+                    session.setRepeatingRequest(
+                        captureRequest!!,
+                        null,
+                        null
+                    )
+                }
+
+                override fun onConfigureFailed(session: CameraCaptureSession) {
+                    Log.e("Camera2", "Configuration failed")
+                }
+            },
+            null
+        )
+    }
+
+    override fun onPause() {
+        super.onPause()
+        captureSession?.close()
+        cameraDevice?.close()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📸 사진 캡처
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// 사진 캡처 구현
+private fun capturePhoto() {
+    val imageReader = ImageReader.newInstance(
+        1920, 1080,
+        ImageFormat.JPEG,
+        1
+    )
+
+    imageReader.setOnImageAvailableListener({ reader ->
+        val image = reader.acquireLatestImage()
+        val buffer = image.planes[0].buffer
+        val bytes = ByteArray(buffer.remaining())
+        buffer.get(bytes)
+
+        // 파일로 저장
+        val file = File(getExternalFilesDir(null), "photo.jpg")
+        FileOutputStream(file).use { it.write(bytes) }
+
+        image.close()
+        Log.d("Camera2", "Photo saved: ${file.absolutePath}")
+    }, null)
+
+    val captureRequestBuilder = cameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
+    captureRequestBuilder?.addTarget(imageReader.surface)
+
+    // 오토포커스 설정
+    captureRequestBuilder?.set(
+        CaptureRequest.CONTROL_AF_MODE,
+        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+    )
+
+    // 플래시 자동
+    captureRequestBuilder?.set(
+        CaptureRequest.CONTROL_AE_MODE,
+        CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH
+    )
+
+    captureSession?.capture(
+        captureRequestBuilder!!.build(),
+        object : CameraCaptureSession.CaptureCallback() {
+            override fun onCaptureCompleted(
+                session: CameraCaptureSession,
+                request: CaptureRequest,
+                result: TotalCaptureResult
+            ) {
+                Log.d("Camera2", "Capture completed")
+            }
+        },
+        null
+    )
+}</code></pre>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 CameraX 권장:</strong> 일반적인 사용 사례는 CameraX 사용을 권장합니다.
+                Camera2는 프로 카메라 앱이나 최대한의 제어가 필요한 경우에만 사용하세요.
+            </div>
+        </section>
+
+        <!-- Section 16: DRM 통합 (Widevine) -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">16</span>
+                DRM 통합 (Widevine)
+            </h2>
+            <p class="section-description">
+                ExoPlayer/Media3에서 Widevine DRM 콘텐츠를 재생하는 방법을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔐 Media3 DRM 설정
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// DRM 콘텐츠 재생
+import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
+import androidx.media3.exoplayer.drm.FrameworkMediaDrm
+import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
+
+class DrmPlayerActivity : AppCompatActivity() {
+    private lateinit var player: ExoPlayer
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val licenseUrl = "https://license.widevine.com/cenc/getlicense"
+        val drmCallback = HttpMediaDrmCallback(licenseUrl, DefaultHttpDataSource.Factory())
+
+        val drmSessionManager = DefaultDrmSessionManager.Builder()
+            .setUuidAndExoMediaDrmProvider(
+                C.WIDEVINE_UUID,
+                FrameworkMediaDrm.DEFAULT_PROVIDER
+            )
+            .build(drmCallback)
+
+        player = ExoPlayer.Builder(this)
+            .setDrmSessionManager(drmSessionManager)
+            .build()
+
+        val mediaItem = MediaItem.Builder()
+            .setUri("https://example.com/encrypted_video.mpd")
+            .setDrmConfiguration(
+                MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
+                    .setLicenseUri(licenseUrl)
+                    .build()
+            )
+            .build()
+
+        player.setMediaItem(mediaItem)
+        player.prepare()
+        player.play()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        player.release()
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔑</span>
+                        DRM 시스템
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Widevine:</strong> Google (Android 표준)</li>
+                            <li><strong>PlayReady:</strong> Microsoft</li>
+                            <li><strong>FairPlay:</strong> Apple (iOS/tvOS)</li>
+                            <li><strong>ClearKey:</strong> 테스트용</li>
+                        </ul>
+                    </div>
+                </card>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Widevine 레벨
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>L1:</strong> 하드웨어 기반 (최고 보안)</li>
+                            <li><strong>L2:</strong> 하이브리드</li>
+                            <li><strong>L3:</strong> 소프트웨어 기반 (SD 화질 제한)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 17: Android 버전별 변화 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">17</span>
+                Android 버전별 변화
+            </h2>
+            <p class="section-description">
+                Android 미디어 API의 버전별 진화 과정을 정리합니다.
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Android 버전</th>
+                        <th>주요 변화</th>
+                        <th>권장 API</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Android 5.0 (Lollipop)</td>
+                        <td>Camera2 API 도입, MediaSession 추가</td>
+                        <td>MediaPlayer, Camera2</td>
+                    </tr>
+                    <tr>
+                        <td>Android 7.0 (Nougat)</td>
+                        <td>ExoPlayer 인기 상승</td>
+                        <td>ExoPlayer, MediaSession</td>
+                    </tr>
+                    <tr>
+                        <td>Android 8.0 (Oreo)</td>
+                        <td>AudioFocus 개선, AAudio 도입</td>
+                        <td>ExoPlayer, AAudio</td>
+                    </tr>
+                    <tr>
+                        <td>Android 10 (Q)</td>
+                        <td>Scoped Storage, MediaStore 개선</td>
+                        <td>ExoPlayer, CameraX</td>
+                    </tr>
+                    <tr>
+                        <td>Android 11 (R)</td>
+                        <td>Media controls 개선, ML Kit</td>
+                        <td>ExoPlayer, Media3 (베타)</td>
+                    </tr>
+                    <tr>
+                        <td>Android 12 (S)</td>
+                        <td>Media3 공식 출시, Transcoding API</td>
+                        <td>Media3, CameraX</td>
+                    </tr>
+                    <tr>
+                        <td>Android 13 (T)</td>
+                        <td>Photo Picker, Granular permissions</td>
+                        <td>Media3 (권장), Jetpack</td>
+                    </tr>
+                    <tr>
+                        <td>Android 14 (U)</td>
+                        <td>Ultra HDR, 향상된 코덱 지원</td>
+                        <td>Media3, CameraX</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>📈 트렌드:</strong> MediaPlayer → ExoPlayer → Media3로 진화하고 있으며,
+                새로운 프로젝트는 Media3 사용을 강력히 권장합니다.
+            </div>
+        </section>
+
+        <!-- Section 18: 디버깅 & 트러블슈팅 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">18</span>
+                디버깅 & 트러블슈팅
+            </h2>
+            <p class="section-description">
+                미디어 앱 개발 시 자주 발생하는 문제와 해결 방법을 정리합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔍 일반적인 문제 해결
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>문제</th>
+                        <th>원인</th>
+                        <th>해결 방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>재생 안 됨 (MediaPlayer)</td>
+                        <td>상태 전환 오류</td>
+                        <td>상태 머신 확인, prepare() 후 start()</td>
+                    </tr>
+                    <tr>
+                        <td>버퍼링 지속 (ExoPlayer)</td>
+                        <td>LoadControl 설정 부적절</td>
+                        <td>버퍼 크기 조정, 네트워크 확인</td>
+                    </tr>
+                    <tr>
+                        <td>DRM 재생 실패</td>
+                        <td>라이선스 서버 오류</td>
+                        <td>라이선스 URL 확인, 로그 분석</td>
+                    </tr>
+                    <tr>
+                        <td>백그라운드 재생 안 됨</td>
+                        <td>MediaSession 미구현</td>
+                        <td>MediaSessionService 구현</td>
+                    </tr>
+                    <tr>
+                        <td>AudioTrack 끊김</td>
+                        <td>버퍼 언더런</td>
+                        <td>버퍼 크기 증가, 스레드 우선순위 조정</td>
+                    </tr>
+                    <tr>
+                        <td>Camera2 프리뷰 지연</td>
+                        <td>해상도 너무 높음</td>
+                        <td>적절한 프리뷰 크기 선택</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 logcat 필터링
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-bash"># ExoPlayer 로그
+adb logcat | grep "ExoPlayer"
+
+# MediaPlayer 로그
+adb logcat | grep "MediaPlayer"
+
+# MediaSession 로그
+adb logcat | grep "MediaSession"
+
+# AudioTrack 로그
+adb logcat | grep "AudioTrack"
+
+# Camera2 로그
+adb logcat | grep "CameraDevice"
+
+# DRM 로그
+adb logcat | grep -E "MediaDrm|Widevine"</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛠️</span>
+                        디버그 도구
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Android Profiler:</strong> CPU, 메모리, 네트워크</li>
+                            <li><strong>Logcat:</strong> 런타임 로그</li>
+                            <li><strong>Network Profiler:</strong> 스트리밍 분석</li>
+                            <li><strong>Battery Profiler:</strong> 배터리 소모</li>
+                        </ul>
+                    </div>
+                </card>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        성능 최적화
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>적절한 버퍼 크기 설정</li>
+                            <li>하드웨어 가속 활용</li>
+                            <li>백그라운드 스레드 사용</li>
+                            <li>메모리 누수 방지 (release 호출)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 19: AOSP 소스 코드 참조 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">19</span>
+                AOSP 소스 코드 참조
+            </h2>
+            <p class="section-description">
+                미디어 API 관련 AOSP 소스 코드 경로 및 참조 문서를 정리합니다.
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>컴포넌트</th>
+                        <th>경로</th>
+                        <th>설명</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>MediaPlayer</td>
+                        <td>frameworks/base/media/java/android/media/MediaPlayer.java</td>
+                        <td>MediaPlayer API</td>
+                    </tr>
+                    <tr>
+                        <td>MediaSession</td>
+                        <td>frameworks/base/media/java/android/media/session/</td>
+                        <td>MediaSession/Controller</td>
+                    </tr>
+                    <tr>
+                        <td>AudioTrack</td>
+                        <td>frameworks/base/media/java/android/media/AudioTrack.java</td>
+                        <td>AudioTrack API</td>
+                    </tr>
+                    <tr>
+                        <td>Camera2</td>
+                        <td>frameworks/base/core/java/android/hardware/camera2/</td>
+                        <td>Camera2 API</td>
+                    </tr>
+                    <tr>
+                        <td>ExoPlayer (GitHub)</td>
+                        <td>github.com/google/ExoPlayer</td>
+                        <td>ExoPlayer 오픈소스</td>
+                    </tr>
+                    <tr>
+                        <td>Media3 (AndroidX)</td>
+                        <td>androidx.dev/media3</td>
+                        <td>Media3 라이브러리</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📚 공식 문서
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📖</span>
+                        Android Developers
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><a href="https://developer.android.com/guide/topics/media" style="color: var(--accent-primary);">Media Guide</a></li>
+                            <li><a href="https://developer.android.com/media/media3" style="color: var(--accent-primary);">Media3 Documentation</a></li>
+                            <li><a href="https://exoplayer.dev/" style="color: var(--accent-primary);">ExoPlayer.dev</a></li>
+                            <li><a href="https://developer.android.com/training/camera2" style="color: var(--accent-primary);">Camera2 Guide</a></li>
+                        </ul>
+                    </div>
+                </card>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎓</span>
+                        학습 리소스
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Android Codelabs (Media3)</li>
+                            <li>GitHub Samples</li>
+                            <li>Stack Overflow</li>
+                            <li>YouTube: Android Developers</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 20: 관련 상세 문서 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">20</span>
+                관련 상세 문서
+            </h2>
+            <p class="section-description">
+                미디어 앱 개발과 연관된 다른 문서 링크를 제공합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        Android 미디어 프레임워크의 전체 아키텍처 (Framework↔Native)를 설명합니다.
+                    </div>
+                    <a href="media-framework-core.html" style="color: var(--accent-primary); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        Codec 2.0 & Media HAL
+                    </h3>
+                    <div class="card-description">
+                        Codec 2.0 아키텍처 및 HAL 인터페이스를 다룹니다.
+                    </div>
+                    <a href="codec2.html" style="color: var(--accent-primary); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">▶️</span>
+                        Media Playback Pipeline
+                    </h3>
+                    <div class="card-description">
+                        미디어 재생 파이프라인의 데이터 플로우를 설명합니다.
+                    </div>
+                    <a href="media-playback.html" style="color: var(--accent-primary); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        MediaSession Framework
+                    </h3>
+                    <div class="card-description">
+                        MediaSession의 상세 아키텍처 및 플로우를 다룹니다.
+                    </div>
+                    <a href="mediasession.html" style="color: var(--accent-primary); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        AudioFlinger, AudioPolicyService 등 오디오 시스템을 설명합니다.
+                    </div>
+                    <a href="audio-framework.html" style="color: var(--accent-primary); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Widevine DRM
+                    </h3>
+                    <div class="card-description">
+                        Widevine DRM 아키텍처 및 통합 방법을 상세히 다룹니다.
+                    </div>
+                    <a href="widevine.html" style="color: var(--accent-primary); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Car Media Service
+                    </h3>
+                    <div class="card-description">
+                        AAOS의 미디어 관리 서비스를 설명합니다.
+                    </div>
+                    <a href="carmedia.html" style="color: var(--accent-primary); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Car Ready Mobile Apps
+                    </h3>
+                    <div class="card-description">
+                        모바일 앱을 차량용으로 확장하는 CarMa 프로그램을 다룹니다.
+                    </div>
+                    <a href="carma.html" style="color: var(--accent-primary); text-decoration: none;">
+                        자세히 보기 →
+                    </a>
+                </div>
+            </div>
+        </section>
+
     </div>
 
     <script src="scripts/mermaid-theme.js"></script>
