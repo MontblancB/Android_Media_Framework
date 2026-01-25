@@ -110,6 +110,30 @@ const NODE_ID_MAPPING = {
     'HWSERVICE': 'hwservicemanager',
     'STORE_IMPL': 'Store Implementation',
 
+    // dolby-codecs.html - Dolby Audio & Video
+    'APM': 'AudioPolicyManager',
+    'PostProc': 'Post Processing',
+    'Driver': 'ALSA Driver',
+    // Dolby Vision Metadata
+    'BL': 'Base Layer',
+    'EL': 'Enhancement Layer',
+    'RPU': 'Reference Processing Unit',
+    'COMPOSER': 'DV Composer',
+    'DM': 'Display Manager',
+    'SCREEN': 'HDR Screen',
+    // Dolby Certification Process
+    'DEV': 'Development Kit',
+    'IMPL': 'AOSP Integration',
+    'SELF': 'Self-Test',
+    'DOLBY_TEST': 'Dolby Certification Test',
+    'AUDIO': 'Audio Test',
+    'VIDEO': 'Video Test',
+    'AUDIO_PASS': 'Audio Test Pass',
+    'VIDEO_PASS': 'Video Test Pass',
+    'CERT': 'Certificate',
+    'LOGO': 'Dolby Logo',
+    'PROD': 'Product Launch',
+
     // Media Framework Core (media-framework-core.html)
     'APP': 'Media Apps',
     'ME': 'MediaExtractor',
@@ -2122,6 +2146,351 @@ public:
     }
 };
         `.trim()
+    },
+
+    // ========================================
+    // Dolby Codecs 노드 (dolby-codecs.html)
+    // ========================================
+
+    'AudioPolicyManager': {
+        title: 'AudioPolicyManager (APM)',
+        layer: 'Framework',
+        description: '오디오 라우팅 정책을 관리하고 Dolby 포맷에 대한 Direct Output을 설정합니다.',
+        components: [
+            'Audio Routing Policy',
+            'Direct Output Flag',
+            'Device Selection',
+            'Stream Management'
+        ],
+        path: 'frameworks/av/services/audiopolicy/',
+        doc: 'https://source.android.com/docs/core/audio',
+        codeExample: `
+// AudioPolicyManager.cpp에서 Dolby 포맷 처리
+if (format == AUDIO_FORMAT_AC3 ||
+    format == AUDIO_FORMAT_E_AC3 ||
+    format == AUDIO_FORMAT_AC4) {
+
+    // Direct Output 플래그 설정 (디코딩 없이 HDMI로 Passthrough)
+    flags = (audio_output_flags_t)(
+        AUDIO_OUTPUT_FLAG_DIRECT |
+        AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD
+    );
+}
+
+// Dolby Atmos JOC 메타데이터 확인
+if (hasAtmosMetadata(metadata)) {
+    applyAtmosRouting(output, device);
+}
+        `.trim()
+    },
+
+    'Post Processing': {
+        title: 'Dolby Audio Post Processing',
+        layer: 'HAL',
+        description: 'Dolby MS12 엔진을 사용한 오디오 후처리입니다.',
+        components: [
+            'Virtualizer (Headphone Atmos)',
+            'Volume Leveler (Loudness)',
+            'Dialogue Enhancement',
+            'Bass Enhancement',
+            'Surround Decoder'
+        ],
+        path: 'vendor/<company>/audio/dolby/',
+        doc: 'https://professional.dolby.com/product/dolby-ms12/',
+        codeExample: `
+// Dolby MS12 후처리 파라미터 설정
+dolby_ms12_config_t config = {
+    .dap_virtualizer_enable = true,    // 헤드폰 Atmos
+    .dap_mi_ieq_enable = true,         // 지능형 EQ
+    .dap_dialogue_enhancer = 5,        // 대사 강화 (0-16)
+    .dap_bass_enhancer = 6,            // 저음 강화 (0-10)
+    .dap_volume_leveler_enable = true  // 볼륨 평준화
+};
+
+dolby_ms12_set_params(mDolbyHandle, &config);
+dolby_ms12_process(mDolbyHandle, inputPCM, outputPCM, frameCount);
+        `.trim()
+    },
+
+    'ALSA Driver': {
+        title: 'ALSA Driver',
+        layer: 'Kernel',
+        description: 'Advanced Linux Sound Architecture 오디오 커널 드라이버입니다.',
+        components: [
+            'PCM Playback',
+            'Hardware Buffer',
+            'DMA Transfer',
+            'Audio Device Interface'
+        ],
+        path: 'kernel/sound/soc/',
+        doc: 'https://www.alsa-project.org/'
+    },
+
+    // Dolby Vision 메타데이터 구조
+
+    'Base Layer': {
+        title: 'Dolby Vision Base Layer (BL)',
+        layer: 'Video Stream',
+        description: 'SDR/HDR10 호환 베이스 비디오 레이어입니다. 8/10-bit HEVC로 인코딩됩니다.',
+        components: [
+            'HEVC Video Stream',
+            'SDR Compatibility',
+            'HDR10 Fallback',
+            '8-bit or 10-bit'
+        ],
+        doc: 'https://professional.dolby.com/tv/dolby-vision/'
+    },
+
+    'Enhancement Layer': {
+        title: 'Dolby Vision Enhancement Layer (EL)',
+        layer: 'Video Stream',
+        description: '추가 색상 정보를 담은 강화 레이어입니다. Profile 5/7에서 사용됩니다.',
+        components: [
+            'Additional Color Info',
+            'Residual Data',
+            'Profile 5/7 Only',
+            'Optional Layer'
+        ],
+        doc: 'https://professional.dolby.com/tv/dolby-vision/'
+    },
+
+    'Reference Processing Unit': {
+        title: 'RPU (Reference Processing Unit)',
+        layer: 'Metadata',
+        description: 'Dolby Vision의 동적 메타데이터로, Scene/Frame별 톤 매핑 정보를 포함합니다.',
+        components: [
+            'Dynamic Metadata',
+            'Scene-by-Scene',
+            'Frame-by-Frame',
+            'Tone Mapping Parameters',
+            'Color Volume',
+            'Brightness Levels'
+        ],
+        doc: 'https://professional.dolby.com/tv/dolby-vision/',
+        codeExample: `
+// RPU 메타데이터 구조 (간략화)
+typedef struct {
+    uint8_t rpu_type;                    // 0: Frame-level, 1: Scene-level
+    uint16_t target_max_luminance;       // nits (최대 밝기)
+    uint16_t target_min_luminance;       // nits (최소 밝기)
+    uint16_t source_max_luminance;       // Content Mastering
+    uint16_t source_min_luminance;
+
+    // Tone Mapping Curve
+    uint8_t num_pivots;
+    uint16_t pivots[9];
+    uint16_t mapping[9];
+
+    // Color Volume Transform
+    int16_t color_matrix[3][3];
+
+} dolby_vision_rpu_t;
+        `.trim()
+    },
+
+    'DV Composer': {
+        title: 'Dolby Vision Composer',
+        layer: 'Decoder',
+        description: 'Base Layer와 Enhancement Layer를 합성하는 컴포저입니다.',
+        components: [
+            'BL + EL Composition',
+            'Residual Processing',
+            '12-bit Internal Pipeline',
+            'Color Space Conversion'
+        ],
+        path: 'vendor/<company>/codec2/dolby-vision/',
+        doc: 'https://professional.dolby.com/tv/dolby-vision/'
+    },
+
+    'Display Manager': {
+        title: 'Dolby Vision Display Manager',
+        layer: 'HAL',
+        description: 'RPU 메타데이터를 기반으로 디스플레이에 맞게 Tone Mapping을 수행합니다.',
+        components: [
+            'RPU Metadata Parsing',
+            'Tone Mapping',
+            'Color Volume Mapping',
+            'Target Display Adaptation',
+            'Brightness/Contrast Adjustment'
+        ],
+        path: 'vendor/<company>/display/dolby/',
+        doc: 'https://professional.dolby.com/tv/dolby-vision/',
+        codeExample: `
+// Display Manager Tone Mapping
+void DolbyVisionDisplayManager::applyToneMapping(
+    const dolby_vision_rpu_t* rpu,
+    const display_panel_info_t* panel,
+    uint16_t* yuv_p010_frame) {
+
+    // 타겟 디스플레이 능력
+    uint16_t target_max = panel->peak_luminance;  // 예: 800 nits
+    uint16_t target_min = panel->black_level;     // 예: 0.05 nits
+
+    // RPU의 톤 매핑 커브 적용
+    for (int i = 0; i < rpu->num_pivots; i++) {
+        applyPivot(rpu->pivots[i], rpu->mapping[i]);
+    }
+
+    // 색역 변환 (BT.2020 → Display Native)
+    transformColorVolume(rpu->color_matrix, yuv_p010_frame);
+
+    // HDR10+ ST.2094 메타데이터 생성 (필요시)
+    generateHDR10PlusMetadata(rpu, metadata);
+}
+        `.trim()
+    },
+
+    'HDR Screen': {
+        title: 'HDR Display Panel',
+        layer: 'Hardware',
+        description: '10-bit 또는 12-bit HDR 디스플레이 패널입니다.',
+        components: [
+            '10/12-bit Panel',
+            'Wide Color Gamut (P3/BT.2020)',
+            'High Peak Luminance (400-1000+ nits)',
+            'Local Dimming Support'
+        ],
+        doc: 'https://en.wikipedia.org/wiki/High-dynamic-range_video'
+    },
+
+    // Dolby 인증 프로세스 노드들
+
+    'Development Kit': {
+        title: 'Dolby Development Kit',
+        layer: 'Development',
+        description: 'Dolby로부터 제공받는 개발 키트 및 라이브러리입니다.',
+        components: [
+            'libdolbyms12.so (Audio Engine)',
+            'Dolby Vision Decoder Library',
+            'Sample Code & Documentation',
+            'Test Streams',
+            'Certification Tools'
+        ],
+        doc: 'https://professional.dolby.com/'
+    },
+
+    'AOSP Integration': {
+        title: 'AOSP Integration Implementation',
+        layer: 'Development',
+        description: 'Dolby 라이브러리를 AOSP에 통합하는 구현 단계입니다.',
+        components: [
+            'Audio HAL Integration',
+            'Codec2 DV Decoder',
+            'AudioPolicyManager 수정',
+            'media_codecs.xml 설정',
+            'Build System (Android.bp)'
+        ],
+        path: 'vendor/<company>/dolby/'
+    },
+
+    'Self-Test': {
+        title: 'Vendor Self-Test',
+        layer: 'Testing',
+        description: '벤더가 자체적으로 수행하는 테스트 단계입니다.',
+        components: [
+            'CTS MediaCodec Tests',
+            'Dolby Sample Content Playback',
+            'HDMI Passthrough Verification',
+            'Dolby Vision 10-bit Output Check',
+            'Performance Profiling'
+        ]
+    },
+
+    'Dolby Certification Test': {
+        title: 'Dolby Official Certification',
+        layer: 'Testing',
+        description: 'Dolby 공식 인증 테스트 프로세스입니다.',
+        components: [
+            'Audio Quality Test',
+            'Video Quality Test',
+            'Performance Test',
+            'Compliance Test'
+        ],
+        doc: 'https://professional.dolby.com/certification/'
+    },
+
+    'Audio Test': {
+        title: 'Dolby Audio Certification Test',
+        layer: 'Testing',
+        description: 'Dolby 오디오 코덱 및 처리 품질 테스트입니다.',
+        components: [
+            'AC-3/E-AC-3/AC-4 Decoding',
+            'Atmos Rendering Accuracy',
+            'Channel Mapping Verification',
+            'Synchronization Test',
+            'Dialogue Enhancement Test'
+        ]
+    },
+
+    'Video Test': {
+        title: 'Dolby Vision Certification Test',
+        layer: 'Testing',
+        description: 'Dolby Vision 비디오 품질 및 톤 매핑 테스트입니다.',
+        components: [
+            'Profile 5/8.1 Decoding',
+            'RPU Processing Verification',
+            'Tone Mapping Accuracy',
+            'Color Reproduction Test',
+            'Peak Luminance Validation'
+        ]
+    },
+
+    'Audio Test Pass': {
+        title: 'Audio Test Passed',
+        layer: 'Testing',
+        description: 'Dolby 오디오 인증 테스트 통과 상태입니다.',
+        components: [
+            'Passthrough Verified',
+            'DAP Processing Verified',
+            'Atmos Rendering Verified'
+        ]
+    },
+
+    'Video Test Pass': {
+        title: 'Video Test Passed',
+        layer: 'Testing',
+        description: 'Dolby Vision 인증 테스트 통과 상태입니다.',
+        components: [
+            'Profile Support Verified',
+            'RPU Processing Verified',
+            'Tone Mapping Verified'
+        ]
+    },
+
+    'Certificate': {
+        title: 'Dolby Certification Certificate',
+        layer: 'Certification',
+        description: 'Dolby로부터 발급받는 공식 인증서입니다.',
+        components: [
+            'Dolby Atmos Certification',
+            'Dolby Vision Certification',
+            'Device Model Approval',
+            'Firmware Version Approval'
+        ]
+    },
+
+    'Dolby Logo': {
+        title: 'Dolby Logo Usage Approval',
+        layer: 'Marketing',
+        description: 'Dolby 로고를 제품에 사용할 수 있는 승인입니다.',
+        components: [
+            'Dolby Atmos Logo',
+            'Dolby Vision Logo',
+            'Marketing Material Guidelines',
+            'Logo Placement Rules'
+        ]
+    },
+
+    'Product Launch': {
+        title: 'Product Launch with Dolby',
+        layer: 'Production',
+        description: 'Dolby 인증을 받은 제품의 시장 출시입니다.',
+        components: [
+            'Mass Production',
+            'Retail Distribution',
+            'Marketing Campaign',
+            'Dolby Branding'
+        ]
     },
 
     // ========================================
