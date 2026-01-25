@@ -369,6 +369,15 @@ const NODE_ID_MAPPING = {
     'GALLERY': 'Gallery App',
     'CAMERA': 'Camera App',
     'MUSIC': 'Music App',
+    'EXT_STORAGE': 'External Storage',
+    'INT_STORAGE': 'Internal Storage',
+    'KERNEL_FUSE': 'FUSE Daemon',
+    'L_FS': 'Legacy File System',
+    'L_PERM': 'Legacy Permissions',
+    'S_APP': 'Scoped Storage App',
+    'S_MEDIA': 'Scoped Media Access',
+    'S_OWN': 'Scoped Own Files',
+    'S_SAF': 'Storage Access Framework',
 
     // MediaExtractor (media-extractor.html)
     'EXTRACTOR': 'MediaExtractor',
@@ -4479,6 +4488,300 @@ val cursor = contentResolver.query(
         ],
         path: 'frameworks/base/core/java/android/content/ContentResolver.java',
         doc: 'https://developer.android.com/reference/android/content/ContentResolver'
+    },
+
+    'External Storage': {
+        title: 'External Storage',
+        layer: 'Storage',
+        description: 'SD 카드 또는 내장 공유 저장소입니다. Android 10+에서는 Scoped Storage로 접근이 제한됩니다.',
+        components: [
+            '/storage/emulated/0/ (Primary)',
+            '/storage/[UUID]/ (Secondary)',
+            'DCIM/, Pictures/, Music/, Movies/ 등',
+            'Scoped Storage (Android 10+)',
+            'MANAGE_EXTERNAL_STORAGE (Android 11+)'
+        ],
+        doc: 'https://developer.android.com/training/data-storage',
+        codeExample: `
+// Android 10+ Scoped Storage
+val contentValues = ContentValues().apply {
+    put(MediaStore.MediaColumns.DISPLAY_NAME, "photo.jpg")
+    put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DCIM)
+}
+
+val uri = contentResolver.insert(
+    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+    contentValues
+)
+
+uri?.let {
+    contentResolver.openOutputStream(it)?.use { outputStream ->
+        // 파일 쓰기
+    }
+}
+        `.trim()
+    },
+
+    'Internal Storage': {
+        title: 'Internal Storage',
+        layer: 'Storage',
+        description: '앱 전용 내부 저장소입니다. 다른 앱이나 사용자가 직접 접근할 수 없습니다.',
+        components: [
+            '/data/data/[package_name]/',
+            'files/ - getFilesDir()',
+            'cache/ - getCacheDir()',
+            'databases/ - SQLite',
+            'shared_prefs/ - SharedPreferences',
+            'Private (uninstall 시 삭제)'
+        ],
+        path: 'frameworks/base/core/java/android/app/ContextImpl.java',
+        doc: 'https://developer.android.com/training/data-storage/app-specific',
+        codeExample: `
+// Internal Storage 파일 쓰기
+val file = File(context.filesDir, "myfile.txt")
+file.writeText("Hello, World!")
+
+// Internal Storage 파일 읽기
+val text = file.readText()
+
+// 캐시 파일 (시스템이 자동 정리 가능)
+val cacheFile = File(context.cacheDir, "temp.dat")
+        `.trim()
+    },
+
+    'FUSE Daemon': {
+        title: 'FUSE Daemon (File System in Userspace)',
+        layer: 'Native Daemon',
+        description: 'Android 11+에서 MediaProvider가 저장소 접근을 제어하는 FUSE 기반 파일시스템입니다.',
+        components: [
+            'Scoped Storage 강제 적용',
+            'File Redaction (위치 정보 제거)',
+            'Permission Check',
+            'MediaProvider 통합',
+            '/storage/emulated mount'
+        ],
+        path: 'packages/providers/MediaProvider/jni/FuseDaemon.cpp',
+        doc: 'https://source.android.com/docs/core/storage/scoped',
+        codeExample: `
+// FUSE가 파일 접근을 가로챔
+/*
+앱이 /storage/emulated/0/DCIM/photo.jpg 접근 시:
+1. FUSE Daemon이 요청 가로챔
+2. MediaProvider에 권한 확인
+3. 권한 있으면 실제 파일 반환
+4. 권한 없으면 EACCES 에러
+*/
+
+// READ_MEDIA_IMAGES 권한 없이 접근 시
+val file = File("/storage/emulated/0/DCIM/photo.jpg")
+file.exists() // false (FUSE가 숨김)
+        `.trim()
+    },
+
+    'Legacy File System': {
+        title: 'Legacy File System Access',
+        layer: 'Storage Access',
+        description: 'Android 9 이하에서 사용하던 직접 파일 접근 방식입니다.',
+        components: [
+            'File() 직접 접근',
+            'java.io.FileInputStream',
+            'java.io.FileOutputStream',
+            'WRITE_EXTERNAL_STORAGE 권한',
+            'READ_EXTERNAL_STORAGE 권한',
+            'Android 10+에서 deprecated'
+        ],
+        doc: 'https://developer.android.com/about/versions/10/privacy/changes#scoped-storage',
+        codeExample: `
+// Legacy 방식 (Android 9 이하)
+// Manifest에 권한 선언:
+// <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+
+val file = File(Environment.getExternalStorageDirectory(), "DCIM/photo.jpg")
+if (file.exists()) {
+    val inputStream = FileInputStream(file)
+    // 직접 파일 읽기
+}
+
+// Android 10+에서는 MediaStore API 사용 필요
+// Legacy 방식은 requestLegacyExternalStorage="true"로만 가능
+        `.trim()
+    },
+
+    'Legacy Permissions': {
+        title: 'Legacy Storage Permissions',
+        layer: 'Permissions',
+        description: 'Android 9 이하에서 사용하던 저장소 권한 시스템입니다.',
+        components: [
+            'READ_EXTERNAL_STORAGE',
+            'WRITE_EXTERNAL_STORAGE',
+            'Runtime Permission (Android 6+)',
+            'Full Storage Access',
+            'Android 10+에서 제한적'
+        ],
+        doc: 'https://developer.android.com/training/permissions/requesting',
+        codeExample: `
+// Android 9 이하 권한 요청
+if (ContextCompat.checkSelfPermission(this,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    != PackageManager.PERMISSION_GRANTED) {
+
+    ActivityCompat.requestPermissions(this,
+        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+        REQUEST_CODE)
+}
+
+// Android 10+에서는 Scoped Storage 사용
+// 또는 MANAGE_EXTERNAL_STORAGE (특수 권한)
+        `.trim()
+    },
+
+    'Scoped Storage App': {
+        title: 'Scoped Storage App Access',
+        layer: 'Storage Access',
+        description: 'Android 10+에서 앱이 저장소에 접근하는 제한된 방식입니다.',
+        components: [
+            'MediaStore API 사용',
+            '앱별 디렉토리 직접 접근',
+            'SAF (Storage Access Framework)',
+            'Photo Picker (Android 13+)',
+            'No Full Storage Access'
+        ],
+        doc: 'https://developer.android.com/training/data-storage#scoped-storage',
+        codeExample: `
+// Scoped Storage - MediaStore로 이미지 로드
+val projection = arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DISPLAY_NAME)
+val cursor = contentResolver.query(
+    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+    projection,
+    null,
+    null,
+    null
+)
+
+cursor?.use {
+    while (it.moveToNext()) {
+        val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
+        val uri = ContentUris.withAppendedId(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id
+        )
+        // URI로 이미지 접근
+    }
+}
+        `.trim()
+    },
+
+    'Scoped Media Access': {
+        title: 'Scoped Media Access',
+        layer: 'Permissions',
+        description: 'Android 13+에서 도입된 세분화된 미디어 권한입니다.',
+        components: [
+            'READ_MEDIA_IMAGES',
+            'READ_MEDIA_VIDEO',
+            'READ_MEDIA_AUDIO',
+            'READ_MEDIA_VISUAL_USER_SELECTED (Android 14+)',
+            '미디어 타입별 권한'
+        ],
+        doc: 'https://developer.android.com/about/versions/13/behavior-changes-13#granular-media-permissions',
+        codeExample: `
+// Android 13+ 세분화된 권한
+val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    arrayOf(
+        Manifest.permission.READ_MEDIA_IMAGES,
+        Manifest.permission.READ_MEDIA_VIDEO,
+        Manifest.permission.READ_MEDIA_AUDIO
+    )
+} else {
+    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+}
+
+ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
+
+// Android 14+ Partial Access (일부 사진만 선택)
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+    // READ_MEDIA_VISUAL_USER_SELECTED 사용
+}
+        `.trim()
+    },
+
+    'Scoped Own Files': {
+        title: 'Scoped Own Files Access',
+        layer: 'Storage Access',
+        description: '앱이 자신이 생성한 파일에 대한 직접 접근 권한입니다.',
+        components: [
+            'App-Created Files',
+            'No Permission Required',
+            'MediaStore.IS_PENDING',
+            'Automatic Access',
+            'Delete/Modify 가능'
+        ],
+        doc: 'https://developer.android.com/training/data-storage/shared/media#own-files',
+        codeExample: `
+// 앱이 생성한 파일은 권한 없이 접근 가능
+val contentValues = ContentValues().apply {
+    put(MediaStore.MediaColumns.DISPLAY_NAME, "my_photo.jpg")
+    put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+    put(MediaStore.MediaColumns.IS_PENDING, 1) // 작성 중
+}
+
+val uri = contentResolver.insert(
+    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+    contentValues
+)
+
+uri?.let {
+    contentResolver.openOutputStream(it)?.use { stream ->
+        // 파일 쓰기
+    }
+
+    // 작성 완료 표시
+    contentValues.clear()
+    contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+    contentResolver.update(it, contentValues, null, null)
+}
+
+// 이후 이 파일은 권한 없이 수정/삭제 가능
+        `.trim()
+    },
+
+    'Storage Access Framework': {
+        title: 'Storage Access Framework (SAF)',
+        layer: 'Framework',
+        description: '사용자가 파일을 선택하는 시스템 UI를 통한 저장소 접근 방식입니다.',
+        components: [
+            'ACTION_OPEN_DOCUMENT',
+            'ACTION_CREATE_DOCUMENT',
+            'ACTION_OPEN_DOCUMENT_TREE',
+            'Document Provider',
+            'User-Granted Access',
+            'No Permission Required'
+        ],
+        path: 'frameworks/base/core/java/android/provider/DocumentsContract.java',
+        doc: 'https://developer.android.com/guide/topics/providers/document-provider',
+        codeExample: `
+// SAF로 파일 선택 (권한 불필요)
+val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+    addCategory(Intent.CATEGORY_OPENABLE)
+    type = "image/*"
+}
+startActivityForResult(intent, REQUEST_CODE)
+
+// Result 처리
+override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    if (requestCode == REQUEST_CODE && resultCode == RESULT_OK) {
+        data?.data?.let { uri ->
+            // URI로 파일 접근 (권한 자동 부여)
+            contentResolver.openInputStream(uri)?.use { stream ->
+                // 파일 읽기
+            }
+        }
+    }
+}
+
+// 폴더 전체 접근 (Android 5.0+)
+val treeIntent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+startActivityForResult(treeIntent, TREE_REQUEST_CODE)
+        `.trim()
     },
 
     // ========================================
