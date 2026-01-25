@@ -221,9 +221,6 @@ function handleNodeClick(nodeId, node) {
     console.log(`   노드 ID: "${nodeId}"`);
     console.log(`   노드 요소:`, node);
 
-    // 디버깅: 클릭 확인용 alert
-    alert(`노드 클릭됨!\nID: ${nodeId}`);
-
     let nodeData = DIAGRAM_NODE_DATA[nodeId];
 
     // 데이터가 없으면 노드 텍스트에서 자동 생성
