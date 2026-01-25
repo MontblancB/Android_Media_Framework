@@ -613,6 +613,25 @@ code {
     border-radius: 4px;
 }
 
+pre {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: var(--spacing-md);
+    margin: var(--spacing-sm) 0;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+pre code {
+    background: transparent;
+    padding: 0;
+    color: var(--color-text-primary);
+    border-radius: 0;
+}
+
 ul, ol {
     margin-left: var(--spacing-lg);
     color: var(--color-text-secondary);
@@ -853,6 +872,16 @@ footer {
 [data-theme="light"] code {
     background: rgba(3, 105, 161, 0.12);
     color: #0369a1;
+}
+
+[data-theme="light"] pre {
+    background: #ffffff;
+    border-color: rgba(41, 37, 36, 0.15);
+    box-shadow: 0 2px 8px rgba(41, 37, 36, 0.08);
+}
+
+[data-theme="light"] pre code {
+    color: var(--color-text-primary);
 }
 
 [data-theme="light"] .mermaid-container::before {
