@@ -1,68 +1,35 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Common Media Issues & Solutions</title>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="design-system.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles/design-system.css">
-
-    <style>
-        /* Page-specific styles loaded from design-system.css */
-        .issue-card {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
-            border-left: 4px solid var(--accent-primary);
-        }
-
-        .issue-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--accent-primary);
-            margin-bottom: 15px;
-        }
-
-        .issue-section {
-            margin-bottom: 20px;
-        }
-
-        .issue-label {
-            display: inline-block;
-            font-weight: 600;
-            color: var(--accent-warning);
-            margin-bottom: 8px;
-            font-size: 0.95rem;
-        }
-
-        .severity-critical {
-            border-left-color: #ef4444;
-        }
-
-        .severity-high {
-            border-left-color: #f59e0b;
-        }
-
-        .severity-medium {
-            border-left-color: #3b82f6;
-        }
-
-        .severity-low {
-            border-left-color: #10b981;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
-
 <body>
-    <nav class="nav">
-        <a href="index.html" class="nav-button">
-            ← AOSP Media Framework
-        </a>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">Android Media Framework</a>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </div>
     </nav>
 
     <div class="container">
@@ -70,6 +37,8 @@
             <h1 class="page-title">🆘 Common Media Issues & Solutions</h1>
             <p class="page-subtitle">Android 미디어 프레임워크 실무 트러블슈팅 가이드</p>
         </header>
+
+        
 
         <!-- Section 1: Playback Issues -->
         <section class="content-section section">
@@ -1833,6 +1802,20 @@ adb pull /data/local/tmp/heap.hprof</code></pre>
         });
     </script>
     <script src="scripts/theme-toggle.js"></script>
-</body>
 
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: document.documentElement.getAttribute('data-theme') === 'light' ? 'default' : 'dark',
+            themeVariables: {
+                fontSize: '16px',
+                fontFamily: 'IBM Plex Mono, monospace'
+            }
+        });
+    </script>
+    <script src="theme-toggle.js"></script>
+</body>
 </html>

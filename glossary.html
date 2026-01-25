@@ -4,228 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Android Media Glossary - Android Media Framework</title>
+    <link rel="stylesheet" href="design-system.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #1a1f35;
-            --bg-tertiary: #252b45;
-            --text-primary: #e2e8f0;
-            --text-secondary: #94a3b8;
-            --accent-blue: #3b82f6;
-            --accent-purple: #8b5cf6;
-            --accent-pink: #ec4899;
-            --accent-green: #10b981;
-            --accent-yellow: #f59e0b;
-            --accent-red: #ef4444;
-            --border-color: rgba(148, 163, 184, 0.1);
-            --code-bg: #1e293b;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1420 100%);
-            color: var(--text-primary);
-            line-height: 1.7;
-            min-height: 100vh;
-            padding: 2rem;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 4rem;
-            padding: 3rem 2rem;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            border-radius: 24px;
-            box-shadow: var(--shadow);
-        }
-
-        h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, #ffffff, #e2e8f0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .subtitle {
-            font-size: 1.25rem;
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 300;
-        }
-
-        section {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 2.5rem;
-            margin-bottom: 2rem;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow);
-        }
-
-        h2 {
-            font-size: 2rem;
-            margin-bottom: 1.5rem;
-            color: var(--accent-blue);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        h2::before {
-            content: '';
-            display: inline-block;
-            width: 6px;
-            height: 2rem;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            border-radius: 3px;
-        }
-
-        h3 {
-            font-size: 1.5rem;
-            margin: 2rem 0 1rem 0;
-            color: var(--accent-purple);
-            font-weight: 600;
-        }
-
-        p, li {
-            color: var(--text-secondary);
-            margin-bottom: 0.75rem;
-        }
-
-        code {
-            font-family: 'JetBrains Mono', 'Courier New', monospace;
-            background: var(--code-bg);
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.9em;
-            color: var(--accent-green);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-        }
-
-        .term-card {
-            background: var(--bg-tertiary);
-            border-left: 4px solid var(--accent-blue);
-            padding: 1.5rem;
-            margin: 1.5rem 0;
-            border-radius: 8px;
-        }
-
-        .term-title {
-            font-size: 1.5rem;
-            color: var(--accent-blue);
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .term-pronunciation {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            font-style: italic;
-            margin-bottom: 1rem;
-        }
-
-        .term-definition {
-            color: var(--text-primary);
-            margin-bottom: 1rem;
-            line-height: 1.8;
-        }
-
-        .term-related {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-
-        .tag {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            background: rgba(59, 130, 246, 0.2);
-            color: var(--accent-blue);
-        }
-
-        .alphabet-nav {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            justify-content: center;
-            margin: 2rem 0;
-            padding: 1rem;
-            background: var(--bg-tertiary);
-            border-radius: 12px;
-        }
-
-        .alphabet-nav a {
-            display: inline-block;
-            width: 2.5rem;
-            height: 2.5rem;
-            line-height: 2.5rem;
-            text-align: center;
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--accent-blue);
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .alphabet-nav a:hover {
-            background: var(--accent-blue);
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 1rem;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            h2 {
-                font-size: 1.5rem;
-            }
-
-            section {
-                padding: 1.5rem;
-            }
-
-            .alphabet-nav a {
-                width: 2rem;
-                height: 2rem;
-                line-height: 2rem;
-            }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">Android Media Framework</a>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
     <div class="container">
         <header>
-            <h1>📖 Android Media Glossary</h1>
-            <p class="subtitle">미디어 프레임워크 용어 사전 (알파벳 순)</p>
+            <h1 class="page-title">📖 Android Media Glossary</h1>
+            <p class="page-subtitle">미디어 프레임워크 용어 사전 (알파벳 순)</p>
         </header>
+
+        
 
         <!-- Alphabet Navigation -->
         <div class="alphabet-nav">
@@ -252,8 +65,8 @@
         </div>
 
         <!-- Section A -->
-        <section id="A">
-            <h2>A</h2>
+        <section id="A" class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>A</h2>
 
             <div class="term-card">
                 <div class="term-title">AAC (Advanced Audio Coding)</div>
@@ -349,8 +162,8 @@
         </section>
 
         <!-- Section B -->
-        <section id="B">
-            <h2>B</h2>
+        <section id="B" class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>B</h2>
 
             <div class="term-card">
                 <div class="term-title">Binder</div>
@@ -380,8 +193,8 @@
         </section>
 
         <!-- Section C -->
-        <section id="C">
-            <h2>C</h2>
+        <section id="C" class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>C</h2>
 
             <div class="term-card">
                 <div class="term-title">CCodec</div>
@@ -450,8 +263,8 @@
         </section>
 
         <!-- Section D -->
-        <section id="D">
-            <h2>D</h2>
+        <section id="D" class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>D</h2>
 
             <div class="term-card">
                 <div class="term-title">DASH (Dynamic Adaptive Streaming over HTTP)</div>
@@ -507,8 +320,8 @@
         </section>
 
         <!-- Section E -->
-        <section id="E">
-            <h2>E</h2>
+        <section id="E" class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>E</h2>
 
             <div class="term-card">
                 <div class="term-title">ExoPlayer</div>
@@ -525,8 +338,8 @@
         </section>
 
         <!-- Section F -->
-        <section id="F">
-            <h2>F</h2>
+        <section id="F" class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>F</h2>
 
             <div class="term-card">
                 <div class="term-title">Frame Drop</div>
@@ -556,8 +369,8 @@
         </section>
 
         <!-- Section H -->
-        <section id="H">
-            <h2>H</h2>
+        <section id="H" class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>H</h2>
 
             <div class="term-card">
                 <div class="term-title">H.264 (AVC)</div>
@@ -639,8 +452,8 @@
         </section>
 
         <!-- Section I -->
-        <section id="I">
-            <h2>I</h2>
+        <section id="I" class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>I</h2>
 
             <div class="term-card">
                 <div class="term-title">I-Frame (Intra-coded Frame)</div>
@@ -670,8 +483,8 @@
         </section>
 
         <!-- Section L -->
-        <section id="L">
-            <h2>L</h2>
+        <section id="L" class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>L</h2>
 
             <div class="term-card">
                 <div class="term-title">Latency</div>
@@ -688,8 +501,8 @@
         </section>
 
         <!-- Section M -->
-        <section id="M">
-            <h2>M</h2>
+        <section id="M" class="content-section section">
+            <h2 class="section-title"><span class="section-number">10</span>M</h2>
 
             <div class="term-card">
                 <div class="term-title">Media3</div>
@@ -783,8 +596,8 @@
         </section>
 
         <!-- Section O -->
-        <section id="O">
-            <h2>O</h2>
+        <section id="O" class="content-section section">
+            <h2 class="section-title"><span class="section-number">11</span>O</h2>
 
             <div class="term-card">
                 <div class="term-title">OMX (OpenMAX)</div>
@@ -801,8 +614,8 @@
         </section>
 
         <!-- Section P -->
-        <section id="P">
-            <h2>P</h2>
+        <section id="P" class="content-section section">
+            <h2 class="section-title"><span class="section-number">12</span>P</h2>
 
             <div class="term-card">
                 <div class="term-title">perfetto</div>
@@ -832,8 +645,8 @@
         </section>
 
         <!-- Section R -->
-        <section id="R">
-            <h2>R</h2>
+        <section id="R" class="content-section section">
+            <h2 class="section-title"><span class="section-number">13</span>R</h2>
 
             <div class="term-card">
                 <div class="term-title">Renderer</div>
@@ -849,8 +662,8 @@
         </section>
 
         <!-- Section S -->
-        <section id="S">
-            <h2>S</h2>
+        <section id="S" class="content-section section">
+            <h2 class="section-title"><span class="section-number">14</span>S</h2>
 
             <div class="term-card">
                 <div class="term-title">SPS/PPS (Sequence/Picture Parameter Set)</div>
@@ -880,8 +693,8 @@
         </section>
 
         <!-- Section T -->
-        <section id="T">
-            <h2>T</h2>
+        <section id="T" class="content-section section">
+            <h2 class="section-title"><span class="section-number">15</span>T</h2>
 
             <div class="term-card">
                 <div class="term-title">Track</div>
@@ -911,8 +724,8 @@
         </section>
 
         <!-- Section U -->
-        <section id="U">
-            <h2>U</h2>
+        <section id="U" class="content-section section">
+            <h2 class="section-title"><span class="section-number">16</span>U</h2>
 
             <div class="term-card">
                 <div class="term-title">Underrun</div>
@@ -929,8 +742,8 @@
         </section>
 
         <!-- Section V -->
-        <section id="V">
-            <h2>V</h2>
+        <section id="V" class="content-section section">
+            <h2 class="section-title"><span class="section-number">17</span>V</h2>
 
             <div class="term-card">
                 <div class="term-title">VTS (Vendor Test Suite)</div>
@@ -947,8 +760,8 @@
         </section>
 
         <!-- Section W -->
-        <section id="W">
-            <h2>W</h2>
+        <section id="W" class="content-section section">
+            <h2 class="section-title"><span class="section-number">18</span>W</h2>
 
             <div class="term-card">
                 <div class="term-title">Widevine</div>
@@ -965,11 +778,26 @@
         </section>
 
         <!-- Back to Home -->
-        <section style="text-align: center; padding: 3rem;">
+        <section style="text-align: center; padding: 3rem;" class="content-section section">
             <a href="index.html" style="display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; transition: transform 0.3s ease;">
                 ← Back to Main Page
             </a>
         </section>
     </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: document.documentElement.getAttribute('data-theme') === 'light' ? 'default' : 'dark',
+            themeVariables: {
+                fontSize: '16px',
+                fontFamily: 'IBM Plex Mono, monospace'
+            }
+        });
+    </script>
+    <script src="theme-toggle.js"></script>
 </body>
 </html>

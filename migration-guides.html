@@ -4,302 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Migration Guides - Android Media Framework</title>
+    <link rel="stylesheet" href="design-system.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <style>
-        :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #1a1f35;
-            --bg-tertiary: #252b45;
-            --text-primary: #e2e8f0;
-            --text-secondary: #94a3b8;
-            --accent-blue: #3b82f6;
-            --accent-purple: #8b5cf6;
-            --accent-pink: #ec4899;
-            --accent-green: #10b981;
-            --accent-yellow: #f59e0b;
-            --accent-red: #ef4444;
-            --border-color: rgba(148, 163, 184, 0.1);
-            --code-bg: #1e293b;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1420 100%);
-            color: var(--text-primary);
-            line-height: 1.7;
-            min-height: 100vh;
-            padding: 2rem;
-        }
-
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 4rem;
-            padding: 3rem 2rem;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            border-radius: 24px;
-            box-shadow: var(--shadow);
-        }
-
-        h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, #ffffff, #e2e8f0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .subtitle {
-            font-size: 1.25rem;
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 300;
-        }
-
-        section {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 2.5rem;
-            margin-bottom: 2rem;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow);
-        }
-
-        h2 {
-            font-size: 2rem;
-            margin-bottom: 1.5rem;
-            color: var(--accent-blue);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        h2::before {
-            content: '';
-            display: inline-block;
-            width: 6px;
-            height: 2rem;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            border-radius: 3px;
-        }
-
-        h3 {
-            font-size: 1.5rem;
-            margin: 2rem 0 1rem 0;
-            color: var(--accent-purple);
-            font-weight: 600;
-        }
-
-        h4 {
-            font-size: 1.25rem;
-            margin: 1.5rem 0 1rem 0;
-            color: var(--accent-green);
-            font-weight: 500;
-        }
-
-        p, li {
-            color: var(--text-secondary);
-            margin-bottom: 0.75rem;
-        }
-
-        ul, ol {
-            margin-left: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        code {
-            font-family: 'JetBrains Mono', 'Courier New', monospace;
-            background: var(--code-bg);
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.9em;
-            color: var(--accent-green);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-        }
-
-        pre {
-            background: var(--code-bg);
-            padding: 1.5rem;
-            border-radius: 12px;
-            overflow-x: auto;
-            margin: 1.5rem 0;
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-
-        pre code {
-            background: none;
-            padding: 0;
-            border: none;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            color: #e2e8f0;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1.5rem 0;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        th, td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        th {
-            background: rgba(59, 130, 246, 0.2);
-            color: var(--accent-blue);
-            font-weight: 600;
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        tr:hover {
-            background: rgba(59, 130, 246, 0.05);
-        }
-
-        .migration-card {
-            background: var(--bg-tertiary);
-            border-radius: 12px;
-            padding: 2rem;
-            margin: 2rem 0;
-            border: 1px solid var(--border-color);
-        }
-
-        .code-comparison {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin: 1.5rem 0;
-        }
-
-        .code-block-before {
-            background: rgba(239, 68, 68, 0.1);
-            border-left: 4px solid var(--accent-red);
-            border-radius: 8px;
-            padding: 1rem;
-        }
-
-        .code-block-after {
-            background: rgba(16, 185, 129, 0.1);
-            border-left: 4px solid var(--accent-green);
-            border-radius: 8px;
-            padding: 1rem;
-        }
-
-        .code-block-before h4::before {
-            content: '❌ ';
-        }
-
-        .code-block-after h4::before {
-            content: '✅ ';
-        }
-
-        .info-box {
-            background: rgba(59, 130, 246, 0.1);
-            border-left: 4px solid var(--accent-blue);
-            padding: 1.5rem;
-            margin: 1.5rem 0;
-            border-radius: 8px;
-        }
-
-        .warning-box {
-            background: rgba(245, 158, 11, 0.1);
-            border-left: 4px solid var(--accent-yellow);
-            padding: 1.5rem;
-            margin: 1.5rem 0;
-            border-radius: 8px;
-        }
-
-        .success-box {
-            background: rgba(16, 185, 129, 0.1);
-            border-left: 4px solid var(--accent-green);
-            padding: 1.5rem;
-            margin: 1.5rem 0;
-            border-radius: 8px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-right: 0.5rem;
-        }
-
-        .badge-deprecated {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--accent-red);
-        }
-
-        .badge-new {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--accent-green);
-        }
-
-        .badge-breaking {
-            background: rgba(245, 158, 11, 0.2);
-            color: var(--accent-yellow);
-        }
-
-        @media (max-width: 1024px) {
-            .code-comparison {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 1rem;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            h2 {
-                font-size: 1.5rem;
-            }
-
-            section {
-                padding: 1.5rem;
-            }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">Android Media Framework</a>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
     <div class="container">
         <header>
-            <h1>🔄 Migration Guides</h1>
-            <p class="subtitle">레거시 API에서 최신 API로의 마이그레이션 가이드</p>
+            <h1 class="page-title">🔄 Migration Guides</h1>
+            <p class="page-subtitle">레거시 API에서 최신 API로의 마이그레이션 가이드</p>
         </header>
 
+        
+
         <!-- TOC -->
-        <section>
-            <h2>목차 (Table of Contents)</h2>
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>목차 (Table of Contents)</h2>
             <ol>
                 <li><a href="#mediaplayer-to-exoplayer">MediaPlayer → ExoPlayer 마이그레이션</a></li>
                 <li><a href="#exoplayer-to-media3">ExoPlayer 2.x → Media3 마이그레이션</a></li>
@@ -311,8 +54,8 @@
         </section>
 
         <!-- Section 1: MediaPlayer to ExoPlayer -->
-        <section id="mediaplayer-to-exoplayer">
-            <h2>1. MediaPlayer → ExoPlayer 마이그레이션</h2>
+        <section id="mediaplayer-to-exoplayer" class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>1. MediaPlayer → ExoPlayer 마이그레이션</h2>
 
             <div class="info-box">
                 <strong>💡 왜 ExoPlayer로 마이그레이션해야 하나요?</strong>
@@ -548,8 +291,8 @@ playerView.player = player</code></pre>
         </section>
 
         <!-- Section 2: ExoPlayer to Media3 -->
-        <section id="exoplayer-to-media3">
-            <h2>2. ExoPlayer 2.x → Media3 마이그레이션</h2>
+        <section id="exoplayer-to-media3" class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>2. ExoPlayer 2.x → Media3 마이그레이션</h2>
 
             <div class="info-box">
                 <strong>💡 Media3란?</strong>
@@ -729,8 +472,8 @@ onPlayerStateChanged → onPlaybackStateChanged</code></pre>
         </section>
 
         <!-- Section 3: Audio Focus -->
-        <section id="audio-focus">
-            <h2>3. Legacy Audio Focus → AudioFocusRequest</h2>
+        <section id="audio-focus" class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>3. Legacy Audio Focus → AudioFocusRequest</h2>
 
             <div class="info-box">
                 <strong>💡 Android 8.0 (API 26)부터 AudioFocusRequest 사용 권장</strong>
@@ -878,8 +621,8 @@ when (result) {
         </section>
 
         <!-- Section 4: MediaSession -->
-        <section id="mediasession">
-            <h2>4. MediaSession → MediaBrowserService</h2>
+        <section id="mediasession" class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>4. MediaSession → MediaBrowserService</h2>
 
             <div class="info-box">
                 <strong>💡 Car Media / Wear OS 통합</strong>
@@ -1038,8 +781,8 @@ class MusicService : MediaSessionService() {
         </section>
 
         <!-- Section 5: Android Versions -->
-        <section id="android-versions">
-            <h2>5. Android 버전별 주요 변경사항</h2>
+        <section id="android-versions" class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>5. Android 버전별 주요 변경사항</h2>
 
             <h3>5.1 Android 14 (API 34)</h3>
             <ul>
@@ -1132,8 +875,8 @@ if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         </section>
 
         <!-- Section 6: Deprecated APIs -->
-        <section id="deprecated-apis">
-            <h2>6. Deprecated API 대체 가이드</h2>
+        <section id="deprecated-apis" class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>6. Deprecated API 대체 가이드</h2>
 
             <h3>6.1 MediaPlayer Deprecated 메소드</h3>
 
@@ -1266,7 +1009,7 @@ cursor?.use {
         </section>
 
         <!-- Back to Home -->
-        <section style="text-align: center; padding: 3rem;">
+        <section style="text-align: center; padding: 3rem;" class="content-section section">
             <a href="index.html" style="display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; transition: transform 0.3s ease;">
                 ← Back to Main Page
             </a>
@@ -1293,5 +1036,20 @@ cursor?.use {
             }
         });
     </script>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: document.documentElement.getAttribute('data-theme') === 'light' ? 'default' : 'dark',
+            themeVariables: {
+                fontSize: '16px',
+                fontFamily: 'IBM Plex Mono, monospace'
+            }
+        });
+    </script>
+    <script src="theme-toggle.js"></script>
 </body>
 </html>
