@@ -245,22 +245,36 @@ body::before {
 .theme-icon {
     position: relative;
     z-index: 1;
-    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.theme-icon svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    transition: all 0.3s ease;
 }
 
 .theme-toggle-btn:hover .theme-icon {
     transform: rotate(20deg) scale(1.15);
 }
 
+.theme-toggle-btn:hover .theme-icon svg {
+    filter: drop-shadow(0 0 6px currentColor);
+}
+
 /* Icon animation on theme change */
 @keyframes iconPop {
     0% {
-        transform: scale(0.8) rotate(-20deg);
+        transform: scale(0.5) rotate(-180deg);
         opacity: 0;
     }
-    50% {
-        transform: scale(1.2) rotate(10deg);
+    60% {
+        transform: scale(1.1) rotate(10deg);
     }
     100% {
         transform: scale(1) rotate(0deg);
@@ -269,16 +283,51 @@ body::before {
 }
 
 .theme-icon {
-    animation: iconPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    animation: iconPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-/* Hide icons based on theme */
+/* Smooth rotation transition when switching */
+@keyframes iconRotateOut {
+    0% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.5) rotate(180deg);
+        opacity: 0;
+    }
+}
+
+/* Hide icons based on theme with smooth transition */
 [data-theme="dark"] .sun-icon {
     display: none;
 }
 
 [data-theme="light"] .moon-icon {
     display: none;
+}
+
+/* Moon icon specific styling - crescent moon */
+.moon-icon svg path {
+    transition: all 0.3s ease;
+}
+
+.theme-toggle-btn:hover .moon-icon svg path {
+    stroke-width: 2.5;
+}
+
+/* Sun icon specific styling - rays animation */
+.sun-icon svg line {
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.theme-toggle-btn:hover .sun-icon svg line {
+    stroke-width: 2.5;
+}
+
+.theme-toggle-btn:hover .sun-icon svg circle {
+    stroke-width: 2.5;
 }
 
 /* Theme toggle in nav for document pages */
