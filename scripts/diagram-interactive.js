@@ -407,9 +407,6 @@ function showNodeModal(nodeData) {
         </div>
     `;
 
-    // body에 스크롤 방지
-    document.body.style.overflow = 'hidden';
-
     document.body.appendChild(modal);
     activeModal = modal;
 
@@ -420,13 +417,13 @@ function showNodeModal(nodeData) {
     console.log(`   모달 위치:`, modal.getBoundingClientRect());
     console.log(`   모달 z-index:`, window.getComputedStyle(modal).zIndex);
 
-    // 애니메이션 시작 (모바일 호환성을 위해 setTimeout 사용)
-    setTimeout(() => {
+    // 애니메이션 시작
+    requestAnimationFrame(() => {
         modal.classList.add('show');
         console.log(`   ✅ 'show' 클래스 추가 (애니메이션 시작)`);
         console.log(`   모달 opacity:`, window.getComputedStyle(modal).opacity);
         console.log(`   모달 display:`, window.getComputedStyle(modal).display);
-    }, 10);
+    });
 
     // 닫기 이벤트
     const closeBtn = modal.querySelector('.diagram-modal-close');
@@ -461,8 +458,6 @@ function closeModal() {
             activeModal.remove();
             activeModal = null;
         }
-        // body 스크롤 복원
-        document.body.style.overflow = '';
     }, 300);
 
     document.removeEventListener('keydown', handleEscKey);
