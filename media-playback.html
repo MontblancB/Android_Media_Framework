@@ -609,20 +609,1571 @@
             </div>
         </section>
 
+        <!-- Section 7: NuPlayer Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                NuPlayer 아키텍처
+            </h2>
+            <p class="section-description">
+                Android 5.0+에서 사용되는 핵심 미디어 재생 엔진인 NuPlayer의 내부 구조입니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP["Application"]
+                        MEDIAPLAYER["MediaPlayer API"]
+                    end
+
+                    subgraph NUPLAYER["NuPlayer Engine"]
+                        NUPLAYER_MAIN["NuPlayer<br/>(Main Controller)"]
+
+                        subgraph SOURCE["Source"]
+                            GENERIC_SRC["GenericSource<br/>(Local File/FD)"]
+                            HTTP_SRC["HTTPLiveSource<br/>(HLS Streaming)"]
+                            RTSP_SRC["RTSPSource<br/>(RTSP Streaming)"]
+                        end
+
+                        subgraph DECODER["Decoder"]
+                            VIDEO_DEC["DecoderPassThrough<br/>(Video Decoder)"]
+                            AUDIO_DEC["DecoderPassThrough<br/>(Audio Decoder)"]
+                        end
+
+                        subgraph RENDERER["Renderer"]
+                            VIDEO_REN["VideoRenderer<br/>(Surface)"]
+                            AUDIO_REN["AudioRenderer<br/>(AudioSink)"]
+                        end
+                    end
+
+                    subgraph CODEC["Codec Layer"]
+                        MEDIACODEC["MediaCodec"]
+                        CODEC2["Codec2"]
+                    end
+
+                    subgraph OUTPUT["Output"]
+                        SURFACE["Surface<br/>(SurfaceFlinger)"]
+                        AUDIOTRACK["AudioTrack<br/>(AudioFlinger)"]
+                    end
+
+                    MEDIAPLAYER --> NUPLAYER_MAIN
+                    NUPLAYER_MAIN --> SOURCE
+                    SOURCE --> DECODER
+                    DECODER --> MEDIACODEC
+                    DECODER --> CODEC2
+                    MEDIACODEC --> RENDERER
+                    CODEC2 --> RENDERER
+                    VIDEO_REN --> SURFACE
+                    AUDIO_REN --> AUDIOTRACK
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 NuPlayer 주요 컴포넌트
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        NuPlayer Main Controller
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>중앙 제어 로직</strong></p>
+                        <ul>
+                            <li>State Machine 관리 (Idle, Preparing, Started, Paused)</li>
+                            <li>Source, Decoder, Renderer 간 메시지 조정</li>
+                            <li>Seek, Pause, Resume 등 재생 제어</li>
+                            <li>에러 처리 및 콜백</li>
+                            <li><code>frameworks/av/media/libmediaplayerservice/nuplayer/NuPlayer.cpp</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Source (GenericSource)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>데이터 소스 관리</strong></p>
+                        <ul>
+                            <li>MediaExtractor를 통한 컨테이너 파싱</li>
+                            <li>트랙 선택 (오디오/비디오/자막)</li>
+                            <li>압축된 샘플 데이터 읽기</li>
+                            <li>Seek 위치 제어</li>
+                            <li>로컬 파일, FileDescriptor, content:// URI 지원</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Decoder (DecoderPassThrough)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>코덱 래퍼</strong></p>
+                        <ul>
+                            <li>MediaCodec 또는 Codec2 사용</li>
+                            <li>입력 버퍼 큐잉 (압축 데이터)</li>
+                            <li>출력 버퍼 디큐잉 (디코딩된 데이터)</li>
+                            <li>포맷 변경 감지 (해상도, 채널 변경)</li>
+                            <li>비동기 처리 및 콜백</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🖥️</span>
+                        Renderer (Video/Audio)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>출력 렌더링</strong></p>
+                        <ul>
+                            <li><strong>VideoRenderer</strong>: Surface에 프레임 렌더링</li>
+                            <li><strong>AudioRenderer</strong>: AudioSink를 통해 오디오 출력</li>
+                            <li>A/V 동기화 (PTS 기반)</li>
+                            <li>버퍼링 및 지연 관리</li>
+                            <li>Drop/Duplicate 프레임 처리</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 NuPlayer State Machine
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    stateDiagram-v2
+                    [*] --> IDLE
+                    IDLE --> PREPARING: setDataSource() + prepare()
+                    PREPARING --> PREPARED: onPrepared()
+                    PREPARED --> STARTED: start()
+                    STARTED --> PAUSED: pause()
+                    PAUSED --> STARTED: start()
+                    STARTED --> STARTED: seekTo() (내부 처리)
+                    PAUSED --> PREPARING: reset()
+                    STARTED --> PREPARING: reset()
+                    PREPARED --> IDLE: release()
+                    PREPARING --> IDLE: release()
+                    STARTED --> IDLE: release()
+                    PAUSED --> IDLE: release()
+                    IDLE --> [*]
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 NuPlayer vs AwesomePlayer</strong><br/>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>AwesomePlayer</strong>: Android 4.x 이하에서 사용된 레거시 플레이어 (동기 방식, 제한적 기능)</li>
+                    <li><strong>NuPlayer</strong>: Android 5.0+에서 도입된 현대적 플레이어 (비동기 방식, HLS/DASH 지원)</li>
+                    <li><strong>차이점</strong>: NuPlayer는 완전히 비동기 메시지 기반 아키텍처로 재설계됨</li>
+                    <li><strong>현재</strong>: AwesomePlayer는 완전히 제거되고 NuPlayer만 사용</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 8: Buffer Management and Data Flow -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                버퍼 관리 및 데이터 플로우
+            </h2>
+            <p class="section-description">
+                미디어 재생 시 버퍼가 어떻게 관리되고 데이터가 어떻게 흐르는지 상세히 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                📊 End-to-End 데이터 플로우
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                    subgraph STORAGE["Storage"]
+                        FILE["MP4 File<br/>(Container)"]
+                    end
+
+                    subgraph EXTRACTOR["MediaExtractor"]
+                        PARSER["Container Parser"]
+                        DEMUX["Demuxer"]
+                    end
+
+                    subgraph CODEC["MediaCodec"]
+                        INPUT_Q["Input Queue<br/>(Compressed)"]
+                        DECODER["Decoder<br/>(HW/SW)"]
+                        OUTPUT_Q["Output Queue<br/>(Raw)"]
+                    end
+
+                    subgraph RENDERER["Renderer"]
+                        V_RENDER["Video Renderer"]
+                        A_RENDER["Audio Renderer"]
+                    end
+
+                    subgraph OUTPUT["Output"]
+                        SURFACE["Surface<br/>(YUV/RGB)"]
+                        AUDIOSINK["AudioSink<br/>(PCM)"]
+                    end
+
+                    FILE -->|read()| PARSER
+                    PARSER --> DEMUX
+                    DEMUX -->|H.264 NAL| INPUT_Q
+                    DEMUX -->|AAC Frame| INPUT_Q
+                    INPUT_Q --> DECODER
+                    DECODER --> OUTPUT_Q
+                    OUTPUT_Q -->|YUV Buffer| V_RENDER
+                    OUTPUT_Q -->|PCM Buffer| A_RENDER
+                    V_RENDER --> SURFACE
+                    A_RENDER --> AUDIOSINK
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎯 버퍼 큐 구조
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📥</span>
+                        Input Buffer Queue
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>압축된 데이터 입력</strong></p>
+                        <ul>
+                            <li><strong>용량</strong>: 일반적으로 4~16개 버퍼</li>
+                            <li><strong>크기</strong>: 코덱별 상이 (H.264: ~1MB, AAC: ~8KB)</li>
+                            <li><strong>데이터</strong>: 압축된 비디오/오디오 프레임</li>
+                            <li><strong>메타데이터</strong>: PTS, Flags (KeyFrame, EOS)</li>
+                            <li><strong>흐름</strong>: MediaExtractor → Input Queue → Decoder</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📤</span>
+                        Output Buffer Queue
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>디코딩된 데이터 출력</strong></p>
+                        <ul>
+                            <li><strong>용량</strong>: 일반적으로 4~16개 버퍼</li>
+                            <li><strong>크기</strong>: 큼 (1920x1080 YUV: ~3MB, PCM: ~192KB)</li>
+                            <li><strong>데이터</strong>: YUV 프레임 또는 PCM 오디오</li>
+                            <li><strong>메타데이터</strong>: PTS, 색상 포맷</li>
+                            <li><strong>흐름</strong>: Decoder → Output Queue → Renderer</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Zero-Copy 메커니즘
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>메모리 복사 최소화</strong></p>
+                        <ul>
+                            <li><strong>Shared Memory</strong>: 프로세스 간 버퍼 공유</li>
+                            <li><strong>ION Allocator</strong>: 커널 레벨 메모리 할당</li>
+                            <li><strong>Gralloc</strong>: 그래픽 버퍼 공유</li>
+                            <li><strong>File Descriptor</strong>: 버퍼 핸들 전달</li>
+                            <li><strong>성능</strong>: CPU 사용량 및 메모리 대역폭 절감</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏊</span>
+                        Buffer Pool
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>버퍼 재사용</strong></p>
+                        <ul>
+                            <li><strong>C2BlockPool</strong>: Codec2의 버퍼 풀</li>
+                            <li><strong>할당 전략</strong>: 미리 할당하여 재사용</li>
+                            <li><strong>메모리 효율</strong>: 할당/해제 오버헤드 제거</li>
+                            <li><strong>참조 카운트</strong>: 사용 중인 버퍼 추적</li>
+                            <li><strong>해제 시점</strong>: 참조 카운트 0일 때 풀로 반환</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 버퍼 라이프사이클
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant Pool as Buffer Pool
+                    participant Source as NuPlayer Source
+                    participant Decoder as MediaCodec
+                    participant Renderer as Renderer
+                    participant Surface as Surface/AudioSink
+
+                    Note over Pool: 버퍼 할당 단계
+                    Pool->>Pool: 버퍼 사전 할당 (초기화)
+
+                    Note over Source,Renderer: 재생 루프
+                    loop 프레임마다 반복
+                        Source->>Pool: 버퍼 요청
+                        Pool-->>Source: 빈 버퍼 제공
+                        Source->>Source: MediaExtractor로 데이터 읽기
+                        Source->>Decoder: queueInputBuffer(압축 데이터)
+
+                        Decoder->>Decoder: 하드웨어 디코딩
+
+                        Decoder->>Pool: 출력 버퍼 요청
+                        Pool-->>Decoder: 빈 버퍼 제공
+                        Decoder-->>Renderer: dequeueOutputBuffer(디코딩 데이터)
+
+                        Renderer->>Surface: 렌더링 (releaseOutputBuffer)
+                        Surface-->>Pool: 버퍼 반환 (참조 카운트 감소)
+                    end
+
+                    Note over Pool: 종료 시
+                    Pool->>Pool: 모든 버퍼 해제
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ 버퍼 관리 주의사항</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>버퍼 부족</strong>: Input Queue가 비면 디코더 starving 발생 → 프레임 드롭</li>
+                    <li><strong>버퍼 넘침</strong>: Output Queue가 가득 차면 디코더 블로킹 → 지연 증가</li>
+                    <li><strong>메모리 누수</strong>: 버퍼를 release하지 않으면 메모리 누수 → 앱 크래시</li>
+                    <li><strong>동기화 문제</strong>: 잘못된 PTS로 버퍼 전달 시 A/V sync 깨짐</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: A/V Sync Mechanism -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                A/V 동기화 메커니즘
+            </h2>
+            <p class="section-description">
+                오디오와 비디오를 정확하게 동기화하여 립싱크를 유지하는 방법입니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph DECODER["Decoder"]
+                        V_DEC["Video Decoder"]
+                        A_DEC["Audio Decoder"]
+                    end
+
+                    subgraph TIMESTAMP["Timestamp"]
+                        V_PTS["Video PTS<br/>(μs)"]
+                        A_PTS["Audio PTS<br/>(μs)"]
+                    end
+
+                    subgraph SYNC["Sync Controller"]
+                        MEDIASYNC["MediaClock<br/>(Master Clock)"]
+                        COMPARE["PTS 비교"]
+                    end
+
+                    subgraph RENDERER["Renderer"]
+                        V_REN["VideoRenderer"]
+                        A_REN["AudioRenderer"]
+                    end
+
+                    subgraph ACTION["Action"]
+                        DROP["Drop Frame<br/>(비디오 늦음)"]
+                        DUPLICATE["Duplicate Frame<br/>(비디오 빠름)"]
+                        NORMAL["Normal Render"]
+                    end
+
+                    V_DEC --> V_PTS
+                    A_DEC --> A_PTS
+                    V_PTS --> COMPARE
+                    A_PTS --> MEDIASYNC
+                    MEDIASYNC --> COMPARE
+                    COMPARE --> DROP
+                    COMPARE --> DUPLICATE
+                    COMPARE --> NORMAL
+                    DROP --> V_REN
+                    DUPLICATE --> V_REN
+                    NORMAL --> V_REN
+                    A_PTS --> A_REN
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ⏱️ PTS (Presentation Time Stamp)
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        PTS 개념
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>재생 시간 정보</strong></p>
+                        <ul>
+                            <li><strong>정의</strong>: 각 프레임/샘플이 재생되어야 할 시간 (마이크로초 단위)</li>
+                            <li><strong>기준</strong>: 미디어 시작 시점부터의 경과 시간</li>
+                            <li><strong>출처</strong>: 컨테이너에서 추출 (MP4, MKV 등)</li>
+                            <li><strong>전달</strong>: MediaExtractor → Decoder → Renderer</li>
+                            <li><strong>예시</strong>: 30fps 비디오의 2번째 프레임 PTS = 33,333μs</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio as Master Clock
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>오디오 기준 동기화</strong></p>
+                        <ul>
+                            <li><strong>이유</strong>: 사람은 오디오 지연에 더 민감</li>
+                            <li><strong>방식</strong>: AudioSink의 현재 재생 위치를 Master Clock으로 사용</li>
+                            <li><strong>계산</strong>: getPosition()으로 실제 재생 시간 추적</li>
+                            <li><strong>비디오 조정</strong>: 오디오 PTS에 맞춰 비디오 렌더링</li>
+                            <li><strong>허용 오차</strong>: 일반적으로 ±50ms 이내</li>
+                        </ul>
+                    </div>
+                </card>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        동기화 전략
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>PTS 차이 처리</strong></p>
+                        <ul>
+                            <li><strong>비디오 늦음 (Video PTS > Audio PTS + 50ms)</strong>:
+                                <ul style="margin-top: 5px; padding-left: 20px;">
+                                    <li>→ 프레임 드롭 (Drop Frame)</li>
+                                    <li>→ 빠른 디코딩 (Fast Forward)</li>
+                                </ul>
+                            </li>
+                            <li><strong>비디오 빠름 (Video PTS < Audio PTS - 50ms)</strong>:
+                                <ul style="margin-top: 5px; padding-left: 20px;">
+                                    <li>→ 프레임 중복 (Duplicate Frame)</li>
+                                    <li>→ 렌더링 지연 (Delay Render)</li>
+                                </ul>
+                            </li>
+                            <li><strong>정상 범위 (±50ms 이내)</strong>: 정상 렌더링</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        동기화 구현
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>NuPlayer에서의 동기화</strong></p>
+                        <ul>
+                            <li><strong>MediaClock</strong>: 재생 시간 추적 클래스</li>
+                            <li><strong>VideoRenderer</strong>: onDrainVideoQueue()에서 PTS 비교</li>
+                            <li><strong>AudioRenderer</strong>: AudioSink를 통해 실제 재생 위치 제공</li>
+                            <li><strong>Latency 보정</strong>: 오디오 출력 지연 고려</li>
+                            <li><strong>실시간 조정</strong>: 매 프레임마다 동기화 검사</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 동기화 문제 해결
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>문제</th>
+                        <th>원인</th>
+                        <th>해결 방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>립싱크 어긋남</strong></td>
+                        <td>잘못된 PTS, 디코더 지연</td>
+                        <td>MediaExtractor PTS 확인, 하드웨어 디코더 사용</td>
+                    </tr>
+                    <tr>
+                        <td><strong>오디오 먼저 들림</strong></td>
+                        <td>비디오 디코딩 느림</td>
+                        <td>프레임 드롭, 해상도 낮추기, 코덱 변경</td>
+                    </tr>
+                    <tr>
+                        <td><strong>비디오 먼저 보임</strong></td>
+                        <td>오디오 버퍼링 지연</td>
+                        <td>AudioTrack 버퍼 크기 조정, 출력 레이턴시 확인</td>
+                    </tr>
+                    <tr>
+                        <td><strong>재생 중 sync 깨짐</strong></td>
+                        <td>CPU 부하, 버퍼 부족</td>
+                        <td>백그라운드 작업 중단, 버퍼 큐 크기 증가</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Seek 후 sync 깨짐</strong></td>
+                        <td>Keyframe seek 오류</td>
+                        <td>SEEK_TO_CLOSEST_SYNC 플래그 사용</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 동기화 디버깅</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>logcat</strong>: <code>adb logcat -s NuPlayer NuPlayerRenderer</code></li>
+                    <li><strong>PTS 로그</strong>: "video PTS", "audio PTS" 검색</li>
+                    <li><strong>Drop/Duplicate</strong>: "drop", "late" 키워드 확인</li>
+                    <li><strong>Systrace</strong>: MediaCodec, AudioTrack 타이밍 분석</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 10: Streaming Pipeline -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                스트리밍 파이프라인
+            </h2>
+            <p class="section-description">
+                HLS, DASH 등 적응형 스트리밍 프로토콜과 ExoPlayer 아키텍처를 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                🌐 적응형 스트리밍 프로토콜
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        HLS (HTTP Live Streaming)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Apple 개발, 범용 지원</strong></p>
+                        <ul>
+                            <li><strong>포맷</strong>: .m3u8 플레이리스트 + .ts 세그먼트</li>
+                            <li><strong>세그먼트</strong>: 일반적으로 6~10초 길이</li>
+                            <li><strong>코덱</strong>: H.264, HEVC / AAC, AC-3</li>
+                            <li><strong>DRM</strong>: FairPlay (iOS), Widevine (Android)</li>
+                            <li><strong>사용</strong>: Apple, YouTube, Twitch</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        DASH (Dynamic Adaptive Streaming over HTTP)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MPEG 표준, 유연한 구조</strong></p>
+                        <ul>
+                            <li><strong>포맷</strong>: .mpd 매니페스트 + .m4s 세그먼트</li>
+                            <li><strong>세그먼트</strong>: 2~10초 (설정 가능)</li>
+                            <li><strong>코덱</strong>: H.264, VP9, AV1 / AAC, Opus</li>
+                            <li><strong>DRM</strong>: Widevine, PlayReady</li>
+                            <li><strong>사용</strong>: Netflix, YouTube (일부)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        적응형 비트레이트 (ABR)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>네트워크 대역폭에 따른 품질 조정</strong></p>
+                        <ul>
+                            <li><strong>멀티 비트레이트</strong>: 동일 콘텐츠를 여러 해상도/비트레이트로 인코딩</li>
+                            <li><strong>대역폭 측정</strong>: 다운로드 속도 실시간 측정</li>
+                            <li><strong>품질 전환</strong>: 네트워크 상태에 따라 자동 전환
+                                <ul style="margin-top: 5px; padding-left: 20px;">
+                                    <li>빠름: 1080p (6Mbps)</li>
+                                    <li>보통: 720p (3Mbps)</li>
+                                    <li>느림: 480p (1Mbps)</li>
+                                </ul>
+                            </li>
+                            <li><strong>버퍼링 최소화</strong>: 끊김 현상 방지</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        세그먼트 다운로드 전략
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>초기 버퍼링</strong>: 3~5개 세그먼트 미리 다운로드</li>
+                            <li><strong>진행 중</strong>: 1~2개 세그먼트 앞서 다운로드</li>
+                            <li><strong>Seek</strong>: Keyframe 세그먼트부터 다시 다운로드</li>
+                            <li><strong>캐싱</strong>: 다운로드한 세그먼트 디스크 저장</li>
+                            <li><strong>Prefetch</strong>: 예상 재생 경로 미리 다운로드</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎮 ExoPlayer 아키텍처
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP["Application"]
+                        PLAYER_API["ExoPlayer API"]
+                    end
+
+                    subgraph EXOPLAYER["ExoPlayer Core"]
+                        PLAYBACK_THREAD["Playback Thread"]
+
+                        subgraph COMPONENTS["Components"]
+                            MEDIA_SOURCE["MediaSource<br/>(HLS/DASH/Local)"]
+                            TRACK_SELECTOR["TrackSelector<br/>(품질 선택)"]
+                            LOAD_CONTROL["LoadControl<br/>(버퍼링 정책)"]
+                        end
+
+                        subgraph RENDERERS["Renderers"]
+                            VIDEO_RENDERER["VideoRenderer"]
+                            AUDIO_RENDERER["AudioRenderer"]
+                            TEXT_RENDERER["TextRenderer"]
+                        end
+                    end
+
+                    subgraph PLATFORM["Platform"]
+                        MEDIACODEC["MediaCodec"]
+                        AUDIOTRACK["AudioTrack"]
+                        SURFACE["Surface"]
+                    end
+
+                    PLAYER_API --> PLAYBACK_THREAD
+                    PLAYBACK_THREAD --> COMPONENTS
+                    COMPONENTS --> RENDERERS
+                    VIDEO_RENDERER --> MEDIACODEC
+                    AUDIO_RENDERER --> MEDIACODEC
+                    MEDIACODEC --> SURFACE
+                    MEDIACODEC --> AUDIOTRACK
+                </div>
+            </div>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        MediaSource
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>데이터 소스 추상화</strong></p>
+                        <ul>
+                            <li><strong>HlsMediaSource</strong>: HLS 스트리밍</li>
+                            <li><strong>DashMediaSource</strong>: DASH 스트리밍</li>
+                            <li><strong>ProgressiveMediaSource</strong>: 로컬 파일, HTTP 다운로드</li>
+                            <li><strong>ConcatenatingMediaSource</strong>: 여러 소스 병합</li>
+                            <li><strong>ClippingMediaSource</strong>: 일부 구간만 재생</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        TrackSelector
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>트랙 선택 로직</strong></p>
+                        <ul>
+                            <li><strong>DefaultTrackSelector</strong>: 자동 품질 선택</li>
+                            <li><strong>해상도 선택</strong>: 화면 크기 및 대역폭 고려</li>
+                            <li><strong>언어 선택</strong>: 사용자 선호 언어</li>
+                            <li><strong>자막 선택</strong>: 자막 트랙 자동/수동 선택</li>
+                            <li><strong>커스터마이징</strong>: 앱별 선택 정책 구현 가능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        LoadControl
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>버퍼링 정책 제어</strong></p>
+                        <ul>
+                            <li><strong>minBufferMs</strong>: 최소 버퍼 (기본: 50초)</li>
+                            <li><strong>maxBufferMs</strong>: 최대 버퍼 (기본: 50초)</li>
+                            <li><strong>bufferForPlaybackMs</strong>: 재생 시작 버퍼 (기본: 2.5초)</li>
+                            <li><strong>bufferForPlaybackAfterRebufferMs</strong>: 재버퍼링 후 (기본: 5초)</li>
+                            <li><strong>커스텀 정책</strong>: 네트워크 상태에 따라 동적 조정</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎨</span>
+                        ExoPlayer 장점
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>일관성</strong>: 모든 기기에서 동일한 동작</li>
+                            <li><strong>최신 기능</strong>: Google Play 통해 독립 업데이트</li>
+                            <li><strong>확장성</strong>: 커스텀 Renderer, Extractor 지원</li>
+                            <li><strong>DRM 통합</strong>: Widevine, PlayReady 기본 지원</li>
+                            <li><strong>디버깅</strong>: 상세한 로그 및 이벤트 리스너</li>
+                            <li><strong>Media3</strong>: 최신 Jetpack 라이브러리로 진화</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 ExoPlayer vs MediaPlayer</strong><br/>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>MediaPlayer</strong>: 간단한 로컬 재생에 적합, OS 버전에 따라 동작 차이</li>
+                    <li><strong>ExoPlayer (Media3)</strong>: 스트리밍 필수, 일관된 동작, 고급 기능 필요 시 권장</li>
+                    <li><strong>권장</strong>: 새 앱은 Media3 ExoPlayer 사용</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 11: Code Examples -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                실제 코드 예시
+            </h2>
+            <p class="section-description">
+                MediaPlayer, MediaExtractor, ExoPlayer를 사용한 실제 재생 코드입니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                🎬 MediaPlayer 기본 재생
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        URI 방식 재생
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>content:// URI 사용</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// MediaStore에서 오디오 URI 획득
+val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+val projection = arrayOf(MediaStore.Audio.Media._ID)
+val cursor = contentResolver.query(uri, projection, null, null, null)
+
+cursor?.use {
+    if (it.moveToFirst()) {
+        val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
+        val audioUri = ContentUris.withAppendedId(uri, id)
+
+        // MediaPlayer 초기화
+        val mediaPlayer = MediaPlayer().apply {
+            setDataSource(applicationContext, audioUri)
+            prepareAsync()
+            setOnPreparedListener {
+                start()  // 재생 시작
+            }
+            setOnCompletionListener {
+                release()  // 리소스 해제
+            }
+        }
+    }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📂</span>
+                        FileDescriptor 방식
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>직접 FD 획득</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// FileDescriptor 획득
+val pfd = contentResolver.openFileDescriptor(audioUri, "r")
+
+pfd?.use { parcelFd ->
+    val mediaPlayer = MediaPlayer().apply {
+        setDataSource(parcelFd.fileDescriptor)
+        prepare()  // 동기 방식
+        start()
+
+        // Seek 예시
+        seekTo(30000)  // 30초 위치로 이동
+
+        // 상태 확인
+        val duration = duration  // ms
+        val position = currentPosition  // ms
+    }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 MediaExtractor + MediaCodec
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        MediaExtractor 초기화
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>val extractor = MediaExtractor()
+val pfd = contentResolver.openFileDescriptor(videoUri, "r")
+
+pfd?.use {
+    extractor.setDataSource(it.fileDescriptor)
+
+    // 비디오 트랙 찾기
+    var videoTrackIndex = -1
+    for (i in 0 until extractor.trackCount) {
+        val format = extractor.getTrackFormat(i)
+        val mime = format.getString(MediaFormat.KEY_MIME)
+        if (mime?.startsWith("video/") == true) {
+            videoTrackIndex = i
+            extractor.selectTrack(i)
+            break
+        }
+    }
+
+    val format = extractor.getTrackFormat(videoTrackIndex)
+    val width = format.getInteger(MediaFormat.KEY_WIDTH)
+    val height = format.getInteger(MediaFormat.KEY_HEIGHT)
+    val duration = format.getLong(MediaFormat.KEY_DURATION)  // μs
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        MediaCodec 디코딩 루프
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>val decoder = MediaCodec.createDecoderByType("video/avc")
+decoder.configure(format, surface, null, 0)
+decoder.start()
+
+val bufferInfo = MediaCodec.BufferInfo()
+var isEOS = false
+
+while (!isEOS) {
+    // 입력 버퍼 처리
+    val inputIndex = decoder.dequeueInputBuffer(10000)
+    if (inputIndex >= 0) {
+        val inputBuffer = decoder.getInputBuffer(inputIndex)!!
+        val sampleSize = extractor.readSampleData(inputBuffer, 0)
+
+        if (sampleSize < 0) {
+            decoder.queueInputBuffer(inputIndex, 0, 0, 0,
+                MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+            isEOS = true
+        } else {
+            val pts = extractor.sampleTime
+            decoder.queueInputBuffer(inputIndex, 0, sampleSize, pts, 0)
+            extractor.advance()
+        }
+    }
+
+    // 출력 버퍼 처리
+    val outputIndex = decoder.dequeueOutputBuffer(bufferInfo, 10000)
+    if (outputIndex >= 0) {
+        decoder.releaseOutputBuffer(outputIndex, true)  // Surface 렌더링
+    }
+}
+
+decoder.stop()
+decoder.release()
+extractor.release()</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎮 ExoPlayer (Media3) 재생
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        HLS 스트리밍
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// build.gradle
+implementation("androidx.media3:media3-exoplayer:1.2.0")
+implementation("androidx.media3:media3-exoplayer-hls:1.2.0")
+implementation("androidx.media3:media3-ui:1.2.0")
+
+// ExoPlayer 초기화
+val player = ExoPlayer.Builder(context)
+    .setLoadControl(
+        DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                15000,  // minBufferMs
+                50000,  // maxBufferMs
+                2500,   // bufferForPlaybackMs
+                5000    // bufferForPlaybackAfterRebufferMs
+            )
+            .build()
+    )
+    .build()
+
+// HLS MediaSource
+val hlsUrl = "https://example.com/playlist.m3u8"
+val mediaItem = MediaItem.fromUri(hlsUrl)
+player.setMediaItem(mediaItem)
+player.prepare()
+player.play()
+
+// PlayerView에 연결
+val playerView = findViewById<PlayerView>(R.id.player_view)
+playerView.player = player</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        로컬 파일 재생
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// content:// URI 사용
+val mediaItem = MediaItem.fromUri(contentUri)
+
+val player = ExoPlayer.Builder(context).build().apply {
+    setMediaItem(mediaItem)
+
+    // 이벤트 리스너
+    addListener(object : Player.Listener {
+        override fun onPlaybackStateChanged(state: Int) {
+            when (state) {
+                Player.STATE_BUFFERING -> Log.d(TAG, "Buffering...")
+                Player.STATE_READY -> Log.d(TAG, "Ready to play")
+                Player.STATE_ENDED -> Log.d(TAG, "Playback ended")
+            }
+        }
+
+        override fun onPlayerError(error: PlaybackException) {
+            Log.e(TAG, "Playback error: ${error.message}")
+        }
+    })
+
+    prepare()
+    play()
+}
+
+// Seek
+player.seekTo(60000)  // 60초 위치
+
+// 재생 속도 조절
+player.setPlaybackSpeed(1.5f)  // 1.5배속
+
+// 해제
+player.release()</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ 코드 사용 시 주의사항</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>권한</strong>: READ_MEDIA_AUDIO, READ_MEDIA_VIDEO 권한 필요 (Android 13+)</li>
+                    <li><strong>UI Thread</strong>: prepareAsync() 또는 ExoPlayer 비동기 사용</li>
+                    <li><strong>리소스 해제</strong>: 반드시 release() 호출 (메모리 누수 방지)</li>
+                    <li><strong>생명주기</strong>: Activity/Fragment 생명주기에 맞춰 pause/resume</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 12: Performance Profiling -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                성능 프로파일링 및 디버깅
+            </h2>
+            <p class="section-description">
+                미디어 재생 성능을 측정하고 문제를 해결하는 방법입니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                🔍 디버깅 도구
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        adb logcat 필터링
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>미디어 재생 로그 추출</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># NuPlayer 로그
+adb logcat -s NuPlayer NuPlayerDriver NuPlayerRenderer
+
+# MediaCodec 로그
+adb logcat -s MediaCodec ACodec CCodec
+
+# MediaExtractor 로그
+adb logcat -s MediaExtractor MPEG4Extractor
+
+# ExoPlayer 로그
+adb logcat -s ExoPlayerImpl DefaultTrackSelector LoadControl
+
+# A/V Sync 문제 디버깅
+adb logcat | grep -iE "pts|sync|late|drop"
+
+# 버퍼링 문제
+adb logcat | grep -iE "buffer|starv|underrun"</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        dumpsys 분석
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>시스템 상태 조회</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># MediaPlayer 인스턴스 상태
+adb shell dumpsys media.player
+
+# MediaCodec 사용 현황
+adb shell dumpsys media.codec
+
+# AudioFlinger 상태
+adb shell dumpsys media.audio_flinger
+
+# 리소스 사용 현황
+adb shell dumpsys media.resource_manager
+
+# Surface 상태
+adb shell dumpsys SurfaceFlinger</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📈</span>
+                        Systrace 프로파일링
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>타이밍 분석</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Systrace 캡처 (10초)
+adb shell atrace -z -t 10 \
+  gfx input view webview wm am audio video camera hal \
+  sched freq idle disk mmc load sync workq memreclaim \
+  -o /data/local/tmp/trace.html
+
+# PC로 복사
+adb pull /data/local/tmp/trace.html
+
+# Chrome에서 chrome://tracing 열어서 분석
+
+# 주요 확인 사항:
+# - MediaCodec 디코딩 시간
+# - AudioTrack write 타이밍
+# - SurfaceFlinger vsync
+# - CPU 사용률 및 스케줄링</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        ExoPlayer EventLogger
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>상세 이벤트 로깅</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// ExoPlayer에 EventLogger 추가
+val player = ExoPlayer.Builder(context).build()
+player.addAnalyticsListener(EventLogger())
+
+// 로그 출력 내용:
+// - 트랙 선택 (비디오/오디오 품질)
+// - 버퍼링 이벤트 (시작/종료)
+// - 디코더 초기화
+// - 드롭된 프레임 수
+// - 네트워크 대역폭 측정
+// - 에러 및 경고</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ⚠️ 일반적인 문제 및 해결책
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>문제</th>
+                        <th>원인</th>
+                        <th>해결 방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>재생 시작 느림</strong></td>
+                        <td>prepare() 동기 호출, 큰 파일</td>
+                        <td>prepareAsync() 사용, 버퍼 크기 조정</td>
+                    </tr>
+                    <tr>
+                        <td><strong>비디오 끊김 (버퍼링)</strong></td>
+                        <td>네트워크 느림, 디코더 느림</td>
+                        <td>LoadControl 버퍼 증가, 해상도 낮추기</td>
+                    </tr>
+                    <tr>
+                        <td><strong>프레임 드롭</strong></td>
+                        <td>CPU 부하, 디코더 성능 부족</td>
+                        <td>하드웨어 디코더 사용, 백그라운드 작업 중단</td>
+                    </tr>
+                    <tr>
+                        <td><strong>오디오 끊김</strong></td>
+                        <td>AudioTrack 버퍼 부족, Underrun</td>
+                        <td>AudioTrack 버퍼 크기 증가, 우선순위 상승</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Seek 느림</strong></td>
+                        <td>Keyframe 멀리 위치, 인덱스 부재</td>
+                        <td>SEEK_TO_CLOSEST_SYNC 플래그, 세그먼트 크기 조정</td>
+                    </tr>
+                    <tr>
+                        <td><strong>메모리 부족</strong></td>
+                        <td>리소스 미해제, 큰 버퍼</td>
+                        <td>release() 호출, 버퍼 크기 감소, 해상도 낮추기</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DRM 재생 실패</strong></td>
+                        <td>라이센스 만료, Secure Decoder 부재</td>
+                        <td>라이센스 갱신, Widevine L1 지원 확인</td>
+                    </tr>
+                    <tr>
+                        <td><strong>4K 재생 안됨</strong></td>
+                        <td>하드웨어 미지원, 메모리 부족</td>
+                        <td>media_codecs.xml 확인, 메모리 최적화</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 성능 메트릭
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏱️</span>
+                        재생 시작 시간 (Time to First Frame)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>목표</strong>: 1초 이내</li>
+                            <li><strong>측정</strong>: setDataSource() ~ onPrepared()</li>
+                            <li><strong>영향 요소</strong>: 네트워크 지연, 컨테이너 파싱, 디코더 초기화</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📉</span>
+                        드롭 프레임 비율
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>목표</strong>: 1% 미만</li>
+                            <li><strong>측정</strong>: dumpsys media.codec 또는 Systrace</li>
+                            <li><strong>허용</strong>: Seek 직후 일시적 드롭은 정상</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        버퍼링 빈도
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>목표</strong>: 5분당 1회 미만</li>
+                            <li><strong>측정</strong>: ExoPlayer EventLogger</li>
+                            <li><strong>개선</strong>: 초기 버퍼 증가, ABR 알고리즘 조정</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💾</span>
+                        메모리 사용량
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>목표</strong>: 100MB 미만 (1080p 기준)</li>
+                            <li><strong>측정</strong>: Android Profiler</li>
+                            <li><strong>주의</strong>: 버퍼 크기와 해상도에 비례</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 성능 최적화 팁</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>하드웨어 디코더 우선</strong>: 소프트웨어 디코더보다 10배 이상 효율적</li>
+                    <li><strong>적절한 버퍼 크기</strong>: 너무 크면 메모리 낭비, 너무 작으면 버퍼링</li>
+                    <li><strong>Surface 직접 렌더링</strong>: ByteBuffer 복사보다 빠름</li>
+                    <li><strong>ExoPlayer 사용</strong>: MediaPlayer보다 안정적이고 기능 풍부</li>
+                    <li><strong>FUSE Passthrough</strong>: Android 12+ 타겟으로 I/O 성능 향상</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 13: AOSP Source Code Reference -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                AOSP 소스 코드 참조
+            </h2>
+            <p class="section-description">
+                미디어 재생 파이프라인 관련 AOSP 소스 코드 위치 및 주요 파일입니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                📂 주요 디렉토리
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        NuPlayer
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/av/media/libmediaplayerservice/nuplayer/</code><br/>
+                            → NuPlayer.cpp (메인 컨트롤러)</li>
+                            <li><code>NuPlayerSource.cpp</code><br/>
+                            → Source 인터페이스</li>
+                            <li><code>GenericSource.cpp</code><br/>
+                            → 로컬 파일 소스</li>
+                            <li><code>NuPlayerRenderer.cpp</code><br/>
+                            → VideoRenderer, AudioRenderer</li>
+                            <li><code>NuPlayerDecoder.cpp</code><br/>
+                            → MediaCodec 래퍼</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        MediaExtractor
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/av/media/libstagefright/</code><br/>
+                            → MediaExtractor.cpp</li>
+                            <li><code>MPEG4Extractor.cpp</code><br/>
+                            → MP4/MOV 파서</li>
+                            <li><code>MatroskaExtractor.cpp</code><br/>
+                            → MKV/WebM 파서</li>
+                            <li><code>frameworks/av/media/extractors/</code><br/>
+                            → 각종 Extractor 플러그인</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        MediaCodec
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/av/media/libstagefright/</code><br/>
+                            → MediaCodec.cpp (API)</li>
+                            <li><code>frameworks/av/media/codec2/</code><br/>
+                            → Codec2 Framework</li>
+                            <li><code>ACodec.cpp</code><br/>
+                            → OpenMAX IL 래퍼 (레거시)</li>
+                            <li><code>CCodec.cpp</code><br/>
+                            → Codec2 래퍼</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Output
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/av/media/libaudioclient/</code><br/>
+                            → AudioTrack.cpp</li>
+                            <li><code>frameworks/av/services/audioflinger/</code><br/>
+                            → AudioFlinger.cpp (믹싱)</li>
+                            <li><code>Threads.cpp</code><br/>
+                            → PlaybackThread</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔬 핵심 코드 예시
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        NuPlayer 상태 관리
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>NuPlayer.cpp</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/av/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+
+void NuPlayer::onMessageReceived(const sp&lt;AMessage&gt; &msg) {
+    switch (msg->what()) {
+        case kWhatSetDataSource:
+        {
+            sp&lt;RefBase&gt; obj;
+            CHECK(msg->findObject("source", &obj));
+            mSource = static_cast&lt;Source *&gt;(obj.get());
+            break;
+        }
+
+        case kWhatPrepare:
+        {
+            mSource->prepareAsync();
+            postScanSources();
+            break;
+        }
+
+        case kWhatStart:
+        {
+            mOffloadAudio = false;
+            onStart();
+            mPausedByClient = false;
+            break;
+        }
+
+        // ... 기타 메시지 처리
+    }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        A/V Sync 구현
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>NuPlayerRenderer.cpp</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/av/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
+
+void NuPlayerRenderer::onDrainVideoQueue() {
+    VideoEntry entry = mVideoQueue.front();
+    int64_t videoPTS = entry.mNotify->getInt64("timeUs");
+
+    // 오디오 기준 시간 획득
+    int64_t mediaTimeUs;
+    int64_t nowUs = ALooper::GetNowUs();
+    status_t result = getCurrentPosition(&mediaTimeUs);
+
+    // PTS 차이 계산
+    int64_t lateByUs = nowUs - videoPTS;
+
+    if (lateByUs > 50000) {
+        // 50ms 이상 늦음 → 프레임 드롭
+        ALOGV("video late by %lld us, dropping frame", lateByUs);
+        mVideoQueue.pop_front();
+        notifyPendingBufferDrop();
+        return;
+    }
+
+    // 정상 렌더링
+    renderVideoFrame(entry);
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔗 유용한 AOSP 링크</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>AOSP 소스 브라우저</strong>: <a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/av/media/" target="_blank" style="color: var(--accent-primary);">cs.android.com (media)</a></li>
+                    <li><strong>Media 공식 문서</strong>: <a href="https://source.android.com/docs/core/media" target="_blank" style="color: var(--accent-primary);">source.android.com/media</a></li>
+                    <li><strong>MediaPlayer API</strong>: <a href="https://developer.android.com/reference/android/media/MediaPlayer" target="_blank" style="color: var(--accent-primary);">developer.android.com</a></li>
+                    <li><strong>ExoPlayer 문서</strong>: <a href="https://developer.android.com/media/media3/exoplayer" target="_blank" style="color: var(--accent-primary);">Media3 ExoPlayer</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 14: Related Pages -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                관련 상세 문서
+            </h2>
+            <p class="section-description">
+                미디어 재생 파이프라인과 관련된 다른 주제들을 탐색하세요.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        <p>전체 미디어 프레임워크 아키텍처</p>
+                        <ul>
+                            <li>AOSP 5-Layer 구조</li>
+                            <li>Application → HAL 데이터 플로우</li>
+                            <li>MediaPlayer/MediaCodec 위치</li>
+                            <li>NuPlayer가 전체 구조에서 차지하는 역할</li>
+                        </ul>
+                        <a href="media-framework-core.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Codec 2.0
+                    </h3>
+                    <div class="card-description">
+                        <p>차세대 코덱 프레임워크</p>
+                        <ul>
+                            <li>C2Component 구조</li>
+                            <li>Zero-Copy 버퍼 메커니즘</li>
+                            <li>HAL 인터페이스 (HIDL/AIDL)</li>
+                            <li>MediaCodec과의 통합</li>
+                        </ul>
+                        <a href="codec2.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        MediaExtractor
+                    </h3>
+                    <div class="card-description">
+                        <p>컨테이너 파싱 및 디먹싱</p>
+                        <ul>
+                            <li>MP4/MKV/WebM 파싱</li>
+                            <li>트랙 분리 및 메타데이터</li>
+                            <li>NuPlayer GenericSource 통합</li>
+                            <li>Extractor 플러그인 구조</li>
+                        </ul>
+                        <a href="media-extractor.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>오디오 처리 파이프라인</p>
+                        <ul>
+                            <li>AudioFlinger 믹싱 엔진</li>
+                            <li>AudioTrack API</li>
+                            <li>Audio HAL 인터페이스</li>
+                            <li>NuPlayer AudioRenderer 통합</li>
+                        </ul>
+                        <a href="audio-framework.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🗄️</span>
+                        MediaProvider
+                    </h3>
+                    <div class="card-description">
+                        <p>미디어 파일 인덱싱 및 접근</p>
+                        <ul>
+                            <li>MediaStore API</li>
+                            <li>FUSE Daemon 및 Passthrough</li>
+                            <li>Scoped Storage 정책</li>
+                            <li>재생 플로우에서의 역할</li>
+                        </ul>
+                        <a href="mediaprovider.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Widevine DRM
+                    </h3>
+                    <div class="card-description">
+                        <p>DRM 보호 콘텐츠 재생</p>
+                        <ul>
+                            <li>Widevine L1/L2/L3</li>
+                            <li>MediaDrm + MediaCodec 통합</li>
+                            <li>Secure Decoder (TEE)</li>
+                            <li>ExoPlayer DRM 지원</li>
+                        </ul>
+                        <a href="widevine.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Footer -->
         <footer
             style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
-            <p>MediaProvider in Media Playback Flow</p>
+            <p>Media Playback Pipeline & Data Flow</p>
             <p style="margin-top: 10px; font-size: 0.9rem;">
-                Audio/Video Playback Architecture & Performance Optimization
+                Complete guide to Android media playback architecture
             </p>
             <p style="margin-top: 20px;">
-                <a href="mediaprovider.html" style="color: var(--accent-primary); text-decoration: none;">
-                    ← MediaProvider Overview로 돌아가기
-                </a>
-                |
                 <a href="index.html" style="color: var(--accent-primary); text-decoration: none;">
-                    AOSP Media Framework로 돌아가기
+                    ← AOSP Media Framework로 돌아가기
                 </a>
             </p>
         </footer>
