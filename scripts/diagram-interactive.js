@@ -9,8 +9,12 @@ let activeTooltip = null;
 
 // DOM 로드 완료 후 초기화
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 diagram-interactive.js 로드됨!');
+    console.log('📦 DIAGRAM_NODE_DATA 정의 여부:', typeof DIAGRAM_NODE_DATA !== 'undefined');
+
     // Mermaid 렌더링 완료 대기 (1초)
     setTimeout(() => {
+        console.log('⏰ 1초 대기 완료, 초기화 시작...');
         initializeDiagramInteractivity();
     }, 1000);
 });
@@ -216,6 +220,9 @@ function handleNodeClick(nodeId, node) {
     console.log(`\n🖱️ 노드 클릭 이벤트 발생!`);
     console.log(`   노드 ID: "${nodeId}"`);
     console.log(`   노드 요소:`, node);
+
+    // 디버깅: 클릭 확인용 alert
+    alert(`노드 클릭됨!\nID: ${nodeId}`);
 
     let nodeData = DIAGRAM_NODE_DATA[nodeId];
 
