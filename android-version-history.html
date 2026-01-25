@@ -319,6 +319,36 @@
                         </div>
                     </div>
 
+                    <!-- 2015 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2015<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                6.0</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">MediaBrowser API</div>
+                            <ul class="timeline-list">
+                                <li>MediaBrowser/MediaController</li>
+                                <li>Adoptable Storage</li>
+                                <li>Auto Backup for Apps</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2016 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2016<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                7.0</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Multi-window Media</div>
+                            <ul class="timeline-list">
+                                <li>Multi-window playback</li>
+                                <li>Data Saver improvements</li>
+                                <li>Scoped Directory Access</li>
+                            </ul>
+                        </div>
+                    </div>
+
                     <!-- 2017 -->
                     <div class="timeline-item">
                         <div class="timeline-date">2017<br><span style="font-size: 0.8em; opacity: 0.7;">Android
@@ -329,8 +359,25 @@
                             <ul class="timeline-list">
                                 <li>HIDL for HALs</li>
                                 <li>AAudio API (Low-latency)</li>
+                                <li>MediaPlayer2 API</li>
+                                <li>BT Audio Codec selection</li>
                             </ul>
                             <span class="badge">Architecture Change</span>
+                        </div>
+                    </div>
+
+                    <!-- 2018 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2018<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                9.0</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">HDR & HEIF</div>
+                            <ul class="timeline-list">
+                                <li>HDR VP9 Profile 2</li>
+                                <li>HEIF image format</li>
+                                <li>Dynamic Processing Effect</li>
+                            </ul>
                         </div>
                     </div>
 
@@ -356,10 +403,28 @@
                                 11</span></div>
                         <div class="timeline-dot"></div>
                         <div class="timeline-content-box">
-                            <div class="timeline-title">AIDL for HALs</div>
+                            <div class="timeline-title">AIDL & MediaParser</div>
                             <ul class="timeline-list">
                                 <li>Transition from HIDL to AIDL</li>
-                                <li>Instant Resume support</li>
+                                <li>MediaParser API</li>
+                                <li>Variable Refresh Rate</li>
+                                <li>Frame Rate API</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2021 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2021<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                12</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">AVIF & Haptic Audio</div>
+                            <ul class="timeline-list">
+                                <li>AVIF image support</li>
+                                <li>Haptic-coupled audio</li>
+                                <li>MediaDrm improvements</li>
+                                <li>TranscodingSession API</li>
                             </ul>
                         </div>
                     </div>
@@ -497,48 +562,87 @@ graph LR
                 <span class="section-number">3</span>
                 Media Player Architecture
             </h2>
+            <p class="section-description">
+                Android의 미디어 플레이어는 하위 레벨 엔진과 상위 레벨 API로 나뉘며, 시간이 지남에 따라 진화했습니다.
+            </p>
             <table>
                 <thead>
                     <tr>
                         <th>Component</th>
-                        <th>Stagefright (Legacy)</th>
-                        <th>NuPlayer (Transition)</th>
-                        <th>ExoPlayer / Media3 (Modern)</th>
+                        <th>MediaPlayer API</th>
+                        <th>Stagefright Engine</th>
+                        <th>NuPlayer Engine</th>
+                        <th>ExoPlayer / Media3</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td><strong>도입 시기</strong></td>
-                        <td>Android 2.2 (Froyo)</td>
-                        <td>Android 5.0 (Lollipop)</td>
-                        <td>Jetpack Library (Unbundled)</td>
+                        <td>Android 1.0 (2008)</td>
+                        <td>Android 2.2 (2010)</td>
+                        <td>Android 5.0 (2014)</td>
+                        <td>Jetpack Library (2016+)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>레이어</strong></td>
+                        <td>Java API (Public)</td>
+                        <td>Native Engine (Internal)</td>
+                        <td>Native Engine (Internal)</td>
+                        <td>App-level Library (Public)</td>
                     </tr>
                     <tr>
                         <td><strong>특징</strong></td>
-                        <td>OS 내장 네이티브 플레이어 엔진</td>
-                        <td>스트리밍(RTSP, HLS)에 최적화</td>
-                        <td>앱 레벨 구현, 높은 확장성 및 유연성</td>
+                        <td>간단한 재생 API</td>
+                        <td>OpenCore 대체 엔진</td>
+                        <td>스트리밍 최적화</td>
+                        <td>확장 가능한 플레이어</td>
                     </tr>
                     <tr>
-                        <td><strong>장점</strong></td>
-                        <td>OS 통합</td>
-                        <td>향상된 스트리밍 지원</td>
+                        <td><strong>주요 기능</strong></td>
                         <td>
                             <ul>
-                                <li>DASH, HLS, SmoothStreaming 지원</li>
-                                <li>커스텀 Renderer 및 Extractor 확장 용이</li>
-                                <li>일관된 기기 간 동작 보장</li>
+                                <li>로컬/원격 재생</li>
+                                <li>기본 제어 (play/pause)</li>
+                                <li>간단한 이벤트 콜백</li>
+                            </ul>
+                        </td>
+                        <td>
+                            <ul>
+                                <li>MediaPlayer 백엔드</li>
+                                <li>로컬 파일 중심</li>
+                                <li>OS 통합</li>
+                            </ul>
+                        </td>
+                        <td>
+                            <ul>
+                                <li>RTSP, HLS 지원</li>
+                                <li>향상된 버퍼링</li>
+                                <li>MediaPlayer2 백엔드</li>
+                            </ul>
+                        </td>
+                        <td>
+                            <ul>
+                                <li>DASH, HLS, SS 지원</li>
+                                <li>커스텀 확장</li>
+                                <li>일관된 크로스 디바이스</li>
                             </ul>
                         </td>
                     </tr>
                     <tr>
                         <td><strong>상태</strong></td>
+                        <td><span class="tag tag-version">Stable</span></td>
                         <td><span class="tag tag-deprecated">Internal Only</span></td>
                         <td><span class="tag tag-deprecated">Internal Only</span></td>
                         <td><span class="tag tag-new">Recommended</span></td>
                     </tr>
                 </tbody>
             </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 권장사항</strong><br/>
+                새 앱 개발 시 <strong>Media3 (ExoPlayer)</strong>를 사용하세요. MediaPlayer API는 간단한 재생에는 여전히 유효하지만,
+                어댑티브 스트리밍, DRM, 고급 제어가 필요한 경우 Media3가 더 적합합니다.
+            </div>
         </section>
 
         <!-- Section 4: Codec & Player Performance Tuning -->
@@ -610,6 +714,9 @@ graph LR
                 <span class="section-number">6</span>
                 Major API Deprecation Timeline
             </h2>
+            <p class="section-description">
+                Android 미디어 프레임워크의 주요 API 변경 및 Deprecation 내역입니다.
+            </p>
             <table>
                 <thead>
                     <tr>
@@ -617,35 +724,375 @@ graph LR
                         <th>Introduced</th>
                         <th>Deprecated In</th>
                         <th>Replacement</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><code>MediaRecorder.AudioEncoder.AMR_NB</code></td>
-                        <td>API 1</td>
-                        <td>-</td>
-                        <td>AAC (Recommended)</td>
+                        <td><code>android.hardware.Camera</code></td>
+                        <td>API 1 (2008)</td>
+                        <td>API 21 (Lollipop, 2014)</td>
+                        <td><code>android.hardware.camera2</code></td>
+                        <td><span class="tag tag-deprecated">Deprecated</span></td>
                     </tr>
                     <tr>
                         <td><code>RemoteControlClient</code></td>
-                        <td>API 14</td>
-                        <td>API 21 (Lollipop)</td>
+                        <td>API 14 (2011)</td>
+                        <td>API 21 (Lollipop, 2014)</td>
                         <td><code>MediaSession</code></td>
+                        <td><span class="tag tag-deprecated">Deprecated</span></td>
                     </tr>
                     <tr>
-                        <td><code>MediaSession</code> (Legacy)</td>
-                        <td>API 21</td>
-                        <td>-</td>
-                        <td><code>Media3 MediaSession</code></td>
+                        <td><code>OpenSL ES</code></td>
+                        <td>API 9 (2010)</td>
+                        <td>API 26+ (Oreo, 2017)</td>
+                        <td><code>AAudio</code> (Native C++)</td>
+                        <td><span class="tag tag-deprecated">AAudio Recommended</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>MediaPlayer2</code></td>
+                        <td>API 28 (Pie, 2018)</td>
+                        <td>API 30 (Android 11, 2020)</td>
+                        <td><code>Media3</code></td>
+                        <td><span class="tag tag-deprecated">Removed</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>MediaSession</code> (Framework)</td>
+                        <td>API 21 (2014)</td>
+                        <td>Not Deprecated (but migration recommended)</td>
+                        <td><code>androidx.media3.session.MediaSession</code></td>
+                        <td><span class="tag tag-version">Stable, Media3 Preferred</span></td>
                     </tr>
                     <tr>
                         <td><code>ExoPlayer</code> (Standalone)</td>
-                        <td>-</td>
-                        <td>Deprecated (2023)</td>
+                        <td>2016 (Google I/O)</td>
+                        <td>2023 (v2.19.0)</td>
                         <td><code>androidx.media3.exoplayer</code></td>
+                        <td><span class="tag tag-deprecated">Deprecated</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>MediaRecorder.AudioEncoder.AMR_NB</code></td>
+                        <td>API 1</td>
+                        <td>Not Deprecated (but AAC preferred)</td>
+                        <td>AAC (Better quality)</td>
+                        <td><span class="tag tag-version">Legacy</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>OpenMAX IL</code></td>
+                        <td>API 16 (2012)</td>
+                        <td>API 29 (Android 10, 2019)</td>
+                        <td><code>Codec2</code></td>
+                        <td><span class="tag tag-deprecated">Replaced</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>MediaDrm.SECURITY_LEVEL_UNKNOWN</code></td>
+                        <td>API 18</td>
+                        <td>API 28 (Pie)</td>
+                        <td>Use <code>getSecurityLevel()</code></td>
+                        <td><span class="tag tag-deprecated">Deprecated</span></td>
                     </tr>
                 </tbody>
             </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>⚠️ 주요 마이그레이션 가이드</strong><br/>
+                • <strong>Camera → Camera2</strong>: Manual 제어 및 RAW 캡처 필요 시 필수 전환<br/>
+                • <strong>OpenSL ES → AAudio</strong>: 저지연 오디오 앱(게임, 악기)은 AAudio 권장<br/>
+                • <strong>ExoPlayer → Media3</strong>: 2024년까지 마이그레이션 완료 권장 (ExoPlayer v2 지원 종료)<br/>
+                • <strong>MediaSession (Framework) → Media3 MediaSession</strong>: Jetpack 버전이 더 많은 기능 제공
+            </div>
+        </section>
+
+        <!-- Section 7: Camera API Evolution -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Camera API Evolution
+            </h2>
+            <p class="section-description">
+                Android의 카메라 API는 단순한 이미지 캡처부터 고급 RAW 제어까지 3세대에 걸쳐 진화했습니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Gen1["1st Gen: Camera API (API 1+)"]
+                        CAM1["android.hardware.Camera<br/>2008~2014"]
+                        CAM1_FEAT["• Simple preview/capture<br/>• Limited manual control<br/>• Deprecated in API 21"]
+                    end
+
+                    subgraph Gen2["2nd Gen: Camera2 API (API 21+)"]
+                        CAM2["android.hardware.camera2<br/>2014~Present"]
+                        CAM2_FEAT["• Request-based pipeline<br/>• Manual control (ISO, exposure)<br/>• RAW capture<br/>• Concurrent camera streams"]
+                    end
+
+                    subgraph Gen3["3rd Gen: CameraX (Jetpack)"]
+                        CAMX["androidx.camera.core<br/>2019~Present"]
+                        CAMX_FEAT["• Lifecycle-aware<br/>• Use cases (Preview, Capture, Analysis)<br/>• Vendor extensions support<br/>• Simplified API"]
+                    end
+
+                    Gen1 -->|Deprecated| Gen2
+                    Gen2 -->|Recommended for advanced| Gen3
+                    Gen3 -.->|Built on top of| Gen2
+                </div>
+            </div>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h3 class="card-title">📷 Camera API (Legacy)</h3>
+                    <span class="tag tag-deprecated">Deprecated</span>
+                    <ul>
+                        <li><strong>도입</strong>: Android 1.0 (2008)</li>
+                        <li><strong>특징</strong>: 단순 프리뷰/캡처, 제한된 제어</li>
+                        <li><strong>상태</strong>: API 21(Lollipop)부터 Deprecated</li>
+                        <li><strong>교체</strong>: Camera2 API로 전환 권장</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">📸 Camera2 API</h3>
+                    <span class="tag tag-version">Android 5.0+</span>
+                    <ul>
+                        <li><strong>도입</strong>: Android 5.0 (2014)</li>
+                        <li><strong>특징</strong>: Request-based 파이프라인, Manual 제어</li>
+                        <li><strong>장점</strong>: RAW 캡처, Multi-camera, 세밀한 제어</li>
+                        <li><strong>난이도</strong>: 복잡한 API, 긴 학습 곡선</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">🎥 CameraX (Jetpack)</h3>
+                    <span class="tag tag-new">Recommended</span>
+                    <ul>
+                        <li><strong>도입</strong>: 2019 (Jetpack Library)</li>
+                        <li><strong>특징</strong>: Lifecycle-aware, Use case 기반</li>
+                        <li><strong>장점</strong>: 80% 기기에서 일관된 동작, 간단한 API</li>
+                        <li><strong>확장</strong>: Camera2 Interop으로 고급 기능 접근</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Audio API Evolution -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Audio API Evolution
+            </h2>
+            <p class="section-description">
+                Android의 오디오 API는 저지연 및 고품질 재생을 위해 지속적으로 발전해왔습니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                    subgraph Java["Java/Kotlin APIs"]
+                        AT["AudioTrack<br/>(API 1+)"]
+                        AR["AudioRecord<br/>(API 1+)"]
+                    end
+
+                    subgraph Native1["Native C/C++ (Legacy)"]
+                        OPENSL["OpenSL ES<br/>(API 9-27)"]
+                    end
+
+                    subgraph Native2["Native C/C++ (Modern)"]
+                        AAUDIO["AAudio<br/>(API 26+)"]
+                    end
+
+                    subgraph Features["Key Features"]
+                        FEAT_AT["• High-level API<br/>• Android-specific"]
+                        FEAT_OPENSL["• Cross-platform<br/>• Complex API"]
+                        FEAT_AAUDIO["• Low-latency<br/>• Simple & efficient"]
+                    end
+
+                    AT -.-> FEAT_AT
+                    OPENSL -.-> FEAT_OPENSL
+                    AAUDIO -.-> FEAT_AAUDIO
+
+                    OPENSL -->|Replaced by| AAUDIO
+                </div>
+            </div>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h3 class="card-title">🔊 AudioTrack/AudioRecord</h3>
+                    <span class="tag tag-version">Android 1.0+</span>
+                    <ul>
+                        <li><strong>레벨</strong>: Java/Kotlin API</li>
+                        <li><strong>특징</strong>: 간단한 재생/녹음 인터페이스</li>
+                        <li><strong>장점</strong>: 사용 편의성, Android 전용 기능</li>
+                        <li><strong>단점</strong>: 상대적으로 높은 레이턴시</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">🎹 OpenSL ES</h3>
+                    <span class="tag tag-deprecated">Deprecated</span>
+                    <ul>
+                        <li><strong>도입</strong>: Android 2.3 (API 9)</li>
+                        <li><strong>특징</strong>: Khronos 표준 C API</li>
+                        <li><strong>장점</strong>: 크로스 플랫폼</li>
+                        <li><strong>상태</strong>: AAudio로 교체 권장 (API 26+)</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">⚡ AAudio</h3>
+                    <span class="tag tag-new">Android 8.0+</span>
+                    <ul>
+                        <li><strong>도입</strong>: Android 8.0 (API 26)</li>
+                        <li><strong>특징</strong>: 저지연 Native C++ API</li>
+                        <li><strong>장점</strong>: MMAP 모드, 10ms 이하 레이턴시</li>
+                        <li><strong>용도</strong>: 실시간 오디오 앱 (악기, 게임)</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">🎵 AudioAttributes (API 21+)</h3>
+                    <span class="tag tag-version">Android 5.0+</span>
+                    <ul>
+                        <li><strong>도입</strong>: Android 5.0 (Lollipop)</li>
+                        <li><strong>역할</strong>: 오디오 스트림의 용도 정의</li>
+                        <li><strong>예시</strong>: USAGE_MEDIA, USAGE_ALARM, USAGE_GAME</li>
+                        <li><strong>효과</strong>: 시스템 라우팅 및 볼륨 정책 결정</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 9: DRM Framework Evolution -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                DRM Framework Evolution
+            </h2>
+            <p class="section-description">
+                Android의 DRM 프레임워크는 콘텐츠 보호를 위해 하드웨어 기반 보안으로 진화했습니다.
+            </p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h3 class="card-title">🔐 MediaDrm API</h3>
+                    <span class="tag tag-version">Android 4.3+</span>
+                    <ul>
+                        <li><strong>도입</strong>: Android 4.3 (API 18)</li>
+                        <li><strong>역할</strong>: DRM 플러그인 인터페이스</li>
+                        <li><strong>지원</strong>: Widevine, PlayReady, ClearKey</li>
+                        <li><strong>개선</strong>: Android 12에서 성능 및 보안 강화</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">🛡️ Widevine DRM Levels</h3>
+                    <span class="tag tag-version">All Versions</span>
+                    <ul>
+                        <li><strong>L1 (Hardware)</strong>: 모든 처리가 TEE에서 실행, 4K/HDR 지원</li>
+                        <li><strong>L2 (Hybrid)</strong>: 암호화만 하드웨어, 최대 540p</li>
+                        <li><strong>L3 (Software)</strong>: 모든 처리가 소프트웨어, SD 해상도만</li>
+                        <li><strong>인증</strong>: OEM이 L1 인증 획득 필요</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">🔒 Hardware-backed Security</h3>
+                    <span class="tag tag-new">Modern Devices</span>
+                    <ul>
+                        <li><strong>TEE (Trusted Execution Environment)</strong>: 격리된 보안 영역</li>
+                        <li><strong>Keymaster HAL</strong>: 하드웨어 키 저장소</li>
+                        <li><strong>StrongBox</strong>: 전용 보안 칩 (Titan M, Android 9+)</li>
+                        <li><strong>효과</strong>: 키 추출 불가능, DRM L1 요구사항</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">📺 DRM + Codec Integration</h3>
+                    <span class="tag tag-version">All Versions</span>
+                    <ul>
+                        <li><strong>Secure Decoder</strong>: MediaCodec FEATURE_SecurePlayback</li>
+                        <li><strong>Protected Surface</strong>: FLAG_SECURE로 스크린 캡처 방지</li>
+                        <li><strong>HDCP</strong>: 외부 디스플레이 출력 보호</li>
+                        <li><strong>Encrypted Buffer</strong>: 복호화 없이 디코더로 전달</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 10: Image & Video Format Evolution -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                Image & Video Format Evolution
+            </h2>
+            <p class="section-description">
+                Android는 효율적인 미디어 저장 및 전송을 위해 차세대 포맷을 지속적으로 도입하고 있습니다.
+            </p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h3 class="card-title">🖼️ Image Format Timeline</h3>
+                    <ul>
+                        <li><strong>JPEG (API 1+)</strong>: 기본 이미지 포맷, 넓은 호환성</li>
+                        <li><strong>PNG (API 1+)</strong>: 무손실 압축, 투명도 지원</li>
+                        <li><strong>WebP (API 14+)</strong>: JPEG 대비 25-35% 작은 크기</li>
+                        <li><strong>HEIF (API 28+)</strong>: H.265 기반, 50% 압축률 개선</li>
+                        <li><strong>AVIF (API 31+)</strong>: AV1 기반, HEIF보다 20% 향상</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">🎬 Video Codec Timeline</h3>
+                    <ul>
+                        <li><strong>H.264/AVC (API 1+)</strong>: 표준 비디오 코덱, 범용 지원</li>
+                        <li><strong>VP8 (API 14+)</strong>: Google WebM, 오픈소스</li>
+                        <li><strong>H.265/HEVC (API 21+)</strong>: 4K/8K 비디오, 50% 효율</li>
+                        <li><strong>VP9 (API 19+)</strong>: YouTube 기본, HDR 지원 (API 28)</li>
+                        <li><strong>AV1 (API 29+)</strong>: 차세대 코덱, 30% 압축률 개선</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">🎨 HDR Support</h3>
+                    <span class="tag tag-version">Android 7.0+</span>
+                    <ul>
+                        <li><strong>Android 7.0 (API 24)</strong>: HDR 비디오 재생 지원 시작</li>
+                        <li><strong>Android 8.0 (API 26)</strong>: HDR 디스플레이 API</li>
+                        <li><strong>Android 9.0 (API 28)</strong>: HDR VP9 Profile 2</li>
+                        <li><strong>Android 13 (API 33)</strong>: Ultra HDR 이미지 (JPEG + Gainmap)</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">📦 Container Formats</h3>
+                    <ul>
+                        <li><strong>MP4 (API 1+)</strong>: 가장 보편적인 컨테이너</li>
+                        <li><strong>WebM (API 16+)</strong>: VP8/VP9 + Vorbis/Opus</li>
+                        <li><strong>Matroska (.mkv)</strong>: 유연한 멀티트랙 지원</li>
+                        <li><strong>HEIF Container (API 28+)</strong>: HEIC 이미지 시퀀스</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Legacy["Legacy Era (2008-2014)"]
+                        L1["H.264 + JPEG<br/>Universal Compatibility"]
+                    end
+
+                    subgraph Modern["Modern Era (2015-2020)"]
+                        M1["H.265 + WebP<br/>Improved Efficiency"]
+                        M2["VP9 + HEIF<br/>4K/HDR Support"]
+                    end
+
+                    subgraph Future["Future Era (2021+)"]
+                        F1["AV1 + AVIF<br/>Next-gen Compression"]
+                        F2["Ultra HDR<br/>Enhanced Imaging"]
+                    end
+
+                    Legacy -->|Evolution| Modern
+                    Modern -->|Evolution| Future
+                </div>
+            </div>
         </section>
 
     </div>
