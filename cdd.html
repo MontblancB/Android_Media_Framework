@@ -382,6 +382,1989 @@
             </div>
         </section>
 
+        <!-- Section 6: Real CDD Requirement Examples -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                실제 CDD 요구사항 예제
+            </h2>
+            <p class="section-description">
+                CDD 문서의 실제 Requirement ID와 구체적인 예시를 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📋 미디어 관련 MUST 요구사항
+            </h3>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">Requirement ID</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">요구사항</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">CTS 검증</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace;">[C-1-1]</td>
+                            <td style="padding: 15px;">
+                                Handheld device implementations <strong>MUST</strong> support H.264 decoding at 1080p@30fps
+                            </td>
+                            <td style="padding: 15px;">
+                                <code>MediaCodecTest#testH264Decoder1080p30fps</code>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace;">[C-1-2]</td>
+                            <td style="padding: 15px;">
+                                Device implementations <strong>MUST</strong> support AAC LC decoding at 48kHz, stereo
+                            </td>
+                            <td style="padding: 15px;">
+                                <code>MediaCodecTest#testAacLcDecoder</code>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace;">[C-5-1]</td>
+                            <td style="padding: 15px;">
+                                Television implementations <strong>MUST</strong> support H.265 decoding at 4K@30fps
+                            </td>
+                            <td style="padding: 15px;">
+                                <code>MediaCodecTest#testHevcDecoder4K30fps</code>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace;">[C-5-3]</td>
+                            <td style="padding: 15px;">
+                                Television implementations <strong>MUST</strong> support VP9 Profile 2 (10-bit) decoding
+                            </td>
+                            <td style="padding: 15px;">
+                                <code>MediaCodecTest#testVp9Profile2Decoder</code>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace;">[C-3-2]</td>
+                            <td style="padding: 15px;">
+                                Automotive implementations <strong>MUST</strong> support audio output latency ≤ 100ms
+                            </td>
+                            <td style="padding: 15px;">
+                                <code>AudioLatencyTest#testOutputLatency</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace;">[C-8-1]</td>
+                            <td style="padding: 15px;">
+                                Watch implementations <strong>MUST</strong> support Opus audio codec
+                            </td>
+                            <td style="padding: 15px;">
+                                <code>MediaCodecTest#testOpusDecoder</code>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📝 Requirement ID 형식
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔢</span>
+                        ID 구조
+                    </h3>
+                    <div class="card-description">
+                        <p><code>[C-X-Y]</code> 형식</p>
+                        <ul style="margin-top: 10px;">
+                            <li><strong>C</strong>: Conditional (조건부 요구사항)</li>
+                            <li><strong>X</strong>: Device Type (1=Handheld, 3=Automotive, 5=TV, 8=Watch)</li>
+                            <li><strong>Y</strong>: 일련번호 (섹션 내 순서)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📌</span>
+                        예시
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>[C-1-3]</code>: Handheld 디바이스의 3번째 조건부 요구사항</li>
+                            <li><code>[C-5-7]</code>: Television 디바이스의 7번째 조건부 요구사항</li>
+                            <li><code>[C-0-1]</code>: 모든 디바이스 타입에 적용되는 요구사항</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        위반 시 결과
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>MUST 위반</strong>: CTS 테스트 실패</li>
+                            <li><strong>SHOULD 위반</strong>: 경고만 발생, 통과 가능</li>
+                            <li><strong>MAY 위반</strong>: 아무 영향 없음</li>
+                            <li><strong>GMS 인증</strong>: MUST 모두 통과 필수</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        추적 가능성
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>CDD 문서에서 Requirement ID로 검색</li>
+                            <li>CTS 소스코드에 ID가 주석으로 포함</li>
+                            <li>실패 시 어떤 요구사항 위반인지 명확</li>
+                            <li>버전별 변경 이력 추적 용이</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>💡 실제 CDD 문서 예시:</strong>
+                <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; margin-top: 10px; overflow-x: auto;">
+<code>5.1.3. Video Codecs
+
+If device implementations support H.264 decoders, they:
+* [C-1-1] MUST support Baseline Profile Level 3.
+* [C-1-2] MUST support the SD (Standard Definition) video decoding profiles
+  in the following table and be able to decode videos with sizes up to the
+  maximum supported resolution.
+* [C-1-3] SHOULD support Main Profile Level 4.
+* [C-1-4] SHOULD support the HD (High Definition) video decoding profiles.</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 7: Device Type Specific Requirements -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                디바이스 타입별 상세 요구사항
+            </h2>
+            <p class="section-description">
+                Handheld, Television, Automotive, Watch 등 폼팩터별 특화 요구사항을 설명합니다.
+            </p>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">항목</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Handheld</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Television</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Automotive</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Watch</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Display</strong></td>
+                            <td style="padding: 15px; text-align: center;">≥ 2.5 inch<br>≥ 320 dpi</td>
+                            <td style="padding: 15px; text-align: center;">≥ 720p (1080p 권장)<br>HDR10 지원</td>
+                            <td style="padding: 15px; text-align: center;">≥ 6 inch<br>가변 DPI</td>
+                            <td style="padding: 15px; text-align: center;">≥ 1 inch<br>≥ 180 dpi</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Camera</strong></td>
+                            <td style="padding: 15px; text-align: center;">후면 카메라 MUST<br>≥ 2 MP</td>
+                            <td style="padding: 15px; text-align: center;">MAY (선택)</td>
+                            <td style="padding: 15px; text-align: center;">MAY (선택)<br>후방 카메라 권장</td>
+                            <td style="padding: 15px; text-align: center;">MAY (선택)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Audio Output</strong></td>
+                            <td style="padding: 15px; text-align: center;">스피커 MUST<br>3.5mm 잭 권장</td>
+                            <td style="padding: 15px; text-align: center;">HDMI Audio MUST<br>5.1 서라운드 지원</td>
+                            <td style="padding: 15px; text-align: center;">Multi-zone MUST<br>Focus 관리</td>
+                            <td style="padding: 15px; text-align: center;">스피커 MUST<br>저전력 모드</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Video Decode</strong></td>
+                            <td style="padding: 15px; text-align: center;">H.264 1080p@30fps<br>HEVC 권장</td>
+                            <td style="padding: 15px; text-align: center;">HEVC 4K@30fps<br>VP9 Profile 2</td>
+                            <td style="padding: 15px; text-align: center;">H.264 1080p@30fps<br>멀티 스트림</td>
+                            <td style="padding: 15px; text-align: center;">H.264 480p@30fps</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Video Encode</strong></td>
+                            <td style="padding: 15px; text-align: center;">H.264 1080p@30fps<br>HEVC 권장</td>
+                            <td style="padding: 15px; text-align: center;">MAY (선택)</td>
+                            <td style="padding: 15px; text-align: center;">MAY (선택)</td>
+                            <td style="padding: 15px; text-align: center;">MAY (선택)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Sensors</strong></td>
+                            <td style="padding: 15px; text-align: center;">Accelerometer MUST<br>Gyroscope 권장</td>
+                            <td style="padding: 15px; text-align: center;">MAY (선택)</td>
+                            <td style="padding: 15px; text-align: center;">Speed MUST<br>Gear 권장</td>
+                            <td style="padding: 15px; text-align: center;">Accelerometer MUST<br>Heart Rate 권장</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px;"><strong>Input</strong></td>
+                            <td style="padding: 15px; text-align: center;">Touchscreen MUST</td>
+                            <td style="padding: 15px; text-align: center;">D-pad MUST<br>리모컨 지원</td>
+                            <td style="padding: 15px; text-align: center;">Rotary Controller<br>Steering Wheel</td>
+                            <td style="padding: 15px; text-align: center;">Touchscreen 권장<br>버튼 MUST</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📱 Handheld 특화 요구사항
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📸</span>
+                        카메라
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>후면 카메라: 2 MP 이상 필수</li>
+                            <li>전면 카메라: VGA (0.3 MP) 이상 권장</li>
+                            <li>Camera2 API 지원 필수</li>
+                            <li>Auto-focus, Flash 권장</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔋</span>
+                        배터리
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>재충전 가능 배터리 필수</li>
+                            <li>배터리 잔량 표시 필수</li>
+                            <li>저전력 모드 지원</li>
+                            <li>Doze 모드 준수</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        네트워크
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Wi-Fi 802.11n 필수</li>
+                            <li>Bluetooth 4.2 이상 필수</li>
+                            <li>Cellular 데이터 권장</li>
+                            <li>NFC 권장</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📏</span>
+                        화면
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>대각선 2.5 인치 이상</li>
+                            <li>320 dpi 이상 권장</li>
+                            <li>16:9 또는 더 긴 비율</li>
+                            <li>Multi-touch 지원 필수</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Automotive CDD Specialized -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Automotive CDD 특화 섹션
+            </h2>
+            <p class="section-description">
+                Android Automotive OS (AAOS)의 차량 특화 요구사항을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                🚗 Car Audio 요구사항
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Audio Routing
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>[C-3-1]</strong></p>
+                        <ul>
+                            <li>AudioManager.getDevices() 지원 필수</li>
+                            <li>DEVICE_OUT_BUS 사용</li>
+                            <li>Zone별 오디오 라우팅</li>
+                            <li>Dynamic routing 지원</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Focus
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>[C-3-2]</strong></p>
+                        <ul>
+                            <li>CarAudioManager 구현 필수</li>
+                            <li>Focus 우선순위: Navigation > Phone > Media</li>
+                            <li>Ducking 지원</li>
+                            <li>Multiple concurrent streams</li>
+                        </ul>
+                    </div>
+                </card>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔢</span>
+                        Multi-zone Audio
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>[C-3-3]</strong></p>
+                        <ul>
+                            <li>Primary Zone (운전석) 필수</li>
+                            <li>Rear Seat Zone 권장</li>
+                            <li>Zone별 볼륨 제어</li>
+                            <li>독립적인 오디오 재생</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏱️</span>
+                        Audio Latency
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>[C-3-4]</strong></p>
+                        <ul>
+                            <li>Output latency ≤ 100ms</li>
+                            <li>Navigation TTS 우선 처리</li>
+                            <li>Media 재생 smooth</li>
+                            <li>Jitter ≤ 50ms</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🚙 차량 속성 API
+            </h3>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">Property ID</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">속성명</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">필수 여부</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace;">0x11600207</td>
+                            <td style="padding: 15px;"><strong>PERF_VEHICLE_SPEED</strong></td>
+                            <td style="padding: 15px;">MUST</td>
+                            <td style="padding: 15px;">차량 속도 (km/h 또는 m/s)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace;">0x11400400</td>
+                            <td style="padding: 15px;"><strong>GEAR_SELECTION</strong></td>
+                            <td style="padding: 15px;">MUST</td>
+                            <td style="padding: 15px;">현재 기어 (P, R, N, D 등)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace;">0x11200405</td>
+                            <td style="padding: 15px;"><strong>PARKING_BRAKE_ON</strong></td>
+                            <td style="padding: 15px;">MUST</td>
+                            <td style="padding: 15px;">주차 브레이크 상태 (boolean)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace;">0x1160030A</td>
+                            <td style="padding: 15px;"><strong>FUEL_LEVEL_LOW</strong></td>
+                            <td style="padding: 15px;">SHOULD</td>
+                            <td style="padding: 15px;">연료 부족 경고 (boolean)</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace;">0x0A400101</td>
+                            <td style="padding: 15px;"><strong>HVAC_TEMPERATURE_SET</strong></td>
+                            <td style="padding: 15px;">SHOULD</td>
+                            <td style="padding: 15px;">HVAC 온도 설정 (°C)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🚦 CarUxRestrictions 정책
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        주행 중 제한
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>[C-3-5]</strong></p>
+                        <ul>
+                            <li>텍스트 입력 차단 (키보드 비활성화)</li>
+                            <li>리스트 항목 수 제한 (최대 6개)</li>
+                            <li>비디오 재생 차단</li>
+                            <li>복잡한 애니메이션 제한</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🅿️</span>
+                        정차 시 허용
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>모든 UI 요소 활성화</li>
+                            <li>비디오 재생 가능</li>
+                            <li>풀 키보드 입력</li>
+                            <li>긴 리스트 스크롤</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔔</span>
+                        예외 기능
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Navigation: 주행 중에도 허용</li>
+                            <li>Phone: 음성 통화 허용</li>
+                            <li>Media: 오디오 컨트롤 허용</li>
+                            <li>HUN (Heads-Up Notification)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        OEM 커스터마이징
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>car_ux_restrictions_map.xml 설정</li>
+                            <li>속도별 제한 레벨 조정</li>
+                            <li>국가별 법규 준수</li>
+                            <li>브랜드별 정책 적용</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ Automotive CTS 주의사항:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>CarService 구현 필수 (Android 10+)</li>
+                    <li>Vehicle HAL 연동 필수 (실제 차량 속성 제공)</li>
+                    <li>Multi-zone Audio 테스트는 실제 하드웨어 필요</li>
+                    <li>UX Restrictions는 국가별 법규 확인 필수</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: Performance Class Detailed Table -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                Performance Class 상세 테이블
+            </h2>
+            <p class="section-description">
+                Android 12부터 도입된 Media Performance Class의 등급별 전체 요구사항을 정리했습니다.
+            </p>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">카테고리</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Class 11 (R)</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Class 12 (S)</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Class 13 (T)</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Class 14 (U)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color); background: rgba(59, 130, 246, 0.05);">
+                            <td colspan="5" style="padding: 15px; font-weight: 600; color: var(--accent-primary);">
+                                💾 메모리 & 스토리지
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">RAM</td>
+                            <td style="padding: 15px; text-align: center;">6 GB</td>
+                            <td style="padding: 15px; text-align: center;">8 GB</td>
+                            <td style="padding: 15px; text-align: center;">8 GB</td>
+                            <td style="padding: 15px; text-align: center;">12 GB</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">Internal Storage</td>
+                            <td style="padding: 15px; text-align: center;">128 GB</td>
+                            <td style="padding: 15px; text-align: center;">256 GB</td>
+                            <td style="padding: 15px; text-align: center;">256 GB</td>
+                            <td style="padding: 15px; text-align: center;">256 GB</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">Storage Type</td>
+                            <td style="padding: 15px; text-align: center;">UFS 2.1+</td>
+                            <td style="padding: 15px; text-align: center;">UFS 2.2+</td>
+                            <td style="padding: 15px; text-align: center;">UFS 3.1+</td>
+                            <td style="padding: 15px; text-align: center;">UFS 4.0+</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color); background: rgba(59, 130, 246, 0.05);">
+                            <td colspan="5" style="padding: 15px; font-weight: 600; color: var(--accent-primary);">
+                                📺 디스플레이
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">Resolution</td>
+                            <td style="padding: 15px; text-align: center;">1080p</td>
+                            <td style="padding: 15px; text-align: center;">1080p</td>
+                            <td style="padding: 15px; text-align: center;">1080p</td>
+                            <td style="padding: 15px; text-align: center;">1080p+</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">Density</td>
+                            <td style="padding: 15px; text-align: center;">400 dpi</td>
+                            <td style="padding: 15px; text-align: center;">400 dpi</td>
+                            <td style="padding: 15px; text-align: center;">420 dpi</td>
+                            <td style="padding: 15px; text-align: center;">420 dpi+</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">HDR</td>
+                            <td style="padding: 15px; text-align: center;">-</td>
+                            <td style="padding: 15px; text-align: center;">HDR10</td>
+                            <td style="padding: 15px; text-align: center;">HDR10+</td>
+                            <td style="padding: 15px; text-align: center;">HDR10+ / Dolby Vision</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color); background: rgba(59, 130, 246, 0.05);">
+                            <td colspan="5" style="padding: 15px; font-weight: 600; color: var(--accent-primary);">
+                                🎬 비디오 디코딩
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">4K@30fps Streams</td>
+                            <td style="padding: 15px; text-align: center;">2 concurrent</td>
+                            <td style="padding: 15px; text-align: center;">3 concurrent</td>
+                            <td style="padding: 15px; text-align: center;">3 concurrent (60fps)</td>
+                            <td style="padding: 15px; text-align: center;">4 concurrent (60fps)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">8K@30fps</td>
+                            <td style="padding: 15px; text-align: center;">-</td>
+                            <td style="padding: 15px; text-align: center;">-</td>
+                            <td style="padding: 15px; text-align: center;">-</td>
+                            <td style="padding: 15px; text-align: center;">1 stream</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">AV1 Decoder</td>
+                            <td style="padding: 15px; text-align: center;">-</td>
+                            <td style="padding: 15px; text-align: center;">4K@30fps</td>
+                            <td style="padding: 15px; text-align: center;">4K@60fps</td>
+                            <td style="padding: 15px; text-align: center;">8K@30fps</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color); background: rgba(59, 130, 246, 0.05);">
+                            <td colspan="5" style="padding: 15px; font-weight: 600; color: var(--accent-primary);">
+                                🎥 비디오 인코딩
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">4K@30fps Encode</td>
+                            <td style="padding: 15px; text-align: center;">1 stream</td>
+                            <td style="padding: 15px; text-align: center;">1 stream + 1080p@30fps</td>
+                            <td style="padding: 15px; text-align: center;">1 stream (60fps)</td>
+                            <td style="padding: 15px; text-align: center;">2 streams (60fps)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">AV1 Encoder</td>
+                            <td style="padding: 15px; text-align: center;">-</td>
+                            <td style="padding: 15px; text-align: center;">-</td>
+                            <td style="padding: 15px; text-align: center;">-</td>
+                            <td style="padding: 15px; text-align: center;">4K@30fps</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color); background: rgba(59, 130, 246, 0.05);">
+                            <td colspan="5" style="padding: 15px; font-weight: 600; color: var(--accent-primary);">
+                                📸 카메라
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">Primary Camera</td>
+                            <td style="padding: 15px; text-align: center;">12 MP @ 30fps</td>
+                            <td style="padding: 15px; text-align: center;">12 MP @ 30fps</td>
+                            <td style="padding: 15px; text-align: center;">12 MP @ 60fps</td>
+                            <td style="padding: 15px; text-align: center;">200 MP @ 30fps</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">Front Camera</td>
+                            <td style="padding: 15px; text-align: center;">5 MP @ 30fps</td>
+                            <td style="padding: 15px; text-align: center;">5 MP @ 30fps</td>
+                            <td style="padding: 15px; text-align: center;">5 MP @ 30fps</td>
+                            <td style="padding: 15px; text-align: center;">10 MP @ 60fps</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">Concurrent Streams</td>
+                            <td style="padding: 15px; text-align: center;">2 streams</td>
+                            <td style="padding: 15px; text-align: center;">2 streams</td>
+                            <td style="padding: 15px; text-align: center;">3 streams</td>
+                            <td style="padding: 15px; text-align: center;">3 streams</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color); background: rgba(59, 130, 246, 0.05);">
+                            <td colspan="5" style="padding: 15px; font-weight: 600; color: var(--accent-primary);">
+                                🎵 오디오
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">Output Latency</td>
+                            <td style="padding: 15px; text-align: center;">≤ 100 ms</td>
+                            <td style="padding: 15px; text-align: center;">≤ 80 ms</td>
+                            <td style="padding: 15px; text-align: center;">≤ 80 ms</td>
+                            <td style="padding: 15px; text-align: center;">≤ 60 ms</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">Concurrent Sessions</td>
+                            <td style="padding: 15px; text-align: center;">6 sessions</td>
+                            <td style="padding: 15px; text-align: center;">6 sessions</td>
+                            <td style="padding: 15px; text-align: center;">8 sessions</td>
+                            <td style="padding: 15px; text-align: center;">12 sessions</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="success-box" style="margin-top: 30px;">
+                <strong>✅ 쿼리 방법:</strong>
+                <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; margin-top: 10px; overflow-x: auto;">
+<code>// Android 12 (API 31) 이상
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    int perfClass = Build.VERSION.MEDIA_PERFORMANCE_CLASS;
+
+    if (perfClass >= 14) {
+        // 8K 디코딩, AV1 인코딩, 200MP 카메라
+    } else if (perfClass >= 13) {
+        // 4K@60fps, 12MP@60fps 카메라
+    } else if (perfClass >= 12) {
+        // 4K@30fps 3 streams
+    } else if (perfClass >= 11) {
+        // 4K@30fps 2 streams
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 10: Codec Requirements Detailed Table -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                코덱 요구사항 상세 테이블
+            </h2>
+            <p class="section-description">
+                CDD Section 5에 정의된 필수 미디어 코덱 요구사항을 정리했습니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                🎬 비디오 코덱
+            </h3>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">코덱</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Decode</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Encode</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">최소 해상도</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">권장 해상도</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">프레임레이트</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>H.264 (AVC)</strong></td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">1080p</td>
+                            <td style="padding: 15px; text-align: center;">4K</td>
+                            <td style="padding: 15px; text-align: center;">30 fps</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>H.265 (HEVC)</strong></td>
+                            <td style="padding: 15px; text-align: center;">SHOULD</td>
+                            <td style="padding: 15px; text-align: center;">SHOULD</td>
+                            <td style="padding: 15px; text-align: center;">1080p</td>
+                            <td style="padding: 15px; text-align: center;">4K</td>
+                            <td style="padding: 15px; text-align: center;">30 fps (60 fps 권장)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>VP8</strong></td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">720p</td>
+                            <td style="padding: 15px; text-align: center;">1080p</td>
+                            <td style="padding: 15px; text-align: center;">30 fps</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>VP9</strong></td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">SHOULD</td>
+                            <td style="padding: 15px; text-align: center;">1080p</td>
+                            <td style="padding: 15px; text-align: center;">4K</td>
+                            <td style="padding: 15px; text-align: center;">30 fps (60 fps 권장)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>AV1</strong></td>
+                            <td style="padding: 15px; text-align: center;">MUST (Android 14+)</td>
+                            <td style="padding: 15px; text-align: center;">SHOULD</td>
+                            <td style="padding: 15px; text-align: center;">1080p</td>
+                            <td style="padding: 15px; text-align: center;">4K</td>
+                            <td style="padding: 15px; text-align: center;">30 fps</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px;"><strong>MPEG-4 Visual</strong></td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">-</td>
+                            <td style="padding: 15px; text-align: center;">480p</td>
+                            <td style="padding: 15px; text-align: center;">720p</td>
+                            <td style="padding: 15px; text-align: center;">30 fps</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎵 오디오 코덱
+            </h3>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">코덱</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Decode</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Encode</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">샘플레이트</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">채널</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">비트레이트</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>AAC LC</strong></td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">8~48 kHz</td>
+                            <td style="padding: 15px; text-align: center;">Mono / Stereo</td>
+                            <td style="padding: 15px; text-align: center;">8~320 kbps</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>HE-AAC (v1/v2)</strong></td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">-</td>
+                            <td style="padding: 15px; text-align: center;">8~48 kHz</td>
+                            <td style="padding: 15px; text-align: center;">Stereo</td>
+                            <td style="padding: 15px; text-align: center;">16~128 kbps</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>FLAC</strong></td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">SHOULD</td>
+                            <td style="padding: 15px; text-align: center;">8~96 kHz</td>
+                            <td style="padding: 15px; text-align: center;">Mono / Stereo</td>
+                            <td style="padding: 15px; text-align: center;">Lossless</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>MP3</strong></td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">-</td>
+                            <td style="padding: 15px; text-align: center;">8~48 kHz</td>
+                            <td style="padding: 15px; text-align: center;">Mono / Stereo</td>
+                            <td style="padding: 15px; text-align: center;">8~320 kbps</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Opus</strong></td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">SHOULD</td>
+                            <td style="padding: 15px; text-align: center;">8~48 kHz</td>
+                            <td style="padding: 15px; text-align: center;">Mono / Stereo</td>
+                            <td style="padding: 15px; text-align: center;">6~510 kbps</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Vorbis</strong></td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">-</td>
+                            <td style="padding: 15px; text-align: center;">8~48 kHz</td>
+                            <td style="padding: 15px; text-align: center;">Mono / Stereo</td>
+                            <td style="padding: 15px; text-align: center;">Variable</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px;"><strong>PCM/WAVE</strong></td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">MUST</td>
+                            <td style="padding: 15px; text-align: center;">8~192 kHz</td>
+                            <td style="padding: 15px; text-align: center;">Mono / Stereo</td>
+                            <td style="padding: 15px; text-align: center;">16-bit / 24-bit</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📺 Television 특화 요구사항
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        비디오
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>HEVC</strong>: 4K@30fps MUST</li>
+                            <li><strong>VP9 Profile 2</strong>: 4K@30fps (10-bit) MUST</li>
+                            <li><strong>HDR10</strong>: Static metadata MUST</li>
+                            <li><strong>Dolby Vision</strong>: SHOULD</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        오디오
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>AC-3 (Dolby Digital)</strong>: 5.1 MUST</li>
+                            <li><strong>E-AC-3 (DD+)</strong>: 7.1 SHOULD</li>
+                            <li><strong>DTS</strong>: SHOULD</li>
+                            <li><strong>Dolby Atmos</strong>: SHOULD</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📡</span>
+                        HDMI
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>HDMI 2.0+</strong>: 4K@60fps MUST</li>
+                            <li><strong>HDMI-CEC</strong>: 1.4+ MUST</li>
+                            <li><strong>HDCP 2.2</strong>: MUST</li>
+                            <li><strong>ARC/eARC</strong>: Audio Return Channel SHOULD</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎮</span>
+                        성능
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Frame Drop</strong>: &lt; 1% MUST</li>
+                            <li><strong>Seek Latency</strong>: &lt; 1s SHOULD</li>
+                            <li><strong>Cold Start</strong>: &lt; 2s SHOULD</li>
+                            <li><strong>Concurrent Streams</strong>: 2+ MUST</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>💡 코덱 검증 방법:</strong>
+                <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; margin-top: 10px; overflow-x: auto;">
+<code>// MediaCodecList로 지원 코덱 확인
+MediaCodecList codecList = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
+for (MediaCodecInfo info : codecList.getCodecInfos()) {
+    for (String type : info.getSupportedTypes()) {
+        if (type.equals("video/avc")) {
+            MediaCodecInfo.VideoCapabilities caps =
+                info.getCapabilitiesForType(type).getVideoCapabilities();
+            Log.i(TAG, "H.264 max resolution: " +
+                caps.getSupportedWidths().getUpper() + "x" +
+                caps.getSupportedHeights().getUpper());
+        }
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 11: Security Requirements -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                보안 요구사항
+            </h2>
+            <p class="section-description">
+                CDD Section 9에 정의된 보안 정책과 요구사항을 설명합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        SELinux
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>[C-0-1] MUST</strong></p>
+                        <ul>
+                            <li>SELinux Enforcing 모드 필수</li>
+                            <li>모든 도메인에 정책 적용</li>
+                            <li>Permissive 모드 금지 (User Build)</li>
+                            <li>Neverallow 규칙 준수</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        앱 샌드박스
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>[C-0-2] MUST</strong></p>
+                        <ul>
+                            <li>각 앱마다 고유 UID 할당</li>
+                            <li>파일 시스템 격리</li>
+                            <li>프로세스 격리</li>
+                            <li>IPC 권한 검증</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        권한 모델
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>[C-0-3] MUST</strong></p>
+                        <ul>
+                            <li>Runtime Permissions 구현</li>
+                            <li>사용자 명시적 동의 필수</li>
+                            <li>권한 철회 가능</li>
+                            <li>Dangerous Permissions 관리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        Verified Boot
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>[C-0-4] MUST</strong></p>
+                        <ul>
+                            <li>Bootloader 검증</li>
+                            <li>System 파티션 검증</li>
+                            <li>dm-verity 활성화</li>
+                            <li>변조 감지 및 경고</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔑 생체인식 보안
+            </h3>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">보안 등급</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">FAR (False Accept Rate)</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">용도</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">예시</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Class 3 (Strong)</strong></td>
+                            <td style="padding: 15px;">&lt; 1 / 50,000</td>
+                            <td style="padding: 15px;">결제, 앱 잠금 해제</td>
+                            <td style="padding: 15px;">초음파 지문, 3D 얼굴인식</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Class 2 (Weak)</strong></td>
+                            <td style="padding: 15px;">&lt; 1 / 1,000</td>
+                            <td style="padding: 15px;">디바이스 잠금 해제</td>
+                            <td style="padding: 15px;">광학 지문, 2D 얼굴인식</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px;"><strong>Class 1 (Convenience)</strong></td>
+                            <td style="padding: 15px;">&lt; 1 / 100</td>
+                            <td style="padding: 15px;">빠른 잠금 해제</td>
+                            <td style="padding: 15px;">스마트 워치 얼굴인식</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🛡️ DRM & 미디어 보안
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        Widevine L1
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>하드웨어 보안 필수</strong></p>
+                        <ul>
+                            <li>TEE (Trusted Execution Environment)</li>
+                            <li>하드웨어 백업 키스토어</li>
+                            <li>Secure Video Path (SVP)</li>
+                            <li>HDCP 2.2+ 지원</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔓</span>
+                        Widevine L3
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>소프트웨어 보안</strong></p>
+                        <ul>
+                            <li>최대 SD (480p) 해상도</li>
+                            <li>TEE 불필요</li>
+                            <li>모든 디바이스 지원 가능</li>
+                            <li>저비용 솔루션</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        PlayReady
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Microsoft DRM</strong></p>
+                        <ul>
+                            <li>SL2000: 하드웨어 보안 (L1 상당)</li>
+                            <li>SL3000: 소프트웨어 보안 (L3 상당)</li>
+                            <li>Xbox, Windows 플랫폼</li>
+                            <li>DASH/HLS 지원</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🍎</span>
+                        FairPlay
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Apple DRM (참고용)</strong></p>
+                        <ul>
+                            <li>iOS/macOS/tvOS 전용</li>
+                            <li>하드웨어 보안 통합</li>
+                            <li>HLS 스트리밍</li>
+                            <li>Android 미지원</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ 보안 CTS 테스트:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><code>CtsSecurityTestCases</code>: SELinux, 권한 모델, 암호화 검증</li>
+                    <li><code>CtsVerifiedBootTestCases</code>: Verified Boot, dm-verity 검증</li>
+                    <li><code>CtsBiometricsTestCases</code>: 생체인식 FAR/FRR 테스트</li>
+                    <li><code>CtsKeystoreTestCases</code>: 하드웨어 키스토어 검증</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 12: Android Version CDD Changes -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                Android 버전별 CDD 변경사항
+            </h2>
+            <p class="section-description">
+                주요 Android 버전별 CDD 변경사항과 새로운 요구사항을 정리했습니다.
+            </p>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">버전</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">주요 CDD 변경사항</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">새 MUST 요구사항</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Android 14 (U)</strong><br>2023년</td>
+                            <td style="padding: 15px;">
+                                • AV1 디코더 필수화<br>
+                                • Ultra HDR (JPEG_R) 지원<br>
+                                • Predictive Back Gesture<br>
+                                • OpenJDK 17 기반
+                            </td>
+                            <td style="padding: 15px;">
+                                [C-1-10] AV1 decoder 1080p@30fps MUST<br>
+                                [C-1-11] Ultra HDR SHOULD
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Android 13 (T)</strong><br>2022년</td>
+                            <td style="padding: 15px;">
+                                • Photo Picker API 필수<br>
+                                • Themed Icons 지원<br>
+                                • Per-app language<br>
+                                • Runtime Permissions 확장
+                            </td>
+                            <td style="padding: 15px;">
+                                [C-1-9] Photo Picker MUST<br>
+                                [C-0-5] Per-app language MUST
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Android 12 (S)</strong><br>2021년</td>
+                            <td style="padding: 15px;">
+                                • Performance Class 도입<br>
+                                • Codec 2.0 필수화<br>
+                                • Material You 디자인<br>
+                                • Splash Screen API
+                            </td>
+                            <td style="padding: 15px;">
+                                [C-1-8] Codec 2.0 HAL MUST<br>
+                                [C-SR-1] Performance Class 선택적
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Android 11 (R)</strong><br>2020년</td>
+                            <td style="padding: 15px;">
+                                • Scoped Storage 필수화<br>
+                                • 5G 지원 요구사항<br>
+                                • Neural Networks API 1.3<br>
+                                • One-time Permissions
+                            </td>
+                            <td style="padding: 15px;">
+                                [C-0-4] Scoped Storage MUST<br>
+                                [C-1-7] NNAPI 1.3 MUST
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Android 10 (Q)</strong><br>2019년</td>
+                            <td style="padding: 15px;">
+                                • AV1 디코더 권장<br>
+                                • Dynamic Color<br>
+                                • Bubbles API<br>
+                                • Dark Theme 필수
+                            </td>
+                            <td style="padding: 15px;">
+                                [C-1-6] AV1 decoder SHOULD<br>
+                                [C-0-3] Dark Theme MUST
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px;"><strong>Android 9 (P)</strong><br>2018년</td>
+                            <td style="padding: 15px;">
+                                • VP9 Profile 2 (10-bit) 필수<br>
+                                • ImageDecoder API<br>
+                                • Neural Networks API 도입<br>
+                                • Multi-camera 지원
+                            </td>
+                            <td style="padding: 15px;">
+                                [C-5-2] VP9 Profile 2 MUST (TV)<br>
+                                [C-1-5] NNAPI 1.0 MUST
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📈 주요 트렌드
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        코덱 진화
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>VP8/VP9 → AV1 (차세대 표준)</li>
+                            <li>H.264 → H.265 (효율성 향상)</li>
+                            <li>8-bit → 10-bit (HDR 지원)</li>
+                            <li>하드웨어 가속 필수화</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        보안 강화
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Scoped Storage (파일 접근 제한)</li>
+                            <li>Runtime Permissions 확대</li>
+                            <li>생체인식 FAR 기준 강화</li>
+                            <li>Verified Boot 필수화</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        성능 표준화
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Performance Class 도입 (Android 12+)</li>
+                            <li>명확한 성능 기준 제시</li>
+                            <li>파편화 문제 해결</li>
+                            <li>프리미엄 경험 보장</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎨</span>
+                        UX 일관성
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Material You (Android 12+)</li>
+                            <li>Dark Theme 필수 (Android 10+)</li>
+                            <li>Splash Screen API 표준화</li>
+                            <li>Themed Icons 지원</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>💡 버전 업그레이드 전략:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>신규 CDD 문서를 먼저 검토하여 새로운 MUST 요구사항 파악</li>
+                    <li>Deprecated API 사용 중단 및 대체 API로 마이그레이션</li>
+                    <li>CTS 테스트를 조기에 시작하여 실패 케이스 파악</li>
+                    <li>Performance Class 도입 시 하드웨어 성능 검토</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 13: Real CDD Document Links -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                실제 CDD 문서 링크
+            </h2>
+            <p class="section-description">
+                공식 Android CDD PDF 문서 링크와 주요 섹션을 안내합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📄</span>
+                        Android 14 CDD
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>최신 버전 (2024년)</strong></p>
+                        <ul style="margin-top: 10px;">
+                            <li>AV1 디코더 필수</li>
+                            <li>Ultra HDR 지원</li>
+                            <li>Performance Class 14</li>
+                        </ul>
+                        <a href="https://source.android.com/docs/compatibility/14/android-14-cdd.pdf"
+                           target="_blank"
+                           style="color: var(--accent-primary); text-decoration: none; font-weight: 600; margin-top: 10px; display: inline-block;">
+                            PDF 다운로드 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📄</span>
+                        Android 13 CDD
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>2023년</strong></p>
+                        <ul style="margin-top: 10px;">
+                            <li>Photo Picker API</li>
+                            <li>Themed Icons</li>
+                            <li>Performance Class 13</li>
+                        </ul>
+                        <a href="https://source.android.com/docs/compatibility/13/android-13-cdd.pdf"
+                           target="_blank"
+                           style="color: var(--accent-primary); text-decoration: none; font-weight: 600; margin-top: 10px; display: inline-block;">
+                            PDF 다운로드 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📄</span>
+                        Android 12 CDD
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>2022년</strong></p>
+                        <ul style="margin-top: 10px;">
+                            <li>Performance Class 도입</li>
+                            <li>Codec 2.0 필수</li>
+                            <li>Material You</li>
+                        </ul>
+                        <a href="https://source.android.com/docs/compatibility/12/android-12-cdd.pdf"
+                           target="_blank"
+                           style="color: var(--accent-primary); text-decoration: none; font-weight: 600; margin-top: 10px; display: inline-block;">
+                            PDF 다운로드 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        AAOS CDD
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Automotive 특화</strong></p>
+                        <ul style="margin-top: 10px;">
+                            <li>Car Audio 요구사항</li>
+                            <li>UX Restrictions</li>
+                            <li>Vehicle Properties</li>
+                        </ul>
+                        <a href="https://source.android.com/docs/compatibility/automotive"
+                           target="_blank"
+                           style="color: var(--accent-primary); text-decoration: none; font-weight: 600; margin-top: 10px; display: inline-block;">
+                            문서 보기 →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📚 CDD 주요 섹션 구조
+            </h3>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">섹션</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">제목</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">주요 내용</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">1</td>
+                            <td style="padding: 15px;"><strong>Introduction</strong></td>
+                            <td style="padding: 15px;">CDD 문서 개요, 용어 정의, 호환성 정의</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">2</td>
+                            <td style="padding: 15px;"><strong>Device Types</strong></td>
+                            <td style="padding: 15px;">Handheld, TV, Automotive, Watch 등 폼팩터별 요구사항</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">3</td>
+                            <td style="padding: 15px;"><strong>Software</strong></td>
+                            <td style="padding: 15px;">API 호환성, SDK 버전, 관리형 API</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">4</td>
+                            <td style="padding: 15px;"><strong>Application Packaging</strong></td>
+                            <td style="padding: 15px;">APK 포맷, 매니페스트, 권한</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">5</td>
+                            <td style="padding: 15px;"><strong>Multimedia</strong></td>
+                            <td style="padding: 15px;">코덱, 오디오, 비디오, 카메라 (가장 중요!)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">6</td>
+                            <td style="padding: 15px;"><strong>Developer Tools</strong></td>
+                            <td style="padding: 15px;">ADB, Logcat, Systrace 지원</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">7</td>
+                            <td style="padding: 15px;"><strong>Hardware Compatibility</strong></td>
+                            <td style="padding: 15px;">디스플레이, 센서, 카메라, 네트워크</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">8</td>
+                            <td style="padding: 15px;"><strong>Performance & Power</strong></td>
+                            <td style="padding: 15px;">성능 기준, 배터리, Thermal</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">9</td>
+                            <td style="padding: 15px;"><strong>Security Model</strong></td>
+                            <td style="padding: 15px;">SELinux, 권한, 암호화, 생체인식</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px;">10</td>
+                            <td style="padding: 15px;"><strong>Software Compatibility Testing</strong></td>
+                            <td style="padding: 15px;">CTS 요구사항, 테스트 방법</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="success-box" style="margin-top: 30px;">
+                <strong>✅ CDD 읽기 팁:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Section 2 (Device Types)에서 해당 폼팩터 요구사항 먼저 확인</li>
+                    <li>Section 5 (Multimedia)는 미디어 개발자 필독 섹션</li>
+                    <li>Ctrl+F로 "[C-X-Y]" 형식의 Requirement ID 검색</li>
+                    <li>MUST, SHOULD, MAY 키워드에 주목</li>
+                    <li>CTS 테스트 실패 시 해당 Requirement ID로 CDD 문서 검색</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 14: MUST/SHOULD Requirements Table -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                MUST/SHOULD 요구사항 예제 테이블
+            </h2>
+            <p class="section-description">
+                미디어 관련 MUST, SHOULD 요구사항을 비교하여 우선순위를 파악합니다.
+            </p>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">카테고리</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">MUST 요구사항</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">SHOULD 요구사항</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>H.264 Decoding</strong></td>
+                            <td style="padding: 15px;">
+                                <span style="color: var(--accent-success);">✓</span> 1080p@30fps MUST<br>
+                                <span style="color: var(--accent-success);">✓</span> Baseline Profile Level 3 MUST
+                            </td>
+                            <td style="padding: 15px;">
+                                Main Profile Level 4 SHOULD<br>
+                                4K@30fps SHOULD
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>H.265 Decoding</strong></td>
+                            <td style="padding: 15px;">
+                                <span style="color: var(--text-muted);">-</span> (Handheld에서는 선택)
+                            </td>
+                            <td style="padding: 15px;">
+                                1080p@30fps SHOULD<br>
+                                4K@30fps SHOULD (TV는 MUST)
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>VP9 Decoding</strong></td>
+                            <td style="padding: 15px;">
+                                <span style="color: var(--accent-success);">✓</span> 1080p@30fps MUST
+                            </td>
+                            <td style="padding: 15px;">
+                                4K@30fps SHOULD<br>
+                                Profile 2 (10-bit) SHOULD (TV는 MUST)
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>AV1 Decoding</strong></td>
+                            <td style="padding: 15px;">
+                                <span style="color: var(--accent-success);">✓</span> 1080p@30fps MUST (Android 14+)
+                            </td>
+                            <td style="padding: 15px;">
+                                4K@30fps SHOULD<br>
+                                8K@30fps SHOULD
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>H.264 Encoding</strong></td>
+                            <td style="padding: 15px;">
+                                <span style="color: var(--accent-success);">✓</span> 1080p@30fps MUST
+                            </td>
+                            <td style="padding: 15px;">
+                                4K@30fps SHOULD<br>
+                                60fps SHOULD
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>AAC Audio</strong></td>
+                            <td style="padding: 15px;">
+                                <span style="color: var(--accent-success);">✓</span> AAC LC Decode/Encode MUST<br>
+                                <span style="color: var(--accent-success);">✓</span> HE-AAC Decode MUST
+                            </td>
+                            <td style="padding: 15px;">
+                                HE-AAC Encode SHOULD<br>
+                                AAC-ELD SHOULD
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Display</strong></td>
+                            <td style="padding: 15px;">
+                                <span style="color: var(--accent-success);">✓</span> 720p MUST (Handheld)<br>
+                                <span style="color: var(--accent-success);">✓</span> 320 dpi MUST
+                            </td>
+                            <td style="padding: 15px;">
+                                1080p SHOULD<br>
+                                HDR10 SHOULD
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Audio Latency</strong></td>
+                            <td style="padding: 15px;">
+                                <span style="color: var(--accent-success);">✓</span> ≤ 100ms MUST (Automotive)
+                            </td>
+                            <td style="padding: 15px;">
+                                ≤ 80ms SHOULD (Handheld)<br>
+                                ≤ 20ms SHOULD (Pro Audio)
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Camera</strong></td>
+                            <td style="padding: 15px;">
+                                <span style="color: var(--accent-success);">✓</span> 후면 2 MP MUST (Handheld)<br>
+                                <span style="color: var(--accent-success);">✓</span> Camera2 API MUST
+                            </td>
+                            <td style="padding: 15px;">
+                                전면 VGA SHOULD<br>
+                                4K@30fps 녹화 SHOULD
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px;"><strong>DRM</strong></td>
+                            <td style="padding: 15px;">
+                                <span style="color: var(--accent-success);">✓</span> Widevine L3 MUST
+                            </td>
+                            <td style="padding: 15px;">
+                                Widevine L1 SHOULD (프리미엄 콘텐츠)<br>
+                                HDCP 2.2 SHOULD
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ⚖️ MUST vs SHOULD 의사결정 가이드
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        MUST 구현 우선순위
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>1순위</strong>: 플랫폼 기본 기능 (H.264, AAC)</li>
+                            <li><strong>2순위</strong>: 디바이스 타입 필수 (TV HEVC)</li>
+                            <li><strong>3순위</strong>: 버전별 신규 필수 (Android 14 AV1)</li>
+                            <li><strong>검증</strong>: CTS 실패 시 GMS 인증 불가</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        SHOULD 구현 전략
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>비용 고려</strong>: 하드웨어 제약, 개발 공수</li>
+                            <li><strong>시장 요구</strong>: 타겟 사용자 분석</li>
+                            <li><strong>차별화</strong>: 경쟁사 대비 강점</li>
+                            <li><strong>미래 대비</strong>: 다음 버전 MUST 예상</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        권장 구현 SHOULD
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>HEVC 디코딩 (콘텐츠 호환성)</li>
+                            <li>Widevine L1 (프리미엄 스트리밍)</li>
+                            <li>HDR10 (프리미엄 디스플레이)</li>
+                            <li>60fps 인코딩 (고품질 녹화)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💰</span>
+                        비용 대비 효과
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>높음</strong>: HE-AAC (소프트웨어)</li>
+                            <li><strong>중간</strong>: HEVC (라이선스 필요)</li>
+                            <li><strong>낮음</strong>: 8K 디코딩 (제한적 사용)</li>
+                            <li><strong>평가</strong>: ROI 분석 필수</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ 주의사항:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>SHOULD는 권장이지만, 구현하지 않으면 사용자 경험 저하 가능</li>
+                    <li>경쟁사가 SHOULD 구현 시 시장에서 불리할 수 있음</li>
+                    <li>다음 Android 버전에서 SHOULD → MUST로 변경될 수 있음 (AV1 사례)</li>
+                    <li>Performance Class 선언 시 모든 관련 SHOULD가 MUST로 전환</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 15: Debugging & Troubleshooting -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">15</span>
+                디버깅 & 트러블슈팅
+            </h2>
+            <p class="section-description">
+                CDD 요구사항 위반 시 체계적인 디버깅 방법을 설명합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        CTS 실패 → CDD 매핑
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem;">
+<code># CTS 실패 로그 예시
+FAIL: testH264Decoder4K30fps
+AssertionError: [C-5-1] TV implementations MUST
+support H.264 decoding at 3840x2160@30fps
+
+# CDD 문서 검색
+1. Android TV CDD 문서 열기
+2. Ctrl+F → "[C-5-1]" 검색
+3. Section 5.1.3 Video Codecs 확인
+4. 구체적 요구사항 파악</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        체크리스트
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>✓ 디바이스 타입 확인 (Handheld/TV/Auto/Watch)</li>
+                            <li>✓ Android 버전 확인 (버전별 요구사항 다름)</li>
+                            <li>✓ Performance Class 선언 여부</li>
+                            <li>✓ User Build인지 확인 (eng/userdebug 금지)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛠️</span>
+                        설정 파일 검증
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem;">
+<code># media_codecs.xml 확인
+adb pull /vendor/etc/media_codecs.xml
+
+# 코덱 capabilities 확인
+&lt;Limit name="size" min="96x96" max="3840x2160" /&gt;
+&lt;Limit name="frame-rate" range="1-60" /&gt;
+
+# media_profiles.xml 검증
+adb pull /vendor/etc/media_profiles.xml</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💻</span>
+                        런타임 검증
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem;">
+<code># MediaCodecList 덤프
+adb shell dumpsys media.codec
+
+# Performance Class 확인
+adb shell getprop ro.odm.build.media_performance_class
+
+# 시스템 속성 확인
+adb shell getprop | grep media</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 일반적인 문제 및 해결법
+            </h3>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">문제</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">원인</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">해결법</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">H.264 디코더 누락</td>
+                            <td style="padding: 15px;">media_codecs.xml에 미등록</td>
+                            <td style="padding: 15px;">
+                                <code>&lt;MediaCodec name="OMX.google.h264.decoder" type="video/avc" /&gt;</code> 추가
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">해상도 제한 위반</td>
+                            <td style="padding: 15px;">max resolution 설정 부족</td>
+                            <td style="padding: 15px;">
+                                <code>&lt;Limit name="size" max="3840x2160" /&gt;</code>로 수정
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">Performance Class 불일치</td>
+                            <td style="padding: 15px;">하드웨어 성능 부족</td>
+                            <td style="padding: 15px;">
+                                Performance Class 선언 제거 또는 하드웨어 업그레이드
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">DRM 테스트 실패</td>
+                            <td style="padding: 15px;">Widevine provisioning 안됨</td>
+                            <td style="padding: 15px;">
+                                <code>adb shell pm list packages | grep drm</code>로 CDM 확인
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px;">SELinux 위반</td>
+                            <td style="padding: 15px;">Permissive 모드 또는 정책 누락</td>
+                            <td style="padding: 15px;">
+                                <code>adb shell getenforce</code>로 Enforcing 확인 및 정책 수정
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="success-box" style="margin-top: 30px;">
+                <strong>✅ 디버깅 프로세스:</strong>
+                <ol style="margin-top: 10px; padding-left: 20px;">
+                    <li>CTS 실패 로그에서 Requirement ID 추출 ([C-X-Y])</li>
+                    <li>해당 버전의 CDD PDF에서 Requirement ID 검색</li>
+                    <li>정확한 요구사항 확인 (해상도, 프레임레이트 등)</li>
+                    <li>media_codecs.xml 및 시스템 속성 확인</li>
+                    <li>설정 수정 또는 HAL 구현 업데이트</li>
+                    <li>CTS 재실행 및 검증</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- Section 16: Related Documents -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">16</span>
+                관련 상세 문서
+            </h2>
+            <p class="section-description">
+                CDD 정책과 관련된 다른 문서들의 링크입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        CTS Testing
+                    </h3>
+                    <div class="card-description">
+                        <p>CDD를 검증하는 Compatibility Test Suite</p>
+                        <a href="cts.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            CTS 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Codec 2.0
+                    </h3>
+                    <div class="card-description">
+                        <p>CDD Section 5에서 요구하는 차세대 코덱 프레임워크</p>
+                        <a href="codec2.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            Codec 2.0 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        Widevine DRM
+                    </h3>
+                    <div class="card-description">
+                        <p>CDD Section 9 보안 요구사항 - DRM L1/L3</p>
+                        <a href="widevine.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            Widevine 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>CDD Section 5 오디오 요구사항 구현</p>
+                        <a href="audio-framework.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            Audio Framework 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        AAOS
+                    </h3>
+                    <div class="card-description">
+                        <p>CDD Section 2.5 Automotive 특화 요구사항</p>
+                        <a href="aaos.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            AAOS 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Media Extractor
+                    </h3>
+                    <div class="card-description">
+                        <p>미디어 컨테이너 파싱 구현</p>
+                        <a href="media-extractor.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            Media Extractor 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">▶️</span>
+                        Media Playback
+                    </h3>
+                    <div class="card-description">
+                        <p>미디어 재생 파이프라인</p>
+                        <a href="media-playback.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            Media Playback 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        AOSP Architecture
+                    </h3>
+                    <div class="card-description">
+                        <p>Android 전체 시스템 아키텍처</p>
+                        <a href="aosp.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            AOSP 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 40px;">
+                <strong>🔗 외부 참조 링크:</strong>
+                <ul style="margin-top: 15px; padding-left: 20px;">
+                    <li>
+                        <a href="https://source.android.com/docs/compatibility/cdd" target="_blank" style="color: var(--accent-primary);">
+                            Android CDD 공식 문서
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://source.android.com/docs/compatibility/cts" target="_blank" style="color: var(--accent-primary);">
+                            Android CTS 공식 문서
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://developer.android.com/topic/performance/performance-class" target="_blank" style="color: var(--accent-primary);">
+                            Performance Class 개발자 가이드
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://source.android.com/docs/core/media" target="_blank" style="color: var(--accent-primary);">
+                            AOSP Media Framework 문서
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
         <!-- Footer -->
         <footer
             style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
