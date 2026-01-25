@@ -78,6 +78,37 @@ const NODE_ID_MAPPING = {
     'COMP_IMPL': 'Component Implementation',
     'PARAMS': 'C2Param',
     'QUERY': 'Query',
+    'TUNING': 'Tuning',
+    'INPUT_Q': 'Input Queue',
+    'OUTPUT_Q': 'Output Queue',
+    'WORK_PROC': 'Work Processor',
+    'WORK_DONE': 'onWorkDone',
+    'TRIGGERED': 'onTriggered',
+    'ERROR': 'onError',
+    // codec2.html - Buffer Management Flow
+    'START': 'Flow Start',
+    'C2BUFFER': 'C2Buffer',
+    'C2WORK': 'C2Work',
+    'POOL': 'Block Pool',
+    'TYPE': 'Buffer Type',
+    'ION_ALLOC': 'ION Allocation',
+    'GRALLOC_ALLOC': 'Gralloc Allocation',
+    'QUEUE': 'Queue to Component',
+    'PROCESS': 'Processing',
+    'ZEROCOPY': 'Zero-Copy Check',
+    'DIRECT': 'Direct Access',
+    'COPY': 'Copy Operation',
+    'OUTPUT': 'Output Buffer',
+    'RETURN': 'Return to App',
+    'RECYCLE': 'Recycle Buffer',
+    'END': 'Flow End',
+    'ALLOC': 'Allocation Decision',
+    // codec2.html - Vendor Implementation
+    'BP': 'Android.bp',
+    'XML': 'media_codecs.xml',
+    'MANIFEST': 'manifest.xml',
+    'HWSERVICE': 'hwservicemanager',
+    'STORE_IMPL': 'Store Implementation',
 
     // Media Framework Core (media-framework-core.html)
     'APP': 'Media Apps',
@@ -1342,6 +1373,755 @@ codec.start()
         ],
         path: 'hardware/interfaces/graphics/allocator/',
         doc: 'https://source.android.com/docs/core/graphics/arch-bq-gralloc'
+    },
+
+    'HIDL/AIDL IPC': {
+        title: 'HIDL/AIDL IPC Layer',
+        layer: 'HAL Interface',
+        description: 'Framework와 Vendor 간 프로세스 간 통신(IPC)을 담당하는 HAL 인터페이스입니다.',
+        components: [
+            'HIDL (Hardware Interface Definition Language)',
+            'AIDL (Android Interface Definition Language)',
+            'Binder IPC',
+            'Data Serialization'
+        ],
+        path: 'hardware/interfaces/media/c2/',
+        doc: 'https://source.android.com/docs/core/architecture/hidl',
+        codeExample: `
+// HIDL 서비스 등록 (vendor)
+using android::hardware::media::c2::V1_0::IComponentStore;
+sp<IComponentStore> store = new MyComponentStore();
+status_t status = store->registerAsService("default");
+
+// AIDL 서비스 등록 (vendor)
+using aidl::android::hardware::media::c2::IComponentStore;
+std::shared_ptr<IComponentStore> store = ndk::SharedRefBase::make<MyComponentStore>();
+const std::string name = IComponentStore::descriptor + "/default";
+binder_status_t status = AServiceManager_addService(store->asBinder().get(), name.c_str());
+        `.trim()
+    },
+
+    'ClientListener': {
+        title: 'Client Listener (mClientListener)',
+        layer: 'Framework',
+        description: 'Codec2Client에서 컴포넌트의 콜백을 수신하는 리스너입니다.',
+        components: [
+            'onWorkDone() 콜백',
+            'onTriggered() 콜백',
+            'onError() 콜백',
+            'onFramesRendered() 콜백'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'Component Implementation': {
+        title: 'C2Component Implementation',
+        layer: 'Vendor',
+        description: '실제 인코딩/디코딩 로직을 구현하는 벤더 코드입니다.',
+        components: [
+            'Hardware Codec Driver',
+            'DSP/GPU Integration',
+            'Buffer Processing',
+            'Error Handling'
+        ],
+        path: 'vendor/<company>/codec2/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+// 벤더 코덱 구현 예제
+class MyAvcDecoder : public SimpleC2Component {
+    void process(
+        const std::unique_ptr<C2Work>& work,
+        const std::shared_ptr<C2BlockPool>& pool) override {
+
+        // 입력 버퍼에서 압축 데이터 추출
+        C2ReadView rView = work->input.buffers[0]->data()
+            .linearBlocks().front().map().get();
+
+        // 하드웨어 디코더 호출
+        mHwDecoder->decode(rView.data(), rView.capacity());
+
+        // 출력 버퍼 생성 및 반환
+        std::shared_ptr<C2GraphicBlock> block;
+        pool->fetchGraphicBlock(mWidth, mHeight, format, usage, &block);
+        work->worklets.front()->output.buffers.push_back(
+            createGraphicBuffer(block)
+        );
+    }
+};
+        `.trim()
+    },
+
+    'C2Param': {
+        title: 'C2Param (Configuration Parameters)',
+        layer: 'HAL',
+        description: '코덱의 설정 파라미터를 정의하는 타입입니다.',
+        components: [
+            'Bitrate Parameters',
+            'Resolution Parameters',
+            'Frame Rate Parameters',
+            'Profile/Level Parameters',
+            'Color Format Parameters'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/include/C2Param.h',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+// C2Param 설정 예제
+std::vector<std::unique_ptr<C2Param>> params;
+
+// 비트레이트 설정
+params.push_back(std::make_unique<C2StreamBitrateInfo::output>(
+    0u, 6000000  // 6 Mbps
+));
+
+// 프레임레이트 설정
+params.push_back(std::make_unique<C2StreamFrameRateInfo::output>(
+    0u, 30.0  // 30 fps
+));
+
+// 해상도 설정
+params.push_back(std::make_unique<C2StreamPictureSizeInfo::input>(
+    0u, 1920, 1080
+));
+
+c2_status_t err = component->config(params, C2_MAY_BLOCK, &failures);
+        `.trim()
+    },
+
+    'Query': {
+        title: 'Query (Capability Query)',
+        layer: 'HAL',
+        description: '컴포넌트의 지원 능력 및 파라미터 범위를 조회하는 인터페이스입니다.',
+        components: [
+            'Supported Parameters',
+            'Value Ranges',
+            'Profile/Level Support',
+            'Color Format Support'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+// 지원 파라미터 조회
+std::vector<std::shared_ptr<C2ParamDescriptor>> params;
+c2_status_t err = component->querySupportedParams(&params);
+
+for (auto& param : params) {
+    ALOGD("Supported param: %s", param->name().c_str());
+}
+
+// 지원 값 범위 조회
+C2FieldSupportedValuesQuery query = C2FieldSupportedValuesQuery::Current(
+    C2ParamField(&C2StreamBitrateInfo::output::value)
+);
+std::vector<C2FieldSupportedValuesQuery> queries = { query };
+err = component->querySupportedValues(queries, C2_MAY_BLOCK);
+
+ALOGD("Bitrate range: %d - %d",
+    queries[0].values.range.min.u32,
+    queries[0].values.range.max.u32);
+        `.trim()
+    },
+
+    'Tuning': {
+        title: 'Tuning (Dynamic Adjustment)',
+        layer: 'HAL',
+        description: '런타임 시 코덱 파라미터를 동적으로 조정하는 기능입니다.',
+        components: [
+            'Bitrate Adaptation',
+            'Frame Rate Adjustment',
+            'Quality Tuning',
+            'Performance Optimization'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+// 런타임 비트레이트 조정
+std::vector<std::unique_ptr<C2Param>> params;
+params.push_back(std::make_unique<C2StreamBitrateInfo::output>(
+    0u, 4000000  // 6 Mbps → 4 Mbps로 감소
+));
+
+std::vector<std::unique_ptr<C2SettingResult>> failures;
+c2_status_t err = component->config(params, C2_MAY_BLOCK, &failures);
+
+if (err == C2_OK) {
+    ALOGD("Bitrate adjusted successfully");
+}
+        `.trim()
+    },
+
+    'Input Queue': {
+        title: 'Input Queue',
+        layer: 'HAL',
+        description: '인코더/디코더로 전달될 압축 데이터를 대기시키는 큐입니다.',
+        components: [
+            'Work Queue',
+            'Priority Handling',
+            'Queue Management',
+            'Buffer Ordering'
+        ],
+        path: 'frameworks/av/media/codec2/components/base/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'Output Queue': {
+        title: 'Output Queue',
+        layer: 'HAL',
+        description: '인코딩/디코딩된 데이터를 반환하기 전 대기시키는 큐입니다.',
+        components: [
+            'Output Buffer Queue',
+            'Frame Ordering',
+            'Timestamp Management',
+            'Buffer Release'
+        ],
+        path: 'frameworks/av/media/codec2/components/base/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'Work Processor': {
+        title: 'Work Processor',
+        layer: 'HAL',
+        description: 'C2Work를 처리하는 실제 워커 스레드입니다.',
+        components: [
+            'Work Thread',
+            'Processing Loop',
+            'Codec Operation',
+            'Buffer Handling'
+        ],
+        path: 'frameworks/av/media/codec2/components/base/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+// SimpleC2Component의 워커 스레드
+void SimpleC2Component::processLoop() {
+    while (mRunning) {
+        std::unique_ptr<C2Work> work;
+        {
+            std::unique_lock<std::mutex> lock(mQueueLock);
+            if (mQueue.empty()) {
+                mQueueCondition.wait(lock);
+                continue;
+            }
+            work = std::move(mQueue.front());
+            mQueue.pop_front();
+        }
+
+        // 실제 인코딩/디코딩 처리
+        process(work, mBlockPool);
+
+        // 완료 콜백
+        mListener->onWorkDone_nb(shared_from_this(), work);
+    }
+}
+        `.trim()
+    },
+
+    'onWorkDone': {
+        title: 'onWorkDone Callback',
+        layer: 'Framework',
+        description: 'C2Work 처리가 완료되었을 때 호출되는 콜백입니다.',
+        components: [
+            'Completion Notification',
+            'Output Buffer Delivery',
+            'Error Reporting',
+            'Timestamp Info'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+// onWorkDone 콜백 구현
+void MyCodec2Listener::onWorkDone_nb(
+    const std::weak_ptr<C2Component>& comp,
+    std::list<std::unique_ptr<C2Work>>& workItems) {
+
+    for (auto& work : workItems) {
+        if (work->result == C2_OK) {
+            // 출력 버퍼를 앱으로 전달
+            deliverOutputBuffer(work->worklets.front()->output.buffers[0]);
+        } else {
+            ALOGE("Work failed: %d", work->result);
+        }
+    }
+}
+        `.trim()
+    },
+
+    'onTriggered': {
+        title: 'onTriggered Callback',
+        layer: 'Framework',
+        description: '특정 이벤트가 발생했을 때 호출되는 콜백입니다.',
+        components: [
+            'Event Notification',
+            'Configuration Change',
+            'Stream Event',
+            'Component State'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+// onTriggered 콜백 구현
+void MyCodec2Listener::onTriggered_nb(
+    const std::weak_ptr<C2Component>& comp,
+    const std::vector<std::shared_ptr<C2Param>>& params) {
+
+    for (auto& param : params) {
+        switch (param->coreIndex().coreIndex()) {
+            case C2StreamPictureSizeInfo::CORE_INDEX:
+                // 해상도 변경 이벤트
+                handleResolutionChange(param);
+                break;
+            case C2StreamFrameRateInfo::CORE_INDEX:
+                // 프레임레이트 변경 이벤트
+                handleFrameRateChange(param);
+                break;
+        }
+    }
+}
+        `.trim()
+    },
+
+    'onError': {
+        title: 'onError Callback',
+        layer: 'Framework',
+        description: '코덱에서 에러가 발생했을 때 호출되는 콜백입니다.',
+        components: [
+            'Error Code',
+            'Error Recovery',
+            'Component Reset',
+            'Failure Notification'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+// onError 콜백 구현
+void MyCodec2Listener::onError_nb(
+    const std::weak_ptr<C2Component>& comp,
+    uint32_t errorCode) {
+
+    ALOGE("Codec error: 0x%x", errorCode);
+
+    switch (errorCode) {
+        case C2_CORRUPTED:
+            ALOGE("Corrupted data detected");
+            break;
+        case C2_NO_MEMORY:
+            ALOGE("Out of memory");
+            break;
+        case C2_BAD_VALUE:
+            ALOGE("Invalid parameter");
+            break;
+        default:
+            ALOGE("Unknown error");
+            break;
+    }
+
+    // 에러 복구 시도 또는 컴포넌트 리셋
+    handleCodecError(errorCode);
+}
+        `.trim()
+    },
+
+    // Buffer Management Flow 노드들
+
+    'Flow Start': {
+        title: 'Buffer Flow Start',
+        layer: 'Framework',
+        description: '앱에서 인코딩/디코딩 요청을 시작하는 시점입니다.',
+        components: [
+            'queueInputBuffer()',
+            'Buffer Request',
+            'Flow Initiation'
+        ]
+    },
+
+    'C2Buffer': {
+        title: 'C2Buffer',
+        layer: 'HAL',
+        description: '미디어 데이터를 담는 Codec 2.0 버퍼 컨테이너입니다.',
+        components: [
+            'Linear Buffer (Audio/Compressed)',
+            'Graphic Buffer (Video/YUV)',
+            'Buffer Metadata',
+            'Data Blocks'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/include/C2Buffer.h',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+// C2Buffer 생성 예제
+std::shared_ptr<C2LinearBlock> block;
+c2_status_t err = pool->fetchLinearBlock(size, usage, &block);
+
+std::shared_ptr<C2Buffer> buffer = C2Buffer::CreateLinearBuffer(
+    block->share(0, size, C2Fence())
+);
+
+// C2Work에 첨부
+work->input.buffers.clear();
+work->input.buffers.push_back(buffer);
+        `.trim()
+    },
+
+    'C2Work': {
+        title: 'C2Work',
+        layer: 'HAL',
+        description: '코덱에 전달되는 작업 단위입니다. 입력/출력 버퍼와 메타데이터를 포함합니다.',
+        components: [
+            'Input Buffers',
+            'Output Buffers',
+            'Worklets',
+            'Timestamp & Flags'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/include/C2Work.h',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+// C2Work 생성 및 큐잉
+std::unique_ptr<C2Work> work = std::make_unique<C2Work>();
+work->input.ordinal.frameIndex = frameIndex;
+work->input.ordinal.timestamp = timestampUs;
+work->input.buffers.push_back(inputBuffer);
+work->input.flags = (C2FrameData::flags_t)0;
+
+std::list<std::unique_ptr<C2Work>> workList;
+workList.push_back(std::move(work));
+
+c2_status_t err = component->queue_nb(&workList);
+        `.trim()
+    },
+
+    'Block Pool': {
+        title: 'C2BlockPool',
+        layer: 'HAL',
+        description: '버퍼 블록을 풀링하여 재사용하는 메모리 관리자입니다.',
+        components: [
+            'Buffer Allocation Pool',
+            'Memory Recycling',
+            'Fast Allocation',
+            'Pool Management'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/C2BlockPool.cpp'
+    },
+
+    'Buffer Type': {
+        title: 'Buffer Type Decision',
+        layer: 'HAL',
+        description: '버퍼 타입(Linear 또는 Graphic)을 결정하는 분기점입니다.',
+        components: [
+            'Linear Buffer (Audio, Compressed Video)',
+            'Graphic Buffer (Raw YUV, RGB)'
+        ]
+    },
+
+    'ION Allocation': {
+        title: 'ION Memory Allocation',
+        layer: 'Kernel',
+        description: 'ION 드라이버를 통해 연속 메모리를 할당합니다.',
+        components: [
+            'ION Heap Selection',
+            'DMA-BUF Allocation',
+            'Shared Memory',
+            'File Descriptor'
+        ],
+        path: 'kernel/drivers/staging/android/ion/',
+        doc: 'https://source.android.com/docs/core/architecture/hidl/memoryblock'
+    },
+
+    'Gralloc Allocation': {
+        title: 'Gralloc Buffer Allocation',
+        layer: 'HAL',
+        description: 'Gralloc HAL을 통해 그래픽 버퍼를 할당합니다.',
+        components: [
+            'Graphics Buffer Allocation',
+            'Format Negotiation',
+            'Hardware Buffer',
+            'Usage Flags'
+        ],
+        path: 'hardware/interfaces/graphics/allocator/',
+        doc: 'https://source.android.com/docs/core/graphics/arch-bq-gralloc'
+    },
+
+    'Queue to Component': {
+        title: 'Queue Work to Component',
+        layer: 'HAL',
+        description: 'C2Work를 컴포넌트의 입력 큐에 전달합니다.',
+        components: [
+            'queue_nb() Call',
+            'Work Submission',
+            'Input Queue'
+        ]
+    },
+
+    'Processing': {
+        title: 'Codec Processing',
+        layer: 'HAL/Hardware',
+        description: '실제 인코딩 또는 디코딩을 수행하는 단계입니다.',
+        components: [
+            'Hardware Codec Processing',
+            'Software Codec Processing',
+            'Data Transform',
+            'Buffer Management'
+        ]
+    },
+
+    'Zero-Copy Check': {
+        title: 'Zero-Copy Possible?',
+        layer: 'HAL',
+        description: 'Zero-Copy로 버퍼를 전달할 수 있는지 확인하는 분기점입니다.',
+        components: [
+            'Memory Mapping Check',
+            'Buffer Compatibility',
+            'Direct Access Possibility'
+        ]
+    },
+
+    'Direct Access': {
+        title: 'Direct Memory Access',
+        layer: 'HAL',
+        description: '버퍼를 복사하지 않고 직접 접근합니다 (Zero-Copy).',
+        components: [
+            'Pointer Sharing',
+            'No Data Copy',
+            'Memory Mapping',
+            'Performance Optimization'
+        ]
+    },
+
+    'Copy Operation': {
+        title: 'Buffer Copy',
+        layer: 'HAL',
+        description: 'Zero-Copy가 불가능한 경우 버퍼를 복사합니다.',
+        components: [
+            'Memory Copy',
+            'Format Conversion',
+            'Data Transfer'
+        ]
+    },
+
+    'Output Buffer': {
+        title: 'Output Buffer Creation',
+        layer: 'HAL',
+        description: '처리된 데이터를 담을 출력 버퍼를 생성합니다.',
+        components: [
+            'C2Buffer Creation',
+            'Output Queue',
+            'Buffer Metadata'
+        ]
+    },
+
+    'Return to App': {
+        title: 'Return Buffer to Application',
+        layer: 'Framework',
+        description: '처리된 버퍼를 앱으로 반환합니다.',
+        components: [
+            'dequeueOutputBuffer()',
+            'Callback Notification',
+            'Buffer Delivery'
+        ]
+    },
+
+    'Recycle Buffer': {
+        title: 'Recycle Buffer to Pool',
+        layer: 'HAL',
+        description: '사용이 끝난 버퍼를 풀로 반환하여 재사용합니다.',
+        components: [
+            'Buffer Release',
+            'Pool Return',
+            'Memory Reuse'
+        ]
+    },
+
+    'Flow End': {
+        title: 'Buffer Flow End',
+        layer: 'Framework',
+        description: '버퍼 처리 플로우가 완료되는 시점입니다.',
+        components: [
+            'Flow Completion',
+            'Resource Cleanup'
+        ]
+    },
+
+    'Allocation Decision': {
+        title: 'Buffer Allocation Decision',
+        layer: 'HAL',
+        description: '새로운 버퍼 할당이 필요한지 판단하는 분기점입니다.',
+        components: [
+            'Pool Check',
+            'Allocation Need',
+            'Buffer Reuse Check'
+        ]
+    },
+
+    // Vendor Implementation 노드들
+
+    'Android.bp': {
+        title: 'Android.bp Build File',
+        layer: 'Build System',
+        description: '벤더 코덱을 빌드하기 위한 Soong 빌드 파일입니다.',
+        components: [
+            'cc_library_shared',
+            'Shared Libraries',
+            'Source Files',
+            'Compiler Flags'
+        ],
+        path: 'vendor/<company>/codec2/Android.bp',
+        doc: 'https://source.android.com/docs/setup/build',
+        codeExample: `
+// Android.bp 예제
+cc_library_shared {
+    name: "libcodec2_vendor_mycompany",
+    vendor: true,
+
+    srcs: [
+        "MyAvcDecoder.cpp",
+        "MyComponentStore.cpp",
+    ],
+
+    shared_libs: [
+        "libcodec2",
+        "libcodec2_vndk",
+        "libcodec2_soft_common",
+        "liblog",
+        "libutils",
+    ],
+
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-DLOG_TAG=\\"MyCodec\\"",
+    ],
+}
+        `.trim()
+    },
+
+    'media_codecs.xml': {
+        title: 'media_codecs.xml Configuration',
+        layer: 'HAL Configuration',
+        description: '코덱의 능력과 지원 형식을 선언하는 XML 파일입니다.',
+        components: [
+            'Codec Declaration',
+            'Supported MIME Types',
+            'Resolution Limits',
+            'Feature Support'
+        ],
+        path: 'device/<company>/<device>/media_codecs.xml',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+<!-- media_codecs.xml 예제 -->
+<MediaCodecs>
+    <Decoders>
+        <MediaCodec name="c2.vendor.avc.decoder" type="video/avc">
+            <Limit name="size" min="64x64" max="3840x2160"/>
+            <Limit name="alignment" value="2x2"/>
+            <Limit name="block-size" value="16x16"/>
+            <Limit name="frame-rate" range="1-60"/>
+            <Limit name="bitrate" range="1-120000000"/>
+            <Feature name="adaptive-playback"/>
+            <Feature name="secure-playback"/>
+        </MediaCodec>
+    </Decoders>
+</MediaCodecs>
+        `.trim()
+    },
+
+    'manifest.xml': {
+        title: 'HAL Manifest',
+        layer: 'HAL Configuration',
+        description: 'HAL 서비스를 시스템에 등록하는 매니페스트 파일입니다.',
+        components: [
+            'HAL Service Declaration',
+            'Interface Version',
+            'Service Name',
+            'Transport Type'
+        ],
+        path: 'device/<company>/<device>/manifest.xml',
+        doc: 'https://source.android.com/docs/core/architecture/vintf/objects',
+        codeExample: `
+<!-- manifest.xml 예제 -->
+<hal format="hidl">
+    <name>android.hardware.media.c2</name>
+    <transport>hwbinder</transport>
+    <version>1.0</version>
+    <interface>
+        <name>IComponentStore</name>
+        <instance>vendor</instance>
+    </interface>
+</hal>
+
+<!-- AIDL 버전 -->
+<hal format="aidl">
+    <name>android.hardware.media.c2</name>
+    <fqname>IComponentStore/vendor</fqname>
+</hal>
+        `.trim()
+    },
+
+    'hwservicemanager': {
+        title: 'HW Service Manager',
+        layer: 'System Service',
+        description: 'HAL 서비스를 등록하고 발견하는 시스템 서비스입니다.',
+        components: [
+            'Service Registry',
+            'Service Discovery',
+            'Binder Communication',
+            'Service Lookup'
+        ],
+        path: 'system/hwservicemanager/',
+        doc: 'https://source.android.com/docs/core/architecture/hidl/services',
+        codeExample: `
+// HAL 서비스 등록 확인
+adb shell lshal | grep android.hardware.media.c2
+
+// 출력 예:
+// FC android.hardware.media.c2@1.0::IComponentStore/vendor
+// FC android.hardware.media.c2@1.0::IComponentStore/software
+
+// 서비스 상태 확인
+adb shell dumpsys -l | grep hwservicemanager
+        `.trim()
+    },
+
+    'Store Implementation': {
+        title: 'C2ComponentStore Implementation',
+        layer: 'Vendor',
+        description: '벤더가 구현하는 C2ComponentStore 팩토리 클래스입니다.',
+        components: [
+            'Component Factory',
+            'createComponent()',
+            'listComponents()',
+            'Parameter Support'
+        ],
+        path: 'vendor/<company>/codec2/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+// C2ComponentStore 구현 예제
+class MyComponentStore : public C2ComponentStore {
+public:
+    MyComponentStore()
+        : mReflector(std::make_shared<C2ReflectorHelper>()) {}
+
+    c2_status_t createComponent(
+        c2_node_id_t id,
+        std::shared_ptr<C2Component>* component,
+        ComponentDeleter* deleter) override {
+
+        *deleter = [](C2Component* p) { delete p; };
+
+        if (name == "c2.vendor.avc.decoder") {
+            *component = std::make_shared<MyAvcDecoder>(
+                name, id, std::make_shared<IntfImpl>()
+            );
+            return C2_OK;
+        }
+        return C2_NOT_FOUND;
+    }
+
+    std::vector<std::shared_ptr<const C2Component::Traits>>
+    listComponents() override {
+        return {
+            std::make_shared<MyAvcDecoder::Traits>(),
+            std::make_shared<MyHevcDecoder::Traits>()
+        };
+    }
+};
+        `.trim()
     },
 
     // ========================================
