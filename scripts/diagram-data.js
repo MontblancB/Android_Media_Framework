@@ -193,6 +193,9 @@ const NODE_ID_MAPPING = {
     'APS': 'AudioPolicyService',
     'AR': 'AudioRecord',
     'AT': 'AudioTrack',
+    'AT1': 'AudioTrack 1',
+    'AT2': 'AudioTrack 2',
+    'AT3': 'AudioTrack 3',
     'MIXER': 'AudioMixer',
     'FAST': 'FastMixer',
     'EFFECTS': 'Audio Effects',
@@ -201,6 +204,14 @@ const NODE_ID_MAPPING = {
     'CAS': 'Car Audio Service',
     'BT': 'Bluetooth Audio',
     'USB_DAC': 'USB DAC',
+    'BINDER1': 'Binder IPC (Playback)',
+    'BINDER2': 'Binder IPC (Recording)',
+    'HP': 'Headphone',
+    'SPK': 'Speaker',
+    'HW': 'Audio Hardware',
+    'LEGACY': 'Legacy Path',
+    'ZONE0': 'Zone 0 (Driver)',
+    'ZONE1': 'Zone 1 (Rear)',
 
     // media-extractor.html - MediaExtractor & Container Parsing
     'DATA_SRC': 'Data Source',
@@ -3845,6 +3856,290 @@ audioTrack.play()
         ],
         path: 'kernel/sound/core/',
         doc: 'https://www.kernel.org/doc/html/latest/sound/'
+    },
+
+    'AudioTrack 1': {
+        title: 'AudioTrack Instance 1',
+        layer: 'Client Track',
+        description: 'AudioFlinger MixerThread로 전달되는 첫 번째 AudioTrack 인스턴스입니다.',
+        components: [
+            'PCM Buffer',
+            'Audio Format',
+            'Session ID',
+            'Volume',
+            'Audio Attributes'
+        ],
+        path: 'frameworks/av/services/audioflinger/Tracks.cpp',
+        doc: 'https://source.android.com/docs/core/audio/audioflinger'
+    },
+
+    'AudioTrack 2': {
+        title: 'AudioTrack Instance 2',
+        layer: 'Client Track',
+        description: 'AudioFlinger MixerThread로 전달되는 두 번째 AudioTrack 인스턴스입니다.',
+        components: [
+            'PCM Buffer',
+            'Audio Format',
+            'Session ID',
+            'Volume',
+            'Audio Attributes'
+        ],
+        path: 'frameworks/av/services/audioflinger/Tracks.cpp',
+        doc: 'https://source.android.com/docs/core/audio/audioflinger'
+    },
+
+    'AudioTrack 3': {
+        title: 'AudioTrack Instance 3',
+        layer: 'Client Track',
+        description: 'AudioFlinger MixerThread로 전달되는 세 번째 AudioTrack 인스턴스입니다.',
+        components: [
+            'PCM Buffer',
+            'Audio Format',
+            'Session ID',
+            'Volume',
+            'Audio Attributes'
+        ],
+        path: 'frameworks/av/services/audioflinger/Tracks.cpp',
+        doc: 'https://source.android.com/docs/core/audio/audioflinger'
+    },
+
+    'Binder IPC (Playback)': {
+        title: 'Binder IPC (Playback Path)',
+        layer: 'IPC',
+        description: '앱에서 AudioFlinger로 오디오 데이터를 전달하는 Binder IPC입니다.',
+        components: [
+            'IAudioTrack Interface',
+            'Shared Memory (Parcels)',
+            'Callback Mechanism',
+            'Buffer Transfer',
+            'AIDL/HIDL'
+        ],
+        path: 'frameworks/av/media/libaudioclient/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl/overview',
+        codeExample: `
+// AudioTrack이 내부적으로 Binder IPC 사용
+// frameworks/av/media/libaudioclient/AudioTrack.cpp
+
+sp<IAudioTrack> track = audioFlinger->createTrack(
+    streamType,
+    sampleRate,
+    format,
+    channelMask,
+    &frameCount,
+    &trackFlags,
+    sharedBuffer,
+    output,
+    &sessionId,
+    &status
+);
+        `.trim()
+    },
+
+    'Binder IPC (Recording)': {
+        title: 'Binder IPC (Recording Path)',
+        layer: 'IPC',
+        description: 'AudioFlinger에서 앱으로 녹음 데이터를 전달하는 Binder IPC입니다.',
+        components: [
+            'IAudioRecord Interface',
+            'Shared Memory (Parcels)',
+            'Callback Mechanism',
+            'Buffer Transfer',
+            'AIDL/HIDL'
+        ],
+        path: 'frameworks/av/media/libaudioclient/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl/overview',
+        codeExample: `
+// AudioRecord가 내부적으로 Binder IPC 사용
+// frameworks/av/media/libaudioclient/AudioRecord.cpp
+
+sp<IAudioRecord> record = audioFlinger->openRecord(
+    input,
+    sampleRate,
+    format,
+    channelMask,
+    &frameCount,
+    &trackFlags,
+    &sessionId,
+    &status
+);
+        `.trim()
+    },
+
+    'Headphone': {
+        title: 'Headphone Output',
+        layer: 'Audio Device',
+        description: '헤드폰/이어폰 출력 장치입니다.',
+        components: [
+            'Jack Detection',
+            'Impedance Detection',
+            'High-Z/Low-Z Output',
+            'Amplifier Control',
+            '3.5mm Jack / USB-C'
+        ],
+        doc: 'https://source.android.com/docs/core/audio/implement',
+        codeExample: `
+// audio_policy_configuration.xml
+<devicePort type="AUDIO_DEVICE_OUT_WIRED_HEADPHONE"
+            role="sink"
+            address="">
+    <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+             samplingRates="48000"
+             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+</devicePort>
+        `.trim()
+    },
+
+    'Speaker': {
+        title: 'Speaker Output',
+        layer: 'Audio Device',
+        description: '내장 스피커 출력 장치입니다.',
+        components: [
+            'Amplifier (TAS2557, MAX98357 등)',
+            'Stereo/Mono Output',
+            'Volume Ramping',
+            'Thermal Protection',
+            'Speaker Protection Algorithm'
+        ],
+        doc: 'https://source.android.com/docs/core/audio/implement',
+        codeExample: `
+// audio_policy_configuration.xml
+<devicePort type="AUDIO_DEVICE_OUT_SPEAKER"
+            role="sink"
+            address="">
+    <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+             samplingRates="48000"
+             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+    <gains>
+        <gain name="speaker" mode="AUDIO_GAIN_MODE_JOINT"
+              minValueMB="-8400" maxValueMB="400" defaultValueMB="0" stepValueMB="100"/>
+    </gains>
+</devicePort>
+        `.trim()
+    },
+
+    'Audio Hardware': {
+        title: 'Audio Hardware (Codec)',
+        layer: 'Hardware',
+        description: '물리적인 오디오 코덱 칩입니다. (예: WM8994, CS43131, ALC5658)',
+        components: [
+            'DAC (Digital-to-Analog)',
+            'ADC (Analog-to-Digital)',
+            'I2S/PCM Interface',
+            'Audio Amplifier',
+            'Mixer & Routing',
+            'Clock Management (PLL)'
+        ],
+        doc: 'https://source.android.com/docs/core/audio/implement-pre-processing',
+        codeExample: `
+// Audio Codec 초기화 (I2C/SPI)
+/*
+예: Wolfson WM8994 코덱
+- I2S Master/Slave 설정
+- Sample Rate 설정 (8kHz ~ 96kHz)
+- Bit Depth 설정 (16/24/32-bit)
+- Volume 설정
+- Routing 설정 (Speaker/Headphone)
+*/
+
+// ALSA 드라이버에서 Codec 제어
+static int wm8994_set_dai_fmt(struct snd_soc_dai *dai, unsigned int fmt) {
+    // I2S 포맷 설정
+    // Clock Polarity 설정
+    return 0;
+}
+        `.trim()
+    },
+
+    'Legacy Path': {
+        title: 'Legacy Path (AudioFlinger)',
+        layer: 'Playback Path',
+        description: 'AAudio가 MMAP을 지원하지 않을 때 사용하는 기존 경로입니다. AudioFlinger를 경유합니다.',
+        components: [
+            'AudioFlinger 경유',
+            'Higher Latency (~10-20ms)',
+            'Resampling',
+            'Effects Processing',
+            'Mixing with other streams'
+        ],
+        path: 'frameworks/av/media/libaaudio/',
+        doc: 'https://source.android.com/docs/core/audio/aaudio',
+        codeExample: `
+// AAudio가 MMAP을 지원하지 않는 경우
+/*
+App → AAudio → AudioFlinger → HAL → ALSA → Hardware
+
+- Shared Mode 사용
+- 버퍼링으로 인한 지연 증가
+- 여러 스트림 믹싱 가능
+- Effects 적용 가능
+*/
+
+AAudioStreamBuilder_setPerformanceMode(builder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
+// → MMAP 실패 시 자동으로 Legacy Path 사용
+        `.trim()
+    },
+
+    'Zone 0 (Driver)': {
+        title: 'Audio Zone 0 (Driver Seat)',
+        layer: 'Audio Zone',
+        description: 'AAOS에서 운전석 영역의 오디오 출력을 담당합니다.',
+        components: [
+            'Driver Speakers (Front L/R)',
+            'Primary Audio Focus',
+            'Navigation Prompts',
+            'Phone Calls',
+            'Media Playback'
+        ],
+        doc: 'https://source.android.com/docs/automotive/audio',
+        codeExample: `
+// Car Audio Configuration (car_audio_configuration.xml)
+<carAudioConfiguration version="2">
+    <zones>
+        <zone name="primary zone" isPrimary="true" occupantZoneId="0">
+            <volumeGroups>
+                <group>
+                    <device address="bus0_media_out">
+                        <context>music</context>
+                        <context>navigation</context>
+                    </device>
+                </group>
+            </volumeGroups>
+        </zone>
+    </zones>
+</carAudioConfiguration>
+        `.trim()
+    },
+
+    'Zone 1 (Rear)': {
+        title: 'Audio Zone 1 (Rear Seat)',
+        layer: 'Audio Zone',
+        description: 'AAOS에서 뒷좌석 영역의 오디오 출력을 담당합니다.',
+        components: [
+            'Rear Speakers (Rear L/R)',
+            'Independent Volume Control',
+            'Secondary Media Playback',
+            'Rear Seat Entertainment',
+            'Isolated from Zone 0'
+        ],
+        doc: 'https://source.android.com/docs/automotive/audio',
+        codeExample: `
+// Car Audio Configuration (car_audio_configuration.xml)
+<zone name="rear seat zone" isPrimary="false" occupantZoneId="1">
+    <volumeGroups>
+        <group>
+            <device address="bus1_media_out">
+                <context>music</context>
+                <context>movie</context>
+            </device>
+        </group>
+    </volumeGroups>
+</zone>
+
+// Zone 1에서 미디어 재생
+val carAudioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+val zoneId = 1  // Rear Zone
+carAudioManager.setZoneIdForUid(zoneId, android.os.Process.myUid())
+        `.trim()
     },
 
     // ========================================
