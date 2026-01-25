@@ -188,6 +188,9 @@ const NODE_ID_MAPPING = {
     'HAL_STD': 'Standard HAL',
     'SYSTEM_APP': 'System Apps',
     'MEDIA_APP': 'Media App',
+    'APP': 'Vehicle App',
+    'APP1': 'Navigation App',
+    'APP2': 'Media App',
 
     // Media Playback (media-playback.html)
     'PLAYER_API': 'Player API',
@@ -2976,6 +2979,31 @@ AAudioStream_requestStart(stream);
         doc: 'https://developer.android.com/about/versions/marshmallow'
     },
 
+    'Features - Lollipop': {
+        title: 'Lollipop 미디어 기능',
+        layer: 'Features',
+        description: 'Android 5.0 Lollipop에서 추가된 미디어 기능들',
+        components: [
+            'Camera2 API',
+            'AudioAttributes',
+            'MediaSession API',
+            'MediaRouter API',
+            'Material Design'
+        ]
+    },
+
+    'Features - Marshmallow': {
+        title: 'Marshmallow 미디어 기능',
+        layer: 'Features',
+        description: 'Android 6.0 Marshmallow에서 추가된 미디어 기능들',
+        components: [
+            'MIDI API',
+            'Audio Capture Improvements',
+            'Camera2 Enhancements',
+            'Runtime Permissions for Media'
+        ]
+    },
+
     'Features - AAudio': {
         title: 'AAudio 기능',
         layer: 'Features',
@@ -3317,6 +3345,34 @@ val speed = carPropertyManager.getFloatProperty(
             'Graphics HAL',
             'Bluetooth HAL'
         ]
+    },
+
+    'Vehicle App': {
+        title: 'Vehicle App',
+        layer: 'Application',
+        description: 'AAOS에서 실행되는 차량용 앱입니다.',
+        components: [
+            'Navigation Apps',
+            'Media Apps',
+            'HVAC Control Apps',
+            'Car Settings',
+            'OEM Apps'
+        ],
+        doc: 'https://developer.android.com/training/cars/apps'
+    },
+
+    'Navigation App': {
+        title: 'Navigation App',
+        layer: 'Application',
+        description: '차량 내비게이션 앱입니다.',
+        components: [
+            'Google Maps',
+            'Waze',
+            'OEM Navigation',
+            'Route Planning',
+            'Turn-by-turn Guidance'
+        ],
+        doc: 'https://developer.android.com/training/cars/navigation'
     }
 };
 
