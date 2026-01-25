@@ -8,355 +8,11 @@
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #111827;
-            --bg-card: #1a1f35;
-            --bg-card-hover: #222844;
-            --accent-primary: #ec4899;
-            --accent-secondary: #f472b6;
-            --accent-tertiary: #fb7185;
-            --accent-green: #10b981;
-            --text-primary: #e5e7eb;
-            --text-secondary: #9ca3af;
-            --text-muted: #6b7280;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --glow-color: rgba(236, 72, 153, 0.3);
-        }
-
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f2e 100%);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .nav {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-        }
-
-        .nav-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 24px;
-            background: rgba(26, 31, 53, 0.9);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            color: var(--text-primary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .nav-button:hover {
-            background: rgba(236, 72, 153, 0.1);
-            border-color: var(--accent-primary);
-            transform: translateX(-5px);
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 60px;
-            margin-top: 40px;
-            padding: 60px 20px;
-            background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
-            border-radius: 24px;
-            border: 1px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-        }
-
-        header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(236, 72, 153, 0.05) 0%, transparent 70%);
-            animation: pulse 8s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                transform: scale(1);
-                opacity: 0.5;
-            }
-
-            50% {
-                transform: scale(1.1);
-                opacity: 0.8;
-            }
-        }
-
-        h1 {
-            font-size: 3.5rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .subtitle {
-            font-size: 1.3rem;
-            color: var(--text-secondary);
-            font-weight: 300;
-            position: relative;
-            z-index: 1;
-        }
-
-        .section {
-            margin-bottom: 80px;
-            padding: 40px;
-            background: var(--bg-card);
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), #c084fc);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .section:hover {
-            border-color: rgba(236, 72, 153, 0.3);
-            box-shadow: 0 10px 40px rgba(236, 72, 153, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .section:hover::before {
-            opacity: 1;
-        }
-
-        .section-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: var(--accent-primary);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .section-number {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            border-radius: 12px;
-            font-size: 1.3rem;
-            font-weight: 900;
-            color: white;
-            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
-        }
-
-        .section-description {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            margin-bottom: 30px;
-            padding-left: 65px;
-        }
-
-        .diagram-container {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 30px;
-            margin: 30px 0;
-            border: 1px solid var(--border-color);
-            overflow-x: auto;
-        }
-
-        .mermaid {
-            display: flex;
-            justify-content: center;
-            min-height: 300px;
-        }
-
-        .content-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
-        }
-
-        .card {
-            background: var(--bg-secondary);
-            padding: 25px;
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateX(5px);
-            border-color: rgba(236, 72, 153, 0.4);
-            box-shadow: 0 5px 20px rgba(236, 72, 153, 0.15);
-        }
-
-        .card:hover::before {
-            opacity: 1;
-        }
-
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--accent-primary);
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card-icon {
-            font-size: 1.5rem;
-        }
-
-        .card-description {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.7;
-        }
-
-        .card-description ul {
-            margin-top: 10px;
-            padding-left: 20px;
-        }
-
-        .card-description li {
-            margin-bottom: 8px;
-        }
-
-        code {
-            font-family: 'JetBrains Mono', monospace;
-            background: rgba(236, 72, 153, 0.1);
-            padding: 2px 8px;
-            border-radius: 4px;
-            color: var(--accent-primary);
-            font-size: 0.9em;
-        }
-
-        .highlight-box {
-            background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(124, 58, 237, 0.1));
-            border-left: 4px solid var(--accent-primary);
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-        }
-
-        .highlight-box strong {
-            color: var(--accent-primary);
-        }
-
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2.5rem;
-            }
-
-            .subtitle {
-                font-size: 1.1rem;
-            }
-
-            .section {
-                padding: 25px;
-            }
-
-            .section-title {
-                font-size: 1.5rem;
-            }
-
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .section {
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        ::-webkit-scrollbar {
-            width: 12px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-primary);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
-            border-radius: 6px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, var(--accent-secondary), #c084fc);
-        }
+        <style>
+        /* Page-specific styles loaded from design-system.css */
     </style>
 </head>
 
@@ -369,12 +25,12 @@
 
     <div class="container">
         <header>
-            <h1>🎵 Audio Framework</h1>
-            <p class="subtitle">Android 오디오 처리 파이프라인 및 핵심 컴포넌트</p>
+            <h1 class="page-title">🎵 Audio Framework</h1>
+            <p class="page-subtitle">Android 오디오 처리 파이프라인 및 핵심 컴포넌트</p>
         </header>
 
         <!-- Section 1: Audio Framework Overview -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">1</span>
                 Audio Framework 개요
@@ -438,7 +94,7 @@
         </section>
 
         <!-- Section 2: Core Audio Architecture -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">2</span>
                 Audio Framework 전체 아키텍처
@@ -447,7 +103,7 @@
                 애플리케이션 레이어부터 하드웨어까지 5개의 주요 레이어로 구성됩니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph TB
                     APP["📱 Application Layer<br /><br />AudioTrack, AudioRecord<br />MediaPlayer, AAudio API"]
@@ -477,7 +133,7 @@
         </section>
 
         <!-- Section 3: AudioFlinger -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">3</span>
                 AudioFlinger - 오디오 믹싱 엔진
@@ -533,7 +189,7 @@
                 </div>
             </div>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph LR
                     subgraph AudioFlinger
@@ -566,7 +222,7 @@
         </section>
 
         <!-- Section 4: AudioPolicyService -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">4</span>
                 AudioPolicyService - 라우팅 및 정책
@@ -622,7 +278,7 @@
                 </div>
             </div>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph TB
                     APP[Application<br />AudioManager]
@@ -658,7 +314,7 @@
         </section>
 
         <!-- Section 5: Audio Pipeline Flows -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">5</span>
                 오디오 파이프라인 플로우
@@ -669,7 +325,7 @@
 
             <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">📤 재생 파이프라인 (Playback)
             </h3>
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph LR
                     APP[Application<br />MediaPlayer/AAudio]
@@ -699,7 +355,7 @@
 
             <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">📥 녹음 파이프라인 (Capture)
             </h3>
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph RL
                     HW[Microphone]
@@ -729,7 +385,7 @@
         </section>
 
         <!-- Section 6: Audio HAL Interface -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">6</span>
                 Audio HAL 인터페이스
@@ -787,7 +443,7 @@
         </section>
 
         <!-- Section 7: Audio Focus Management -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">7</span>
                 Audio Focus 관리
@@ -844,7 +500,7 @@
                 </div>
             </div>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     sequenceDiagram
                     participant App1 as Music App
@@ -869,7 +525,7 @@
         </section>
 
         <!-- Section 8: Audio Routing -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">8</span>
                 Audio Routing
@@ -926,7 +582,7 @@
                 </div>
             </div>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph TD
                     APP[Application]

@@ -8,424 +8,11 @@
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #111827;
-            --bg-card: #1a1f35;
-            --bg-card-hover: #222844;
-            --accent-primary: #00d4ff;
-            --accent-secondary: #7c3aed;
-            --accent-tertiary: #ec4899;
-            --accent-automotive: #f59e0b;
-            --text-primary: #e5e7eb;
-            --text-secondary: #9ca3af;
-            --text-muted: #6b7280;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --glow-color: rgba(0, 212, 255, 0.3);
-        }
-
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f2e 100%);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        /* Navigation */
-        .nav {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-        }
-
-        .nav-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 24px;
-            background: rgba(26, 31, 53, 0.9);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            color: var(--text-primary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .nav-button:hover {
-            background: rgba(0, 212, 255, 0.1);
-            border-color: var(--accent-primary);
-            transform: translateX(-5px);
-        }
-
-        /* Header Styles */
-        header {
-            text-align: center;
-            margin-bottom: 60px;
-            margin-top: 40px;
-            padding: 60px 20px;
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
-            border-radius: 24px;
-            border: 1px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-        }
-
-        header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(245, 158, 11, 0.05) 0%, transparent 70%);
-            animation: pulse 8s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                transform: scale(1);
-                opacity: 0.5;
-            }
-
-            50% {
-                transform: scale(1.1);
-                opacity: 0.8;
-            }
-        }
-
-        h1 {
-            font-size: 3.5rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--accent-automotive), var(--accent-primary), var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .subtitle {
-            font-size: 1.3rem;
-            color: var(--text-secondary);
-            font-weight: 300;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Section Styles */
-        .section {
-            margin-bottom: 80px;
-            padding: 40px;
-            background: var(--bg-card);
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--accent-automotive), var(--accent-primary), var(--accent-secondary));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .section:hover {
-            border-color: rgba(245, 158, 11, 0.3);
-            box-shadow: 0 10px 40px rgba(245, 158, 11, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .section:hover::before {
-            opacity: 1;
-        }
-
-        .section-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: var(--accent-automotive);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .section-number {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, var(--accent-automotive), var(--accent-primary));
-            border-radius: 12px;
-            font-size: 1.3rem;
-            font-weight: 900;
-            color: white;
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-        }
-
-        .section-description {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            margin-bottom: 30px;
-            padding-left: 65px;
-        }
-
-        /* Diagram Container */
-        .diagram-container {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 30px;
-            margin: 30px 0;
-            border: 1px solid var(--border-color);
-            overflow-x: auto;
-        }
-
-        .mermaid {
-            display: flex;
-            justify-content: center;
-            min-height: 300px;
-        }
-
-        /* Content Grid */
-        .content-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
-        }
-
-        .card {
-            background: var(--bg-secondary);
-            padding: 25px;
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: linear-gradient(180deg, var(--accent-automotive), var(--accent-primary));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateX(5px);
-            border-color: rgba(245, 158, 11, 0.4);
-            box-shadow: 0 5px 20px rgba(245, 158, 11, 0.15);
-        }
-
-        .card:hover::before {
-            opacity: 1;
-        }
-
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--accent-automotive);
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card-icon {
-            font-size: 1.5rem;
-        }
-
-        .card-description {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.7;
-        }
-
-        .card-description ul {
-            margin-top: 10px;
-            padding-left: 20px;
-        }
-
-        .card-description li {
-            margin-bottom: 8px;
-        }
-
-        /* Code styling */
-        code {
-            font-family: 'JetBrains Mono', monospace;
-            background: rgba(245, 158, 11, 0.1);
-            padding: 2px 8px;
-            border-radius: 4px;
-            color: var(--accent-automotive);
-            font-size: 0.9em;
-        }
-
-        /* Comparison Table */
-        .comparison-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            overflow: hidden;
-            border-radius: 12px;
-        }
-
-        .comparison-table th,
-        .comparison-table td {
-            padding: 15px 20px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .comparison-table th {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(0, 212, 255, 0.2));
-            color: var(--accent-automotive);
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        .comparison-table td {
-            background: var(--bg-secondary);
-        }
-
-        .comparison-table tr:hover td {
-            background: var(--bg-card-hover);
-        }
-
-        /* Tag Styles */
-        .tag {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin: 4px;
-        }
-
-        .tag-aaos {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(0, 212, 255, 0.2));
-            color: var(--accent-automotive);
-            border: 1px solid var(--accent-automotive);
-        }
-
-        .tag-proprietary {
-            background: rgba(124, 58, 237, 0.2);
-            color: var(--accent-secondary);
-            border: 1px solid var(--accent-secondary);
-        }
-
-        .tag-oem {
-            background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(124, 58, 237, 0.2));
-            color: var(--accent-tertiary);
-            border: 1px solid var(--accent-tertiary);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2.5rem;
-            }
-
-            .subtitle {
-                font-size: 1.1rem;
-            }
-
-            .section {
-                padding: 25px;
-            }
-
-            .section-title {
-                font-size: 1.5rem;
-            }
-
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Scroll Animation */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .section {
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 12px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-primary);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, var(--accent-automotive), var(--accent-primary));
-            border-radius: 6px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
-        }
-
-        /* Highlight box */
-        .highlight-box {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(0, 212, 255, 0.1));
-            border-left: 4px solid var(--accent-automotive);
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-        }
-
-        .highlight-box strong {
-            color: var(--accent-automotive);
-        }
+        <style>
+        /* Page-specific styles loaded from design-system.css */
     </style>
 </head>
 
@@ -438,12 +25,12 @@
 
     <div class="container">
         <header>
-            <h1>🚗 Google Automotive Services</h1>
-            <p class="subtitle">차량용 인포테인먼트를 위한 구글 서비스 생태계</p>
+            <h1 class="page-title">🚗 Google Automotive Services</h1>
+            <p class="page-subtitle">차량용 인포테인먼트를 위한 구글 서비스 생태계</p>
         </header>
 
         <!-- Section 1: GAS Overview -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">1</span>
                 GAS 개요
@@ -528,7 +115,7 @@
         </section>
 
         <!-- Section 2: AAOS + GAS Architecture -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">2</span>
                 AAOS + GAS 아키텍처
@@ -537,7 +124,7 @@
                 Android Automotive OS와 Google Automotive Services의 계층 구조 및 관계를 보여줍니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph TB
                     subgraph VEHICLE["Vehicle System"]
@@ -659,7 +246,7 @@
         </section>
 
         <!-- Section 3: GAS Core Services -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">3</span>
                 GAS 핵심 서비스
@@ -776,7 +363,7 @@
         </section>
 
         <!-- Section 4: OEM Integration -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">4</span>
                 OEM 통합 프로세스
@@ -785,7 +372,7 @@
                 자동차 제조사가 GAS를 차량에 통합하는 과정과 요구사항을 설명합니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     sequenceDiagram
                     participant OEM as OEM<br />(자동차 제조사)
@@ -917,7 +504,7 @@
         </section>
 
         <!-- Section 5: GAS vs Android Auto -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">5</span>
                 GAS vs Android Auto 비교
@@ -1000,7 +587,7 @@
         </section>
 
         <!-- Section 6: Benefits & Challenges -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">6</span>
                 장점 및 도전 과제

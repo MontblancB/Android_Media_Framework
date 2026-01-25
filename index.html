@@ -1,578 +1,826 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Android Media</title>
+    <title>Android Media Framework — Technical Documentation Hub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 
     <style>
+        :root {
+            /* Base Colors */
+            --color-bg-primary: #0a0e1a;
+            --color-bg-secondary: #0f1419;
+            --color-bg-tertiary: #161b26;
+            --color-surface: #1a2030;
+            --color-surface-elevated: #212838;
+
+            /* Text Colors */
+            --color-text-primary: #e8eaed;
+            --color-text-secondary: #9aa0a6;
+            --color-text-tertiary: #5f6368;
+
+            /* Category Colors */
+            --color-arch: #4a9eff;
+            --color-media: #ff9f43;
+            --color-audio: #ee5a6f;
+            --color-drm: #26de81;
+            --color-car: #a55eea;
+            --color-test: #fc5c65;
+
+            /* Accents */
+            --color-accent: #00d4ff;
+            --color-glow: rgba(0, 212, 255, 0.15);
+
+            /* Spacing */
+            --spacing-xs: 0.5rem;
+            --spacing-sm: 1rem;
+            --spacing-md: 1.5rem;
+            --spacing-lg: 2rem;
+            --spacing-xl: 3rem;
+            --spacing-2xl: 4rem;
+
+            /* Typography */
+            --font-display: 'Playfair Display', serif;
+            --font-body: 'Archivo', sans-serif;
+            --font-mono: 'IBM Plex Mono', monospace;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #111827;
-            --bg-card: #1a1f35;
-            --bg-card-hover: #222844;
-            --accent-primary: #3b82f6;
-            --accent-secondary: #60a5fa;
-            --accent-tertiary: #93c5fd;
-            --text-primary: #e5e7eb;
-            --text-secondary: #9ca3af;
-            --text-muted: #6b7280;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --glow-color: rgba(59, 130, 246, 0.3);
+        body {
+            font-family: var(--font-body);
+            background: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
         }
 
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #0f172a 100%);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-            overflow-x: hidden;
+        /* Background Grid Effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1440px;
             margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 80px;
-            margin-top: 40px;
-            padding: 100px 20px;
-            background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.15), transparent 40%),
-                radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.15), transparent 40%),
-                linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(17, 24, 39, 0.95) 100%);
-            border-radius: 32px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: var(--spacing-2xl) var(--spacing-lg);
             position: relative;
-            overflow: hidden;
-            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+            z-index: 1;
         }
 
-        header::before {
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md) 0;
+            margin-bottom: var(--spacing-2xl);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            animation: slideDown 0.6s ease-out;
+        }
+
+        .logo {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            color: var(--color-accent);
+            text-transform: uppercase;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: var(--spacing-lg);
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+            letter-spacing: 0.03em;
+        }
+
+        .nav-links a:hover {
+            color: var(--color-accent);
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-bottom: var(--spacing-2xl);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .hero-title {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 8vw, 6.5rem);
+            font-weight: 900;
+            line-height: 0.95;
+            margin-bottom: var(--spacing-md);
+            background: linear-gradient(135deg, #ffffff 0%, var(--color-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 2vw, 1.4rem);
+            color: var(--color-text-secondary);
+            font-weight: 300;
+            max-width: 700px;
+            letter-spacing: 0.01em;
+            line-height: 1.5;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-lg);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--color-text-tertiary);
+        }
+
+        .hero-meta-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .hero-meta-item::before {
+            content: '▸';
+            color: var(--color-accent);
+        }
+
+        /* Category Filter */
+        .filter-bar {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-xl);
+            padding: var(--spacing-md) 0;
+            overflow-x: auto;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .filter-btn {
+            padding: var(--spacing-xs) var(--spacing-md);
+            background: var(--color-surface);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            color: var(--color-text-secondary);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            letter-spacing: 0.03em;
+        }
+
+        .filter-btn:hover {
+            background: var(--color-surface-elevated);
+            border-color: var(--color-accent);
+            color: var(--color-accent);
+            transform: translateY(-2px);
+        }
+
+        .filter-btn.active {
+            background: var(--color-accent);
+            color: var(--color-bg-primary);
+            border-color: var(--color-accent);
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .card {
+            position: relative;
+            background: var(--color-surface);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: var(--spacing-lg);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            animation: fadeInUp 0.6s ease-out forwards;
+            overflow: hidden;
+        }
+
+        .card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        }
-
-        header::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
-            animation: pulse 10s ease-in-out infinite;
-            pointer-events: none;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                transform: scale(1);
-                opacity: 0.3;
-            }
-
-            50% {
-                transform: scale(1.2);
-                opacity: 0.6;
-            }
-        }
-
-        h1 {
-            font-size: 5rem;
-            font-weight: 800;
-            letter-spacing: -2px;
-            background: linear-gradient(to right, #60a5fa, #c084fc, #f472b6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 25px;
-            position: relative;
-            z-index: 1;
-            filter: drop-shadow(0 0 30px rgba(192, 132, 252, 0.3));
-        }
-
-        .subtitle {
-            font-size: 1.4rem;
-            color: var(--text-secondary);
-            font-weight: 400;
-            position: relative;
-            z-index: 1;
             width: 100%;
-            margin: 0 auto;
-            line-height: 1.6;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
+            height: 3px;
+            background: var(--category-color);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .subtitle::after {
-            content: '';
-            display: block;
-            width: 60px;
-            height: 4px;
-            background: linear-gradient(90deg, #60a5fa, #c084fc);
-            margin: 30px auto 0;
-            border-radius: 2px;
+        .card:hover::before {
+            transform: scaleX(1);
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 25px;
-            padding: 20px 0;
+        .card:hover {
+            transform: translateY(-6px);
+            background: var(--color-surface-elevated);
+            border-color: var(--category-color);
+            box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.4),
+                        0 0 0 1px var(--category-color);
         }
 
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 30px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+        /* Card Categories */
+        .card.cat-arch { --category-color: var(--color-arch); }
+        .card.cat-media { --category-color: var(--color-media); }
+        .card.cat-audio { --category-color: var(--color-audio); }
+        .card.cat-drm { --category-color: var(--color-drm); }
+        .card.cat-car { --category-color: var(--color-car); }
+        .card.cat-test { --category-color: var(--color-test); }
+
+        /* Animation Delays */
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.15s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+        .card:nth-child(4) { animation-delay: 0.25s; }
+        .card:nth-child(5) { animation-delay: 0.3s; }
+        .card:nth-child(6) { animation-delay: 0.35s; }
+        .card:nth-child(7) { animation-delay: 0.4s; }
+        .card:nth-child(8) { animation-delay: 0.45s; }
+        .card:nth-child(9) { animation-delay: 0.5s; }
+        .card:nth-child(10) { animation-delay: 0.55s; }
+        .card:nth-child(11) { animation-delay: 0.6s; }
+        .card:nth-child(12) { animation-delay: 0.65s; }
+        .card:nth-child(13) { animation-delay: 0.7s; }
+        .card:nth-child(14) { animation-delay: 0.75s; }
+        .card:nth-child(15) { animation-delay: 0.8s; }
+        .card:nth-child(16) { animation-delay: 0.85s; }
+        .card:nth-child(17) { animation-delay: 0.9s; }
+        .card:nth-child(18) { animation-delay: 0.95s; }
+        .card:nth-child(19) { animation-delay: 1s; }
+        .card:nth-child(20) { animation-delay: 1.05s; }
+
+        .card-header {
             display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .card.active {
-            cursor: pointer;
-        }
-
-        .card.active:hover {
-            transform: translateY(-5px);
-            background: var(--bg-card-hover);
-            border-color: var(--accent-secondary);
-            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.15);
-        }
-
-        .card.disabled {
-            opacity: 0.6;
-            cursor: default;
-            background: rgba(26, 31, 53, 0.5);
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-sm);
         }
 
         .card-number {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .card-status {
+            font-family: var(--font-mono);
             font-size: 0.75rem;
-            padding: 4px 10px;
-            border-radius: 12px;
+            color: var(--color-text-tertiary);
             font-weight: 600;
+            letter-spacing: 0.1em;
         }
 
-        .status-ready {
-            width: 8px;
-            height: 8px;
-            background-color: #10b981;
+        .card-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--category-color);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .card-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
-            display: inline-block;
-            padding: 0;
-            font-size: 0;
-            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
-            vertical-align: middle;
-        }
-
-        .status-preparation {
-            width: 8px;
-            height: 8px;
-            background-color: #ef4444;
-            border-radius: 50%;
-            display: inline-block;
-            padding: 0;
-            font-size: 0;
-            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
-            vertical-align: middle;
-        }
-
-        .status-soon {
-            background: rgba(107, 114, 128, 0.2);
-            color: #9ca3af;
+            background: currentColor;
+            box-shadow: 0 0 8px currentColor;
         }
 
         .card-title {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 15px;
+            color: var(--color-text-primary);
+            margin-bottom: var(--spacing-sm);
+            letter-spacing: -0.01em;
             line-height: 1.3;
         }
 
-        .card-desc {
+        .card-description {
             font-size: 0.95rem;
-            color: var(--text-secondary);
-            margin-bottom: 25px;
-            flex-grow: 1;
+            color: var(--color-text-secondary);
+            line-height: 1.5;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            padding-top: var(--spacing-sm);
         }
 
         .card-link {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--category-color);
+            text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: var(--accent-secondary);
-            font-weight: 600;
-            text-decoration: none;
-            margin-top: auto;
-            transition: gap 0.2s ease;
+            transition: gap 0.3s ease;
         }
 
-        .card.active:hover .card-link {
-            gap: 12px;
-            color: #ffffff;
+        .card:hover .card-link {
+            gap: 14px;
         }
 
-        .multi-links {
+        .card-link::after {
+            content: '→';
+            font-size: 1.1rem;
+        }
+
+        /* Multi-link Cards */
+        .card-links {
             display: flex;
-            gap: 10px;
-            margin-top: auto;
+            gap: var(--spacing-xs);
+            width: 100%;
         }
 
-        .btn-sm {
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            text-align: center;
+        .btn-card-link {
             flex: 1;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            color: var(--category-color);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            letter-spacing: 0.02em;
         }
 
-        .btn-primary {
-            background: rgba(59, 130, 246, 0.2);
-            color: var(--accent-secondary);
-            border: 1px solid rgba(59, 130, 246, 0.3);
+        .btn-card-link:hover {
+            background: var(--category-color);
+            color: var(--color-bg-primary);
+            border-color: var(--category-color);
+            transform: translateY(-2px);
         }
 
-        .btn-primary:hover {
-            background: var(--accent-primary);
-            color: white;
-            border-color: var(--accent-primary);
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: var(--spacing-2xl) 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--color-text-tertiary);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            letter-spacing: 0.03em;
         }
 
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.2);
-            color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .btn-danger:hover {
-            background: #ef4444;
-            color: white;
-            border-color: #ef4444;
-        }
-
-        /* Category Colors */
-        .cat-arch {
-            border-top: 4px solid #3b82f6;
-        }
-
-        /* Blue */
-        .cat-media {
-            border-top: 4px solid #f59e0b;
-        }
-
-        /* Amber */
-        .cat-audio {
-            border-top: 4px solid #ec4899;
-        }
-
-        /* Pink */
-        .cat-drm {
-            border-top: 4px solid #10b981;
-        }
-
-        /* Emerald */
-        .cat-car {
-            border-top: 4px solid #8b5cf6;
-        }
-
-        /* Violet */
-        .cat-test {
-            border-top: 4px solid #ef4444;
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Responsive */
         @media (max-width: 768px) {
-            h1 {
-                font-size: 2.5rem;
+            .container {
+                padding: var(--spacing-lg) var(--spacing-md);
             }
 
-            .grid {
+            .nav-links {
+                display: none;
+            }
+
+            .hero-title {
+                font-size: 3rem;
+            }
+
+            .cards-grid {
                 grid-template-columns: 1fr;
             }
+
+            .filter-bar {
+                overflow-x: scroll;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-surface);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-surface-elevated);
         }
     </style>
 </head>
-
 <body>
     <div class="container">
-        <header>
-            <h1>Android Media</h1>
-            <p class="subtitle">Comprehensive Documentation & Architecture Visualization</p>
-        </header>
+        <!-- Navigation -->
+        <nav>
+            <div class="logo">Android Media Framework</div>
+            <ul class="nav-links">
+                <li><a href="#docs">Documentation</a></li>
+                <li><a href="#architecture">Architecture</a></li>
+                <li><a href="https://github.com" target="_blank">GitHub</a></li>
+            </ul>
+        </nav>
 
-        <div class="grid">
-            <!-- 1. Android AOSP Architecture -->
-            <div class="card active cat-arch" onclick="location.href='aosp.html'">
-                <div class="card-number">
-                    01
-                    <span class="card-status status-ready">Ready</span>
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1 class="hero-title">Android Media</h1>
+            <p class="hero-subtitle">Comprehensive technical documentation and architecture visualization for Android's media framework — from application layer to kernel.</p>
+            <div class="hero-meta">
+                <div class="hero-meta-item">20 Documentation Pages</div>
+                <div class="hero-meta-item">6 Categories</div>
+                <div class="hero-meta-item">Production Ready</div>
+            </div>
+        </section>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <button class="filter-btn active" data-category="all">All Topics</button>
+            <button class="filter-btn" data-category="arch">Architecture</button>
+            <button class="filter-btn" data-category="media">Media</button>
+            <button class="filter-btn" data-category="audio">Audio</button>
+            <button class="filter-btn" data-category="drm">DRM</button>
+            <button class="filter-btn" data-category="car">Automotive</button>
+            <button class="filter-btn" data-category="test">Testing</button>
+        </div>
+
+        <!-- Cards Grid -->
+        <div class="cards-grid" id="cardsGrid">
+            <!-- Card 01: Android AOSP Architecture -->
+            <div class="card cat-arch" data-category="arch" onclick="location.href='aosp.html'">
+                <div class="card-header">
+                    <span class="card-number">01</span>
+                    <span class="card-badge">Architecture</span>
                 </div>
                 <h3 class="card-title">Android AOSP Architecture</h3>
-                <p class="card-desc">Android 전체 시스템 아키텍처 및 미디어 프레임워크의 위치</p>
-                <a href="aosp.html" class="card-link">Explore →</a>
+                <p class="card-description">Android 전체 시스템 아키텍처 및 미디어 프레임워크의 위치</p>
+                <div class="card-footer">
+                    <a href="aosp.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 2. Android Version History -->
-            <div class="card active cat-arch" onclick="window.location.href='android-version-history.html'">
-                <div class="card-number">
-                    02
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 02: Android Version History -->
+            <div class="card cat-arch" data-category="arch" onclick="location.href='android-version-history.html'">
+                <div class="card-header">
+                    <span class="card-number">02</span>
+                    <span class="card-badge">Architecture</span>
                 </div>
                 <h3 class="card-title">Android Version History</h3>
-                <p class="card-desc">Android 미디어 프레임워크의 버전별 진화 및 API 변경 사항</p>
-                <a href="android-version-history.html" class="card-link">Explore →</a>
+                <p class="card-description">Android 미디어 프레임워크의 버전별 진화 및 API 변경 사항</p>
+                <div class="card-footer">
+                    <a href="android-version-history.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 3. Android Automotive OS (AAOS) -->
-            <div class="card active cat-car" onclick="location.href='aaos.html'">
-                <div class="card-number">
-                    03
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 03: Android Automotive OS -->
+            <div class="card cat-car" data-category="car" onclick="location.href='aaos.html'">
+                <div class="card-header">
+                    <span class="card-number">03</span>
+                    <span class="card-badge">Automotive</span>
                 </div>
                 <h3 class="card-title">Android Automotive OS (AAOS)</h3>
-                <p class="card-desc">차량용 Android 운영체제 개요 및 구조</p>
-                <a href="aaos.html" class="card-link">Explore →</a>
+                <p class="card-description">차량용 Android 운영체제 개요 및 구조</p>
+                <div class="card-footer">
+                    <a href="aaos.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 4. Media Framework Core -->
-            <div class="card active cat-media" onclick="location.href='media-framework-core.html'">
-                <div class="card-number">
-                    04
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 04: Media Framework Core -->
+            <div class="card cat-media" data-category="media" onclick="location.href='media-framework-core.html'">
+                <div class="card-header">
+                    <span class="card-number">04</span>
+                    <span class="card-badge">Media</span>
                 </div>
                 <h3 class="card-title">Media Framework Core</h3>
-                <p class="card-desc">Application Framework와 Native Framework의 핵심 상호작용</p>
-                <a href="media-framework-core.html" class="card-link">Explore →</a>
+                <p class="card-description">Application Framework와 Native Framework의 핵심 상호작용</p>
+                <div class="card-footer">
+                    <a href="media-framework-core.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 5. Codec 2.0 & Media HAL -->
-            <div class="card active cat-media" onclick="location.href='codec2.html'">
-                <div class="card-number">
-                    05
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 05: Codec 2.0 & Media HAL -->
+            <div class="card cat-media" data-category="media" onclick="location.href='codec2.html'">
+                <div class="card-header">
+                    <span class="card-number">05</span>
+                    <span class="card-badge">Media</span>
                 </div>
                 <h3 class="card-title">Codec 2.0 & Media HAL</h3>
-                <p class="card-desc">최신 코덱 프레임워크 아키텍처 및 HAL 통신</p>
-                <a href="codec2.html" class="card-link">Explore →</a>
+                <p class="card-description">최신 코덱 프레임워크 아키텍처 및 HAL 통신</p>
+                <div class="card-footer">
+                    <a href="codec2.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 6. Dolby Codecs & AOSP -->
-            <div class="card active cat-media" onclick="window.location.href='dolby-codecs.html'">
-                <div class="card-number">
-                    06
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 06: Dolby Codecs -->
+            <div class="card cat-media" data-category="media" onclick="location.href='dolby-codecs.html'">
+                <div class="card-header">
+                    <span class="card-number">06</span>
+                    <span class="card-badge">Media</span>
                 </div>
                 <h3 class="card-title">Dolby Codecs & AOSP</h3>
-                <p class="card-desc">Dolby Atmos, AC-4, Vision 코덱 사양 및 AOSP 통합 아키텍처</p>
-                <a href="dolby-codecs.html" class="card-link">Explore →</a>
+                <p class="card-description">Dolby Atmos, AC-4, Vision 코덱 사양 및 AOSP 통합 아키텍처</p>
+                <div class="card-footer">
+                    <a href="dolby-codecs.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 7. Media Pipeline & Data Flow -->
-            <div class="card active cat-media" onclick="location.href='media-playback.html'">
-                <div class="card-number">
-                    07
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 07: Media Pipeline -->
+            <div class="card cat-media" data-category="media" onclick="location.href='media-playback.html'">
+                <div class="card-header">
+                    <span class="card-number">07</span>
+                    <span class="card-badge">Media</span>
                 </div>
                 <h3 class="card-title">Media Pipeline & Data Flow</h3>
-                <p class="card-desc">미디어 재생 시 데이터 흐름 및 컴포넌트 간 상호작용 시각화</p>
-                <a href="media-playback.html" class="card-link">Explore →</a>
+                <p class="card-description">미디어 재생 시 데이터 흐름 및 컴포넌트 간 상호작용 시각화</p>
+                <div class="card-footer">
+                    <a href="media-playback.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 8. MediaExtractor & Container -->
-            <div class="card active cat-media" onclick="location.href='media-extractor.html'">
-                <div class="card-number">
-                    08
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 08: MediaExtractor -->
+            <div class="card cat-media" data-category="media" onclick="location.href='media-extractor.html'">
+                <div class="card-header">
+                    <span class="card-number">08</span>
+                    <span class="card-badge">Media</span>
                 </div>
                 <h3 class="card-title">MediaExtractor & Container</h3>
-                <p class="card-desc">미디어 컨테이너 파싱, 디먹싱 및 Extractor 아키텍처</p>
-                <a href="media-extractor.html" class="card-link">Explore →</a>
+                <p class="card-description">미디어 컨테이너 파싱, 디먹싱 및 Extractor 아키텍처</p>
+                <div class="card-footer">
+                    <a href="media-extractor.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 9. MediaSession Framework -->
-            <div class="card active cat-media" onclick="location.href='mediasession.html'">
-                <div class="card-number">
-                    09
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 09: MediaSession -->
+            <div class="card cat-media" data-category="media" onclick="location.href='mediasession.html'">
+                <div class="card-header">
+                    <span class="card-number">09</span>
+                    <span class="card-badge">Media</span>
                 </div>
                 <h3 class="card-title">MediaSession Framework</h3>
-                <p class="card-desc">미디어 재생 제어 및 세션 관리 아키텍처</p>
-                <a href="mediasession.html" class="card-link">Explore →</a>
+                <p class="card-description">미디어 재생 제어 및 세션 관리 아키텍처</p>
+                <div class="card-footer">
+                    <a href="mediasession.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 10. MediaProvider & Storage Access -->
-            <div class="card active cat-media" onclick="location.href='mediaprovider.html'">
-                <div class="card-number">
-                    10
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 10: MediaProvider -->
+            <div class="card cat-media" data-category="media" onclick="location.href='mediaprovider.html'">
+                <div class="card-header">
+                    <span class="card-number">10</span>
+                    <span class="card-badge">Media</span>
                 </div>
                 <h3 class="card-title">MediaProvider & Storage Access</h3>
-                <p class="card-desc">미디어 파일 인덱싱, 데이터베이스 관리 및 스토리지 접근</p>
-                <a href="mediaprovider.html" class="card-link">Explore →</a>
+                <p class="card-description">미디어 파일 인덱싱, 데이터베이스 관리 및 스토리지 접근</p>
+                <div class="card-footer">
+                    <a href="mediaprovider.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 11. Audio Framework -->
-            <div class="card active cat-audio" onclick="location.href='audio-framework.html'">
-                <div class="card-number">
-                    11
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 11: Audio Framework -->
+            <div class="card cat-audio" data-category="audio" onclick="location.href='audio-framework.html'">
+                <div class="card-header">
+                    <span class="card-number">11</span>
+                    <span class="card-badge">Audio</span>
                 </div>
                 <h3 class="card-title">Audio Framework</h3>
-                <p class="card-desc">AudioFlinger, AudioPolicyService 및 오디오 처리 파이프라인</p>
-                <a href="audio-framework.html" class="card-link">Explore →</a>
+                <p class="card-description">AudioFlinger, AudioPolicyService 및 오디오 처리 파이프라인</p>
+                <div class="card-footer">
+                    <a href="audio-framework.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 12. Car Media Service -->
-            <div class="card active cat-car" onclick="location.href='carmedia.html'">
-                <div class="card-number">
-                    12
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 12: Car Media Service -->
+            <div class="card cat-car" data-category="car" onclick="location.href='carmedia.html'">
+                <div class="card-header">
+                    <span class="card-number">12</span>
+                    <span class="card-badge">Automotive</span>
                 </div>
                 <h3 class="card-title">Car Media Service</h3>
-                <p class="card-desc">차량 특화 미디어 서비스 및 오디오 라우팅</p>
-                <a href="carmedia.html" class="card-link">Explore →</a>
+                <p class="card-description">차량 특화 미디어 서비스 및 오디오 라우팅</p>
+                <div class="card-footer">
+                    <a href="carmedia.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 13. AAOS Key Event Handling -->
-            <div class="card active cat-car" onclick="window.location.href='aaos-key-events.html'">
-                <div class="card-number">
-                    13
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 13: AAOS Key Events -->
+            <div class="card cat-car" data-category="car" onclick="location.href='aaos-key-events.html'">
+                <div class="card-header">
+                    <span class="card-number">13</span>
+                    <span class="card-badge">Automotive</span>
                 </div>
                 <h3 class="card-title">AAOS Key Event Handling</h3>
-                <p class="card-desc">CarService, Input Framework, UX Restriction 및 미디어 키 처리 구조</p>
-                <a href="aaos-key-events.html" class="card-link">Explore →</a>
+                <p class="card-description">CarService, Input Framework, UX Restriction 및 미디어 키 처리 구조</p>
+                <div class="card-footer">
+                    <a href="aaos-key-events.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 14. AAOS Last Media & Autoplay -->
-            <div class="card active cat-car" onclick="window.location.href='aaos-last-media.html'">
-                <div class="card-number">
-                    14
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 14: AAOS Last Media -->
+            <div class="card cat-car" data-category="car" onclick="location.href='aaos-last-media.html'">
+                <div class="card-header">
+                    <span class="card-number">14</span>
+                    <span class="card-badge">Automotive</span>
                 </div>
                 <h3 class="card-title">AAOS Last Media & Autoplay</h3>
-                <p class="card-desc">Last Media Source 저장 구조, 자동 재생(Autoplay) 정책 및 복원 메커니즘</p>
-                <a href="aaos-last-media.html" class="card-link">Explore →</a>
+                <p class="card-description">Last Media Source 저장 구조, 자동 재생(Autoplay) 정책 및 복원 메커니즘</p>
+                <div class="card-footer">
+                    <a href="aaos-last-media.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 15. Power Policy & Suspend -->
-            <div class="card active cat-car" onclick="window.location.href='power-policy-suspend.html'">
-                <div class="card-number">
-                    15
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 15: Power Policy -->
+            <div class="card cat-car" data-category="car" onclick="location.href='power-policy-suspend.html'">
+                <div class="card-header">
+                    <span class="card-number">15</span>
+                    <span class="card-badge">Automotive</span>
                 </div>
                 <h3 class="card-title">Power Policy & Suspend</h3>
-                <p class="card-desc">Deep Sleep, Suspend-to-RAM 메커니즘 및 오디오 컨텍스트 보존 로직</p>
-                <a href="power-policy-suspend.html" class="card-link">Explore →</a>
+                <p class="card-description">Deep Sleep, Suspend-to-RAM 메커니즘 및 오디오 컨텍스트 보존 로직</p>
+                <div class="card-footer">
+                    <a href="power-policy-suspend.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 16. DRM & Widevine Architecture -->
-            <div class="card active cat-drm" onclick="location.href='widevine.html'">
-                <div class="card-number">
-                    16
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 16: DRM & Widevine -->
+            <div class="card cat-drm" data-category="drm" onclick="location.href='widevine.html'">
+                <div class="card-header">
+                    <span class="card-number">16</span>
+                    <span class="card-badge">DRM</span>
                 </div>
                 <h3 class="card-title">DRM & Widevine Architecture</h3>
-                <p class="card-desc">콘텐츠 보호를 위한 DRM 프레임워크 및 Widevine 구현</p>
-                <a href="widevine.html" class="card-link">Explore →</a>
+                <p class="card-description">콘텐츠 보호를 위한 DRM 프레임워크 및 Widevine 구현</p>
+                <div class="card-footer">
+                    <a href="widevine.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 17. Google Automotive Services (GAS) -->
-            <div class="card active cat-car" onclick="location.href='gas.html'">
-                <div class="card-number">
-                    17
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 17: Google Automotive Services -->
+            <div class="card cat-car" data-category="car" onclick="location.href='gas.html'">
+                <div class="card-header">
+                    <span class="card-number">17</span>
+                    <span class="card-badge">Automotive</span>
                 </div>
                 <h3 class="card-title">Google Automotive Services (GAS)</h3>
-                <p class="card-desc">GAS 구성 요소 및 차량용 Google 서비스 통합</p>
-                <a href="gas.html" class="card-link">Explore →</a>
+                <p class="card-description">GAS 구성 요소 및 차량용 Google 서비스 통합</p>
+                <div class="card-footer">
+                    <a href="gas.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 18. Car Ready Mobile Apps (CarMa) -->
-            <div class="card active cat-arch" onclick="location.href='carma.html'">
-                <div class="card-number">
-                    18
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 18: CarMa -->
+            <div class="card cat-arch" data-category="arch" onclick="location.href='carma.html'">
+                <div class="card-header">
+                    <span class="card-number">18</span>
+                    <span class="card-badge">Architecture</span>
                 </div>
                 <h3 class="card-title">Car Ready Mobile Apps (CarMa)</h3>
-                <p class="card-desc">기존 모바일 앱을 자동차로 확장하는 Google의 새로운 프로그램</p>
-                <a href="carma.html" class="card-link">Explore →</a>
+                <p class="card-description">기존 모바일 앱을 자동차로 확장하는 Google의 새로운 프로그램</p>
+                <div class="card-footer">
+                    <a href="carma.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 19. Media App Layer & APIs -->
-            <div class="card active cat-media" onclick="window.location.href='media-app-layer.html'">
-                <div class="card-number">
-                    19
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 19: Media App Layer -->
+            <div class="card cat-media" data-category="media" onclick="location.href='media-app-layer.html'">
+                <div class="card-header">
+                    <span class="card-number">19</span>
+                    <span class="card-badge">Media</span>
                 </div>
                 <h3 class="card-title">Media App Layer & APIs</h3>
-                <p class="card-desc">MediaPlayer, ExoPlayer, Media3, MediaSession API 상세 가이드</p>
-                <a href="media-app-layer.html" class="card-link">Explore →</a>
+                <p class="card-description">MediaPlayer, ExoPlayer, Media3, MediaSession API 상세 가이드</p>
+                <div class="card-footer">
+                    <a href="media-app-layer.html" class="card-link">Explore</a>
+                </div>
             </div>
 
-            <!-- 20. CTS / VTS / GTS / CDD -->
-            <div class="card cat-test">
-                <div class="card-number">
-                    20
-                    <span class="card-status status-ready">Ready</span>
+            <!-- Card 20: CTS / VTS / GTS / CDD -->
+            <div class="card cat-test" data-category="test">
+                <div class="card-header">
+                    <span class="card-number">20</span>
+                    <span class="card-badge">Testing</span>
                 </div>
                 <h3 class="card-title">CTS / VTS / GTS / CDD</h3>
-                <p class="card-desc">Android 호환성 테스트 스위트 및 정책 문서</p>
-                <div class="multi-links">
-                    <a href="cts.html" class="btn-sm btn-danger">xTS Testing</a>
-                    <a href="cdd.html" class="btn-sm btn-primary">CDD Policy</a>
+                <p class="card-description">Android 호환성 테스트 스위트 및 정책 문서</p>
+                <div class="card-footer">
+                    <div class="card-links">
+                        <a href="cts.html" class="btn-card-link">xTS Testing</a>
+                        <a href="cdd.html" class="btn-card-link">CDD Policy</a>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <footer
-            style="text-align: center; margin-top: 60px; padding: 40px; color: var(--text-muted); border-top: 1px solid var(--border-color);">
-            <p>© Android Media Framework Documentation</p>
+        <!-- Footer -->
+        <footer>
+            <p>© 2026 Android Media Framework Documentation — Created by Antigravity</p>
         </footer>
     </div>
 
+    <script>
+        // Category Filter Logic
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const cards = document.querySelectorAll('.card');
 
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const category = button.dataset.category;
+
+                // Update active button
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                // Filter cards
+                cards.forEach(card => {
+                    if (category === 'all' || card.dataset.category === category) {
+                        card.style.display = 'block';
+                        setTimeout(() => {
+                            card.style.opacity = '1';
+                            card.style.transform = 'translateY(0)';
+                        }, 10);
+                    } else {
+                        card.style.opacity = '0';
+                        card.style.transform = 'translateY(20px)';
+                        setTimeout(() => {
+                            card.style.display = 'none';
+                        }, 300);
+                    }
+                });
+            });
+        });
+
+        // Prevent card click when clicking links
+        document.querySelectorAll('.card a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        });
+    </script>
 </body>
-
 </html>

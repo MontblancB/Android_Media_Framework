@@ -8,271 +8,11 @@
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #111827;
-            --bg-card: #1a1f35;
-            --bg-card-hover: #222844;
-            --accent-primary: #00d4ff;
-            --accent-secondary: #7c3aed;
-            --accent-tertiary: #ec4899;
-            --accent-car: #f59e0b;
-            /* Automotive Theme Color */
-            --accent-success: #10b981;
-            --text-primary: #e5e7eb;
-            --text-secondary: #9ca3af;
-            --text-muted: #6b7280;
-            --border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f2e 100%);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .nav {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-        }
-
-        .nav-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 24px;
-            background: rgba(26, 31, 53, 0.9);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            color: var(--text-primary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .nav-button:hover {
-            background: rgba(245, 158, 11, 0.1);
-            border-color: var(--accent-car);
-            transform: translateX(-5px);
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 60px;
-            margin-top: 40px;
-            padding: 60px 20px;
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
-            border-radius: 24px;
-            border: 1px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-        }
-
-        h1 {
-            font-size: 3.5rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--accent-car), var(--accent-primary), var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .subtitle {
-            font-size: 1.3rem;
-            color: var(--text-secondary);
-            font-weight: 300;
-            position: relative;
-            z-index: 1;
-        }
-
-        .section {
-            margin-bottom: 80px;
-            padding: 40px;
-            background: var(--bg-card);
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--accent-car), var(--accent-primary), var(--accent-secondary));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .section:hover {
-            border-color: rgba(245, 158, 11, 0.3);
-            box-shadow: 0 10px 40px rgba(245, 158, 11, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .section:hover::before {
-            opacity: 1;
-        }
-
-        .section-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: var(--accent-car);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .section-number {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, var(--accent-car), var(--accent-primary));
-            border-radius: 12px;
-            font-size: 1.3rem;
-            font-weight: 900;
-            color: white;
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-        }
-
-        .section-description {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            margin-bottom: 30px;
-            padding-left: 65px;
-        }
-
-        .diagram-container {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 30px;
-            margin: 30px 0;
-            border: 1px solid var(--border-color);
-            overflow-x: auto;
-        }
-
-        .mermaid {
-            display: flex;
-            justify-content: center;
-            min-height: 300px;
-        }
-
-        .content-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
-        }
-
-        .card {
-            background: var(--bg-secondary);
-            padding: 25px;
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateX(5px);
-            border-color: rgba(245, 158, 11, 0.4);
-            box-shadow: 0 5px 20px rgba(245, 158, 11, 0.15);
-        }
-
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--accent-car);
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card-icon {
-            font-size: 1.5rem;
-        }
-
-        .card-description {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.7;
-        }
-
-        .card-description ul {
-            margin-top: 10px;
-            padding-left: 20px;
-        }
-
-        .card-description li {
-            margin-bottom: 8px;
-        }
-
-        code {
-            font-family: 'JetBrains Mono', monospace;
-            background: rgba(245, 158, 11, 0.1);
-            padding: 2px 8px;
-            border-radius: 4px;
-            color: var(--accent-car);
-            font-size: 0.9em;
-        }
-
-        .highlight-box {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(0, 212, 255, 0.1));
-            border-left: 4px solid var(--accent-car);
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-        }
-
-        .highlight-box strong {
-            color: var(--accent-car);
-        }
-
-        ::-webkit-scrollbar {
-            width: 12px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-primary);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, var(--accent-car), var(--accent-primary));
-            border-radius: 6px;
-        }
+        <style>
+        /* Page-specific styles loaded from design-system.css */
     </style>
 </head>
 
@@ -285,12 +25,12 @@
 
     <div class="container">
         <header>
-            <h1>🚗 Car Media Service</h1>
-            <p class="subtitle">Android Automotive OS 미디어 및 오디오 관리 아키텍처</p>
+            <h1 class="page-title">🚗 Car Media Service</h1>
+            <p class="page-subtitle">Android Automotive OS 미디어 및 오디오 관리 아키텍처</p>
         </header>
 
         <!-- Section 1: Overview -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">1</span>
                 Overview: CarMedia vs CarAudio
@@ -335,7 +75,7 @@
         </section>
 
         <!-- Section 2: Architecture -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">2</span>
                 AAOS Media Architecture
@@ -344,7 +84,7 @@
                 CarMediaService와 CarAudioService가 표준 Android Media Framework와 상호작용하는 전체 아키텍처입니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph TB
                     subgraph APPS ["Media Applications"]
@@ -392,7 +132,7 @@
         </section>
 
         <!-- Section 3: Media Source Management -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">3</span>
                 Media Source Management
@@ -401,7 +141,7 @@
                 CarMediaService가 활성 미디어 소스를 선택하고 관리하는 프로세스입니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     sequenceDiagram
                     participant User
@@ -494,7 +234,7 @@
         </section>
 
         <!-- Section 4: Audio Focus & Routing -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">4</span>
                 Audio Focus & Routing
@@ -503,7 +243,7 @@
                 CarAudioService가 오디오 포커스를 관리하고 다중 존(Multi-zone)으로 라우팅하는 메커니즘입니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     flowchart LR
                     subgraph INPUT ["Audio Focus Request"]

@@ -8,302 +8,11 @@
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #111827;
-            --bg-card: #1a1f35;
-            --bg-card-hover: #222844;
-            --accent-primary: #3b82f6;
-            --accent-secondary: #60a5fa;
-            --accent-tertiary: #93c5fd;
-            --text-primary: #e5e7eb;
-            --text-secondary: #9ca3af;
-            --text-muted: #6b7280;
-            --border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #0f172a 100%);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .nav {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-        }
-
-        .nav-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 24px;
-            background: rgba(26, 31, 53, 0.9);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            color: var(--text-primary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .nav-button:hover {
-            background: rgba(59, 130, 246, 0.1);
-            border-color: var(--accent-primary);
-            transform: translateX(-5px);
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 60px;
-            margin-top: 40px;
-            padding: 60px 20px;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%);
-            border-radius: 24px;
-            border: 1px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-        }
-
-        h1 {
-            font-size: 3.5rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 20px;
-        }
-
-        .subtitle {
-            font-size: 1.3rem;
-            color: var(--text-secondary);
-            font-weight: 300;
-        }
-
-        /* Section Styles */
-        .section {
-            margin-bottom: 80px;
-            padding: 40px;
-            background: var(--bg-card);
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-        }
-
-        .section:hover {
-            border-color: rgba(59, 130, 246, 0.3);
-            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .section-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: var(--accent-primary);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .section-number {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            border-radius: 12px;
-            font-size: 1.3rem;
-            font-weight: 900;
-            color: white;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        }
-
-        .section-description {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            margin-bottom: 30px;
-            padding-left: 65px;
-        }
-
-        /* Diagram Container */
-        .diagram-container {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 30px;
-            margin: 30px 0;
-            border: 1px solid var(--border-color);
-            overflow-x: auto;
-        }
-
-        .mermaid {
-            display: flex;
-            justify-content: center;
-            min-height: 300px;
-        }
-
-        /* Content Grid */
-        .content-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
-        }
-
-        .card {
-            background: var(--bg-secondary);
-            padding: 25px;
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateX(5px);
-            border-color: rgba(59, 130, 246, 0.4);
-            box-shadow: 0 5px 20px rgba(59, 130, 246, 0.15);
-        }
-
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--accent-primary);
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card-icon {
-            font-size: 1.5rem;
-        }
-
-        .card-description {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.7;
-        }
-
-        .card-description ul {
-            margin-top: 10px;
-            padding-left: 20px;
-        }
-
-        .card-description li {
-            margin-bottom: 8px;
-        }
-
-        .card-description ol {
-            margin-top: 10px;
-            padding-left: 20px;
-        }
-
-        /* Code styling */
-        code {
-            font-family: 'JetBrains Mono', monospace;
-            background: rgba(59, 130, 246, 0.1);
-            padding: 2px 8px;
-            border-radius: 4px;
-            color: var(--accent-primary);
-            font-size: 0.9em;
-        }
-
-        /* Comparison Table */
-        .comparison-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            overflow: hidden;
-            border-radius: 12px;
-        }
-
-        .comparison-table th,
-        .comparison-table td {
-            padding: 15px 20px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .comparison-table th {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(96, 165, 250, 0.2));
-            color: var(--accent-primary);
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        .comparison-table td {
-            background: var(--bg-secondary);
-        }
-
-        .comparison-table tr:hover td {
-            background: var(--bg-card-hover);
-        }
-
-        /* Tag Styles */
-        .tag {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin: 4px;
-        }
-
-        .tag-new {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(96, 165, 250, 0.2));
-            color: var(--accent-primary);
-            border: 1px solid var(--accent-primary);
-        }
-
-        .tag-legacy {
-            background: rgba(156, 163, 175, 0.2);
-            color: var(--text-secondary);
-            border: 1px solid var(--text-muted);
-        }
-
-        .tag-hal {
-            background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(124, 58, 237, 0.2));
-            color: #ec4899;
-            border: 1px solid #ec4899;
-        }
-
-        ::-webkit-scrollbar {
-            width: 12px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-primary);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
-            border-radius: 6px;
-        }
+        <style>
+        /* Page-specific styles loaded from design-system.css */
     </style>
 </head>
 
@@ -316,12 +25,12 @@
 
     <div class="container">
         <header>
-            <h1>Media Framework Core</h1>
-            <p class="subtitle">Android 미디어 프레임워크의 핵심 아키텍처 및 계층별 상세 구조</p>
+            <h1 class="page-title">Media Framework Core</h1>
+            <p class="page-subtitle">Android 미디어 프레임워크의 핵심 아키텍처 및 계층별 상세 구조</p>
         </header>
 
         <!-- Section 1: Overall Architecture -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">1</span>
                 전체 아키텍처
@@ -331,7 +40,7 @@
                 각 레이어는 명확하게 정의된 인터페이스를 통해 상호작용합니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph TB
                     subgraph APP["Application Layer"]
@@ -433,7 +142,7 @@
         </section>
 
         <!-- Section 2: Application Framework -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">2</span>
                 Application Framework Layer
@@ -510,7 +219,7 @@
         </section>
 
         <!-- Section 3: Native Framework -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">3</span>
                 Native Framework Layer
@@ -519,7 +228,7 @@
                 C++로 구현된 핵심 미디어 처리 엔진입니다. Stagefright 엔진을 중심으로 구성되어 있습니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph LR
                     subgraph STAGEFRIGHT["Stagefright Engine"]
@@ -617,7 +326,7 @@
         </section>
 
         <!-- Section 3.5: Codec2 Architecture -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">3.5</span>
                 Codec2 아키텍처
@@ -628,7 +337,7 @@
                 성능 향상, 모듈화, 메인라인 업데이트를 제공합니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph TB
                     subgraph APP_LAYER["Application Layer"]
@@ -833,7 +542,7 @@
         </section>
 
         <!-- Section 4: Media Server -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">4</span>
                 Media Server
@@ -842,7 +551,7 @@
                 미디어 서비스를 제공하는 시스템 프로세스입니다. Binder IPC를 통해 클라이언트와 통신합니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph TB
                     subgraph CLIENT["Client Process"]
@@ -946,7 +655,7 @@
         </section>
 
         <!-- Section 5: HAL Layer -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">5</span>
                 Hardware Abstraction Layer (HAL)
@@ -1025,7 +734,7 @@
         </section>
 
         <!-- Section 6: Video Playback Flow -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">6</span>
                 비디오 재생 플로우
@@ -1034,7 +743,7 @@
                 비디오 파일이 재생될 때 각 레이어를 거치며 데이터가 어떻게 변환되고 처리되는지 보여줍니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     sequenceDiagram
                     participant App as Application
@@ -1151,7 +860,7 @@
         </section>
 
         <!-- Section 7: Audio Playback Flow -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">7</span>
                 오디오 재생 플로우
@@ -1160,7 +869,7 @@
                 오디오 파일이 재생될 때의 데이터 흐름과 각 컴포넌트의 역할을 시각화합니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     sequenceDiagram
                     participant App as Application

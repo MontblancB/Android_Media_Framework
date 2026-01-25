@@ -8,317 +8,11 @@
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #111827;
-            --bg-card: #1a1f35;
-            --bg-card-hover: #222844;
-
-            /* Enhanced Palette */
-            --accent-blue: #3b82f6;
-            --accent-indigo: #6366f1;
-            --accent-teal: #14b8a6;
-            --accent-green: #10b981;
-            --accent-rose: #f43f5e;
-            --accent-amber: #f59e0b;
-
-            --text-primary: #e5e7eb;
-            --text-secondary: #9ca3af;
-            --text-muted: #6b7280;
-            --border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #0f172a 100%);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .nav {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-        }
-
-        .nav-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 24px;
-            background: rgba(26, 31, 53, 0.9);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            color: var(--text-primary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .nav-button:hover {
-            background: rgba(59, 130, 246, 0.1);
-            border-color: var(--accent-blue);
-            transform: translateX(-5px);
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 60px;
-            margin-top: 40px;
-            padding: 80px 20px;
-            background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.15), transparent 40%),
-                radial-gradient(circle at bottom left, rgba(99, 102, 241, 0.15), transparent 40%),
-                linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(17, 24, 39, 0.95) 100%);
-            border-radius: 32px;
-            border: 1px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
-        }
-
-        header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        }
-
-        h1 {
-            font-size: 3.5rem;
-            font-weight: 900;
-            background: linear-gradient(to right, var(--accent-green), var(--accent-teal), var(--accent-blue), var(--accent-indigo));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 20px;
-            letter-spacing: -1px;
-        }
-
-        .subtitle {
-            font-size: 1.3rem;
-            color: var(--text-secondary);
-            font-weight: 300;
-        }
-
-        /* Section Styles */
-        .section {
-            margin-bottom: 80px;
-            padding: 40px;
-            background: var(--bg-card);
-            border-radius: 24px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .section:hover {
-            border-color: rgba(99, 102, 241, 0.3);
-            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .section-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .section-number {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            border-radius: 14px;
-            font-size: 1.3rem;
-            font-weight: 900;
-            color: white;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Section Specific Colors */
-        .sec-input .section-title {
-            color: var(--accent-teal);
-        }
-
-        .sec-input .section-number {
-            background: linear-gradient(135deg, var(--accent-teal), var(--accent-green));
-        }
-
-        .sec-car .section-title {
-            color: var(--accent-indigo);
-        }
-
-        .sec-car .section-number {
-            background: linear-gradient(135deg, var(--accent-indigo), var(--accent-blue));
-        }
-
-        .sec-ux .section-title {
-            color: var(--accent-rose);
-        }
-
-        .sec-ux .section-number {
-            background: linear-gradient(135deg, var(--accent-rose), var(--accent-amber));
-        }
-
-        .section-description {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            margin-bottom: 30px;
-            padding-left: 65px;
-            max-width: 900px;
-        }
-
-        /* Diagram Container */
-        .diagram-container {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 30px;
-            margin: 30px 0;
-            border: 1px solid var(--border-color);
-            overflow-x: auto;
-        }
-
-        .mermaid {
-            display: flex;
-            justify-content: center;
-            min-height: 300px;
-        }
-
-        /* Content Grid */
-        .content-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
-        }
-
-        .card {
-            background: var(--bg-secondary);
-            padding: 30px;
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .sec-input .card:hover {
-            border-color: var(--accent-teal);
-        }
-
-        .sec-car .card:hover {
-            border-color: var(--accent-indigo);
-        }
-
-        .sec-ux .card:hover {
-            border-color: var(--accent-rose);
-        }
-
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .sec-input .card-title {
-            color: var(--accent-teal);
-        }
-
-        .sec-car .card-title {
-            color: var(--accent-indigo);
-        }
-
-        .sec-ux .card-title {
-            color: var(--accent-rose);
-        }
-
-        .card-icon {
-            font-size: 1.5rem;
-        }
-
-        .card-description {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.7;
-        }
-
-        .card-description ul {
-            margin-top: 10px;
-            padding-left: 20px;
-        }
-
-        .card-description li {
-            margin-bottom: 8px;
-        }
-
-        .card-description ol {
-            margin-top: 10px;
-            padding-left: 20px;
-        }
-
-        /* Code styling */
-        code {
-            font-family: 'JetBrains Mono', monospace;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 2px 6px;
-            border-radius: 4px;
-            color: var(--accent-blue);
-            font-size: 0.9em;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        ::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-primary);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 5px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
-        }
+        <style>
+        /* Page-specific styles loaded from design-system.css */
     </style>
 </head>
 
@@ -331,8 +25,8 @@
 
     <div class="container">
         <header>
-            <h1>AAOS Key Event Handling</h1>
-            <p class="subtitle">Architecture and flow of key events in Android Automotive OS, from hardware input to
+            <h1 class="page-title">AAOS Key Event Handling</h1>
+            <p class="page-subtitle">Architecture and flow of key events in Android Automotive OS, from hardware input to
                 app-level handling.</p>
         </header>
 
@@ -346,7 +40,7 @@
                 AAOS는 표준 Android Input Framework를 기반으로 하지만, 차량 하드웨어(핸들 리모컨, 로터리 노브 등)를 처리하기 위해
                 <strong>Vehicle HAL (VHAL)</strong>이 추가된 구조를 가집니다.
             </p>
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph TD
                     HW[Vehicle Hardware<br />Steering Wheel / Buttons] --> VHAL[Vehicle
@@ -409,7 +103,7 @@
                 <strong>CarUxRestrictionsManager</strong>는 차량의 기어 상태(Parked, Moving)에 따라 앱의 UI 상호작용을 제어합니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph LR
                     Sensor[Gear / Speed Sensor] --> CarInfo[CarInfoManager]
@@ -462,7 +156,7 @@
                 Android 프레임워크의 <code>MediaSessionService</code>로 전달됩니다.
                 이후 우선순위(Priority)에 따라 가장 적절한 MediaSession에게 전달됩니다.
             </p>
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     sequenceDiagram
                     participant HW as Vehicle HW
@@ -503,7 +197,7 @@
                 소프트웨어 믹서에서 볼륨을 줄이지 않고, <strong>CarAudioService</strong>가 하드웨어 앰프(Audio Control HAL)에 직접 게인(Gain) 값을
                 전달합니다.
             </p>
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph TD
                     HW[Volume Knob / Button] --> VHAL[Vehicle HAL]
@@ -574,7 +268,7 @@
                 </div>
             </div>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     sequenceDiagram
                     participant HW as HW Button

@@ -8,406 +8,11 @@
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #111827;
-            --bg-card: #1a1f35;
-            --bg-card-hover: #222844;
-            --accent-primary: #00d4ff;
-            --accent-secondary: #7c3aed;
-            --accent-tertiary: #ec4899;
-            --accent-green: #10b981;
-            --text-primary: #e5e7eb;
-            --text-secondary: #9ca3af;
-            --text-muted: #6b7280;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --glow-color: rgba(0, 212, 255, 0.3);
-        }
-
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f2e 100%);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .nav {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-        }
-
-        .nav-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 24px;
-            background: rgba(26, 31, 53, 0.9);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            color: var(--text-primary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .nav-button:hover {
-            background: rgba(0, 212, 255, 0.1);
-            border-color: var(--accent-primary);
-            transform: translateX(-5px);
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 60px;
-            margin-top: 40px;
-            padding: 60px 20px;
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
-            border-radius: 24px;
-            border: 1px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-        }
-
-        header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
-            animation: pulse 8s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                transform: scale(1);
-                opacity: 0.5;
-            }
-
-            50% {
-                transform: scale(1.1);
-                opacity: 0.8;
-            }
-        }
-
-        h1 {
-            font-size: 3.5rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--accent-green), var(--accent-primary), var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .subtitle {
-            font-size: 1.3rem;
-            color: var(--text-secondary);
-            font-weight: 300;
-            position: relative;
-            z-index: 1;
-        }
-
-        .section {
-            margin-bottom: 80px;
-            padding: 40px;
-            background: var(--bg-card);
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--accent-green), var(--accent-primary), var(--accent-secondary));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .section:hover {
-            border-color: rgba(16, 185, 129, 0.3);
-            box-shadow: 0 10px 40px rgba(16, 185, 129, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .section:hover::before {
-            opacity: 1;
-        }
-
-        .section-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: var(--accent-green);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .section-number {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, var(--accent-green), var(--accent-primary));
-            border-radius: 12px;
-            font-size: 1.3rem;
-            font-weight: 900;
-            color: white;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-        }
-
-        .section-description {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            margin-bottom: 30px;
-            padding-left: 65px;
-        }
-
-        .diagram-container {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 30px;
-            margin: 30px 0;
-            border: 1px solid var(--border-color);
-            overflow-x: auto;
-        }
-
-        .mermaid {
-            display: flex;
-            justify-content: center;
-            min-height: 300px;
-        }
-
-        .content-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
-        }
-
-        .card {
-            background: var(--bg-secondary);
-            padding: 25px;
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: linear-gradient(180deg, var(--accent-green), var(--accent-primary));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateX(5px);
-            border-color: rgba(16, 185, 129, 0.4);
-            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.15);
-        }
-
-        .card:hover::before {
-            opacity: 1;
-        }
-
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--accent-green);
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card-icon {
-            font-size: 1.5rem;
-        }
-
-        .card-description {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.7;
-        }
-
-        .card-description ul {
-            margin-top: 10px;
-            padding-left: 20px;
-        }
-
-        .card-description li {
-            margin-bottom: 8px;
-        }
-
-        code {
-            font-family: 'JetBrains Mono', monospace;
-            background: rgba(16, 185, 129, 0.1);
-            padding: 2px 8px;
-            border-radius: 4px;
-            color: var(--accent-green);
-            font-size: 0.9em;
-        }
-
-        .comparison-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            overflow: hidden;
-            border-radius: 12px;
-        }
-
-        .comparison-table th,
-        .comparison-table td {
-            padding: 15px 20px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .comparison-table th {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(0, 212, 255, 0.2));
-            color: var(--accent-green);
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        .comparison-table td {
-            background: var(--bg-secondary);
-        }
-
-        .comparison-table tr:hover td {
-            background: var(--bg-card-hover);
-        }
-
-        .tag {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin: 4px;
-        }
-
-        .tag-aosp {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(0, 212, 255, 0.2));
-            color: var(--accent-green);
-            border: 1px solid var(--accent-green);
-        }
-
-        .tag-aaos {
-            background: rgba(245, 158, 11, 0.2);
-            color: #f59e0b;
-            border: 1px solid #f59e0b;
-        }
-
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2.5rem;
-            }
-
-            .subtitle {
-                font-size: 1.1rem;
-            }
-
-            .section {
-                padding: 25px;
-            }
-
-            .section-title {
-                font-size: 1.5rem;
-            }
-
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .section {
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        ::-webkit-scrollbar {
-            width: 12px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-primary);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, var(--accent-green), var(--accent-primary));
-            border-radius: 6px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
-        }
-
-        .highlight-box {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(0, 212, 255, 0.1));
-            border-left: 4px solid var(--accent-green);
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-        }
-
-        .highlight-box strong {
-            color: var(--accent-green);
-        }
+        <style>
+        /* Page-specific styles loaded from design-system.css */
     </style>
 </head>
 
@@ -420,12 +25,12 @@
 
     <div class="container">
         <header>
-            <h1>🤖 Android AOSP</h1>
-            <p class="subtitle">Android Open Source Project 전체 아키텍처</p>
+            <h1 class="page-title">🤖 Android AOSP</h1>
+            <p class="page-subtitle">Android Open Source Project 전체 아키텍처</p>
         </header>
 
         <!-- Section 1: AOSP Overview -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">1</span>
                 AOSP 개요
@@ -504,7 +109,7 @@
         </section>
 
         <!-- Section 2: AOSP Architecture -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">2</span>
                 AOSP 전체 아키텍처
@@ -513,7 +118,7 @@
                 AOSP는 Linux 커널부터 애플리케이션까지 6개의 주요 레이어로 구성됩니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph TB
                     APP["🎨 Application Layer<br /><br />System Apps, OEM Apps, 3rd Party Apps<br />(Phone, Contacts,
@@ -555,7 +160,7 @@
         </section>
 
         <!-- Section 3: Layer Details -->
-        <section class="section">
+        <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">3</span>
                 레이어별 상세 구조
@@ -685,7 +290,7 @@
         </section>
 
 <!-- Section 4: AOSP Boot Process -->
-<section class="section">
+<section class="content-section section">
     <h2 class="section-title">
         <span class="section-number">4</span>
         AOSP 부팅 프로세스
@@ -694,7 +299,7 @@
         Android 시스템이 부팅되는 전체 과정을 단계별로 설명합니다.
     </p>
 
-    <div class="diagram-container">
+    <div class="mermaid-container">
         <div class="mermaid">
             graph TB
             BOOTROM[Boot ROM<br />Power On]
@@ -782,7 +387,7 @@
 </section>
 
 <!-- Section 5: System Services -->
-<section class="section">
+<section class="content-section section">
     <h2 class="section-title">
         <span class="section-number">5</span>
         시스템 서비스 (System Services)
@@ -903,7 +508,7 @@
 </section>
 
 <!-- Section 6: Binder IPC -->
-<section class="section">
+<section class="content-section section">
     <h2 class="section-title">
         <span class="section-number">6</span>
         Binder IPC
@@ -968,7 +573,7 @@
         </div>
     </div>
 
-    <div class="diagram-container">
+    <div class="mermaid-container">
         <div class="mermaid">
             graph LR
             APP[App Process<br />Client]
@@ -1000,7 +605,7 @@
 </section>
 
 <!-- Section 7: AOSP vs AAOS Link -->
-<section class="section">
+<section class="content-section section">
     <h2 class="section-title">
         <span class="section-number">7</span>
         Android Automotive OS (AAOS)

@@ -8,371 +8,11 @@
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #111827;
-            --bg-card: #1a1f35;
-            --bg-card-hover: #222844;
-
-            /* Enhanced Palette */
-            --accent-blue: #3b82f6;
-            --accent-cyan: #06b6d4;
-            --accent-purple: #8b5cf6;
-            --accent-pink: #ec4899;
-            --accent-rose: #f43f5e;
-            --accent-amber: #f59e0b;
-
-            --text-primary: #e5e7eb;
-            --text-secondary: #9ca3af;
-            --text-muted: #6b7280;
-            --border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #0f172a 100%);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .nav {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-        }
-
-        .nav-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 24px;
-            background: rgba(26, 31, 53, 0.9);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            color: var(--text-primary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .nav-button:hover {
-            background: rgba(59, 130, 246, 0.1);
-            border-color: var(--accent-blue);
-            transform: translateX(-5px);
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 60px;
-            margin-top: 40px;
-            padding: 80px 20px;
-            background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.15), transparent 40%),
-                radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.15), transparent 40%),
-                linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(17, 24, 39, 0.95) 100%);
-            border-radius: 32px;
-            border: 1px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
-        }
-
-        header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        }
-
-        h1 {
-            font-size: 3.5rem;
-            font-weight: 900;
-            background: linear-gradient(to right, var(--accent-cyan), var(--accent-blue), var(--accent-purple), var(--accent-pink));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 20px;
-            letter-spacing: -1px;
-        }
-
-        .subtitle {
-            font-size: 1.3rem;
-            color: var(--text-secondary);
-            font-weight: 300;
-        }
-
-        /* Section Styles */
-        .section {
-            margin-bottom: 80px;
-            padding: 40px;
-            background: var(--bg-card);
-            border-radius: 24px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .section:hover {
-            border-color: rgba(139, 92, 246, 0.3);
-            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .section-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .section-number {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            border-radius: 14px;
-            font-size: 1.3rem;
-            font-weight: 900;
-            color: white;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Section Specific Colors */
-        .sec-audio .section-title {
-            color: var(--accent-cyan);
-        }
-
-        .sec-audio .section-number {
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-        }
-
-        .sec-video .section-title {
-            color: var(--accent-pink);
-        }
-
-        .sec-video .section-number {
-            background: linear-gradient(135deg, var(--accent-pink), var(--accent-rose));
-        }
-
-        .sec-arch .section-title {
-            color: var(--accent-purple);
-        }
-
-        .sec-arch .section-number {
-            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
-        }
-
-        .section-description {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            margin-bottom: 30px;
-            padding-left: 65px;
-            max-width: 900px;
-        }
-
-        /* Diagram Container */
-        .diagram-container {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 30px;
-            margin: 30px 0;
-            border: 1px solid var(--border-color);
-            overflow-x: auto;
-        }
-
-        .mermaid {
-            display: flex;
-            justify-content: center;
-            min-height: 300px;
-        }
-
-        /* Content Grid */
-        .content-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
-        }
-
-        .card {
-            background: var(--bg-secondary);
-            padding: 30px;
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .sec-audio .card:hover {
-            border-color: var(--accent-cyan);
-        }
-
-        .sec-video .card:hover {
-            border-color: var(--accent-pink);
-        }
-
-        .sec-arch .card:hover {
-            border-color: var(--accent-purple);
-        }
-
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .sec-audio .card-title {
-            color: var(--accent-cyan);
-        }
-
-        .sec-video .card-title {
-            color: var(--accent-pink);
-        }
-
-        .sec-arch .card-title {
-            color: var(--accent-purple);
-        }
-
-        .card-icon {
-            font-size: 1.5rem;
-        }
-
-        .card-description {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.7;
-        }
-
-        /* Code styling */
-        code {
-            font-family: 'JetBrains Mono', monospace;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 2px 6px;
-            border-radius: 4px;
-            color: var(--accent-tertiary);
-            font-size: 0.9em;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Comparison Table */
-        .comparison-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-top: 30px;
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-        }
-
-        .comparison-table th,
-        .comparison-table td {
-            padding: 18px 24px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .comparison-table th {
-            background: rgba(6, 182, 212, 0.1);
-            color: var(--accent-cyan);
-            font-weight: 700;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .comparison-table td {
-            background: var(--bg-secondary);
-        }
-
-        .comparison-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .comparison-table tr:hover td {
-            background: var(--bg-card-hover);
-        }
-
-        /* Tag Styles */
-        .tag {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 12px;
-            letter-spacing: 0.5px;
-        }
-
-        .tag-audio {
-            background: rgba(6, 182, 212, 0.15);
-            color: var(--accent-cyan);
-            border: 1px solid rgba(6, 182, 212, 0.3);
-        }
-
-        .tag-video {
-            background: rgba(236, 72, 153, 0.15);
-            color: var(--accent-pink);
-            border: 1px solid rgba(236, 72, 153, 0.3);
-        }
-
-        .tag-new {
-            background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        ::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-primary);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 5px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
-        }
+        <style>
+        /* Page-specific styles loaded from design-system.css */
     </style>
 </head>
 
@@ -385,8 +25,8 @@
 
     <div class="container">
         <header>
-            <h1>Dolby Codecs & AOSP Integration</h1>
-            <p class="subtitle">Comprehensive guide to Dolby Audio (Atmos, AC-4) and Dolby Vision architecture in
+            <h1 class="page-title">Dolby Codecs & AOSP Integration</h1>
+            <p class="page-subtitle">Comprehensive guide to Dolby Audio (Atmos, AC-4) and Dolby Vision architecture in
                 Android</p>
         </header>
 
@@ -494,7 +134,7 @@
                 밝기와 색상을 최적화하는 고급 HDR 기술입니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph LR
                     Source[Video Source] -- "Base Layer (BL)" --> Decoder[HEVC Decoder]
@@ -543,7 +183,7 @@
                 합니다. 일반적으로 <code>libdolbyms12.so</code>와 같은 독점 라이브러리가 사용됩니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph TD
                     subgraph Framework
@@ -606,7 +246,7 @@
                 하드웨어 디코더가 Dolby Vision 프로파일을 지원해야 하며, 디스플레이 파이프라인이 10/12-bit 및 HDR 메타데이터를 처리할 수 있어야 합니다.
             </p>
 
-            <div class="diagram-container">
+            <div class="mermaid-container">
                 <div class="mermaid">
                     graph TD
                     subgraph Application
