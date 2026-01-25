@@ -3,6 +3,26 @@
    ======================================== */
 
 :root {
+    /* Spacing (Theme-independent) */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+    --spacing-xl: 3rem;
+    --spacing-2xl: 4rem;
+
+    /* Typography (Theme-independent) */
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Archivo', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+}
+
+/* ========================================
+   Dark Theme (Default)
+   ======================================== */
+
+:root,
+[data-theme="dark"] {
     /* Base Colors */
     --color-bg-primary: #0a0e1a;
     --color-bg-secondary: #0f1419;
@@ -27,18 +47,41 @@
     --color-accent: #00d4ff;
     --color-glow: rgba(0, 212, 255, 0.15);
 
-    /* Spacing */
-    --spacing-xs: 0.5rem;
-    --spacing-sm: 1rem;
-    --spacing-md: 1.5rem;
-    --spacing-lg: 2rem;
-    --spacing-xl: 3rem;
-    --spacing-2xl: 4rem;
+    /* Grid Pattern */
+    --grid-opacity: 0.02;
+}
 
-    /* Typography */
-    --font-display: 'Playfair Display', serif;
-    --font-body: 'Archivo', sans-serif;
-    --font-mono: 'IBM Plex Mono', monospace;
+/* ========================================
+   Light Theme
+   ======================================== */
+
+[data-theme="light"] {
+    /* Base Colors */
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f8f9fa;
+    --color-bg-tertiary: #e9ecef;
+    --color-surface: #ffffff;
+    --color-surface-elevated: #f1f3f5;
+
+    /* Text Colors */
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #4a5568;
+    --color-text-tertiary: #718096;
+
+    /* Category Colors (slightly adjusted for light background) */
+    --color-arch: #2563eb;
+    --color-media: #ea580c;
+    --color-audio: #dc2626;
+    --color-drm: #059669;
+    --color-car: #7c3aed;
+    --color-test: #e11d48;
+
+    /* Accents */
+    --color-accent: #0284c7;
+    --color-glow: rgba(2, 132, 199, 0.2);
+
+    /* Grid Pattern */
+    --grid-opacity: 0.03;
 }
 
 /* ========================================
@@ -58,6 +101,7 @@ body {
     line-height: 1.6;
     overflow-x: hidden;
     min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Background Grid Effect */
@@ -69,11 +113,18 @@ body::before {
     width: 100%;
     height: 100%;
     background-image:
-        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        linear-gradient(rgba(0, 0, 0, var(--grid-opacity)) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, var(--grid-opacity)) 1px, transparent 1px);
     background-size: 50px 50px;
     pointer-events: none;
     z-index: 0;
+    transition: opacity 0.3s ease;
+}
+
+[data-theme="dark"] body::before {
+    background-image:
+        linear-gradient(rgba(255, 255, 255, var(--grid-opacity)) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, var(--grid-opacity)) 1px, transparent 1px);
 }
 
 /* ========================================
@@ -133,6 +184,87 @@ body::before {
 
 .nav-button:hover::before {
     transform: translateX(-3px);
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+    display: inline-flex;
+}
+
+.theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--color-surface);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: var(--color-accent);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 1.2rem;
+}
+
+[data-theme="light"] .theme-toggle-btn {
+    background: var(--color-surface);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.theme-toggle-btn:hover {
+    background: var(--color-surface-elevated);
+    border-color: var(--color-accent);
+    transform: rotate(15deg) scale(1.05);
+    box-shadow: 0 4px 20px var(--color-glow);
+}
+
+.theme-toggle-btn:active {
+    transform: rotate(15deg) scale(0.95);
+}
+
+.theme-icon {
+    transition: transform 0.3s ease;
+}
+
+.theme-toggle-btn:hover .theme-icon {
+    transform: scale(1.1);
+}
+
+/* Hide icons based on theme */
+[data-theme="dark"] .sun-icon {
+    display: none;
+}
+
+[data-theme="light"] .moon-icon {
+    display: none;
+}
+
+/* Theme toggle in nav for document pages */
+.nav-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+/* Fixed position for document pages (when nav is position:fixed) */
+.nav.fixed-nav {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    max-width: calc(100% - 40px);
+}
+
+.nav.fixed-nav .theme-toggle {
+    margin-left: auto;
 }
 
 /* ========================================
@@ -569,4 +701,73 @@ footer {
 
 .text-center {
     text-align: center;
+}
+
+/* ========================================
+   Light Theme Specific Overrides
+   ======================================== */
+
+[data-theme="light"] .nav-button {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .nav-button:hover {
+    background: rgba(255, 255, 255, 1);
+    border-color: var(--color-accent);
+    box-shadow: 0 4px 20px rgba(2, 132, 199, 0.15);
+}
+
+[data-theme="light"] .card-panel,
+[data-theme="light"] .mermaid-container {
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .card-panel:hover,
+[data-theme="light"] .mermaid-container:hover {
+    border-color: rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] header {
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .page-title {
+    background: linear-gradient(135deg, #1a1a1a 0%, var(--color-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="light"] code {
+    background: rgba(2, 132, 199, 0.1);
+}
+
+[data-theme="light"] .mermaid-container::before {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] table,
+[data-theme="light"] thead {
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] td {
+    border-bottom-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] tr:hover td {
+    background: rgba(2, 132, 199, 0.05);
+}
+
+/* Smooth theme transition for all themed elements */
+* {
+    transition: background-color 0.3s ease,
+                border-color 0.3s ease,
+                color 0.3s ease,
+                box-shadow 0.3s ease;
 }

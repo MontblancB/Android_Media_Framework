@@ -111,6 +111,7 @@
             display: flex;
             gap: var(--spacing-lg);
             list-style: none;
+            align-items: center;
         }
 
         .nav-links a {
@@ -124,6 +125,10 @@
 
         .nav-links a:hover {
             color: var(--color-accent);
+        }
+
+        .nav-links .theme-toggle {
+            margin-left: var(--spacing-sm);
         }
 
         /* Hero Section */
@@ -822,5 +827,6 @@
             });
         });
     </script>
+    <script src="scripts/theme-toggle.js"></script>
 </body>
 </html>
