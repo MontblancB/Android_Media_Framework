@@ -2054,7 +2054,7 @@ val cursor = contentResolver.query(
     projection,
     null,
     null,
-    "${MediaStore.Audio.Media.DISPLAY_NAME} ASC"
+    "\${MediaStore.Audio.Media.DISPLAY_NAME} ASC"
 )
         `.trim()
     },
