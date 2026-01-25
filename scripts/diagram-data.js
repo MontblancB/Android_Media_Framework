@@ -92,7 +92,68 @@ const NODE_ID_MAPPING = {
     'CC_BUFFER': 'CCodecBufferChannel',
     'CC_CLIENT': 'Codec2Client',
     'C2_STORE': 'C2ComponentStore',
-    'C2_PARAM': 'C2Params'
+    'C2_PARAM': 'C2Params',
+
+    // Audio Framework (audio-framework.html)
+    'AAUDIO': 'AAudio',
+    'AF': 'AudioFlinger',
+    'ALSA': 'ALSA Driver',
+    'AM': 'AudioManager',
+    'APS': 'AudioPolicyService',
+    'AR': 'AudioRecord',
+    'AT': 'AudioTrack',
+    'MIXER': 'AudioMixer',
+    'FAST': 'FastMixer',
+    'EFFECTS': 'Audio Effects',
+    'ROUTE': 'Audio Routing',
+    'VOL': 'Volume Control',
+    'CAS': 'Car Audio Service',
+    'BT': 'Bluetooth Audio',
+    'USB_DAC': 'USB DAC',
+
+    // Widevine DRM (widevine.html)
+    'CDM': 'Content Decryption Module',
+    'MEDIADRM': 'MediaDRM API',
+    'MEDIACRYPTO': 'MediaCrypto',
+    'LIBMEDIADRM': 'libmediadrm',
+    'DRMHAL': 'DRM HAL',
+    'CRYPTOHAL': 'Crypto HAL',
+    'CDM_LIB': 'CDM Library',
+    'CDM_CORE': 'CDM Core',
+    'CDM_SESSION': 'CDM Session',
+    'OEMCRYPTO': 'OEMCrypto',
+    'OEMCRYPTO_LIB': 'OEMCrypto Library',
+    'TEE': 'Trusted Execution Environment',
+    'TEE_OS': 'TEE OS',
+    'TRUSTLET': 'Trustlet',
+    'L1_TEE': 'Widevine L1 TEE',
+    'L2_TEE': 'Widevine L2 TEE',
+    'L3_SW': 'Widevine L3 Software',
+    'LICENSE_SRV': 'License Server',
+    'KEY_STORE': 'Key Storage',
+
+    // Car Media Service (carmedia.html)
+    'CMS': 'CarMediaService',
+    'CAR_AUDIO': 'CarAudioService',
+    'CAR_DISPLAY': 'CarDisplayService',
+    'CAR_OS': 'Car OS',
+    'VEHICLE_HAL': 'Vehicle HAL',
+    'MATRIX': 'Audio Matrix',
+    'ZONES': 'Audio Zones',
+    'GROUPS': 'Audio Groups',
+    'SPK_MAIN': 'Main Speaker',
+    'SPK_NAV': 'Navigation Speaker',
+    'SPK_REAR': 'Rear Speaker',
+
+    // MediaSession (mediasession.html)
+    'SESSION': 'MediaSession',
+    'PLAYER': 'Media Player',
+    'NOTIF': 'Notification',
+    'AUTO': 'Android Auto',
+    'WEAR': 'Wear OS',
+    'ASSISTANT': 'Google Assistant',
+    'BUTTON': 'Media Button',
+    'EXTERNAL': 'External Device'
 };
 
 const DIAGRAM_NODE_DATA = {
@@ -1188,6 +1249,436 @@ for (i in 0 until trackCount) {
         ],
         path: 'frameworks/av/media/codec2/vndk/',
         doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    // ========================================
+    // Audio Framework 노드 (audio-framework.html)
+    // ========================================
+
+    'AAudio': {
+        title: 'AAudio',
+        layer: 'Framework API',
+        description: 'Android의 고성능 오디오 API입니다. 저지연 오디오 재생과 녹음을 지원합니다.',
+        components: [
+            'Low Latency Audio',
+            'Shared Mode',
+            'Exclusive Mode',
+            'MMAP (Memory Mapped) Buffer'
+        ],
+        path: 'frameworks/av/media/libaaudio/',
+        doc: 'https://developer.android.com/ndk/guides/audio/aaudio/aaudio',
+        codeExample: `
+// AAudio 스트림 생성
+AAudioStreamBuilder *builder;
+AAudioStream *stream;
+
+AAudio_createStreamBuilder(&builder);
+AAudioStreamBuilder_setDirection(builder, AAUDIO_DIRECTION_OUTPUT);
+AAudioStreamBuilder_setSampleRate(builder, 48000);
+AAudioStreamBuilder_openStream(builder, &stream);
+AAudioStream_requestStart(stream);
+        `.trim()
+    },
+
+    'AudioTrack': {
+        title: 'AudioTrack',
+        layer: 'Framework API',
+        description: 'PCM 오디오 데이터를 재생하는 Android API입니다.',
+        components: [
+            'PCM Playback',
+            'Stream Mode',
+            'Static Mode',
+            'Audio Attributes',
+            'Session ID'
+        ],
+        path: 'frameworks/base/media/java/android/media/AudioTrack.java',
+        doc: 'https://developer.android.com/reference/android/media/AudioTrack',
+        codeExample: `
+val audioTrack = AudioTrack(
+    AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_MEDIA)
+        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+        .build(),
+    AudioFormat.Builder()
+        .setSampleRate(44100)
+        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+        .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+        .build(),
+    bufferSize,
+    AudioTrack.MODE_STREAM,
+    AudioManager.AUDIO_SESSION_ID_GENERATE
+)
+audioTrack.play()
+        `.trim()
+    },
+
+    'AudioRecord': {
+        title: 'AudioRecord',
+        layer: 'Framework API',
+        description: 'PCM 오디오 데이터를 녹음하는 Android API입니다.',
+        components: [
+            'PCM Recording',
+            'Audio Source Selection',
+            'Buffer Management',
+            'Sample Rate Control'
+        ],
+        path: 'frameworks/base/media/java/android/media/AudioRecord.java',
+        doc: 'https://developer.android.com/reference/android/media/AudioRecord'
+    },
+
+    'AudioManager': {
+        title: 'AudioManager',
+        layer: 'Framework Service',
+        description: '오디오 볼륨, 라우팅, 오디오 포커스를 관리하는 시스템 서비스입니다.',
+        components: [
+            'Volume Control',
+            'Audio Focus',
+            'Audio Routing',
+            'Audio Mode (Call, Normal, etc.)',
+            'Device Management'
+        ],
+        path: 'frameworks/base/media/java/android/media/AudioManager.java',
+        doc: 'https://developer.android.com/reference/android/media/AudioManager'
+    },
+
+    'AudioPolicyService': {
+        title: 'AudioPolicyService',
+        layer: 'Native Service',
+        description: '오디오 라우팅 정책을 결정하고 관리합니다.',
+        components: [
+            'Device Selection',
+            'Stream Routing',
+            'Volume Curves',
+            'Audio Policy Configuration'
+        ],
+        path: 'frameworks/av/services/audiopolicy/',
+        doc: 'https://source.android.com/docs/core/audio/implement-policy'
+    },
+
+    'AudioMixer': {
+        title: 'AudioMixer',
+        layer: 'Native',
+        description: '여러 오디오 스트림을 믹싱합니다.',
+        components: [
+            'Multi-track Mixing',
+            'Resampling',
+            'Volume Ramping',
+            'Effects Processing'
+        ],
+        path: 'frameworks/av/services/audioflinger/',
+        doc: 'https://source.android.com/docs/core/audio/audioflinger'
+    },
+
+    'FastMixer': {
+        title: 'FastMixer Thread',
+        layer: 'Native',
+        description: '저지연 오디오 믹싱을 담당하는 고우선순위 스레드입니다.',
+        components: [
+            'Low Latency Mixing',
+            'Real-time Priority',
+            'SCHED_FIFO Scheduling',
+            'MMAP Buffer'
+        ],
+        path: 'frameworks/av/services/audioflinger/',
+        doc: 'https://source.android.com/docs/core/audio/latency/design'
+    },
+
+    'Audio Effects': {
+        title: 'Audio Effects',
+        layer: 'Native',
+        description: '이퀄라이저, 리버브 등 오디오 효과를 처리합니다.',
+        components: [
+            'Equalizer',
+            'Reverb',
+            'Bass Boost',
+            'Virtualizer',
+            'Loudness Enhancer'
+        ],
+        path: 'frameworks/av/media/libeffects/',
+        doc: 'https://developer.android.com/guide/topics/media/audio-effects'
+    },
+
+    'ALSA Driver': {
+        title: 'ALSA (Advanced Linux Sound Architecture)',
+        layer: 'Kernel',
+        description: 'Linux 오디오 드라이버 프레임워크입니다.',
+        components: [
+            'PCM Interface',
+            'Control Interface',
+            'Hardware Parameters',
+            'DMA Buffer'
+        ],
+        path: 'kernel/sound/core/',
+        doc: 'https://www.kernel.org/doc/html/latest/sound/'
+    },
+
+    // ========================================
+    // Widevine DRM 노드 (widevine.html)
+    // ========================================
+
+    'MediaDRM API': {
+        title: 'MediaDRM',
+        layer: 'Framework API',
+        description: 'Android의 DRM 프레임워크 API입니다. Widevine, PlayReady 등을 지원합니다.',
+        components: [
+            'Session Management',
+            'Key Request',
+            'License Processing',
+            'Provisioning'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaDrm.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaDrm',
+        codeExample: `
+val widevineUUID = UUID(0xEDEF8BA979D64ACEL, 0xA3C827DCD51D21EDL)
+val mediaDrm = MediaDrm(widevineUUID)
+
+val session = mediaDrm.openSession()
+val request = mediaDrm.getKeyRequest(session, initData, mimeType,
+                                     MediaDrm.KEY_TYPE_STREAMING, null)
+
+// 라이선스 서버에서 응답 받은 후
+mediaDrm.provideKeyResponse(session, response)
+        `.trim()
+    },
+
+    'MediaCrypto': {
+        title: 'MediaCrypto',
+        layer: 'Framework API',
+        description: 'MediaCodec과 함께 사용되어 암호화된 미디어를 디코딩합니다.',
+        components: [
+            'Secure Decoding',
+            'Session Binding',
+            'Crypto Plugin Interface'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaCrypto.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaCrypto',
+        codeExample: `
+val mediaCrypto = MediaCrypto(widevineUUID, sessionId)
+val decoder = MediaCodec.createDecoderByType("video/avc")
+decoder.configure(format, surface, mediaCrypto, 0)
+        `.trim()
+    },
+
+    'Content Decryption Module': {
+        title: 'CDM (Content Decryption Module)',
+        layer: 'Native',
+        description: 'Widevine DRM의 핵심 복호화 모듈입니다.',
+        components: [
+            'License Parsing',
+            'Key Management',
+            'Decryption Engine',
+            'Usage Tracking'
+        ],
+        doc: 'https://www.widevine.com/'
+    },
+
+    'OEMCrypto': {
+        title: 'OEMCrypto',
+        layer: 'HAL',
+        description: 'OEM이 구현하는 하드웨어 암호화 API입니다. Widevine의 핵심 보안 계층입니다.',
+        components: [
+            'Hardware Key Storage',
+            'Secure Decryption',
+            'HDCP Enforcement',
+            'Device Provisioning'
+        ],
+        doc: 'https://www.widevine.com/product',
+        codeExample: `
+// OEMCrypto API (C/C++)
+OEMCrypto_Initialize();
+OEMCryptoResult result = OEMCrypto_LoadKeys(session, message, signature);
+OEMCrypto_DecryptCTR(session, encryptedData, iv, outputBuffer);
+        `.trim()
+    },
+
+    'Trusted Execution Environment': {
+        title: 'TEE (Trusted Execution Environment)',
+        layer: 'Hardware',
+        description: '하드웨어 기반 보안 실행 환경입니다. ARM TrustZone 등을 사용합니다.',
+        components: [
+            'Secure World',
+            'Trustlet Execution',
+            'Hardware Key Storage',
+            'Secure Boot'
+        ],
+        doc: 'https://source.android.com/docs/security/features/trusty'
+    },
+
+    'License Server': {
+        title: 'License Server',
+        layer: 'External',
+        description: 'DRM 라이선스를 발급하는 서버입니다.',
+        components: [
+            'License Generation',
+            'Key Encryption',
+            'Usage Rules',
+            'Device Authentication'
+        ],
+        doc: 'https://www.widevine.com/'
+    },
+
+    // ========================================
+    // Car Media Service 노드 (carmedia.html)
+    // ========================================
+
+    'CarMediaService': {
+        title: 'CarMediaService',
+        layer: 'Car Framework',
+        description: '차량용 미디어 재생을 관리하는 서비스입니다. MediaSession과 통합됩니다.',
+        components: [
+            'Media Source Management',
+            'Playback State Tracking',
+            'Source Switching',
+            'Last Media Persistence'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/media/',
+        doc: 'https://source.android.com/docs/automotive/start/car-service'
+    },
+
+    'CarAudioService': {
+        title: 'CarAudioService',
+        layer: 'Car Framework',
+        description: '차량용 오디오 라우팅과 볼륨을 관리합니다. 다중 존(Zone) 오디오를 지원합니다.',
+        components: [
+            'Audio Zones (Driver, Passenger, Rear)',
+            'Audio Focus (per Zone)',
+            'Volume Groups',
+            'Ducking & Mixing',
+            'External Audio Sources'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/audio/',
+        doc: 'https://source.android.com/docs/automotive/audio',
+        codeExample: `
+// CarAudioManager 사용
+val carAudioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+val primaryZoneId = carAudioManager.primaryAudioZone
+val volumeGroupCount = carAudioManager.getVolumeGroupCount(primaryZoneId)
+        `.trim()
+    },
+
+    'Audio Matrix': {
+        title: 'Audio Matrix',
+        layer: 'Car Audio',
+        description: '오디오 소스와 출력 장치를 매핑하는 매트릭스입니다.',
+        components: [
+            'Source to Device Mapping',
+            'Dynamic Routing',
+            'Priority Management',
+            'Concurrent Playback'
+        ],
+        path: 'packages/services/Car/service/res/xml/car_audio_configuration.xml',
+        doc: 'https://source.android.com/docs/automotive/audio/audio-routing'
+    },
+
+    'Audio Zones': {
+        title: 'Audio Zones',
+        layer: 'Car Audio',
+        description: '차량 내 독립적인 오디오 영역입니다. (예: 운전석, 뒷좌석)',
+        components: [
+            'Zone 0 (Primary) - Driver',
+            'Zone 1 - Rear Seat',
+            'Independent Volume',
+            'Independent Audio Focus'
+        ],
+        doc: 'https://source.android.com/docs/automotive/audio/audio-routing'
+    },
+
+    // ========================================
+    // MediaSession 노드 (mediasession.html)
+    // ========================================
+
+    'MediaSession': {
+        title: 'MediaSession',
+        layer: 'Framework',
+        description: '미디어 재생을 표준화하고 원격 제어를 가능하게 합니다.',
+        components: [
+            'Playback State',
+            'Metadata (Title, Artist, Album)',
+            'Transport Controls',
+            'Queue Management',
+            'Session Token'
+        ],
+        path: 'frameworks/base/media/java/android/media/session/',
+        doc: 'https://developer.android.com/guide/topics/media-apps/working-with-a-media-session',
+        codeExample: `
+val session = MediaSession(context, "MyMusicPlayer")
+session.setCallback(object : MediaSession.Callback() {
+    override fun onPlay() {
+        player.play()
+        session.setPlaybackState(
+            PlaybackState.Builder()
+                .setState(PlaybackState.STATE_PLAYING, position, 1.0f)
+                .build()
+        )
+    }
+})
+session.isActive = true
+        `.trim()
+    },
+
+    'Media Player': {
+        title: 'Media Player',
+        layer: 'Application',
+        description: '실제 미디어를 재생하는 플레이어 구현체입니다.',
+        components: [
+            'ExoPlayer',
+            'MediaPlayer',
+            'Custom Player',
+            'Playback Engine'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media/media3'
+    },
+
+    'Notification': {
+        title: 'Media Notification',
+        layer: 'Framework',
+        description: '재생 중인 미디어 정보를 알림으로 표시합니다.',
+        components: [
+            'Media Style Notification',
+            'Transport Controls',
+            'Artwork Display',
+            'Compact View'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media-apps/mediabuttons'
+    },
+
+    'Android Auto': {
+        title: 'Android Auto',
+        layer: 'Platform',
+        description: '차량 디스플레이에 미디어 앱을 표시합니다.',
+        components: [
+            'Media Browser Service',
+            'Automotive App Library',
+            'Voice Control',
+            'Safety Guidelines'
+        ],
+        doc: 'https://developer.android.com/training/cars/media'
+    },
+
+    'Wear OS': {
+        title: 'Wear OS',
+        layer: 'Platform',
+        description: '웨어러블 디바이스에서 미디어를 제어합니다.',
+        components: [
+            'Media Controls',
+            'Complications',
+            'Voice Commands',
+            'Offline Playback'
+        ],
+        doc: 'https://developer.android.com/training/wearables/media'
+    },
+
+    'Google Assistant': {
+        title: 'Google Assistant',
+        layer: 'Platform',
+        description: '음성 명령으로 미디어를 제어합니다.',
+        components: [
+            'Voice Commands',
+            'App Actions',
+            'Media Controls',
+            'Content Deep Links'
+        ],
+        doc: 'https://developers.google.com/assistant/app/media'
     }
 };
 
