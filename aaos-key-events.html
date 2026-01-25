@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAOS Key Event Handling | Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+
+            /* Enhanced Palette */
+            --accent-blue: #3b82f6;
+            --accent-indigo: #6366f1;
+            --accent-teal: #14b8a6;
+            --accent-green: #10b981;
+            --accent-rose: #f43f5e;
+            --accent-amber: #f59e0b;
+
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #0f172a 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--accent-blue);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 80px 20px;
+            background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.15), transparent 40%),
+                radial-gradient(circle at bottom left, rgba(99, 102, 241, 0.15), transparent 40%),
+                linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(17, 24, 39, 0.95) 100%);
+            border-radius: 32px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(to right, var(--accent-green), var(--accent-teal), var(--accent-blue), var(--accent-indigo));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Section Specific Colors */
+        .sec-input .section-title {
+            color: var(--accent-teal);
+        }
+
+        .sec-input .section-number {
+            background: linear-gradient(135deg, var(--accent-teal), var(--accent-green));
+        }
+
+        .sec-car .section-title {
+            color: var(--accent-indigo);
+        }
+
+        .sec-car .section-number {
+            background: linear-gradient(135deg, var(--accent-indigo), var(--accent-blue));
+        }
+
+        .sec-ux .section-title {
+            color: var(--accent-rose);
+        }
+
+        .sec-ux .section-number {
+            background: linear-gradient(135deg, var(--accent-rose), var(--accent-amber));
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+            max-width: 900px;
+        }
+
+        /* Diagram Container */
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .sec-input .card:hover {
+            border-color: var(--accent-teal);
+        }
+
+        .sec-car .card:hover {
+            border-color: var(--accent-indigo);
+        }
+
+        .sec-ux .card:hover {
+            border-color: var(--accent-rose);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sec-input .card-title {
+            color: var(--accent-teal);
+        }
+
+        .sec-car .card-title {
+            color: var(--accent-indigo);
+        }
+
+        .sec-ux .card-title {
+            color: var(--accent-rose);
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        .card-description ol {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        /* Code styling */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-blue);
+            font-size: 0.9em;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>AAOS Key Event Handling</h1>
+            <p class="subtitle">Architecture and flow of key events in Android Automotive OS, from hardware input to
+                app-level handling.</p>
+        </header>
+
+        <!-- Section 1: Input Framework (AOSP) -->
+        <section class="section sec-input">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Input Framework (AOSP)
+            </h2>
+            <p class="section-description">
+                AAOS는 표준 Android Input Framework를 기반으로 하지만, 차량 하드웨어(핸들 리모컨, 로터리 노브 등)를 처리하기 위해
+                <strong>Vehicle HAL (VHAL)</strong>이 추가된 구조를 가집니다.
+            </p>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TD
+                    HW[Vehicle Hardware<br />Steering Wheel / Buttons] --> VHAL[Vehicle
+                    HAL<br />android.hardware.automotive.vehicle]
+                    VHAL -- "VEHICLE_PROPERTY_HW_KEY_INPUT" --> CarService[Car Service]
+                    CarService --> InputMgr[InputManagerService]
+                    InputMgr --> App[Application]
+
+                    style VHAL fill:#10b981,stroke:#fff,color:#fff
+                    style CarService fill:#3b82f6,stroke:#fff,color:#fff
+                    style HW fill:#1a1f35,stroke:#9ca3af
+                    style InputMgr fill:#1a1f35,stroke:#9ca3af
+                    style App fill:#1a1f35,stroke:#9ca3af
+                </div>
+            </div>
+            <p style="margin-top: 20px; color: var(--text-secondary);">
+                기본적인 키 이벤트는 Linux Kernel Driver(evdev)를 통해 <code>InputReader</code>로 전달되지만,
+                차량 특화 키(Custom Input)는 VHAL을 통해 <code>CarService</code>로 전달되어 별도 처리됩니다.
+            </p>
+        </section>
+
+        <!-- Section 2: Car Service (AAOS Specific) -->
+        <section class="section sec-car">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Car Service (AAOS 전용)
+            </h2>
+            <p class="section-description">
+                <strong>CarInputService</strong>는 AAOS에서 입력 이벤트를 중앙에서 관리하는 핵심 컴포넌트입니다.
+                VHAL로부터 받은 이벤트를 분석하여 적절한 타겟(Cluster, Main Display, Voice Assistant 등)으로 라우팅합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🚗</span> CarInputService</h3>
+                    <div class="card-description">입력 이벤트를 모니터링하고 필터링합니다.
+                        특수 키(Voice, Call)를 가로채거나, 로터리 이벤트를 표준 키 이벤트로 변환합니다.</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎹</span> InstrumentClusterRenderingService</h3>
+                    <div class="card-description">계기판(Cluster) 디스플레이를 타겟으로 하는 키 이벤트를 처리합니다.
+                        (예: 핸들의 '다음 곡' 버튼이 계기판 UI를 제어할 때)</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔄</span> RotaryController</h3>
+                    <div class="card-description">로터리 노브(Rotary Knob) 입력을 포커스 이동(Navigation) 이벤트로 변환하여
+                        터치 스크린이 아닌 조작계에서도 앱을 제어할 수 있게 합니다.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Car Input / UX Restriction -->
+        <section class="section sec-ux">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Car Input & UX Restriction
+            </h2>
+            <p class="section-description">
+                운전자 안전을 위해 주행 상태(Driving State)에 따라 입력 및 UX가 제한됩니다.
+                <strong>CarUxRestrictionsManager</strong>는 차량의 기어 상태(Parked, Moving)에 따라 앱의 UI 상호작용을 제어합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph LR
+                    Sensor[Gear / Speed Sensor] --> CarInfo[CarInfoManager]
+                    CarInfo -- "Update State" --> UXR[CarUxRestrictionsManager]
+                    UXR -- "onUxRestrictionsChanged()" --> App
+
+                    subgraph App Logic
+                    State{Is Moving?}
+                    State -- Yes --> Block[Block Input / Hide Video]
+                    State -- No --> Allow[Allow Full Interaction]
+                    end
+
+                    style UXR fill:#f43f5e,stroke:#fff,color:#fff
+                    style Sensor fill:#1a1f35,stroke:#9ca3af
+                    style CarInfo fill:#1a1f35,stroke:#9ca3af
+                    style App fill:#1a1f35,stroke:#3b82f6
+                    style App Logic fill:#1a1f35,stroke:#3b82f6
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🛑</span> Moving State</h3>
+                    <div class="card-description">키보드 입력 차단, 비디오 재생 중지, 리스트 스크롤 제한, 설정 메뉴 진입 제한.</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">✅</span> Distraction Optimized</h3>
+                    <div class="card-description">앱은 <code>Distraction Optimized</code>로 태깅되어야 주행 중에도 제한된 UI로 실행 가능합니다.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Framework Deep Dive: Media & Volume Key Flow -->
+        <section class="section sec-car">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Framework Deep Dive: Media & Volume Key Flow
+            </h2>
+            <p class="section-description">
+                AAOS에서 미디어 키(Play/Pause)와 볼륨 키는 서로 다른 경로로 처리됩니다.
+                미디어 키는 <strong>MediaSessionService</strong>를 통해 활성 세션으로 전달되며,
+                볼륨 키는 <strong>CarAudioService</strong>를 통해 하드웨어 앰프를 직접 제어합니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">1. Media
+                Key Dispatching Flow</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                미디어 키 이벤트(<code>KEYCODE_MEDIA_PLAY</code> 등)는 <code>CarInputService</code>를 거쳐
+                Android 프레임워크의 <code>MediaSessionService</code>로 전달됩니다.
+                이후 우선순위(Priority)에 따라 가장 적절한 MediaSession에게 전달됩니다.
+            </p>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant HW as Vehicle HW
+                    participant VHAL as Vehicle HAL
+                    participant CIS as CarInputService
+                    participant IMS as InputManagerService
+                    participant MSS as MediaSessionService
+                    participant App as Active Media App
+
+                    HW->>VHAL: Press Play Button
+                    VHAL->>CIS: VEHICLE_PROPERTY_HW_KEY_INPUT
+                    CIS->>CIS: Filter & Process
+                    CIS->>IMS: injectKeyEvent(KEYCODE_MEDIA_PLAY)
+                    IMS->>MSS: dispatchMediaKeyEvent()
+                    MSS->>MSS: Find Priority Session<br />(Active & PlaybackState)
+                    MSS->>App: MediaSession.Callback.onPlay()
+                    App->>App: Handle Playback
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎯</span> Dispatch Priority Logic</h3>
+                    <div class="card-description">
+                        <ol>
+                            <li><strong>Active UI:</strong> 현재 화면에 보이는 앱이 최우선.</li>
+                            <li><strong>Active Session:</strong> UI가 없더라도 재생 중(Active)인 <code>MediaSession</code>.</li>
+                            <li><strong>Last Active:</strong> 가장 최근에 재생했던 세션 (Resumption 지원 시).</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">2.
+                Volume Key Handling Flow</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                AAOS의 볼륨 제어는 <strong>Fixed Volume</strong> 정책을 따릅니다.
+                소프트웨어 믹서에서 볼륨을 줄이지 않고, <strong>CarAudioService</strong>가 하드웨어 앰프(Audio Control HAL)에 직접 게인(Gain) 값을
+                전달합니다.
+            </p>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TD
+                    HW[Volume Knob / Button] --> VHAL[Vehicle HAL]
+                    VHAL -- "HW_KEY_INPUT" --> CIS[CarInputService]
+                    CIS -- "KEYCODE_VOLUME_UP/DOWN" --> CAS[CarAudioService]
+
+                    subgraph Volume Logic
+                    CAS --> Group{Identify Volume Group}
+                    Group -- "Music Group" --> Current[Get Current Context]
+                    Group -- "Navi Group" --> Priority[Check Priority]
+                    end
+
+                    CAS -- "setGroupVolume(zone, group, index)" --> HAL[Audio Control HAL]
+                    HAL -- "Apply Hardware Gain" --> Amp[Hardware Amplifier]
+
+                    style CAS fill:#ec4899,stroke:#fff,color:#fff
+                    style HAL fill:#10b981,stroke:#fff,color:#fff
+                    style HW fill:#1a1f35,stroke:#9ca3af
+                    style VHAL fill:#1a1f35,stroke:#9ca3af
+                    style CIS fill:#1a1f35,stroke:#9ca3af
+                    style Volume Logic fill:#1a1f35,stroke:#3b82f6
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔊</span> Volume Groups & Audio Context</h3>
+                    <div class="card-description">
+                        <p>
+                            <code>CarAudioService</code>는 오디오 속성(Usage)에 따라 <strong>Volume Group</strong>을 관리합니다.
+                            예를 들어, 미디어 볼륨을 조절할 때 내비게이션 안내 볼륨은 영향을 받지 않도록 그룹별로 독립적인 제어가 가능합니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: App Level Handling -->
+        <section class="section sec-input">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                App 레벨 처리
+            </h2>
+            <p class="section-description">
+                앱 개발자는 표준 Android API를 사용하여 키 이벤트를 처리하되, AAOS의 특수성을 고려해야 합니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">Best
+                Practices</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">✅</span> Checklist</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>MediaSession Callback 구현:</strong> <code>onPlay()</code>,
+                                <code>onPause()</code>,
+                                <code>onSkipToNext()</code> 등을 구현하여 미디어 키에 대응합니다.
+                            </li>
+                            <li><strong>Audio Focus 관리:</strong> 재생 시작 전 반드시 포커스를 요청하고,
+                                <code>onAudioFocusChange()</code>에서 포커스
+                                손실(Loss)에 대응합니다.
+                            </li>
+                            <li><strong>UX Restriction 준수:</strong> <code>CarUxRestrictionsManager</code>를 구독하여 주행 중 UI를
+                                단순화하거나 입력을
+                                차단해야 합니다.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant HW as HW Button
+                    participant CS as CarService
+                    participant MS as MediaSession
+                    participant App as Media App
+
+                    HW->>CS: Key Event (KEYCODE_MEDIA_PLAY)
+                    CS->>MS: Dispatch Media Button
+                    MS->>App: onPlay() Callback
+                    App->>App: requestAudioFocus()
+                    App->>App: Start Playback
+                </div>
+            </div>
+        </section>
+
+        <a href="index.html" class="nav-button">← Back to Dashboard</a>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                darkMode: true,
+                background: '#111827',
+                primaryColor: '#3b82f6',
+                secondaryColor: '#ec4899',
+                tertiaryColor: '#0f172a',
+                primaryTextColor: '#e5e7eb',
+                secondaryTextColor: '#9ca3af',
+                lineColor: '#334155'
+            }
+        });
+    </script>
+</body>
+
+</html>
+```

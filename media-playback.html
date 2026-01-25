@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediaProvider in Media Playback Flow</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #7c3aed;
+            --accent-secondary: #a78bfa;
+            --accent-tertiary: #c4b5fd;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f2e 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(124, 58, 237, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(124, 58, 237, 0.3);
+            box-shadow: 0 10px 40px rgba(124, 58, 237, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(124, 58, 237, 0.4);
+            box-shadow: 0 5px 20px rgba(124, 58, 237, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(124, 58, 237, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-secondary);
+            font-size: 0.9em;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(167, 139, 250, 0.1));
+            border-left: 4px solid var(--accent-primary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-primary);
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.1));
+            border-left: 4px solid var(--accent-warning);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .warning-box strong {
+            color: var(--accent-warning);
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="mediaprovider.html" class="nav-button">
+            ← MediaProvider Overview
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>🎬 미디어 재생 플로우</h1>
+            <p class="subtitle">MediaProvider의 역할과 오디오/비디오 재생 과정</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overview: 미디어 재생에서 MediaProvider의 역할
+            </h2>
+            <p class="section-description">
+                오디오/비디오 재생 시 MediaProvider는 미디어 파일 발견, 메타데이터 제공, 파일 접근 제어의 핵심 역할을 수행합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        미디어 발견 및 인덱싱
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaStore를 통한 미디어 검색</strong></p>
+                        <ul>
+                            <li>저장소 스캔 및 메타데이터 인덱싱</li>
+                            <li><code>content://</code> URI로 미디어 식별</li>
+                            <li>제목, 아티스트, 앨범, 재생 시간 등 메타데이터 제공</li>
+                            <li>MIME 타입 자동 감지</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📂</span>
+                        파일 접근 제공
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>ContentResolver를 통한 데이터 접근</strong></p>
+                        <ul>
+                            <li><code>openFileDescriptor()</code>로 파일 디스크립터 제공</li>
+                            <li><code>openInputStream()</code>으로 스트림 제공</li>
+                            <li>Scoped Storage 권한 검사</li>
+                            <li>FUSE를 통한 실시간 접근 제어</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        보안 및 프라이버시
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>안전한 미디어 접근</strong></p>
+                        <ul>
+                            <li>앱별 권한 검사 (READ_MEDIA_*)</li>
+                            <li>위치 정보 자동 제거 (Redaction)</li>
+                            <li>다른 앱의 미디어 보호</li>
+                            <li>FUSE Daemon을 통한 실시간 필터링</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        성능 최적화
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>FUSE Passthrough (Android 12+)</strong></p>
+                        <ul>
+                            <li>권한 확인 후 직접 파일 시스템 접근</li>
+                            <li>User-space 우회로 I/O 성능 향상</li>
+                            <li>Random Read 성능 개선</li>
+                            <li>네이티브 파일 시스템 수준의 속도</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Complete Playback Flow -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                전체 재생 플로우
+            </h2>
+            <p class="section-description">
+                앱이 미디어를 검색하고 재생하기까지의 전체 과정을 시각화합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App as Media App
+                    participant CR as ContentResolver
+                    participant MP as MediaProvider
+                    participant DB as SQLite DB
+                    participant FUSE as FUSE Daemon
+                    participant FS as File System
+                    participant Player as MediaPlayer/Extractor
+
+                    Note over App,Player: 1. 미디어 검색 단계
+                    App->>CR: query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
+                    CR->>MP: query() 호출
+                    MP->>DB: SELECT * FROM audio WHERE...
+                    DB-->>MP: Cursor (메타데이터)
+                    MP-->>CR: Cursor 반환
+                    CR-->>App: Cursor 반환
+                    App->>App: Cursor 순회 및 URI 추출
+
+                    Note over App,Player: 2. 파일 접근 단계
+                    App->>CR: openFileDescriptor(content://media/...)
+                    CR->>MP: openFile() 호출
+                    MP->>MP: 권한 검사 (READ_MEDIA_AUDIO)
+                    MP->>FUSE: FUSE_OPEN 요청
+                    FUSE->>FUSE: 앱 UID 검증
+                    FUSE->>FS: 실제 파일 열기
+                    FS-->>FUSE: File Descriptor
+                    FUSE->>FUSE: FUSE Passthrough 설정 (Android 12+)
+                    FUSE-->>MP: FD 반환
+                    MP-->>CR: ParcelFileDescriptor
+                    CR-->>App: ParcelFileDescriptor
+
+                    Note over App,Player: 3. 미디어 재생 단계
+                    App->>Player: setDataSource(fileDescriptor)
+                    Player->>Player: MediaExtractor 초기화
+                    Player->>FS: read() - Passthrough 활성화 시 직접 접근
+                    FS-->>Player: 미디어 데이터
+                    Player->>Player: 디코딩 및 렌더링
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>핵심 포인트:</strong>
+                <ul>
+                    <li><strong>1단계 (검색)</strong>: MediaProvider의 SQLite DB에서 메타데이터 쿼리</li>
+                    <li><strong>2단계 (접근)</strong>: FUSE Daemon을 통한 권한 검사 및 파일 디스크립터 제공</li>
+                    <li><strong>3단계 (재생)</strong>: MediaPlayer/MediaExtractor가 파일 디스크립터로 직접 읽기</li>
+                    <li><strong>성능</strong>: FUSE Passthrough로 User-space 우회, 네이티브 속도 달성</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 3: MediaPlayer Flow -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                MediaPlayer를 통한 재생
+            </h2>
+            <p class="section-description">
+                고수준 API인 MediaPlayer를 사용한 간편한 미디어 재생 방식입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    flowchart TD
+                    START[앱 시작] --> QUERY[MediaStore 쿼리]
+                    QUERY --> URI[content:// URI 획득]
+                    URI --> MP_CREATE[MediaPlayer 생성]
+
+                    MP_CREATE --> SET_DS{setDataSource 방식}
+
+                    SET_DS -->|방법 1| URI_DS[setDataSource<br />context, uri]
+                    SET_DS -->|방법 2| FD_DS[setDataSource<br />fileDescriptor]
+
+                    URI_DS --> MP_INTERNAL[MediaPlayer 내부<br />ContentResolver 호출]
+                    FD_DS --> SKIP[앱이 직접<br />FD 획득]
+
+                    MP_INTERNAL --> OPEN_FD[openFileDescriptor]
+                    SKIP --> OPEN_FD
+
+                    OPEN_FD --> FUSE_CHECK[FUSE Daemon<br />권한 검사]
+                    FUSE_CHECK --> PASSTHROUGH{FUSE Passthrough<br />가능?<br />Android 12+}
+
+                    PASSTHROUGH -->|Yes| DIRECT[직접 파일<br />시스템 접근]
+                    PASSTHROUGH -->|No| USERSPACE[User-space<br />경유 접근]
+
+                    DIRECT --> PREPARE[prepare /<br />prepareAsync]
+                    USERSPACE --> PREPARE
+
+                    PREPARE --> START_PLAY[start]
+                    START_PLAY --> DECODE[디코딩 및 재생]
+                    DECODE --> END[재생 완료]
+
+                    style FUSE_CHECK fill:#1a1f35,stroke:#7c3aed,stroke-width:2px
+                    style PASSTHROUGH fill:#1a1f35,stroke:#10b981,stroke-width:2px
+                    style DIRECT fill:#1a1f35,stroke:#10b981,stroke-width:2px
+                    style USERSPACE fill:#1a1f35,stroke:#f59e0b,stroke-width:2px
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📝 MediaPlayer 사용 방식
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        URI 방식 (권장)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>가장 간단한 방법</strong></p>
+                        <ul>
+                            <li><code>setDataSource(context, uri)</code></li>
+                            <li>MediaPlayer가 내부적으로 ContentResolver 호출</li>
+                            <li>권한 처리 자동화</li>
+                            <li>Scoped Storage 완벽 지원</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        FileDescriptor 방식
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>세밀한 제어 가능</strong></p>
+                        <ul>
+                            <li>앱이 직접 <code>openFileDescriptor()</code> 호출</li>
+                            <li><code>setDataSource(fileDescriptor)</code></li>
+                            <li>오프셋 및 길이 지정 가능</li>
+                            <li>여러 MediaPlayer 인스턴스에서 재사용</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        주의사항
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>파일 디스크립터 제약</strong></p>
+                        <ul>
+                            <li>Seekable FD 필요 (Pipe 불가)</li>
+                            <li><code>ParcelFileDescriptor.createPipe()</code> 사용 불가</li>
+                            <li>MediaPlayer는 Random Access 필요</li>
+                            <li><code>openFileDescriptor()</code> 사용 권장</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        성능 고려사항
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>최적화 팁</strong></p>
+                        <ul>
+                            <li><code>prepareAsync()</code> 사용 (UI Thread 블로킹 방지)</li>
+                            <li>FUSE Passthrough 활용 (Android 12+)</li>
+                            <li>로컬 파일은 URI 방식이 효율적</li>
+                            <li>스트리밍은 URL 방식 사용</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: MediaExtractor Flow -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                MediaExtractor를 통한 재생
+            </h2>
+            <p class="section-description">
+                저수준 API인 MediaExtractor와 MediaCodec을 사용한 고급 미디어 처리 방식입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App
+                    participant CR as ContentResolver
+                    participant MP as MediaProvider
+                    participant FUSE as FUSE Daemon
+                    participant FS as File System
+                    participant ME as MediaExtractor
+                    participant MC as MediaCodec
+
+                    App->>CR: openFileDescriptor(uri)
+                    CR->>MP: openFile()
+                    MP->>FUSE: FUSE_OPEN
+                    FUSE->>FS: 파일 열기
+                    FS-->>FUSE: FD
+                    FUSE->>FUSE: Passthrough 설정
+                    FUSE-->>MP: FD
+                    MP-->>CR: ParcelFileDescriptor
+                    CR-->>App: ParcelFileDescriptor
+
+                    App->>ME: setDataSource(fileDescriptor)
+                    ME->>FS: 컨테이너 파싱 (MP4, MKV 등)
+                    FS-->>ME: 트랙 정보
+                    ME-->>App: Track Count 반환
+
+                    App->>ME: selectTrack(trackIndex)
+                    App->>MC: MediaCodec 생성 및 configure()
+                    App->>MC: start()
+
+                    loop 디코딩 루프
+                    App->>ME: readSampleData(buffer)
+                    ME->>FS: read() - Passthrough로 직접 접근
+                    FS-->>ME: 인코딩된 샘플 데이터
+                    ME-->>App: 샘플 데이터 반환
+
+                    App->>MC: queueInputBuffer()
+                    MC->>MC: 하드웨어 디코딩
+                    MC-->>App: dequeueOutputBuffer()
+                    App->>App: 렌더링 (AudioTrack/Surface)
+
+                    App->>ME: advance()
+                    end
+
+                    App->>ME: release()
+                    App->>MC: release()
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 MediaExtractor의 장점
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎛️</span>
+                        세밀한 제어
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>프레임 단위 처리</strong></p>
+                        <ul>
+                            <li>개별 샘플 데이터 접근</li>
+                            <li>Presentation Timestamp 제어</li>
+                            <li>특정 트랙 선택 (오디오/비디오/자막)</li>
+                            <li>Seek 위치 정밀 제어</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎨</span>
+                        커스텀 처리
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>미디어 편집 및 변환</strong></p>
+                        <ul>
+                            <li>비디오 편집 (자르기, 병합)</li>
+                            <li>포맷 변환 (Transcoding)</li>
+                            <li>필터 적용 (색상 보정, 이펙트)</li>
+                            <li>오디오 믹싱</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        메타데이터 추출
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>상세 정보 획득</strong></p>
+                        <ul>
+                            <li>코덱 정보 (MIME, Profile, Level)</li>
+                            <li>해상도 및 프레임레이트</li>
+                            <li>비트레이트 및 샘플레이트</li>
+                            <li>재생 시간 및 트랙 수</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        성능 최적화
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>효율적인 데이터 처리</strong></p>
+                        <ul>
+                            <li>Zero-Copy 버퍼 사용</li>
+                            <li>하드웨어 가속 디코딩</li>
+                            <li>FUSE Passthrough로 I/O 최적화</li>
+                            <li>비동기 처리 가능</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: FUSE Passthrough Performance -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                FUSE Passthrough 성능 최적화
+            </h2>
+            <p class="section-description">
+                Android 12+에서 도입된 FUSE Passthrough는 미디어 재생 성능을 획기적으로 개선합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    flowchart TB
+                    subgraph LEGACY ["Legacy FUSE - Android 11"]
+                    direction TB
+                    L_APP[App] --> L_KERNEL[Kernel FUSE]
+                    L_KERNEL --> L_DAEMON[FUSE Daemon<br />User-space]
+                    L_DAEMON --> L_KERNEL2[Kernel]
+                    L_KERNEL2 --> L_FS[File System]
+                    end
+
+                    subgraph PASSTHROUGH ["FUSE Passthrough - Android 12+"]
+                    direction TB
+                    P_APP[App] --> P_KERNEL[Kernel FUSE]
+                    P_KERNEL --> P_CHECK{권한 확인<br />최초 1회}
+                    P_CHECK -->|허용| P_DIRECT[Direct Access<br />Kernel Only]
+                    P_DIRECT --> P_FS[File System]
+                    P_CHECK -.->|검사만| P_DAEMON[FUSE Daemon]
+                    end
+
+                    LEGACY -.->|성능 개선| PASSTHROUGH
+
+                    style L_DAEMON fill:#1a1f35,stroke:#f59e0b,stroke-width:2px
+                    style P_DIRECT fill:#1a1f35,stroke:#10b981,stroke-width:3px
+                    style P_CHECK fill:#1a1f35,stroke:#7c3aed,stroke-width:2px
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📈 성능 비교
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🐌</span>
+                        Legacy FUSE (Android 11)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>User-space 경유</strong></p>
+                        <ul>
+                            <li>모든 read/write가 FUSE Daemon 경유</li>
+                            <li>Kernel ↔ User-space 전환 오버헤드</li>
+                            <li>Random Read 성능 저하</li>
+                            <li>중저가 기기에서 성능 문제</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        FUSE Passthrough (Android 12+)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>직접 파일 시스템 접근</strong></p>
+                        <ul>
+                            <li>최초 권한 확인 후 직접 접근</li>
+                            <li>User-space 우회</li>
+                            <li>네이티브 파일 시스템 수준 성능</li>
+                            <li>미디어 재생 끊김 현상 해결</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Passthrough 동작 방식
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>ioctl 기반 최적화</strong></p>
+                        <ul>
+                            <li><code>FUSE_DEV_IOC_PASSTHROUGH_OPEN</code> ioctl 사용</li>
+                            <li>FUSE 파일 객체 ↔ 하위 파일 객체 직접 연결</li>
+                            <li>Read/Write만 Passthrough (다른 작업은 Daemon 경유)</li>
+                            <li>정책 기반 선택적 적용</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        성능 향상 수치
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>벤치마크 결과</strong></p>
+                        <ul>
+                            <li>Random Read: 약 2~3배 향상</li>
+                            <li>Sequential Write: 약 1.5~2배 향상</li>
+                            <li>4K 비디오 재생 끊김 현상 제거</li>
+                            <li>저가 기기에서 특히 큰 효과</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ 추가 최적화 기법:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Splicing</strong>: 데이터 복사 최소화</li>
+                    <li><strong>Write-back Cache</strong>: FUSE 쓰기 캐시 활용</li>
+                    <li><strong>Permission Caching</strong>: 권한 검사 결과 캐싱으로 IPC 감소</li>
+                    <li><strong>FUSE Bypass</strong>: <code>/Android/data</code>, <code>/Android/obb</code> 디렉토리는 FUSE
+                        우회</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 6: Best Practices -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                미디어 재생 Best Practices
+            </h2>
+            <p class="section-description">
+                MediaProvider를 활용한 효율적인 미디어 재생을 위한 권장사항입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        권장 사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>URI 사용</strong>: <code>content://</code> URI로 미디어 접근</li>
+                            <li><strong>MediaStore 활용</strong>: 파일 경로 대신 MediaStore API 사용</li>
+                            <li><strong>비동기 처리</strong>: <code>prepareAsync()</code>로 UI Thread 보호</li>
+                            <li><strong>권한 요청</strong>: <code>READ_MEDIA_*</code> 권한 명시적 요청</li>
+                            <li><strong>리소스 해제</strong>: <code>release()</code>로 리소스 정리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">❌</span>
+                        피해야 할 사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>직접 파일 경로</strong>: <code>/storage/emulated/0/...</code> 직접 접근 지양</li>
+                            <li><strong>Pipe 사용</strong>: MediaPlayer에 Pipe FileDescriptor 전달 불가</li>
+                            <li><strong>UI Thread 블로킹</strong>: <code>prepare()</code>대신 <code>prepareAsync()</code>
+                            </li>
+                            <li><strong>권한 미확인</strong>: 권한 없이 미디어 접근 시도</li>
+                            <li><strong>리소스 누수</strong>: MediaPlayer/MediaExtractor 미해제</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        성능 최적화
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Android 12+ 타겟</strong>: FUSE Passthrough 활용</li>
+                            <li><strong>로컬 파일</strong>: URI 방식이 가장 효율적</li>
+                            <li><strong>스트리밍</strong>: HTTP URL 직접 사용</li>
+                            <li><strong>대용량 파일</strong>: MediaExtractor로 청크 단위 처리</li>
+                            <li><strong>캐싱</strong>: 자주 사용하는 메타데이터 캐싱</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        보안 고려사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Scoped Storage 준수</strong>: Android 10+ 정책 따르기</li>
+                            <li><strong>최소 권한 원칙</strong>: 필요한 권한만 요청</li>
+                            <li><strong>사용자 동의</strong>: 다른 앱 미디어 수정 시 동의 획득</li>
+                            <li><strong>민감 정보 보호</strong>: 위치 정보 등 Redaction 인지</li>
+                            <li><strong>안전한 URI</strong>: 신뢰할 수 있는 출처의 URI만 사용</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>MediaProvider in Media Playback Flow</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                Audio/Video Playback Architecture & Performance Optimization
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="mediaprovider.html" style="color: var(--accent-primary); text-decoration: none;">
+                    ← MediaProvider Overview로 돌아가기
+                </a>
+                |
+                <a href="index.html" style="color: var(--accent-primary); text-decoration: none;">
+                    AOSP Media Framework로 돌아가기
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#7c3aed',
+                lineColor: '#a78bfa',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#0a0e1a',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                border1: '#7c3aed',
+                border2: '#a78bfa',
+                note: '#c4b5fd',
+                noteBkgColor: 'rgba(124, 58, 237, 0.1)',
+                noteBorderColor: '#7c3aed',
+                fontFamily: 'Noto Sans KR'
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 50
+            },
+            sequence: {
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35
+            }
+        });
+
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+</body>
+
+</html>

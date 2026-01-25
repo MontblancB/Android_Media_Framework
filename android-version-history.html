@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Media Framework Evolution</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #8b5cf6;
+            --accent-secondary: #a78bfa;
+            --accent-tertiary: #c4b5fd;
+            --accent-pink: #ec4899;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glow-color: rgba(139, 92, 246, 0.3);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f1e 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.05) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: var(--accent-secondary);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--accent-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .timeline-container {
+            margin: 40px 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-5px);
+            border-color: var(--accent-primary);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            color: var(--accent-tertiary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .tag-version {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+
+        .tag-deprecated {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .tag-new {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--accent-tertiary);
+            font-weight: 600;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-pink);
+            font-size: 0.9em;
+        }
+
+        .mermaid {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <a href="index.html" class="nav-button">
+            <span>←</span> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Android Media Framework Evolution</h1>
+            <p class="subtitle">Android 1.0부터 15까지의 미디어 프레임워크 역사, API 변화, 그리고 아키텍처의 진화</p>
+        </header>
+
+        <!-- Section 1: Overview & Timeline -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overview & Timeline
+            </h2>
+            <p>
+                Android 미디어 프레임워크는 초기 Stagefright 기반의 모놀리식 구조에서, 모듈화된 Codec2 및 Jetpack 기반의 Media3 라이브러리로 지속적으로 진화해왔습니다.
+                이 타임라인은 주요 아키텍처 변경 사항과 API 도입 시점을 보여줍니다.
+            </p>
+
+            <style>
+                /* Custom Timeline Styles - Horizontal Scrollable */
+                .timeline-container-scroll {
+                    width: 100%;
+                    overflow-x: auto;
+                    padding: 20px 0 40px 0;
+                    /* Hide scrollbar for cleaner look but allow scrolling */
+                    scrollbar-width: thin;
+                    scrollbar-color: var(--accent-primary) var(--bg-card);
+                }
+
+                .timeline-container-scroll::-webkit-scrollbar {
+                    height: 8px;
+                }
+
+                .timeline-container-scroll::-webkit-scrollbar-track {
+                    background: var(--bg-card);
+                    border-radius: 4px;
+                }
+
+                .timeline-container-scroll::-webkit-scrollbar-thumb {
+                    background-color: var(--accent-primary);
+                    border-radius: 4px;
+                }
+
+                .timeline-wrapper {
+                    display: flex;
+                    position: relative;
+                    padding: 60px 20px 20px 20px;
+                    /* Top padding for dates */
+                    min-width: max-content;
+                    /* Ensure it expands horizontally */
+                }
+
+                /* Horizontal Line */
+                .timeline-wrapper::before {
+                    content: '';
+                    position: absolute;
+                    top: 90px;
+                    /* Adjust based on date height */
+                    left: 20px;
+                    right: 20px;
+                    height: 4px;
+                    background: linear-gradient(to right,
+                            rgba(139, 92, 246, 0.2) 0%,
+                            rgba(139, 92, 246, 0.8) 50%,
+                            rgba(139, 92, 246, 0.2) 100%);
+                    border-radius: 2px;
+                    z-index: 0;
+                }
+
+                .timeline-item {
+                    position: relative;
+                    width: 320px;
+                    flex-shrink: 0;
+                    margin-right: 40px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+
+                .timeline-item:last-child {
+                    margin-right: 0;
+                }
+
+                /* Dot Marker */
+                .timeline-dot {
+                    position: absolute;
+                    top: 90px;
+                    /* Match line position */
+                    left: 50%;
+                    width: 16px;
+                    height: 16px;
+                    background: var(--bg-primary);
+                    border: 3px solid var(--accent-primary);
+                    border-radius: 50%;
+                    transform: translate(-50%, -50%);
+                    z-index: 2;
+                    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+                    transition: all 0.3s ease;
+                }
+
+                .timeline-item:hover .timeline-dot {
+                    background: var(--accent-primary);
+                    box-shadow: 0 0 0 8px rgba(139, 92, 246, 0.3);
+                    transform: translate(-50%, -50%) scale(1.3);
+                }
+
+                /* Date / Version Label */
+                .timeline-date {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    text-align: center;
+                    font-family: 'JetBrains Mono', monospace;
+                    color: var(--accent-secondary);
+                    font-weight: 700;
+                    font-size: 1.1rem;
+                    padding-bottom: 20px;
+                }
+
+                /* Content Card */
+                .timeline-content-box {
+                    margin-top: 100px;
+                    /* Space below line (Dot is at 90px) */
+                    width: 100%;
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid var(--border-color);
+                    border-radius: 16px;
+                    padding: 20px;
+                    transition: all 0.3s ease;
+                    position: relative;
+                    height: 100%;
+                    /* Make cards same height if possible */
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                /* Arrow pointing up to dot */
+                .timeline-content-box::before {
+                    content: '';
+                    position: absolute;
+                    top: -10px;
+                    left: 50%;
+                    width: 20px;
+                    height: 20px;
+                    background: var(--bg-card);
+                    border-top: 1px solid var(--border-color);
+                    border-left: 1px solid var(--border-color);
+                    transform: translateX(-50%) rotate(45deg);
+                }
+
+                .timeline-item:hover .timeline-content-box {
+                    border-color: var(--accent-primary);
+                    background: rgba(255, 255, 255, 0.05);
+                    transform: translateY(-5px);
+                }
+
+                .timeline-title {
+                    color: var(--accent-tertiary);
+                    font-size: 1.1rem;
+                    margin-bottom: 12px;
+                    font-weight: 700;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    min-height: 30px;
+                    /* Align titles */
+                }
+
+                .timeline-list {
+                    list-style-type: none;
+                    padding: 0;
+                    margin: 0;
+                    color: var(--text-secondary);
+                    font-size: 0.9rem;
+                }
+
+                .timeline-list li {
+                    position: relative;
+                    padding-left: 15px;
+                    margin-bottom: 6px;
+                    line-height: 1.4;
+                }
+
+                .timeline-list li::before {
+                    content: '•';
+                    position: absolute;
+                    left: 0;
+                    color: var(--accent-primary);
+                }
+
+                .badge {
+                    display: inline-block;
+                    padding: 4px 10px;
+                    border-radius: 6px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    background: rgba(139, 92, 246, 0.15);
+                    color: var(--accent-secondary);
+                    border: 1px solid rgba(139, 92, 246, 0.2);
+                    margin-top: auto;
+                    /* Push to bottom */
+                    align-self: flex-start;
+                }
+            </style>
+
+            <div class="timeline-container-scroll">
+                <div class="timeline-wrapper">
+                    <!-- 2008 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2008<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                1.0</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">MediaPlayer</div>
+                            <ul class="timeline-list">
+                                <li>Basic media playback support</li>
+                                <li>Initial framework release</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2010 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2010<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                2.2</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Stagefright</div>
+                            <ul class="timeline-list">
+                                <li>New playback engine</li>
+                                <li>Replaced OpenCore</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2012 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2012<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                4.1</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">MediaCodec API</div>
+                            <ul class="timeline-list">
+                                <li>Low-level codec access</li>
+                                <li>MediaExtractor introduced</li>
+                            </ul>
+                            <span class="badge">Major Milestone</span>
+                        </div>
+                    </div>
+
+                    <!-- 2014 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2014<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                5.0</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">NuPlayer Default</div>
+                            <ul class="timeline-list">
+                                <li>Replaced Stagefright for streaming</li>
+                                <li>AudioAttributes API</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2017 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2017<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                8.0</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Project Treble</div>
+                            <ul class="timeline-list">
+                                <li>HIDL for HALs</li>
+                                <li>AAudio API (Low-latency)</li>
+                            </ul>
+                            <span class="badge">Architecture Change</span>
+                        </div>
+                    </div>
+
+                    <!-- 2019 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2019<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                10</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Codec2 Framework</div>
+                            <ul class="timeline-list">
+                                <li>Replaced OpenMAX</li>
+                                <li>Updatable components (Mainline)</li>
+                                <li>Opus support</li>
+                            </ul>
+                            <span class="badge">Major Milestone</span>
+                        </div>
+                    </div>
+
+                    <!-- 2020 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2020<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                11</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">AIDL for HALs</div>
+                            <ul class="timeline-list">
+                                <li>Transition from HIDL to AIDL</li>
+                                <li>Instant Resume support</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2022 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2022<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                13</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Media3 (Jetpack)</div>
+                            <ul class="timeline-list">
+                                <li>Unified media library</li>
+                                <li>Spatial Audio support</li>
+                                <li>MIDI 2.0 support</li>
+                            </ul>
+                            <span class="badge">New Standard</span>
+                        </div>
+                    </div>
+
+                    <!-- 2023 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2023<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                14</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Lossless USB Audio</div>
+                            <ul class="timeline-list">
+                                <li>Bit-perfect USB audio</li>
+                                <li>Ultra HDR image support</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2024 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                15</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Loudness Control</div>
+                            <ul class="timeline-list">
+                                <li>CTA-2075 loudness standard</li>
+                                <li>HDR Headroom control</li>
+                                <li>dav1d AV1 decoder</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2025 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                16</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Future & Beyond</div>
+                            <ul class="timeline-list">
+                                <li>APV Codec support</li>
+                                <li>Audio Sharing</li>
+                                <li>Media Quality Framework</li>
+                            </ul>
+                            <span class="badge">Upcoming</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Codec Evolution -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Codec Evolution: OpenMAX to Codec2
+            </h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h3 class="card-title">🏛️ OpenMAX Era (Legacy)</h3>
+                    <span class="tag tag-deprecated">Deprecated</span>
+                    <p>초기 Android는 Khronos Group의 OpenMAX IL 표준을 사용하여 하드웨어 코덱을 제어했습니다. Stagefright 프레임워크와 긴밀하게 결합되어
+                        있었으나, 유연성이 부족하고 업데이트가 어려웠습니다.</p>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">🛠️ MediaCodec API</h3>
+                    <span class="tag tag-version">Android 4.1+</span>
+                    <p>API Level 16에서 도입된 저수준 코덱 인터페이스입니다. 앱이 입력 버퍼를 채우고 출력 버퍼를 소비하는 방식으로 동작하며, 현재까지도 미디어 처리의 핵심 API로
+                        사용됩니다.
+                        <br /><br />
+                        <strong>Key Features:</strong>
+                    <ul>
+                        <li>Asynchronous Processing</li>
+                        <li>Surface Input/Output (Zero-copy)</li>
+                        <li>CryptoInfo for DRM</li>
+                    </ul>
+                    </p>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">🚀 Codec2 Architecture</h3>
+                    <span class="tag tag-new">Android 10+</span>
+                    <p>OpenMAX를 대체하기 위해 도입된 새로운 코덱 프레임워크입니다. 모듈화가 강화되어 시스템 업데이트 없이 코덱 구성요소를 업데이트(Project Mainline)할 수
+                        있으며, 오버헤드가 감소했습니다.
+                        <br /><br />
+                        <strong>Improvements:</strong>
+                    <ul>
+                        <li>Modular & Updatable (Mainline)</li>
+                        <li>Better Memory Management</li>
+                        <li>Software Codec Optimization (dav1d for AV1 in A15)</li>
+                    </ul>
+                    </p>
+                </div>
+            </div>
+
+            <div class="mermaid">
+                graph LR
+                subgraph Legacy ["Legacy (Pre-Android 10)"]
+                App1[App] --> MediaCodec1[MediaCodec API]
+                MediaCodec1 --> ACodec
+                ACodec --> OMX[OpenMAX IL]
+                OMX --> VendorLib[Vendor Codec Lib]
+                end
+
+                subgraph Modern ["Modern (Android 10+)"]
+                App2[App] --> MediaCodec2[MediaCodec API]
+                MediaCodec2 --> CCodec
+                CCodec --> Codec2[Codec2 API]
+                Codec2 --> Codec2Impl[Codec2 Implementation]
+                end
+
+                style Legacy fill:#1f2937,stroke:#4b5563
+                style Modern fill:#1f2937,stroke:#8b5cf6
+            </div>
+        </section>
+
+        <!-- Section 3: Media Player Architecture -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Media Player Architecture
+            </h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Stagefright (Legacy)</th>
+                        <th>NuPlayer (Transition)</th>
+                        <th>ExoPlayer / Media3 (Modern)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>도입 시기</strong></td>
+                        <td>Android 2.2 (Froyo)</td>
+                        <td>Android 5.0 (Lollipop)</td>
+                        <td>Jetpack Library (Unbundled)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>특징</strong></td>
+                        <td>OS 내장 네이티브 플레이어 엔진</td>
+                        <td>스트리밍(RTSP, HLS)에 최적화</td>
+                        <td>앱 레벨 구현, 높은 확장성 및 유연성</td>
+                    </tr>
+                    <tr>
+                        <td><strong>장점</strong></td>
+                        <td>OS 통합</td>
+                        <td>향상된 스트리밍 지원</td>
+                        <td>
+                            <ul>
+                                <li>DASH, HLS, SmoothStreaming 지원</li>
+                                <li>커스텀 Renderer 및 Extractor 확장 용이</li>
+                                <li>일관된 기기 간 동작 보장</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>상태</strong></td>
+                        <td><span class="tag tag-deprecated">Internal Only</span></td>
+                        <td><span class="tag tag-deprecated">Internal Only</span></td>
+                        <td><span class="tag tag-new">Recommended</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 4: Codec & Player Performance Tuning -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Codec & Player Performance Tuning
+            </h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h3 class="card-title">⚡ Low Latency Decoding</h3>
+                    <p>Android 11+에서는 <code>MediaCodec</code>의 Low Latency 모드를 지원합니다. 실시간 스트리밍이나 클라우드 게이밍 시 유용합니다.
+                        <br /><code>MediaFormat.KEY_LOW_LATENCY</code>를 설정하여 활성화할 수 있습니다.
+                    </p>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">🔄 Asynchronous Buffer Queueing</h3>
+                    <p><code>MediaCodec.Callback</code>을 사용하여 비동기적으로 버퍼를 처리하면 UI 스레드 차단을 방지하고 처리량을 극대화할 수 있습니다.
+                        동기식(Synchronous) API 사용은 지양해야 합니다.</p>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">📺 Surface Rendering (Zero-copy)</h3>
+                    <p>비디오 디코딩 시 <code>ByteBuffer</code> 대신 <code>Surface</code>를 출력으로 설정하면, 디코더 출력이 디스플레이 컴포지터로 직접 전달되어
+                        메모리 복사를 줄이고 배터리를 절약할 수 있습니다.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: HAL Interface Evolution -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                HAL Interface: HIDL to AIDL
+            </h2>
+            <p>
+                Android 8.0(Project Treble)에서 도입된 HIDL은 Android 11부터 AIDL로 전환되기 시작했습니다.
+                Android 13부터는 새로운 HAL 인터페이스는 반드시 AIDL로 작성되어야 합니다.
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>HAL Type</th>
+                        <th>Legacy (Pre-8.0)</th>
+                        <th>HIDL (8.0 - 12)</th>
+                        <th>AIDL (13+)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Audio HAL</strong></td>
+                        <td>C header (audio.h)</td>
+                        <td>android.hardware.audio@7.0</td>
+                        <td><span class="tag tag-new">android.hardware.audio.core</span> (Android 14+)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Graphics</strong></td>
+                        <td>gralloc.h</td>
+                        <td>android.hardware.graphics.mapper@4.0</td>
+                        <td><span class="tag tag-new">android.hardware.graphics.allocator</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 6: API Deprecation Timeline -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Major API Deprecation Timeline
+            </h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>API / Class</th>
+                        <th>Introduced</th>
+                        <th>Deprecated In</th>
+                        <th>Replacement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>MediaRecorder.AudioEncoder.AMR_NB</code></td>
+                        <td>API 1</td>
+                        <td>-</td>
+                        <td>AAC (Recommended)</td>
+                    </tr>
+                    <tr>
+                        <td><code>RemoteControlClient</code></td>
+                        <td>API 14</td>
+                        <td>API 21 (Lollipop)</td>
+                        <td><code>MediaSession</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>MediaSession</code> (Legacy)</td>
+                        <td>API 21</td>
+                        <td>-</td>
+                        <td><code>Media3 MediaSession</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>ExoPlayer</code> (Standalone)</td>
+                        <td>-</td>
+                        <td>Deprecated (2023)</td>
+                        <td><code>androidx.media3.exoplayer</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                darkMode: true,
+                background: '#1a1f35',
+                primaryColor: '#8b5cf6',
+                secondaryColor: '#ec4899',
+                tertiaryColor: '#1f2937',
+                primaryTextColor: '#e5e7eb',
+                secondaryTextColor: '#e5e7eb',
+                lineColor: '#4b5563',
+                // Timeline specific high contrast colors
+                cScale0: '#3b82f6', cScaleLabel0: '#ffffff',
+                cScale1: '#8b5cf6', cScaleLabel1: '#ffffff',
+                cScale2: '#ec4899', cScaleLabel2: '#ffffff',
+                cScale3: '#10b981', cScaleLabel3: '#ffffff',
+                cScale4: '#f59e0b', cScaleLabel4: '#ffffff',
+                cScale5: '#6366f1', cScaleLabel5: '#ffffff'
+            }
+        });
+    </script>
+</body>
+
+</html>

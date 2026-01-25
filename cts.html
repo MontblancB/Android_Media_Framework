@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google CTS Testing Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #ef4444;
+            --accent-secondary: #f87171;
+            --accent-tertiary: #fca5a5;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0a0a 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(248, 113, 113, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(239, 68, 68, 0.3);
+            box-shadow: 0 10px 40px rgba(239, 68, 68, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(239, 68, 68, 0.4);
+            box-shadow: 0 5px 20px rgba(239, 68, 68, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-secondary);
+            font-size: 0.9em;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(248, 113, 113, 0.1));
+            border-left: 4px solid var(--accent-primary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-primary);
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.1));
+            border-left: 4px solid var(--accent-warning);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .warning-box strong {
+            color: var(--accent-warning);
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.1));
+            border-left: 4px solid var(--accent-success);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .success-box strong {
+            color: var(--accent-success);
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>✅ Google CTS</h1>
+            <p class="subtitle">Android Compatibility Test Suite</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overview: CTS란?
+            </h2>
+            <p class="section-description">
+                CTS (Compatibility Test Suite)는 Android 디바이스가 플랫폼 호환성 요구사항을 충족하는지 검증하는 무료 테스트 도구입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        주요 목적
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>플랫폼 호환성 보장</strong></p>
+                        <ul>
+                            <li>일관된 앱 동작 보장</li>
+                            <li>Android API 정확한 구현 검증</li>
+                            <li>조기 비호환성 발견</li>
+                            <li>GMS 인증 필수 요건</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        호환성 요구사항
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Android 호환 디바이스 조건</strong></p>
+                        <ul>
+                            <li>CDD (Compatibility Definition Document) 준수</li>
+                            <li>모든 CTS 테스트 통과</li>
+                            <li>User Build에서 실행</li>
+                            <li>다중 ABI 지원 시 모든 ABI 테스트</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        테스트 프레임워크
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>자동화된 테스트 하네스</strong></p>
+                        <ul>
+                            <li>Desktop에서 실행되는 Test Harness</li>
+                            <li>디바이스에서 실행되는 Test Cases</li>
+                            <li>JUnit 기반 Java 테스트</li>
+                            <li>APK 형태로 패키징</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        GMS 인증
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Google Mobile Services</strong></p>
+                        <ul>
+                            <li>Play Store, Gmail, YouTube 사전 설치</li>
+                            <li>CTS 통과 필수</li>
+                            <li>상용 디바이스 필수 요건</li>
+                            <li>사용자 경험 일관성</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Test Categories -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                CTS 테스트 카테고리
+            </h2>
+            <p class="section-description">
+                CTS는 Android 플랫폼의 다양한 영역을 포괄하는 광범위한 테스트를 포함합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    CTS[CTS Test Suite]
+
+                    CTS --> API[API Compatibility<br />Testing]
+                    CTS --> SYSTEM[System Behavior<br />Testing]
+                    CTS --> HW[Hardware Functionality<br />Testing]
+                    CTS --> UI[User Interface<br />Testing]
+                    CTS --> APP[Application Compatibility<br />Testing]
+                    CTS --> NET[Network & Connectivity<br />Testing]
+
+                    API --> API1[Signature Tests]
+                    API --> API2[Platform API Tests]
+                    API --> API3[Core Libraries]
+
+                    SYSTEM --> SYS1[Power Management]
+                    SYSTEM --> SYS2[Memory Management]
+                    SYSTEM --> SYS3[Process Lifecycle]
+
+                    HW --> HW1[Camera]
+                    HW --> HW2[Sensors]
+                    HW --> HW3[Audio/Video]
+
+                    UI --> UI1[Layout & Navigation]
+                    UI --> UI2[Touchscreen]
+                    UI --> UI3[Input Devices]
+
+                    APP --> APP1[Third-party Apps]
+                    APP --> APP2[Screen Sizes]
+                    APP --> APP3[Resolutions]
+
+                    NET --> NET1[Wi-Fi]
+                    NET --> NET2[Bluetooth]
+                    NET --> NET3[Mobile Networks]
+
+                    style CTS fill:#1a1f35,stroke:#ef4444,stroke-width:3px
+                    style API fill:#1a1f35,stroke:#f87171,stroke-width:2px
+                    style SYSTEM fill:#1a1f35,stroke:#f87171,stroke-width:2px
+                    style HW fill:#1a1f35,stroke:#f87171,stroke-width:2px
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 테스트 유형
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔬</span>
+                        Unit Tests
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>원자적 코드 단위 검증</strong></p>
+                        <ul>
+                            <li>단일 클래스 테스트</li>
+                            <li>메서드 동작 검증</li>
+                            <li>에러 처리 확인</li>
+                            <li>격리된 환경에서 실행</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Functional Tests
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>API 조합 테스트</strong></p>
+                        <ul>
+                            <li>상위 레벨 유스케이스</li>
+                            <li>API 간 상호작용</li>
+                            <li>통합 시나리오</li>
+                            <li>실제 사용 패턴</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💪</span>
+                        Robustness Tests
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>시스템 내구성 평가</strong></p>
+                        <ul>
+                            <li>스트레스 테스트</li>
+                            <li>예외 상황 처리</li>
+                            <li>리소스 부족 시나리오</li>
+                            <li>장시간 안정성</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Performance Tests
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>성능 벤치마크</strong></p>
+                        <ul>
+                            <li>FPS 렌더링 측정</li>
+                            <li>응답 시간 검증</li>
+                            <li>처리량 평가</li>
+                            <li>성능 기준 충족</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Media CTS Tests -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                미디어 CTS 테스트
+            </h2>
+            <p class="section-description">
+                MediaCodec, MediaExtractor, MediaPlayer 등 미디어 프레임워크 컴포넌트에 대한 CTS 테스트를 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                🎬 MediaCodec CTS
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        코덱 기능 테스트
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>인코딩/디코딩 검증</strong></p>
+                        <ul>
+                            <li>MediaCodecList의 모든 코덱 테스트</li>
+                            <li>다양한 해상도 (720p, QCIF, QVGA)</li>
+                            <li>프로파일 및 레벨 지원</li>
+                            <li>색상 포맷 처리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        성능 및 Capabilities
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaCodecCapabilities 검증</strong></p>
+                        <ul>
+                            <li>지원 해상도 범위</li>
+                            <li>비트레이트 범위</li>
+                            <li>프레임레이트 범위</li>
+                            <li>성능 클래스 요구사항</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        비동기 모드
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Callback 기반 처리</strong></p>
+                        <ul>
+                            <li>onInputBufferAvailable</li>
+                            <li>onOutputBufferAvailable</li>
+                            <li>onError 처리</li>
+                            <li>onOutputFormatChanged</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📹</span>
+                        테스트 벡터
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>표준 미디어 파일</strong></p>
+                        <ul>
+                            <li>Big Buck Bunny (8-bit)</li>
+                            <li>Cosmos Laundromat (10-bit)</li>
+                            <li>다양한 코덱 및 포맷</li>
+                            <li>자동 다운로드</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📦 MediaExtractor CTS
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📂</span>
+                        데이터 소스 처리
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>파일 경로 (File Path)</li>
+                            <li>HTTP URL</li>
+                            <li>FileDescriptor</li>
+                            <li>MediaDataSource</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        트랙 선택 및 포맷
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>트랙 개수 확인</li>
+                            <li>MediaFormat 정보 검증</li>
+                            <li>MIME 타입 확인</li>
+                            <li>트랙 선택/해제</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        샘플 추출
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>샘플 데이터 읽기</li>
+                            <li>Presentation Time 검증</li>
+                            <li>트랙 인덱스 확인</li>
+                            <li>플래그 (SYNC, ENCRYPTED)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        DRM 지원
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>PSSH 정보 추출</li>
+                            <li>암호화된 샘플 처리</li>
+                            <li>DRM 스킴 확인</li>
+                            <li>보호된 콘텐츠 테스트</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ▶️ MediaPlayer CTS
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        생명주기 관리
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>create() → start() → pause()</li>
+                            <li>stop() → reset() → release()</li>
+                            <li>상태 전환 검증</li>
+                            <li>잘못된 상태 처리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎮</span>
+                        재생 제어
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>start/pause/stop</li>
+                            <li>seekTo() 정확도</li>
+                            <li>재생 속도 제어</li>
+                            <li>루핑 기능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎭</span>
+                        A/V 동기화
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>오디오-비디오 싱크</li>
+                            <li>립싱크 허용 오차</li>
+                            <li>타임스탬프 정확도</li>
+                            <li>드리프트 보정</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📢</span>
+                        이벤트 처리
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>OnCompletionListener</li>
+                            <li>OnErrorListener</li>
+                            <li>OnSeekCompleteListener</li>
+                            <li>OnInfoListener</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: xTS Comparison -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                xTS 비교: CTS vs VTS vs GTS
+            </h2>
+            <p class="section-description">
+                Android 인증 프로세스에서 사용되는 세 가지 주요 테스트 스위트를 비교합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph CTS_BOX ["CTS - Compatibility Test Suite"]
+                    CTS_DESC[플랫폼 호환성<br />Framework APIs<br />앱 호환성]
+                    end
+
+                    subgraph VTS_BOX ["VTS - Vendor Test Suite"]
+                    VTS_DESC[HAL 구현<br />커널 테스트<br />하드웨어 호환성]
+                    end
+
+                    subgraph GTS_BOX ["GTS - GMS Test Suite"]
+                    GTS_DESC[GMS 앱 호환성<br />Google Play Services<br />멀티미디어 성능]
+                    end
+
+                    DEVICE[Android Device] --> CTS_BOX
+                    DEVICE --> VTS_BOX
+                    DEVICE --> GTS_BOX
+
+                    CTS_BOX --> CERT[GMS Certification]
+                    VTS_BOX --> CERT
+                    GTS_BOX --> CERT
+
+                    CERT --> GMS[Google Mobile Services<br />Play Store, Gmail, YouTube]
+
+                    style CTS_BOX fill:#1a1f35,stroke:#ef4444,stroke-width:2px
+                    style VTS_BOX fill:#1a1f35,stroke:#f59e0b,stroke-width:2px
+                    style GTS_BOX fill:#1a1f35,stroke:#10b981,stroke-width:2px
+                    style CERT fill:#1a1f35,stroke:#fca5a5,stroke-width:3px
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        CTS
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Compatibility Test Suite</strong></p>
+                        <ul>
+                            <li><strong>목적</strong>: Android 플랫폼 호환성</li>
+                            <li><strong>대상</strong>: Framework APIs, 시스템 동작</li>
+                            <li><strong>언어</strong>: Java (JUnit)</li>
+                            <li><strong>실행</strong>: APK 형태로 디바이스에서</li>
+                            <li><strong>범위</strong>: 앱 레벨 호환성</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        VTS
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Vendor Test Suite</strong></p>
+                        <ul>
+                            <li><strong>목적</strong>: 벤더 구현 검증</li>
+                            <li><strong>대상</strong>: HAL, 커널, VNDK</li>
+                            <li><strong>언어</strong>: C++ (GTest), Python</li>
+                            <li><strong>실행</strong>: 디바이스 네이티브</li>
+                            <li><strong>범위</strong>: 하드웨어 레벨 호환성</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        GTS
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>GMS Test Suite</strong></p>
+                        <ul>
+                            <li><strong>목적</strong>: GMS 라이선스 획득</li>
+                            <li><strong>대상</strong>: Google 앱 및 서비스</li>
+                            <li><strong>언어</strong>: Java, 다양</li>
+                            <li><strong>실행</strong>: GMS 앱 테스트</li>
+                            <li><strong>범위</strong>: Google 생태계 통합</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>💡 xTS 통과 필수:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>상용 Android 디바이스는 CTS, VTS, GTS 모두 통과해야 GMS 인증 획득</li>
+                    <li>CTS는 앱 호환성, VTS는 하드웨어 호환성, GTS는 Google 서비스 통합 검증</li>
+                    <li>각 테스트 스위트는 서로 보완적이며 전체 시스템 품질 보장</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 5: Certification Process -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                인증 프로세스
+            </h2>
+            <p class="section-description">
+                Android 디바이스가 GMS 인증을 받기 위한 전체 프로세스를 설명합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant OEM as OEM/ODM
+                    participant DEV as Device Under Test
+                    participant HARNESS as Test Harness
+                    participant GOOGLE as Google
+
+                    OEM->>DEV: CDD 요구사항 구현
+                    OEM->>DEV: User Build 생성
+
+                    OEM->>HARNESS: CTS 실행 시작
+                    HARNESS->>DEV: APK 푸시
+                    HARNESS->>DEV: 테스트 실행
+                    DEV-->>HARNESS: 테스트 결과
+                    HARNESS->>HARNESS: XML 리포트 생성
+
+                    OEM->>HARNESS: VTS 실행 시작
+                    HARNESS->>DEV: HAL 테스트 실행
+                    DEV-->>HARNESS: 테스트 결과
+
+                    OEM->>HARNESS: GTS 실행 시작
+                    HARNESS->>DEV: GMS 앱 테스트
+                    DEV-->>HARNESS: 테스트 결과
+
+                    alt 모든 테스트 통과
+                    OEM->>GOOGLE: 테스트 리포트 제출
+                    GOOGLE->>GOOGLE: 결과 검토
+                    GOOGLE-->>OEM: GMS 인증 승인
+                    OEM->>DEV: GMS 앱 사전 설치
+                    else 테스트 실패
+                    HARNESS-->>OEM: 실패 리포트
+                    OEM->>DEV: 문제 수정
+                    OEM->>HARNESS: 재테스트
+                    end
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📝 인증 단계
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        CDD 준수
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Compatibility Definition Document</strong></p>
+                        <ul>
+                            <li>소프트웨어 요구사항 구현</li>
+                            <li>하드웨어 기능 구현</li>
+                            <li>성능 기준 충족</li>
+                            <li>보안 요구사항 준수</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        xTS 실행
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>테스트 스위트 실행</strong></p>
+                        <ul>
+                            <li>CTS: 플랫폼 호환성</li>
+                            <li>VTS: 벤더 구현</li>
+                            <li>GTS: GMS 통합</li>
+                            <li>연속적인 자가 테스트</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">3️⃣</span>
+                        결과 제출
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Google에 리포트 제출</strong></p>
+                        <ul>
+                            <li>XML 테스트 리포트</li>
+                            <li>압축된 결과 디렉토리</li>
+                            <li>디바이스 정보</li>
+                            <li>빌드 정보</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">4️⃣</span>
+                        GMS 승인
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>인증 획득</strong></p>
+                        <ul>
+                            <li>Google 검토 및 승인</li>
+                            <li>GMS 라이선스 발급</li>
+                            <li>Google 앱 사전 설치 권한</li>
+                            <li>상용 출시 가능</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ 인증 성공 시 혜택:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Play Store, Gmail, YouTube 등 Google 앱 사전 설치 가능</li>
+                    <li>Google Play Services API 사용 가능</li>
+                    <li>Android 브랜드 및 로고 사용 권한</li>
+                    <li>사용자에게 일관된 Android 경험 제공</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 6: CTS Execution -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                CTS 실행 방법
+            </h2>
+            <p class="section-description">
+                CTS 테스트를 실행하고 결과를 분석하는 방법을 설명합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💻</span>
+                        환경 준비
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>필수 요구사항</strong></p>
+                        <ul>
+                            <li>Desktop (Windows/Ubuntu)</li>
+                            <li>CTS 패키지 다운로드</li>
+                            <li>ADB (Android Debug Bridge)</li>
+                            <li>User Build 디바이스</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">▶️</span>
+                        실행 명령
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>CTS 실행</strong></p>
+                        <ul>
+                            <li><code>./cts-tradefed</code>: 하네스 시작</li>
+                            <li><code>run cts</code>: 전체 테스트</li>
+                            <li><code>run cts --module [name]</code>: 특정 모듈</li>
+                            <li><code>run cts --plan [name]</code>: 테스트 플랜</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        결과 분석
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>리포트 확인</strong></p>
+                        <ul>
+                            <li>XML 리포트 생성</li>
+                            <li>브라우저에서 확인 가능</li>
+                            <li>모듈별 통과/실패 상태</li>
+                            <li>실패 원인 로그</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        재테스트
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>실패 케이스 재실행</strong></p>
+                        <ul>
+                            <li><code>run retry</code>: 실패 케이스만</li>
+                            <li>문제 수정 후 재실행</li>
+                            <li>부분 테스트 가능</li>
+                            <li>연속 통합 지원</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ 주의사항:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>CTS는 User Build에서만 실행 (eng/userdebug 빌드 불가)</li>
+                    <li>테스트 실행 시간이 매우 길 수 있음 (수 시간~수일)</li>
+                    <li>디바이스는 충전 상태 유지 필요</li>
+                    <li>네트워크 연결 필요 (테스트 벡터 다운로드)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Google CTS Testing Framework</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                Android Compatibility Test Suite
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-primary); text-decoration: none;">
+                    ← AOSP Media Framework로 돌아가기
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#ef4444',
+                lineColor: '#f87171',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#0a0e1a',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                border1: '#ef4444',
+                border2: '#f87171',
+                note: '#fca5a5',
+                noteBkgColor: 'rgba(239, 68, 68, 0.1)',
+                noteBorderColor: '#ef4444',
+                fontFamily: 'Noto Sans KR'
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 50
+            },
+            sequence: {
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35
+            }
+        });
+
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+</body>
+
+</html>

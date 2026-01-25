@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widevine DRM 아키텍처 상세 시각화</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7c3aed;
+            --accent-tertiary: #ec4899;
+            --accent-security: #10b981;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glow-color: rgba(0, 212, 255, 0.3);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f2e 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        /* Header Styles */
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.05) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        /* Diagram Container */
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(0, 212, 255, 0.4);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.15);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        /* Code styling */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 212, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-primary);
+            font-size: 0.9em;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(0, 212, 255, 0.2));
+            color: var(--accent-primary);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .comparison-table td {
+            background: var(--bg-secondary);
+        }
+
+        .comparison-table tr:hover td {
+            background: var(--bg-card-hover);
+        }
+
+        /* Security Level Badges */
+        .security-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 4px;
+        }
+
+        .security-l1 {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(0, 212, 255, 0.2));
+            color: var(--accent-security);
+            border: 2px solid var(--accent-security);
+        }
+
+        .security-l2 {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(124, 58, 237, 0.2));
+            color: #fbbf24;
+            border: 2px solid #fbbf24;
+        }
+
+        .security-l3 {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(236, 72, 153, 0.2));
+            color: #ef4444;
+            border: 2px solid #ef4444;
+        }
+
+        /* Tag Styles */
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 4px;
+        }
+
+        .tag-tee {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(0, 212, 255, 0.2));
+            color: var(--accent-security);
+            border: 1px solid var(--accent-security);
+        }
+
+        .tag-software {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .subtitle {
+                font-size: 1.1rem;
+            }
+
+            .section {
+                padding: 25px;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scroll Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--accent-secondary), var(--accent-tertiary));
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>🔒 Widevine DRM</h1>
+            <p class="subtitle">Google Widevine Digital Rights Management 아키텍처 상세 시각화</p>
+        </header>
+
+        <!-- Section 1: Widevine Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Widevine DRM 개요
+            </h2>
+            <p class="section-description">
+                Widevine은 Google이 소유한 디지털 저작권 관리(DRM) 시스템으로,
+                스트리밍 서비스에서 프리미엄 콘텐츠를 보호하는 데 널리 사용됩니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        주요 목적
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>저작권 보호된 비디오 콘텐츠 보안</li>
+                            <li>불법 복제 및 화면 캡처 방지</li>
+                            <li>HD/4K 콘텐츠 스트리밍 보호</li>
+                            <li>다양한 플랫폼 지원 (Web, Android, iOS 등)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏢</span>
+                        주요 사용처
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Netflix</strong>: HD/4K 스트리밍</li>
+                            <li><strong>Amazon Prime Video</strong>: 프리미엄 콘텐츠</li>
+                            <li><strong>Disney+</strong>: HDR 콘텐츠</li>
+                            <li><strong>YouTube</strong>: 유료 콘텐츠</li>
+                            <li><strong>Spotify</strong>: 오디오 DRM</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        보안 레벨
+                    </h3>
+                    <div class="card-description">
+                        <p>Widevine은 3가지 보안 레벨을 제공:</p>
+                        <ul>
+                            <li><span class="security-badge security-l1">L1</span> 최고 보안 (하드웨어 TEE)</li>
+                            <li><span class="security-badge security-l2">L2</span> 중간 보안 (부분 TEE)</li>
+                            <li><span class="security-badge security-l3">L3</span> 기본 보안 (소프트웨어)</li>
+                        </ul>
+                        <p style="margin-top: 10px; font-size: 0.9em;">
+                            레벨에 따라 재생 가능한 화질이 제한됩니다.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        핵심 컴포넌트
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>CDM</strong>: Content Decryption Module</li>
+                            <li><strong>OEMCrypto</strong>: 하드웨어 암호화 모듈</li>
+                            <li><strong>License Server</strong>: 라이선스 발급 서버</li>
+                            <li><strong>EME</strong>: Encrypted Media Extensions (Web)</li>
+                            <li><strong>MediaDrm</strong>: Android DRM API</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Security Levels -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                보안 레벨 (L1, L2, L3)
+            </h2>
+            <p class="section-description">
+                Widevine의 보안 레벨은 하드웨어 기반 보안(TEE) 사용 여부에 따라 구분되며,
+                각 레벨마다 재생 가능한 콘텐츠 화질이 다릅니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph L1["Security Level 1 (최고 보안)"]
+                    L1_TEE["Trusted Execution Environment<br />(ARM TrustZone)"]
+                    L1_CRYPT["암호화 작업<br />(TEE 내부)"]
+                    L1_DEC["비디오 디코딩<br />(TEE 내부)"]
+                    L1_RENDER["렌더링<br />(하드웨어 보호)"]
+                    L1_OUT["출력: HD/4K/HDR"]
+                    end
+
+                    subgraph L2["Security Level 2 (중간 보안)"]
+                    L2_TEE["Trusted Execution Environment"]
+                    L2_CRYPT["암호화 작업<br />(TEE 내부)"]
+                    L2_DEC["비디오 디코딩<br />(TEE 외부)"]
+                    L2_OUT["출력: ~540p"]
+                    end
+
+                    subgraph L3["Security Level 3 (기본 보안)"]
+                    L3_SW["소프트웨어 DRM<br />(TEE 없음)"]
+                    L3_CRYPT["암호화 작업<br />(사용자 공간)"]
+                    L3_DEC["비디오 디코딩<br />(소프트웨어)"]
+                    L3_OUT["출력: SD (480p)"]
+                    end
+
+                    L1_TEE --> L1_CRYPT --> L1_DEC --> L1_RENDER --> L1_OUT
+                    L2_TEE --> L2_CRYPT --> L2_DEC --> L2_OUT
+                    L3_SW --> L3_CRYPT --> L3_DEC --> L3_OUT
+
+                    style L1 fill:#1a1f35,stroke:#10b981,stroke-width:3px
+                    style L2 fill:#1a1f35,stroke:#fbbf24,stroke-width:2px
+                    style L3 fill:#1a1f35,stroke:#ef4444,stroke-width:2px
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 보안 레벨 상세 비교
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>항목</th>
+                        <th>L1 (최고)</th>
+                        <th>L2 (중간)</th>
+                        <th>L3 (기본)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>암호화 작업</strong></td>
+                        <td>TEE 내부</td>
+                        <td>TEE 내부</td>
+                        <td>사용자 공간 (소프트웨어)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>비디오 디코딩</strong></td>
+                        <td>TEE 내부</td>
+                        <td>TEE 외부</td>
+                        <td>사용자 공간 (소프트웨어)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>렌더링</strong></td>
+                        <td>하드웨어 보호</td>
+                        <td>소프트웨어/하드웨어</td>
+                        <td>소프트웨어</td>
+                    </tr>
+                    <tr>
+                        <td><strong>최대 화질</strong></td>
+                        <td>4K UHD, HDR</td>
+                        <td>~540p</td>
+                        <td>SD (480p)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>화면 캡처 방지</strong></td>
+                        <td>완벽 차단</td>
+                        <td>부분 차단</td>
+                        <td>제한적</td>
+                    </tr>
+                    <tr>
+                        <td><strong>하드웨어 요구사항</strong></td>
+                        <td>TEE 필수 (ARM TrustZone)</td>
+                        <td>부분 TEE</td>
+                        <td>없음 (모든 기기)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>보안 취약점</strong></td>
+                        <td>매우 낮음</td>
+                        <td>중간</td>
+                        <td>상대적으로 높음</td>
+                    </tr>
+                    <tr>
+                        <td><strong>주요 사용 기기</strong></td>
+                        <td>플래그십 스마트폰, 인증된 기기</td>
+                        <td>드물음</td>
+                        <td>엔트리 레벨 기기, 루팅된 기기</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Android 통합</strong></td>
+                        <td>Stagefright + TrustZone</td>
+                        <td>부분 통합</td>
+                        <td>소프트웨어 DRM만</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="content-grid" style="margin-top: 40px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        🏆 Level 1 (L1)
+                        <span class="tag tag-tee">TEE</span>
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>완전한 하드웨어 보호</strong></p>
+                        <ul>
+                            <li>모든 처리가 TEE 내부에서 진행</li>
+                            <li>복호화 키가 절대 노출되지 않음</li>
+                            <li>ARM TrustZone 활용</li>
+                            <li>Netflix, Disney+ 4K 재생 가능</li>
+                            <li>Google 인증 필수</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        ⚠️ Level 2 (L2)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>부분 하드웨어 보호</strong></p>
+                        <ul>
+                            <li>암호화만 TEE에서 처리</li>
+                            <li>디코딩은 TEE 외부</li>
+                            <li>시장에서 드물게 사용</li>
+                            <li>중간 화질 제한 (540p)</li>
+                            <li>과도기적 솔루션</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        ⛔ Level 3 (L3)
+                        <span class="tag tag-software">Software</span>
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>소프트웨어 전용 보호</strong></p>
+                        <ul>
+                            <li>TEE 없이 소프트웨어로만 동작</li>
+                            <li>메모리 덤프 공격에 취약</li>
+                            <li>모든 Android 기기 호환</li>
+                            <li>SD 화질 제한 (480p)</li>
+                            <li>루팅된 기기는 L3로 강등</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Widevine Architecture -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Widevine 아키텍처
+            </h2>
+            <p class="section-description">
+                Widevine DRM의 전체 아키텍처는 CDM, OEMCrypto, 라이선스 서버로 구성됩니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP["Application Layer"]
+                    PLAYER["Media Player<br />(ExoPlayer/HTML5)"]
+                    end
+
+                    subgraph DRM_API["DRM API Layer"]
+                    EME["EME (Web)<br />Encrypted Media Extensions"]
+                    MEDIADRM["MediaDrm (Android)<br />DRM Framework"]
+                    end
+
+                    subgraph CDM["Widevine CDM"]
+                    CDM_CORE["CDM Core"]
+                    CDM_SESSION["Session Manager"]
+                    CDM_PARSER["PSSH Parser"]
+                    end
+
+                    subgraph CRYPTO["Crypto Layer"]
+                    OEMCRYPTO["OEMCrypto Module"]
+                    TEE["Trusted Execution Environment<br />(TrustZone)"]
+                    KEYS["Key Storage<br />(Secure)"]
+                    end
+
+                    subgraph SERVER["License Server"]
+                    LICENSE_SRV["Widevine License Server"]
+                    AUTH["Authentication"]
+                    KEY_GEN["Key Generation"]
+                    end
+
+                    subgraph MEDIA["Media Pipeline"]
+                    DEMUX["Demuxer<br />(Encrypted Content)"]
+                    DECRYPT["Decryptor"]
+                    DECODER["Decoder"]
+                    RENDER["Renderer"]
+                    end
+
+                    PLAYER --> EME & MEDIADRM
+                    EME & MEDIADRM --> CDM_CORE
+                    CDM_CORE --> CDM_SESSION & CDM_PARSER
+                    CDM_SESSION -->|License Request| LICENSE_SRV
+                    LICENSE_SRV --> AUTH --> KEY_GEN
+                    KEY_GEN -->|Encrypted License| CDM_SESSION
+                    CDM_SESSION --> OEMCRYPTO
+                    OEMCRYPTO --> TEE
+                    TEE --> KEYS
+
+                    DEMUX --> DECRYPT
+                    DECRYPT --> OEMCRYPTO
+                    DECRYPT --> DECODER --> RENDER
+
+                    style APP fill:#1a1f35,stroke:#00d4ff,stroke-width:2px
+                    style DRM_API fill:#1a1f35,stroke:#00d4ff,stroke-width:2px
+                    style CDM fill:#1a1f35,stroke:#7c3aed,stroke-width:3px
+                    style CRYPTO fill:#1a1f35,stroke:#10b981,stroke-width:3px
+                    style SERVER fill:#1a1f35,stroke:#ec4899,stroke-width:2px
+                    style MEDIA fill:#1a1f35,stroke:#fbbf24,stroke-width:2px
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        CDM (Content Decryption Module)
+                    </h3>
+                    <div class="card-description">
+                        <p>Widevine 핵심 컴포넌트</p>
+                        <ul>
+                            <li>라이선스 요청 생성</li>
+                            <li>PSSH (Protection System Specific Header) 파싱</li>
+                            <li>세션 관리 (Temporary/Persistent)</li>
+                            <li>OEMCrypto와 통신하여 복호화</li>
+                            <li>브라우저/앱 샌드박스 내에서 동작</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        OEMCrypto Module
+                    </h3>
+                    <div class="card-description">
+                        <p>하드웨어 보안 모듈</p>
+                        <ul>
+                            <li>TEE(Trusted Execution Environment) 내에서 실행</li>
+                            <li>복호화 키 관리 및 저장</li>
+                            <li>암호화된 콘텐츠 복호화</li>
+                            <li>서명 키 검증</li>
+                            <li>하드웨어 기반 보안 제공 (L1)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        EME (Web)
+                    </h3>
+                    <div class="card-description">
+                        <p>웹 브라우저 DRM API</p>
+                        <ul>
+                            <li>W3C 표준 (<code>navigator.requestMediaKeySystemAccess()</code>)</li>
+                            <li>MediaKeys 객체 생성</li>
+                            <li>MediaKeySession 관리</li>
+                            <li>암호화된 미디어 재생 지원</li>
+                            <li>Chrome, Firefox, Safari 지원</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        MediaDrm (Android)
+                    </h3>
+                    <div class="card-description">
+                        <p>Android DRM 프레임워크</p>
+                        <ul>
+                            <li><code>android.media.MediaDrm</code> API</li>
+                            <li>DRM 플러그인 아키텍처</li>
+                            <li>UUID 기반 DRM 스킴 식별</li>
+                            <li>CryptoHal/DrmHal (AIDL)</li>
+                            <li>ExoPlayer, MediaPlayer 통합</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔑</span>
+                        License Server
+                    </h3>
+                    <div class="card-description">
+                        <p>Widevine 라이선스 발급</p>
+                        <ul>
+                            <li>클라이언트 인증</li>
+                            <li>콘텐츠 키 생성 및 암호화</li>
+                            <li>라이선스 정책 적용 (만료 시간, 재생 횟수)</li>
+                            <li>기기 프로비저닝</li>
+                            <li>Google 또는 타사 라이선스 서버</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        TEE (TrustZone)
+                    </h3>
+                    <div class="card-description">
+                        <p>신뢰 실행 환경</p>
+                        <ul>
+                            <li>ARM TrustZone 기술</li>
+                            <li>격리된 보안 영역</li>
+                            <li>루트 공격으로부터 보호</li>
+                            <li>Secure World / Normal World 분리</li>
+                            <li>하드웨어 기반 키 저장소</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: License Acquisition Flow -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                라이선스 획득 플로우
+            </h2>
+            <p class="section-description">
+                Widevine 라이선스를 획득하고 콘텐츠를 재생하는 전체 과정을 시각화합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant APP as Media Player
+                    participant EME as EME/MediaDrm API
+                    participant CDM as Widevine CDM
+                    participant LS as License Server
+                    participant OEM as OEMCrypto
+                    participant TEE as TrustZone (TEE)
+
+                    APP->>EME: 암호화된 미디어 감지
+                    EME->>EME: 'encrypted' 이벤트 발생
+                    APP->>EME: requestMediaKeySystemAccess()
+                    EME-->>APP: MediaKeys 객체 생성
+
+                    APP->>CDM: createSession()
+                    CDM->>CDM: Session 생성
+                    APP->>CDM: generateRequest(initData)
+                    CDM->>CDM: PSSH 파싱
+                    CDM-->>APP: 'message' 이벤트<br />(License Request)
+
+                    APP->>LS: XHR/Fetch<br />(License Request)
+                    LS->>LS: 클라이언트 인증
+                    LS->>LS: 콘텐츠 키 생성
+                    LS-->>APP: Encrypted License
+
+                    APP->>CDM: update(license)
+                    CDM->>OEM: 라이선스 전달
+                    OEM->>TEE: 키 저장 (Secure Storage)
+                    TEE-->>OEM: 저장 완료
+                    OEM-->>CDM: 준비 완료
+                    CDM-->>APP: 재생 가능
+
+                    loop 콘텐츠 재생
+                    APP->>CDM: 암호화된 청크
+                    CDM->>OEM: 복호화 요청
+                    OEM->>TEE: 키 로드 및 복호화
+                    TEE-->>OEM: 복호화된 데이터
+                    OEM-->>CDM: 복호화된 데이터
+                    CDM-->>APP: 재생용 데이터
+                    APP->>APP: 디코딩 및 렌더링
+                    end
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 30px; margin-bottom: 15px;">
+                📋 단계별 상세 설명
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">1️⃣ 미디어 감지</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>HTML5 <code>&lt;video&gt;</code> 또는 앱이 암호화된 미디어 로드</li>
+                            <li><code>encrypted</code> 이벤트 발생</li>
+                            <li>initData에 PSSH 정보 포함</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">2️⃣ Key System 선택</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>navigator.requestMediaKeySystemAccess()</code></li>
+                            <li>"com.widevine.alpha" 선택</li>
+                            <li>MediaKeys 객체 생성</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">3️⃣ 세션 생성</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>MediaKeySession 객체 생성</li>
+                            <li>세션 타입: "temporary" 또는 "persistent"</li>
+                            <li><code>generateRequest(initData)</code> 호출</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">4️⃣ 라이선스 요청</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>CDM이 라이선스 요청 메시지 생성</li>
+                            <li><code>message</code> 이벤트로 앱에 전달</li>
+                            <li>앱이 License Server로 XHR 전송</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">5️⃣ 라이선스 발급</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>License Server가 클라이언트 인증</li>
+                            <li>콘텐츠 키 생성 및 암호화</li>
+                            <li>암호화된 라이선스 응답</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">6️⃣ 키 프로비저닝</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>session.update(license)</code> 호출</li>
+                            <li>CDM이 OEMCrypto로 라이선스 전달</li>
+                            <li>TEE에 복호화 키 안전하게 저장</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">7️⃣ 콘텐츠 복호화</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>암호화된 미디어 청크를 CDM에 전달</li>
+                            <li>OEMCrypto가 TEE 내에서 복호화</li>
+                            <li>복호화된 데이터를 플레이어에 반환</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">8️⃣ 재생</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>디코더가 복호화된 데이터 처리</li>
+                            <li>렌더러가 화면에 출력</li>
+                            <li>A/V 동기화 유지</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Android Integration -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Android 통합
+            </h2>
+            <p class="section-description">
+                Widevine이 Android Media Framework와 어떻게 통합되는지 보여줍니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP_LAYER["Application Layer"]
+                    EXOPLAYER["ExoPlayer / MediaPlayer"]
+                    end
+
+                    subgraph FRAMEWORK["Android Framework"]
+                    MEDIADRM["MediaDrm API"]
+                    MEDIACRYPTO["MediaCrypto"]
+                    MEDIACODEC["MediaCodec"]
+                    end
+
+                    subgraph NATIVE["Native Layer"]
+                    LIBMEDIADRM["libmediadrm"]
+                    DRMHAL["DrmHal (AIDL)"]
+                    CRYPTOHAL["CryptoHal (AIDL)"]
+                    end
+
+                    subgraph VENDOR["Vendor Layer"]
+                    WIDEVINE_PLUGIN["Widevine Plugin"]
+                    CDM_LIB["libwvdrmengine.so"]
+                    OEMCRYPTO_LIB["liboemcrypto.so"]
+                    end
+
+                    subgraph SECURE["Secure World"]
+                    TEE_OS["TEE OS (TrustZone)"]
+                    TRUSTLET["Widevine Trustlet"]
+                    KEY_STORE["Secure Key Storage"]
+                    end
+
+                    EXOPLAYER --> MEDIADRM
+                    EXOPLAYER --> MEDIACRYPTO
+                    MEDIACRYPTO --> MEDIACODEC
+                    MEDIADRM --> LIBMEDIADRM
+                    LIBMEDIADRM --> DRMHAL & CRYPTOHAL
+                    DRMHAL --> WIDEVINE_PLUGIN
+                    CRYPTOHAL --> WIDEVINE_PLUGIN
+                    WIDEVINE_PLUGIN --> CDM_LIB
+                    CDM_LIB --> OEMCRYPTO_LIB
+                    OEMCRYPTO_LIB --> TEE_OS
+                    TEE_OS --> TRUSTLET
+                    TRUSTLET --> KEY_STORE
+
+                    style APP_LAYER fill:#1a1f35,stroke:#00d4ff,stroke-width:2px
+                    style FRAMEWORK fill:#1a1f35,stroke:#00d4ff,stroke-width:2px
+                    style NATIVE fill:#1a1f35,stroke:#7c3aed,stroke-width:2px
+                    style VENDOR fill:#1a1f35,stroke:#ec4899,stroke-width:2px
+                    style SECURE fill:#1a1f35,stroke:#10b981,stroke-width:3px
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Application Layer
+                    </h3>
+                    <div class="card-description">
+                        <p>앱에서 사용하는 미디어 플레이어</p>
+                        <ul>
+                            <li><strong>ExoPlayer</strong>: Google 권장, DRM 완벽 지원</li>
+                            <li><strong>MediaPlayer</strong>: 시스템 기본 플레이어</li>
+                            <li>MediaDrm API로 라이선스 관리</li>
+                            <li>MediaCrypto로 복호화 연결</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        Framework Layer
+                    </h3>
+                    <div class="card-description">
+                        <p>Android DRM 프레임워크</p>
+                        <ul>
+                            <li><code>android.media.MediaDrm</code>: DRM 세션 관리</li>
+                            <li><code>MediaCrypto</code>: 복호화 세션</li>
+                            <li><code>MediaCodec</code>과 통합</li>
+                            <li>UUID로 DRM 스킴 식별</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Native Layer
+                    </h3>
+                    <div class="card-description">
+                        <p>HAL 인터페이스</p>
+                        <ul>
+                            <li><code>libmediadrm</code>: 네이티브 DRM 라이브러리</li>
+                            <li><strong>DrmHal</strong>: 라이선스 관리 HAL (AIDL)</li>
+                            <li><strong>CryptoHal</strong>: 복호화 HAL (AIDL)</li>
+                            <li>Android 11+부터 AIDL 기반</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        Vendor Layer
+                    </h3>
+                    <div class="card-description">
+                        <p>Widevine 플러그인</p>
+                        <ul>
+                            <li><code>libwvdrmengine.so</code>: Widevine CDM</li>
+                            <li><code>liboemcrypto.so</code>: OEMCrypto 구현</li>
+                            <li>벤더별 커스터마이징 가능</li>
+                            <li>Google 인증 필요 (L1)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        Secure World
+                    </h3>
+                    <div class="card-description">
+                        <p>TrustZone 보안 영역</p>
+                        <ul>
+                            <li><strong>TEE OS</strong>: 신뢰 실행 환경 운영체제</li>
+                            <li><strong>Widevine Trustlet</strong>: TEE 내 Widevine 에이전트</li>
+                            <li><strong>Secure Key Storage</strong>: 하드웨어 키 저장소</li>
+                            <li>Normal World와 격리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        확인 방법
+                    </h3>
+                    <div class="card-description">
+                        <p>Android 기기의 Widevine 레벨 확인</p>
+                        <ul>
+                            <li><strong>DRM Info</strong> 앱 설치 (Play Store)</li>
+                            <li><code>MediaDrm.getPropertyString()</code> API 사용</li>
+                            <li>보안 레벨 확인: L1/L2/L3</li>
+                            <li>루팅 시 L3로 강등될 수 있음</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Security & Best Practices -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                보안 및 모범 사례
+            </h2>
+            <p class="section-description">
+                Widevine DRM을 안전하고 효과적으로 사용하기 위한 보안 고려사항과 모범 사례입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        보안 강화
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>항상 L1 레벨 기기 권장</li>
+                            <li>HTTPS로 라이선스 요청</li>
+                            <li>라이선스 만료 시간 설정</li>
+                            <li>재생 횟수 제한</li>
+                            <li>기기 프로비저닝 관리</li>
+                            <li>루팅 감지 구현</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        콘텐츠 보호
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>HD/4K 콘텐츠는 L1만 허용</li>
+                            <li>HDCP (High-bandwidth Digital Content Protection) 적용</li>
+                            <li>화면 캡처 방지 (L1)</li>
+                            <li>워터마킹 추가 고려</li>
+                            <li>저작권 정보 삽입</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        알려진 제한사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>루팅된 기기는 L3로 강등</li>
+                            <li>Custom ROM 사용 시 L3</li>
+                            <li>Bootloader 언락 시 L3</li>
+                            <li>소프트웨어 업데이트 후 레벨 변경 가능</li>
+                            <li>L3 기기는 SD 화질 제한</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        개발 권장사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>ExoPlayer 사용 권장 (Android)</li>
+                            <li>Persistent 라이선스로 오프라인 재생 지원</li>
+                            <li>라이선스 갱신 로직 구현</li>
+                            <li>에러 처리 및 폴백</li>
+                            <li>보안 레벨별 화질 조정</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        성능 최적화
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>라이선스 미리 로드 (Pre-fetch)</li>
+                            <li>세션 재사용</li>
+                            <li>하드웨어 디코더 활용</li>
+                            <li>버퍼링 최적화</li>
+                            <li>네트워크 상태에 따른 ABR</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🐛</span>
+                        디버깅 팁
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>DRM Info 앱으로 보안 레벨 확인</li>
+                            <li>Chrome DevTools의 EME 로그 활용</li>
+                            <li>Android Logcat으로 MediaDrm 로그 확인</li>
+                            <li><code>adb shell dumpsys media.drm</code></li>
+                            <li>라이선스 요청/응답 검증</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Widevine DRM Architecture Visualization</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                Google Widevine Digital Rights Management · L1/L2/L3 Security Levels
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-primary); text-decoration: none;">
+                    ← AOSP Media Framework로 돌아가기
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#00d4ff',
+                lineColor: '#7c3aed',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#0a0e1a',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                border1: '#00d4ff',
+                border2: '#7c3aed',
+                note: '#ec4899',
+                noteBkgColor: 'rgba(236, 72, 153, 0.1)',
+                noteBorderColor: '#ec4899',
+                fontFamily: 'Noto Sans KR'
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 50
+            },
+            sequence: {
+                diagramMarginX: 50,
+                diagramMarginY: 10,
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35
+            }
+        });
+
+        // Add scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+</body>
+
+</html>

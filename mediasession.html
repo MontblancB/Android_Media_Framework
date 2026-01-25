@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android MediaSession Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7c3aed;
+            --accent-tertiary: #ec4899;
+            --accent-media: #f97316;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f2e 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(249, 115, 22, 0.1);
+            border-color: var(--accent-media);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(249, 115, 22, 0.05) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-media), var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-media), var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(249, 115, 22, 0.3);
+            box-shadow: 0 10px 40px rgba(249, 115, 22, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-media);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-media), var(--accent-primary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--accent-media), var(--accent-primary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(249, 115, 22, 0.4);
+            box-shadow: 0 5px 20px rgba(249, 115, 22, 0.15);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-media);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(249, 115, 22, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-media);
+            font-size: 0.9em;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(0, 212, 255, 0.1));
+            border-left: 4px solid var(--accent-media);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-media);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .subtitle {
+                font-size: 1.1rem;
+            }
+
+            .section {
+                padding: 25px;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-media), var(--accent-primary));
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>🎵 MediaSession</h1>
+            <p class="subtitle">Android 미디어 재생 제어 프레임워크</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                MediaSession 개요
+            </h2>
+            <p class="section-description">
+                MediaSession은 Android에서 미디어 재생을 제어하고 외부에서 접근 가능하게 만드는 핵심 프레임워크입니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>MediaSession이란?</strong> 앱의 미디어 플레이어를 시스템과 외부 앱에 광고하고,
+                다양한 소스(알림, Android Auto, Google Assistant 등)로부터 재생 명령을 받아 미디어 재생을 통합 제어하는 프레임워크입니다.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        주요 목적
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>미디어 재생 상태를 시스템에 광고</li>
+                            <li>외부에서 미디어 제어 가능</li>
+                            <li>일관된 미디어 경험 제공</li>
+                            <li>백그라운드 재생 지원</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        제어 소스
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Notification</strong>: 알림 미디어 컨트롤</li>
+                            <li><strong>Android Auto</strong>: 차량 디스플레이</li>
+                            <li><strong>Wear OS</strong>: 스마트워치</li>
+                            <li><strong>Google Assistant</strong>: 음성 명령</li>
+                            <li><strong>Media Buttons</strong>: 헤드폰 버튼</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        핵심 기능
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>재생/일시정지/정지/건너뛰기</li>
+                            <li>재생 상태 및 메타데이터 전송</li>
+                            <li>큐(Queue) 관리</li>
+                            <li>미디어 버튼 이벤트 처리</li>
+                            <li>외부 컨트롤러와 통신</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📚</span>
+                        Media3 vs Legacy
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Legacy</strong>: MediaSessionCompat</li>
+                            <li><strong>Media3</strong>: androidx.media3.session</li>
+                            <li>Media3는 통합 Player 인터페이스</li>
+                            <li>ExoPlayer 기본 통합</li>
+                            <li>더 단순한 아키텍처</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                MediaSession 아키텍처
+            </h2>
+            <p class="section-description">
+                MediaSession 프레임워크는 Client-Server 구조로 미디어 앱과 외부 컨트롤러 간의 통신을 관리합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    UI["📱 UI Activity<br />(MediaBrowser + MediaController)"]
+
+                    SERVICE["🎵 MediaBrowserService / MediaSessionService<br />(Background Service)"]
+
+                    SESSION["MediaSession<br />(Hub / Middleware)"]
+
+                    PLAYER["🎶 Player<br />(ExoPlayer / MediaPlayer)"]
+
+                    EXTERNAL["External Controllers"]
+                    NOTIF["📢 Notification<br />MediaStyle"]
+                    AUTO["🚗 Android Auto"]
+                    WEAR["⌚ Wear OS"]
+                    ASSISTANT["🎤 Google Assistant"]
+                    BUTTON["🎧 Media Buttons"]
+
+                    UI -->|Browse Media| SERVICE
+                    UI -->|Control Commands| SESSION
+                    SERVICE -->|Contains| SESSION
+                    SESSION -->|Delegates| PLAYER
+
+                    NOTIF -->|Commands| SESSION
+                    AUTO -->|Commands| SESSION
+                    WEAR -->|Commands| SESSION
+                    ASSISTANT -->|Commands| SESSION
+                    BUTTON -->|Commands| SESSION
+
+                    SESSION -->|State/Metadata Updates| UI
+                    SESSION -->|State/Metadata Updates| EXTERNAL
+
+                    EXTERNAL -.->|Group| NOTIF
+                    EXTERNAL -.->|Group| AUTO
+                    EXTERNAL -.->|Group| WEAR
+                    EXTERNAL -.->|Group| ASSISTANT
+                    EXTERNAL -.->|Group| BUTTON
+
+                    style UI fill:#1a1f35,stroke:#00d4ff,stroke-width:2px
+                    style SERVICE fill:#1a1f35,stroke:#f97316,stroke-width:3px
+                    style SESSION fill:#1a1f35,stroke:#ec4899,stroke-width:3px
+                    style PLAYER fill:#1a1f35,stroke:#7c3aed,stroke-width:2px
+                    style EXTERNAL fill:#0a0e1a,stroke:#6b7280,stroke-width:2px
+                    style NOTIF fill:#0a0e1a,stroke:#10b981,stroke-width:1px
+                    style AUTO fill:#0a0e1a,stroke:#10b981,stroke-width:1px
+                    style WEAR fill:#0a0e1a,stroke:#10b981,stroke-width:1px
+                    style ASSISTANT fill:#0a0e1a,stroke:#10b981,stroke-width:1px
+                    style BUTTON fill:#0a0e1a,stroke:#10b981,stroke-width:1px
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Components -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                주요 컴포넌트
+            </h2>
+            <p class="section-description">
+                MediaSession 프레임워크의 핵심 컴포넌트와 역할을 설명합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        MediaSession
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>미디어 재생 허브</strong></p>
+                        <ul>
+                            <li>플레이어를 시스템에 광고</li>
+                            <li>외부 명령을 플레이어에 전달</li>
+                            <li>재생 상태 및 메타데이터 전송</li>
+                            <li>SessionToken으로 식별</li>
+                            <li>Callback으로 명령 수신</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎮</span>
+                        MediaController
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>미디어 제어 인터페이스</strong></p>
+                        <ul>
+                            <li>MediaSession에 연결</li>
+                            <li>재생 명령 전송 (play, pause, skip)</li>
+                            <li>상태 업데이트 수신</li>
+                            <li>Player 인터페이스 구현 (Media3)</li>
+                            <li>UI와 플레이어 분리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        MediaBrowser
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>미디어 라이브러리 탐색</strong></p>
+                        <ul>
+                            <li>MediaBrowserService에 연결</li>
+                            <li>미디어 콘텐츠 계층 탐색</li>
+                            <li>MediaController 생성</li>
+                            <li>Android Auto/Wear 통합</li>
+                            <li>백그라운드 서비스 접근</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        MediaBrowserService
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>백그라운드 미디어 서비스</strong></p>
+                        <ul>
+                            <li>MediaSession 호스팅</li>
+                            <li>미디어 라이브러리 노출</li>
+                            <li>백그라운드 재생 관리</li>
+                            <li>외부 앱 연결 허용</li>
+                            <li>생명주기 자동 관리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎶</span>
+                        Player
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>실제 미디어 플레이어</strong></p>
+                        <ul>
+                            <li>오디오/비디오 재생</li>
+                            <li>디코딩 및 버퍼링</li>
+                            <li>MediaPlayer (기본)</li>
+                            <li>ExoPlayer (권장, Media3)</li>
+                            <li>Player 인터페이스 구현</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📢</span>
+                        MediaStyle Notification
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>미디어 알림</strong></p>
+                        <ul>
+                            <li>NotificationCompat.MediaStyle</li>
+                            <li>MediaSession 연동</li>
+                            <li>재생 컨트롤 표시</li>
+                            <li>앨범 아트 표시</li>
+                            <li>Auto/Wear 자동 브리징</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Playback Control Flow -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                재생 제어 흐름
+            </h2>
+            <p class="section-description">
+                사용자 명령이 MediaSession을 통해 Player로 전달되는 전체 흐름입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant User as 👤 User
+                    participant Notif as 📢 Notification
+                    participant Controller as 🎮 MediaController
+                    participant Session as 🎵 MediaSession
+                    participant Player as 🎶 Player
+
+                    User->>Notif: Click 재생 버튼
+                    Notif->>Controller: play() 명령
+                    Controller->>Session: onPlay() callback
+                    Session->>Player: player.play()
+                    Player->>Player: 재생 시작
+
+                    Player->>Session: 상태 변경 (PLAYING)
+                    Session->>Controller: onPlaybackStateChanged()
+                    Controller->>Notif: UI 업데이트 (재생 중)
+                    Notif->>User: 재생 아이콘 → 일시정지 아이콘
+
+                    Note over Session,Player: 메타데이터 전송
+                    Player->>Session: 트랙 정보
+                    Session->>Controller: onMetadataChanged()
+                    Controller->>Notif: 앨범아트, 제목, 아티스트 표시
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>핵심 프로세스:</strong>
+                <ol style="margin-top: 10px; padding-left: 20px;">
+                    <li>사용자가 알림, Auto, Wear 등에서 재생 버튼 클릭</li>
+                    <li>해당 컨트롤러가 MediaSession에 play() 명령 전송</li>
+                    <li>MediaSession의 Callback에서 onPlay() 호출</li>
+                    <li>Player에게 실제 재생 명령 전달</li>
+                    <li>Player가 재생 시작 후 상태 변경</li>
+                    <li>MediaSession이 모든 연결된 컨트롤러에 상태 업데이트</li>
+                    <li>UI 자동 갱신 (알림, Auto, Wear 동시 업데이트)</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- Section 5: Integration -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Auto & Wear 통합
+            </h2>
+            <p class="section-description">
+                MediaSession을 사용하면 Android Auto와 Wear OS 통합이 자동으로 이루어집니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    APP["📱 Media App<br />(Phone)"]
+                    SESSION["🎵 MediaSession"]
+                    NOTIF["📢 MediaStyle<br />Notification"]
+
+                    AUTO_SYS["🚗 Android Auto<br />System"]
+                    WEAR_SYS["⌚ Wear OS<br />System"]
+
+                    AUTO_UI["Car Display<br />Media Controls"]
+                    WEAR_UI["Watch Display<br />Media Controls"]
+
+                    APP --> SESSION
+                    SESSION --> NOTIF
+                    NOTIF -.->|Auto Bridge| AUTO_SYS
+                    NOTIF -.->|Auto Bridge| WEAR_SYS
+
+                    AUTO_SYS --> AUTO_UI
+                    WEAR_SYS --> WEAR_UI
+
+                    AUTO_UI -->|Commands| SESSION
+                    WEAR_UI -->|Commands| SESSION
+
+                    style APP fill:#1a1f35,stroke:#00d4ff,stroke-width:2px
+                    style SESSION fill:#1a1f35,stroke:#f97316,stroke-width:3px
+                    style NOTIF fill:#1a1f35,stroke:#ec4899,stroke-width:2px
+                    style AUTO_SYS fill:#0a0e1a,stroke:#10b981,stroke-width:2px
+                    style WEAR_SYS fill:#0a0e1a,stroke:#10b981,stroke-width:2px
+                    style AUTO_UI fill:#0a0e1a,stroke:#7c3aed,stroke-width:2px
+                    style WEAR_UI fill:#0a0e1a,stroke:#7c3aed,stroke-width:2px
+                </div>
+            </div>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Android Auto 통합
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>자동 브리징</strong>: MediaStyle 알림 자동 전송</li>
+                            <li><strong>MediaBrowserService</strong>: 콘텐츠 라이브러리 노출</li>
+                            <li><strong>차량 디스플레이</strong>: 네이티브 미디어 UI</li>
+                            <li><strong>음성 명령</strong>: Google Assistant 통합</li>
+                            <li>별도 Auto 전용 코드 불필요</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⌚</span>
+                        Wear OS 통합
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>자동 브리징</strong>: 알림이 Watch로 전송</li>
+                            <li><strong>Ongoing Activity</strong>: 재생 중 Watch Face 표시</li>
+                            <li><strong>미디어 컨트롤</strong>: 앨범 아트, 재생 버튼</li>
+                            <li><strong>Media3 자동 지원</strong>: 추가 구현 불필요</li>
+                            <li>페어링된 기기 자동 동기화</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💡</span>
+                        구현 팁
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>MediaSession 반드시 생성</li>
+                            <li>MediaStyle로 Notification 설정</li>
+                            <li>setMediaSession(token) 호출</li>
+                            <li>MediaBrowserService 구현 (콘텐츠 탐색용)</li>
+                            <li>메타데이터 및 상태 정확히 업데이트</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Implementation -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                구현 예시
+            </h2>
+            <p class="section-description">
+                MediaSession을 사용한 기본 미디어 앱 구현 구조입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        MediaSession 생성
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Service에서 생성</strong></p>
+                        <ul>
+                            <li><code>MediaSession(context, TAG)</code></li>
+                            <li>Callback 설정</li>
+                            <li>Player 연결</li>
+                            <li>SessionToken 획득</li>
+                            <li>Active 상태 설정</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        Callback 구현
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaSession.Callback</strong></p>
+                        <ul>
+                            <li><code>onPlay()</code>: 재생 시작</li>
+                            <li><code>onPause()</code>: 일시정지</li>
+                            <li><code>onStop()</code>: 정지</li>
+                            <li><code>onSkipToNext()</code>: 다음 트랙</li>
+                            <li><code>onSeekTo()</code>: 탐색</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">3️⃣</span>
+                        Notification 설정
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaStyle Notification</strong></p>
+                        <ul>
+                            <li><code>NotificationCompat.MediaStyle()</code></li>
+                            <li><code>setMediaSession(token)</code></li>
+                            <li>Action 추가 (play, pause, skip)</li>
+                            <li>앨범 아트 설정</li>
+                            <li>Ongoing notification</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">4️⃣</span>
+                        UI 연결
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Activity에서 MediaController</strong></p>
+                        <ul>
+                            <li>MediaBrowser로 Service 연결</li>
+                            <li>SessionToken으로 Controller 생성</li>
+                            <li>Transport controls 호출</li>
+                            <li>Callback으로 UI 업데이트</li>
+                            <li>연결 해제 관리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">5️⃣</span>
+                        상태 업데이트
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>PlaybackState 및 Metadata</strong></p>
+                        <ul>
+                            <li><code>setPlaybackState()</code></li>
+                            <li>STATE_PLAYING, STATE_PAUSED 등</li>
+                            <li><code>setMetadata()</code></li>
+                            <li>제목, 아티스트, 앨범 아트</li>
+                            <li>Duration, Position 정보</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">6️⃣</span>
+                        생명주기 관리
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Service Lifecycle</strong></p>
+                        <ul>
+                            <li>onCreate(): MediaSession 생성</li>
+                            <li>onStartCommand(): 재생 시작</li>
+                            <li>startForeground(): Notification</li>
+                            <li>onDestroy(): 정리 및 release()</li>
+                            <li>MediaBrowser 연결 관리</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Android MediaSession Framework</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                통합 미디어 재생 제어 프레임워크
+            </p>
+            <div style="margin-top: 25px; display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                <a href="mediasession-api.html"
+                    style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(0, 212, 255, 0.2)); border: 2px solid #f97316; border-radius: 12px; color: #f97316; text-decoration: none; font-weight: 600; font-size: 1rem; transition: all 0.3s ease;">
+                    🎯 MediaSession API 플로우 →
+                </a>
+                <a href="index.html"
+                    style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: rgba(26, 31, 53, 0.5); border: 2px solid var(--border-color); border-radius: 12px; color: var(--text-primary); text-decoration: none; font-weight: 600; font-size: 1rem; transition: all 0.3s ease;">
+                    ← AOSP Media Framework
+                </a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#f97316',
+                lineColor: '#7c3aed',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#0a0e1a',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                border1: '#f97316',
+                border2: '#00d4ff',
+                note: '#ec4899',
+                noteBkgColor: 'rgba(236, 72, 153, 0.1)',
+                noteBorderColor: '#ec4899',
+                fontFamily: 'Noto Sans KR'
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 50
+            },
+            sequence: {
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35
+            }
+        });
+
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+</body>
+
+</html>

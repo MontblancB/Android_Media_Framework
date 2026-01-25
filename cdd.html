@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google CDD - Compatibility Definition Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #8b5cf6;
+            --accent-secondary: #a78bfa;
+            --accent-tertiary: #c4b5fd;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0a0a 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 5px 20px rgba(139, 92, 246, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(139, 92, 246, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-secondary);
+            font-size: 0.9em;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(167, 139, 250, 0.1));
+            border-left: 4px solid var(--accent-primary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-primary);
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.1));
+            border-left: 4px solid var(--accent-warning);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .warning-box strong {
+            color: var(--accent-warning);
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>📜 Google CDD</h1>
+            <p class="subtitle">Android Compatibility Definition Document</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overview: CDD란?
+            </h2>
+            <p class="section-description">
+                CDD (Compatibility Definition Document)는 Android 호환 디바이스가 되기 위해 반드시 충족해야 하는 요구사항을 정의한 정책 문서입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        목적
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>호환성 정책 정의</strong></p>
+                        <ul>
+                            <li>"Android 호환"의 의미 정의</li>
+                            <li>모호성 제거 및 명확한 기준 제시</li>
+                            <li>일관된 앱 생태계 보장</li>
+                            <li>하드웨어/소프트웨어 최소 사양 규정</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚖️</span>
+                        Policy vs Mechanism
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>CDD와 CTS의 역할</strong></p>
+                        <ul>
+                            <li><strong>CDD (Policy)</strong>: 무엇을 해야 하는가? (규정)</li>
+                            <li><strong>CTS (Mechanism)</strong>: 규정을 지켰는가? (검증)</li>
+                            <li>CDD는 법전, CTS는 시험</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌍</span>
+                        생태계 참여
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>GMS 인증의 기초</strong></p>
+                        <ul>
+                            <li>Google Play Store 탑재 조건</li>
+                            <li>Android 상표 사용 권한</li>
+                            <li>개발자에게 안정적 타겟 제공</li>
+                            <li>사용자 경험 파편화 방지</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📅</span>
+                        버전별 관리
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Android 버전 대응</strong></p>
+                        <ul>
+                            <li>각 Android 버전마다 별도 CDD 존재</li>
+                            <li>Android 12 CDD, Android 13 CDD 등</li>
+                            <li>새로운 기능 및 API 반영</li>
+                            <li>하드웨어 발전 수용</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Document Structure -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                문서 구조
+            </h2>
+            <p class="section-description">
+                CDD는 디바이스의 다양한 측면을 포괄하는 섹션들로 구성되어 있습니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    CDD[Android CDD]
+
+                    CDD --> INTRO[1. Introduction]
+                    CDD --> TYPES[2. Device Types]
+                    CDD --> SW[3. Software]
+                    CDD --> PKG[4. App Packaging]
+                    CDD --> MEDIA[5. Multimedia]
+                    CDD --> TOOLS[6. Dev Tools]
+                    CDD --> HW[7. Hardware]
+                    CDD --> PERF[8. Performance]
+                    CDD --> SEC[9. Security]
+                    CDD --> TEST[10. Testing]
+
+                    TYPES --> T1[Handheld]
+                    TYPES --> T2[Television]
+                    TYPES --> T3[Automotive]
+                    TYPES --> T4[Watch]
+
+                    MEDIA --> M1[Media Codecs]
+                    MEDIA --> M2[Video Encoding]
+                    MEDIA --> M3[Audio Recording]
+
+                    HW --> H1[Display]
+                    HW --> H2[Camera]
+                    HW --> H3[Sensors]
+
+                    style CDD fill:#1a1f35,stroke:#8b5cf6,stroke-width:3px
+                    style MEDIA fill:#1a1f35,stroke:#a78bfa,stroke-width:2px
+                    style HW fill:#1a1f35,stroke:#a78bfa,stroke-width:2px
+                    style SEC fill:#1a1f35,stroke:#a78bfa,stroke-width:2px
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>💡 주요 섹션 설명:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Device Types</strong>: 폼팩터별(폰, TV, 차, 시계) 특화 요구사항</li>
+                    <li><strong>Multimedia</strong>: 코덱 지원, 디코딩/인코딩 성능, 오디오 레이턴시 등</li>
+                    <li><strong>Hardware</strong>: 디스플레이 해상도, 카메라 사양, 센서 정확도 등</li>
+                    <li><strong>Security</strong>: 권한 모델, 샌드박스, 암호화, 생체인식 보안 등</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 3: Requirement Language -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                요구사항 언어 (RFC2119)
+            </h2>
+            <p class="section-description">
+                CDD는 요구사항의 강제성을 명확히 하기 위해 RFC2119 표준 키워드를 사용합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card" style="border-left: 4px solid var(--accent-success);">
+                    <h3 class="card-title" style="color: var(--accent-success);">
+                        MUST / REQUIRED
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>필수 사항</strong></p>
+                        <ul>
+                            <li>반드시 준수해야 함</li>
+                            <li>위반 시 호환되지 않음</li>
+                            <li>CTS 테스트 실패 요인</li>
+                            <li>예: "Device implementations MUST support H.264 decoding."</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card" style="border-left: 4px solid var(--accent-warning);">
+                    <h3 class="card-title" style="color: var(--accent-warning);">
+                        SHOULD / RECOMMENDED
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>권장 사항</strong></p>
+                        <ul>
+                            <li>강제는 아니지만 강력히 권장됨</li>
+                            <li>타당한 이유가 없다면 준수해야 함</li>
+                            <li>향후 버전에서 MUST로 변경될 수 있음</li>
+                            <li>예: "Device implementations SHOULD support 5GHz Wi-Fi."</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card" style="border-left: 4px solid var(--text-muted);">
+                    <h3 class="card-title" style="color: var(--text-muted);">
+                        MAY / OPTIONAL
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>선택 사항</strong></p>
+                        <ul>
+                            <li>제조사의 선택에 따름</li>
+                            <li>준수하지 않아도 호환성에 문제 없음</li>
+                            <li>기능 차별화 요소</li>
+                            <li>예: "Device implementations MAY include a hardware keyboard."</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>🆔 Requirement ID:</strong>
+                <p style="margin-top: 10px;">
+                    모든 "MUST" 요구사항은 고유한 ID를 가집니다. (예: <code>[C-1-1]</code>)<br>
+                    이를 통해 특정 요구사항을 정확히 참조하고 추적할 수 있습니다.
+                </p>
+            </div>
+        </section>
+
+        <!-- Section 4: Multimedia Compatibility -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                멀티미디어 호환성
+            </h2>
+            <p class="section-description">
+                미디어 프레임워크 관점에서 가장 중요한 멀티미디어 섹션의 요구사항입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    flowchart LR
+                    CDD_MEDIA[CDD Multimedia<br />Section 5]
+
+                    CDD_MEDIA --> CODECS[Media Codecs]
+                    CDD_MEDIA --> VIDEO[Video Encoding]
+                    CDD_MEDIA --> AUDIO[Audio]
+                    CDD_MEDIA --> PERF_CLASS[Performance Class]
+
+                    CODECS --> C1[H.264/AVC]
+                    CODECS --> C2[HEVC]
+                    CODECS --> C3[VP9/AV1]
+                    CODECS --> C4[AAC/Opus]
+
+                    VIDEO --> V1[Resolution]
+                    VIDEO --> V2[Frame Rate]
+                    VIDEO --> V3[Bitrate]
+
+                    AUDIO --> A1[Raw Audio]
+                    AUDIO --> A2[Latency]
+                    AUDIO --> A3[Microphone]
+
+                    PERF_CLASS --> P1[Media Performance Class]
+                    PERF_CLASS --> P2[Camera Requirements]
+                    PERF_CLASS --> P3[Memory/Storage]
+
+                    style CDD_MEDIA fill:#1a1f35,stroke:#8b5cf6,stroke-width:2px
+                    style PERF_CLASS fill:#1a1f35,stroke:#f59e0b,stroke-width:2px
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        필수 코덱
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MUST Support</strong></p>
+                        <ul>
+                            <li><strong>Video</strong>: H.264 (AVC), H.265 (HEVC), VP8, VP9</li>
+                            <li><strong>Audio</strong>: AAC LC, HE-AAC, FLAC, MP3, Opus</li>
+                            <li>MediaCodecList를 통해 선언 필수</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        Performance Class
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>고성능 미디어 기준 (Android 12+)</strong></p>
+                        <ul>
+                            <li>Class 11 (R), Class 12 (S) 등</li>
+                            <li>4K@30fps, 1080p@60fps 녹화</li>
+                            <li>동시 코덱 세션 수 보장</li>
+                            <li>앱이 런타임에 쿼리 가능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        디바이스별 차이
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>폼팩터 특화</strong></p>
+                        <ul>
+                            <li><strong>Android TV</strong>: H.265/VP9 4K 디코딩 필수</li>
+                            <li><strong>Handheld</strong>: 카메라 녹화 성능 중시</li>
+                            <li><strong>Automotive</strong>: 오디오 라우팅 및 멀티존</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: CDD vs CTS -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                CDD vs CTS
+            </h2>
+            <p class="section-description">
+                CDD(정책)와 CTS(검증)의 관계를 명확히 이해하는 것이 중요합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant GOOGLE as Google
+                    participant OEM as OEM/Manufacturer
+                    participant DEVICE as Device
+
+                    Note over GOOGLE: 1. CDD 발행 (Policy)
+                    GOOGLE->>OEM: Android 14 CDD 문서 제공
+
+                    Note over OEM: 2. 구현 (Implementation)
+                    OEM->>DEVICE: CDD 요구사항에 맞춰<br />HW/SW 개발
+
+                    Note over GOOGLE: 3. CTS 배포 (Mechanism)
+                    GOOGLE->>OEM: CTS 테스트 스위트 제공
+
+                    Note over OEM: 4. 검증 (Verification)
+                    OEM->>DEVICE: CTS 실행
+                    DEVICE-->>OEM: Pass/Fail 결과
+
+                    Note over OEM: 5. 인증 (Certification)
+                    OEM->>GOOGLE: CTS 리포트 제출
+                    GOOGLE-->>OEM: GMS 인증 승인
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📜</span>
+                        CDD (Document)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>형태</strong>: PDF/HTML 문서</li>
+                            <li><strong>내용</strong>: 요구사항 명세</li>
+                            <li><strong>주체</strong>: 사람이 읽고 해석</li>
+                            <li><strong>역할</strong>: 기준점 제시</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        CTS (Software)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>형태</strong>: 테스트 코드 (APK)</li>
+                            <li><strong>내용</strong>: 자동화된 테스트 케이스</li>
+                            <li><strong>주체</strong>: 컴퓨터가 실행</li>
+                            <li><strong>역할</strong>: 기준 충족 여부 판별</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Google CDD - Compatibility Definition Document</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                Android Compatibility Policy & Requirements
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-primary); text-decoration: none;">
+                    ← AOSP Media Framework로 돌아가기
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#8b5cf6',
+                lineColor: '#a78bfa',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#0a0e1a',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                border1: '#8b5cf6',
+                border2: '#a78bfa',
+                note: '#c4b5fd',
+                noteBkgColor: 'rgba(139, 92, 246, 0.1)',
+                noteBorderColor: '#8b5cf6',
+                fontFamily: 'Noto Sans KR'
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 50
+            },
+            sequence: {
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35
+            }
+        });
+
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+</body>
+
+</html>

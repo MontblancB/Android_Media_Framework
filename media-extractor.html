@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediaExtractor Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #f59e0b;
+            --accent-secondary: #fbbf24;
+            --accent-tertiary: #fcd34d;
+            --accent-success: #10b981;
+            --accent-warning: #ef4444;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f0a 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(245, 158, 11, 0.3);
+            box-shadow: 0 10px 40px rgba(245, 158, 11, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(245, 158, 11, 0.4);
+            box-shadow: 0 5px 20px rgba(245, 158, 11, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(245, 158, 11, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-secondary);
+            font-size: 0.9em;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.1));
+            border-left: 4px solid var(--accent-primary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-primary);
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(248, 113, 113, 0.1));
+            border-left: 4px solid var(--accent-warning);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .warning-box strong {
+            color: var(--accent-warning);
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>📦 MediaExtractor</h1>
+            <p class="subtitle">미디어 컨테이너 파싱 및 디먹싱 아키텍처</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overview: MediaExtractor의 역할
+            </h2>
+            <p class="section-description">
+                MediaExtractor는 미디어 컨테이너 파일을 파싱하여 개별 트랙(오디오, 비디오, 자막)으로 분리하는 디먹서입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        주요 기능
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>컨테이너 파싱 및 디먹싱</strong></p>
+                        <ul>
+                            <li>컨테이너 포맷 파싱 (MP4, MKV, WebM 등)</li>
+                            <li>트랙 정보 추출 (개수, 포맷, 메타데이터)</li>
+                            <li>인코딩된 샘플 데이터 추출</li>
+                            <li>타임스탬프 및 플래그 제공</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        MediaCodec과의 협업
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>디먹싱 + 디코딩 파이프라인</strong></p>
+                        <ul>
+                            <li>MediaExtractor: 컨테이너 파싱 및 샘플 추출</li>
+                            <li>MediaCodec: 인코딩된 샘플 디코딩</li>
+                            <li>분리된 관심사로 유연한 처리</li>
+                            <li>커스텀 미디어 처리 가능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📁</span>
+                        지원 컨테이너
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>다양한 포맷 지원</strong></p>
+                        <ul>
+                            <li>MP4 (MPEG-4 Part 14)</li>
+                            <li>MKV (Matroska)</li>
+                            <li>WebM</li>
+                            <li>3GP, TS, FLV 등</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        확장성
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>커스텀 Extractor</strong></p>
+                        <ul>
+                            <li>Android 10+: 개별 .so 파일</li>
+                            <li>커스텀 포맷 지원 가능</li>
+                            <li>플러그인 아키텍처</li>
+                            <li>ExoPlayer 통합</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                전체 아키텍처
+            </h2>
+            <p class="section-description">
+                MediaExtractor의 내부 구조와 Parser 계층을 시각화합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP ["Application Layer"]
+                    MEDIA_APP[Media App]
+                    end
+
+                    subgraph FRAMEWORK ["MediaExtractor API"]
+                    ME_API[MediaExtractor<br />Public API]
+                    ME_IMPL[MediaExtractor<br />Implementation]
+                    end
+
+                    subgraph NATIVE ["Native Layer - libstagefright"]
+                    DATA_SRC[DataSource<br />File/URI/FD]
+                    EXTRACTOR_FACTORY[MediaExtractorFactory<br />Extractor 선택]
+
+                    subgraph PARSERS ["Container Parsers"]
+                    MP4_PARSER[MPEG4Extractor<br />MP4 Parser]
+                    MKV_PARSER[MatroskaExtractor<br />MKV Parser]
+                    WEBM_PARSER[WebM Parser]
+                    OTHER_PARSER[Other Parsers<br />3GP, TS, FLV...]
+                    end
+
+                    SAMPLE_READER[Sample Reader<br />Track Data]
+                    META_DATA[MetaData<br />Track Info]
+                    end
+
+                    subgraph STORAGE ["Data Source"]
+                    FILE[Local File]
+                    URI[Content URI]
+                    FD[File Descriptor]
+                    STREAM[Network Stream]
+                    end
+
+                    MEDIA_APP --> ME_API
+                    ME_API --> ME_IMPL
+                    ME_IMPL --> DATA_SRC
+                    ME_IMPL --> EXTRACTOR_FACTORY
+
+                    DATA_SRC --> FILE
+                    DATA_SRC --> URI
+                    DATA_SRC --> FD
+                    DATA_SRC --> STREAM
+
+                    EXTRACTOR_FACTORY --> MP4_PARSER
+                    EXTRACTOR_FACTORY --> MKV_PARSER
+                    EXTRACTOR_FACTORY --> WEBM_PARSER
+                    EXTRACTOR_FACTORY --> OTHER_PARSER
+
+                    MP4_PARSER --> SAMPLE_READER
+                    MKV_PARSER --> SAMPLE_READER
+                    WEBM_PARSER --> SAMPLE_READER
+                    OTHER_PARSER --> SAMPLE_READER
+
+                    MP4_PARSER --> META_DATA
+                    MKV_PARSER --> META_DATA
+                    WEBM_PARSER --> META_DATA
+                    OTHER_PARSER --> META_DATA
+
+                    style ME_API fill:#1a1f35,stroke:#f59e0b,stroke-width:3px
+                    style EXTRACTOR_FACTORY fill:#1a1f35,stroke:#fbbf24,stroke-width:2px
+                    style MP4_PARSER fill:#1a1f35,stroke:#fcd34d,stroke-width:2px
+                    style MKV_PARSER fill:#1a1f35,stroke:#fcd34d,stroke-width:2px
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>핵심 컴포넌트:</strong>
+                <ul>
+                    <li><strong>MediaExtractor API</strong>: 앱이 사용하는 공개 API</li>
+                    <li><strong>DataSource</strong>: 파일, URI, FD, 스트림 등 다양한 소스 지원</li>
+                    <li><strong>MediaExtractorFactory</strong>: 컨테이너 포맷에 맞는 Parser 선택</li>
+                    <li><strong>Container Parsers</strong>: MP4, MKV, WebM 등 포맷별 파서</li>
+                    <li><strong>Sample Reader</strong>: 트랙별 샘플 데이터 읽기</li>
+                    <li><strong>MetaData</strong>: 트랙 정보 및 메타데이터</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 3: Workflow -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                MediaExtractor 사용 흐름
+            </h2>
+            <p class="section-description">
+                MediaExtractor를 사용하여 미디어 파일에서 샘플 데이터를 추출하는 전체 과정입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App
+                    participant ME as MediaExtractor
+                    participant DS as DataSource
+                    participant Parser as Container Parser
+                    participant Track as Track Reader
+
+                    App->>ME: new MediaExtractor()
+                    App->>ME: setDataSource(path/uri/fd)
+                    ME->>DS: DataSource 생성
+                    DS->>DS: 파일/스트림 열기
+                    DS-->>ME: DataSource 반환
+
+                    ME->>Parser: MediaExtractorFactory로<br />적절한 Parser 선택
+                    Parser->>DS: 컨테이너 헤더 읽기
+                    DS-->>Parser: 헤더 데이터
+                    Parser->>Parser: 포맷 파싱<br />(MP4/MKV/WebM 등)
+                    Parser->>Parser: 트랙 정보 추출
+                    Parser-->>ME: 트랙 개수 및 메타데이터
+
+                    App->>ME: getTrackCount()
+                    ME-->>App: 트랙 개수 반환
+
+                    loop 각 트랙 순회
+                    App->>ME: getTrackFormat(i)
+                    ME->>Parser: 트랙 i 메타데이터 요청
+                    Parser-->>ME: MediaFormat 반환
+                    ME-->>App: MediaFormat (MIME, 해상도 등)
+                    end
+
+                    App->>ME: selectTrack(i)
+                    ME->>Track: 트랙 i 활성화
+
+                    loop 샘플 읽기
+                    App->>ME: readSampleData(buffer)
+                    ME->>Track: 현재 샘플 읽기
+                    Track->>DS: 샘플 데이터 위치로 seek
+                    DS-->>Track: 인코딩된 샘플 데이터
+                    Track-->>ME: 샘플 데이터
+                    ME-->>App: 샘플 크기 반환
+
+                    App->>ME: getSampleTime()
+                    ME->>Track: 타임스탬프 조회
+                    Track-->>ME: PTS (µs)
+                    ME-->>App: 타임스탬프
+
+                    App->>ME: getSampleFlags()
+                    ME->>Track: 플래그 조회
+                    Track-->>ME: SYNC/ENCRYPTED 등
+                    ME-->>App: 플래그
+
+                    App->>ME: advance()
+                    ME->>Track: 다음 샘플로 이동
+                    end
+
+                    App->>ME: release()
+                    ME->>DS: 리소스 해제
+                    ME->>Parser: 리소스 해제
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📝 주요 API 메서드
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        초기화
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>new MediaExtractor()</code>: 인스턴스 생성</li>
+                            <li><code>setDataSource(path)</code>: 파일 경로</li>
+                            <li><code>setDataSource(context, uri)</code>: Content URI</li>
+                            <li><code>setDataSource(fd)</code>: File Descriptor</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        트랙 정보
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>getTrackCount()</code>: 트랙 개수</li>
+                            <li><code>getTrackFormat(i)</code>: 트랙 포맷</li>
+                            <li><code>selectTrack(i)</code>: 트랙 선택</li>
+                            <li><code>unselectTrack(i)</code>: 트랙 선택 해제</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        샘플 읽기
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>readSampleData(buffer, offset)</code>: 샘플 데이터</li>
+                            <li><code>getSampleTime()</code>: PTS (µs)</li>
+                            <li><code>getSampleFlags()</code>: 플래그</li>
+                            <li><code>getSampleTrackIndex()</code>: 트랙 인덱스</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏩</span>
+                        탐색 및 제어
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>advance()</code>: 다음 샘플</li>
+                            <li><code>seekTo(timeUs, mode)</code>: 시간 탐색</li>
+                            <li><code>getCachedDuration()</code>: 캐시 상태</li>
+                            <li><code>release()</code>: 리소스 해제</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Container Parsers -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                컨테이너 Parser 상세
+            </h2>
+            <p class="section-description">
+                주요 컨테이너 포맷별 Parser의 구조와 동작 방식을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📦 MP4 (MPEG4Extractor)
+            </h3>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    flowchart TB
+                    START[MP4 파일] --> FTYP[ftyp Box<br />파일 타입 식별]
+                    FTYP --> MOOV[moov Box<br />메타데이터 컨테이너]
+
+                    MOOV --> MVHD[mvhd Box<br />Movie Header<br />재생 시간, 타임스케일]
+                    MOOV --> TRAK[trak Box<br />트랙 정보]
+
+                    TRAK --> TKHD[tkhd Box<br />Track Header<br />트랙 ID, 해상도]
+                    TRAK --> MDIA[mdia Box<br />Media 정보]
+
+                    MDIA --> MDHD[mdhd Box<br />Media Header<br />타임스케일, 재생시간]
+                    MDIA --> HDLR[hdlr Box<br />Handler<br />vide/soun/subt]
+                    MDIA --> MINF[minf Box<br />Media Info]
+
+                    MINF --> STBL[stbl Box<br />Sample Table]
+
+                    STBL --> STSD[stsd Box<br />Sample Description<br />코덱 정보]
+                    STBL --> STTS[stts Box<br />Time-to-Sample<br />샘플 재생 시간]
+                    STBL --> STSC[stsc Box<br />Sample-to-Chunk<br />청크 매핑]
+                    STBL --> STSZ[stsz Box<br />Sample Size<br />샘플 크기]
+                    STBL --> STCO[stco Box<br />Chunk Offset<br />데이터 위치]
+
+                    START --> MDAT[mdat Box<br />실제 미디어 데이터]
+
+                    style MOOV fill:#1a1f35,stroke:#f59e0b,stroke-width:2px
+                    style STBL fill:#1a1f35,stroke:#fbbf24,stroke-width:2px
+                    style MDAT fill:#1a1f35,stroke:#10b981,stroke-width:2px
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📦 MKV (MatroskaExtractor)
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        EBML 구조
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Extensible Binary Meta Language</strong></p>
+                        <ul>
+                            <li>EBML Header: 문서 타입 (Matroska)</li>
+                            <li>Segment: 최상위 컨테이너</li>
+                            <li>Element ID + Size + Data 구조</li>
+                            <li>가변 길이 인코딩</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        주요 Element
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Segment 내부 구조</strong></p>
+                        <ul>
+                            <li><strong>SeekHead</strong>: 다른 Element 위치 인덱스</li>
+                            <li><strong>Info</strong>: Segment 정보 (재생시간, 타임코드 스케일)</li>
+                            <li><strong>Tracks</strong>: 트랙 정보 (코덱, 해상도)</li>
+                            <li><strong>Cluster</strong>: 실제 미디어 데이터 블록</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎞️</span>
+                        Cluster 구조
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>미디어 데이터 조직</strong></p>
+                        <ul>
+                            <li>Timecode: Cluster 시작 타임스탬프</li>
+                            <li>SimpleBlock: 단일 프레임 데이터</li>
+                            <li>BlockGroup: 복잡한 프레임 (B-frame 등)</li>
+                            <li>Keyframe 플래그 포함</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        MKV 장점
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>유연성 및 확장성</strong></p>
+                        <ul>
+                            <li>다양한 코덱 지원</li>
+                            <li>다중 오디오/자막 트랙</li>
+                            <li>챕터 및 메뉴 지원</li>
+                            <li>메타데이터 풍부</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Sample Extraction -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                샘플 추출 메커니즘
+            </h2>
+            <p class="section-description">
+                Parser가 컨테이너에서 실제 샘플 데이터를 추출하는 과정을 상세히 설명합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    flowchart TB
+                    START[readSampleData 호출] --> TRACK_CHECK{선택된 트랙<br />존재?}
+
+                    TRACK_CHECK -->|No| ERROR[에러 반환]
+                    TRACK_CHECK -->|Yes| GET_SAMPLE[현재 샘플 정보 조회]
+
+                    GET_SAMPLE --> SAMPLE_TABLE[Sample Table 참조<br />MP4: stbl<br />MKV: Cluster]
+
+                    SAMPLE_TABLE --> CALC_OFFSET[샘플 오프셋 계산]
+                    CALC_OFFSET --> CALC_SIZE[샘플 크기 계산]
+
+                    CALC_SIZE --> SEEK[DataSource seek<br />오프셋 위치로 이동]
+                    SEEK --> READ[샘플 데이터 읽기]
+
+                    READ --> BUFFER[ByteBuffer에 복사]
+                    BUFFER --> METADATA[메타데이터 설정]
+
+                    METADATA --> PTS[Presentation Timestamp<br />계산 및 저장]
+                    METADATA --> FLAGS[플래그 설정<br />SYNC/ENCRYPTED]
+
+                    PTS --> RETURN[샘플 크기 반환]
+                    FLAGS --> RETURN
+
+                    RETURN --> ADVANCE{advance 호출?}
+                    ADVANCE -->|Yes| NEXT[다음 샘플로 포인터 이동]
+                    ADVANCE -->|No| WAIT[대기]
+
+                    NEXT --> END[완료]
+                    WAIT --> END
+
+                    style SAMPLE_TABLE fill:#1a1f35,stroke:#f59e0b,stroke-width:2px
+                    style BUFFER fill:#1a1f35,stroke:#fbbf24,stroke-width:2px
+                    style PTS fill:#1a1f35,stroke:#10b981,stroke-width:2px
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔍 샘플 메타데이터
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏱️</span>
+                        Timestamp
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Presentation Time Stamp (PTS)</strong></p>
+                        <ul>
+                            <li>마이크로초(µs) 단위</li>
+                            <li>샘플 표시 시간</li>
+                            <li>동기화에 필수</li>
+                            <li><code>getSampleTime()</code>로 조회</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚩</span>
+                        Sample Flags
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>샘플 속성 플래그</strong></p>
+                        <ul>
+                            <li><code>SAMPLE_FLAG_SYNC</code>: 키프레임 (I-frame)</li>
+                            <li><code>SAMPLE_FLAG_ENCRYPTED</code>: 암호화된 샘플</li>
+                            <li><code>SAMPLE_FLAG_PARTIAL_FRAME</code>: 부분 프레임</li>
+                            <li><code>getSampleFlags()</code>로 조회</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📏</span>
+                        Sample Size
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>샘플 데이터 크기</strong></p>
+                        <ul>
+                            <li>바이트 단위 크기</li>
+                            <li>버퍼 할당에 사용</li>
+                            <li><code>readSampleData()</code> 반환값</li>
+                            <li>-1: 더 이상 샘플 없음</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Track Index
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>샘플 소속 트랙</strong></p>
+                        <ul>
+                            <li>다중 트랙 선택 시 유용</li>
+                            <li>트랙별 처리 분기</li>
+                            <li><code>getSampleTrackIndex()</code>로 조회</li>
+                            <li>0부터 시작하는 인덱스</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Seeking -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Seeking 메커니즘
+            </h2>
+            <p class="section-description">
+                MediaExtractor의 시간 기반 탐색 기능과 다양한 Seek 모드를 설명합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App
+                    participant ME as MediaExtractor
+                    participant Parser
+                    participant Index as Sample Index
+
+                    App->>ME: seekTo(timeUs, mode)
+                    ME->>Parser: seek 요청
+
+                    alt SEEK_TO_PREVIOUS_SYNC
+                    Parser->>Index: timeUs 이전 키프레임 검색
+                    Index-->>Parser: 이전 Sync 샘플 위치
+                    else SEEK_TO_NEXT_SYNC
+                    Parser->>Index: timeUs 이후 키프레임 검색
+                    Index-->>Parser: 다음 Sync 샘플 위치
+                    else SEEK_TO_CLOSEST_SYNC
+                    Parser->>Index: timeUs에 가장 가까운 키프레임
+                    Index-->>Parser: 가장 가까운 Sync 샘플
+                    end
+
+                    Parser->>Parser: 샘플 포인터 이동
+                    Parser-->>ME: Seek 완료
+                    ME-->>App: 성공 반환
+
+                    App->>ME: getSampleTime()
+                    ME-->>App: 실제 Seek된 시간
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎯 Seek 모드
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏮️</span>
+                        PREVIOUS_SYNC
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>이전 키프레임으로 이동</strong></p>
+                        <ul>
+                            <li>지정 시간 이전의 가장 가까운 키프레임</li>
+                            <li>정확한 디코딩 보장</li>
+                            <li>역방향 재생에 유용</li>
+                            <li>약간 이른 시간으로 이동</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏭️</span>
+                        NEXT_SYNC
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>다음 키프레임으로 이동</strong></p>
+                        <ul>
+                            <li>지정 시간 이후의 가장 가까운 키프레임</li>
+                            <li>빠른 탐색 가능</li>
+                            <li>정방향 스킵에 유용</li>
+                            <li>약간 늦은 시간으로 이동</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        CLOSEST_SYNC
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>가장 가까운 키프레임</strong></p>
+                        <ul>
+                            <li>지정 시간에 가장 가까운 키프레임</li>
+                            <li>정확도와 성능의 균형</li>
+                            <li>일반적인 Seek에 권장</li>
+                            <li>사용자 경험 최적화</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        주의사항
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Seek 시 고려사항</strong></p>
+                        <ul>
+                            <li>키프레임만 Seek 가능 (I-frame)</li>
+                            <li>B/P-frame은 디코딩 의존성 있음</li>
+                            <li>정확한 시간 보장 안 됨</li>
+                            <li><code>getSampleTime()</code>으로 실제 위치 확인</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Decoder Selection -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                디코더 선정 과정
+            </h2>
+            <p class="section-description">
+                MediaExtractor로 추출한 샘플 데이터를 디코딩하기 위해 적절한 MediaCodec 디코더를 선정하는 과정을 설명합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App
+                    participant ME as MediaExtractor
+                    participant MCL as MediaCodecList
+                    participant MCI as MediaCodecInfo
+                    participant MC as MediaCodec
+
+                    App->>ME: getTrackFormat(i)
+                    ME-->>App: MediaFormat<br />MIME, 해상도, 프로파일 등
+
+                    App->>MCL: new MediaCodecList<br />(REGULAR_CODECS)
+                    MCL-->>App: CodecList 인스턴스
+
+                    App->>MCL: findDecoderForFormat(format)
+
+                    loop 모든 코덱 순회
+                    MCL->>MCI: getCodecInfos()
+                    MCI-->>MCL: CodecInfo 배열
+
+                    MCL->>MCI: isEncoder()?
+                    MCI-->>MCL: false (디코더만)
+
+                    MCL->>MCI: getSupportedTypes()
+                    MCI-->>MCL: MIME 타입 배열
+
+                    alt MIME 타입 일치
+                    MCL->>MCI: getCapabilitiesForType(mime)
+                    MCI-->>MCL: CodecCapabilities
+
+                    MCL->>MCI: isFormatSupported(format)?
+
+                    alt 포맷 지원
+                    MCI-->>MCL: true
+                    MCL-->>App: 코덱 이름 반환
+                    else 포맷 미지원
+                    MCI-->>MCL: false
+                    end
+                    end
+                    end
+
+                    App->>MC: createByCodecName(name)
+                    MC-->>App: MediaCodec 인스턴스
+
+                    App->>MC: configure(format)
+                    App->>MC: start()
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔍 디코더 선정 기준
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        MIME 타입 매칭
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>기본 필터링</strong></p>
+                        <ul>
+                            <li>video/avc (H.264)</li>
+                            <li>video/hevc (H.265)</li>
+                            <li>video/vp9, video/av1</li>
+                            <li>audio/mp4a-latm (AAC)</li>
+                            <li>audio/opus, audio/vorbis</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📐</span>
+                        해상도 및 프로파일
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>CodecCapabilities 확인</strong></p>
+                        <ul>
+                            <li><code>getVideoCapabilities()</code>: 해상도 범위</li>
+                            <li><code>profileLevels</code>: 지원 프로파일/레벨</li>
+                            <li><code>colorFormats</code>: 색상 포맷</li>
+                            <li><code>isFormatSupported()</code>: 전체 검증</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        하드웨어 vs 소프트웨어
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>우선순위</strong></p>
+                        <ul>
+                            <li><strong>하드웨어 코덱</strong>: 빠르고 전력 효율적</li>
+                            <li>벤더 접두사 (OMX.Exynos, OMX.qcom 등)</li>
+                            <li><strong>소프트웨어 코덱</strong>: 호환성 우수</li>
+                            <li>OMX.google.* 접두사</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        생성 방법
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaCodec 인스턴스화</strong></p>
+                        <ul>
+                            <li><code>createDecoderByType(mime)</code>: 자동 선택</li>
+                            <li><code>createByCodecName(name)</code>: 명시적 선택</li>
+                            <li><code>createEncoderByType(mime)</code>: 인코더</li>
+                            <li>하드웨어 코덱 우선 선택</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 MediaCodecList 사용 예시
+            </h3>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    flowchart TB
+                    START[MediaFormat 획득] --> CREATE_LIST[MediaCodecList 생성<br />REGULAR_CODECS]
+
+                    CREATE_LIST --> METHOD{선택 방법}
+
+                    METHOD -->|자동| AUTO[createDecoderByType<br />mime]
+                    METHOD -->|수동| MANUAL[findDecoderForFormat<br />format]
+
+                    AUTO --> HW_FIRST{하드웨어 코덱<br />사용 가능?}
+                    HW_FIRST -->|Yes| HW_CODEC[하드웨어 디코더 선택]
+                    HW_FIRST -->|No| SW_CODEC[소프트웨어 디코더 선택]
+
+                    MANUAL --> ITERATE[코덱 목록 순회]
+                    ITERATE --> CHECK_TYPE{MIME 타입<br />일치?}
+
+                    CHECK_TYPE -->|No| NEXT[다음 코덱]
+                    NEXT --> ITERATE
+
+                    CHECK_TYPE -->|Yes| GET_CAP[CodecCapabilities 조회]
+                    GET_CAP --> CHECK_FORMAT{포맷 지원?<br />해상도, 프로파일}
+
+                    CHECK_FORMAT -->|No| NEXT
+                    CHECK_FORMAT -->|Yes| FOUND[코덱 이름 저장]
+
+                    HW_CODEC --> CREATE[createByCodecName]
+                    SW_CODEC --> CREATE
+                    FOUND --> CREATE
+
+                    CREATE --> CONFIGURE[configure 및 start]
+                    CONFIGURE --> END[디코딩 준비 완료]
+
+                    style HW_CODEC fill:#1a1f35,stroke:#10b981,stroke-width:2px
+                    style SW_CODEC fill:#1a1f35,stroke:#f59e0b,stroke-width:2px
+                    style CREATE fill:#1a1f35,stroke:#fbbf24,stroke-width:2px
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>💡 디코더 선정 Best Practices:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><code>createDecoderByType()</code>을 사용하면 시스템이 자동으로 최적의 코덱 선택</li>
+                    <li>특정 코덱이 필요한 경우에만 <code>MediaCodecList</code>로 수동 선택</li>
+                    <li>하드웨어 코덱은 성능이 좋지만 디바이스마다 지원 범위가 다름</li>
+                    <li><code>isFormatSupported()</code>로 사전 검증하여 런타임 에러 방지</li>
+                    <li>소프트웨어 코덱은 폴백(fallback) 옵션으로 유용</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: Best Practices -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                Best Practices
+            </h2>
+            <p class="section-description">
+                MediaExtractor를 효율적으로 사용하기 위한 권장사항과 주의사항입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        권장 사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>트랙 선택</strong>: 필요한 트랙만 선택하여 성능 향상</li>
+                            <li><strong>버퍼 재사용</strong>: ByteBuffer를 재사용하여 GC 부담 감소</li>
+                            <li><strong>비동기 처리</strong>: Worker Thread에서 샘플 읽기</li>
+                            <li><strong>리소스 해제</strong>: 사용 후 반드시 <code>release()</code> 호출</li>
+                            <li><strong>에러 처리</strong>: <code>readSampleData()</code> 반환값 확인</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">❌</span>
+                        피해야 할 사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>UI Thread 블로킹</strong>: 메인 스레드에서 샘플 읽기 금지</li>
+                            <li><strong>과도한 Seek</strong>: 빈번한 Seek는 성능 저하</li>
+                            <li><strong>버퍼 크기 부족</strong>: 샘플 크기보다 작은 버퍼 사용</li>
+                            <li><strong>트랙 미선택</strong>: selectTrack() 호출 없이 읽기 시도</li>
+                            <li><strong>리소스 누수</strong>: release() 미호출</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        성능 최적화
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Direct ByteBuffer</strong>: allocateDirect() 사용</li>
+                            <li><strong>Batch Processing</strong>: 여러 샘플 한 번에 처리</li>
+                            <li><strong>캐싱</strong>: MediaFormat 정보 캐싱</li>
+                            <li><strong>Prefetch</strong>: 다음 샘플 미리 읽기</li>
+                            <li><strong>Pool</strong>: ByteBuffer Pool 사용</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        디버깅 팁
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>MediaFormat 확인</strong>: MIME 타입 및 코덱 정보</li>
+                            <li><strong>Timestamp 검증</strong>: PTS 순서 및 간격 확인</li>
+                            <li><strong>플래그 확인</strong>: Keyframe 위치 파악</li>
+                            <li><strong>로깅</strong>: 샘플 크기 및 읽기 속도 모니터링</li>
+                            <li><strong>ExoPlayer</strong>: 복잡한 경우 ExoPlayer 사용 고려</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ 중요 참고사항:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>MediaExtractor는 인코딩된 데이터만 제공 - 디코딩은 MediaCodec 필요</li>
+                    <li>모든 컨테이너 포맷이 지원되는 것은 아님 - 사전 확인 필요</li>
+                    <li>DRM 콘텐츠는 MediaDrm과 함께 사용해야 함</li>
+                    <li>네트워크 스트림은 버퍼링 고려 필요</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>MediaExtractor & Parser Architecture</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                Container Parsing & Demuxing Framework
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-primary); text-decoration: none;">
+                    ← AOSP Media Framework로 돌아가기
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#f59e0b',
+                lineColor: '#fbbf24',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#0a0e1a',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                border1: '#f59e0b',
+                border2: '#fbbf24',
+                note: '#fcd34d',
+                noteBkgColor: 'rgba(245, 158, 11, 0.1)',
+                noteBorderColor: '#f59e0b',
+                fontFamily: 'Noto Sans KR'
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 50
+            },
+            sequence: {
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35
+            }
+        });
+
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+</body>
+
+</html>

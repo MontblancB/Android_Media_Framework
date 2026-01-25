@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power Policy & Suspend | Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+
+            /* Palette */
+            --accent-blue: #3b82f6;
+            --accent-indigo: #6366f1;
+            --accent-teal: #14b8a6;
+            --accent-green: #10b981;
+            --accent-rose: #f43f5e;
+            --accent-amber: #f59e0b;
+            --accent-purple: #8b5cf6;
+
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #0f172a 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--accent-blue);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 80px 20px;
+            background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.15), transparent 40%),
+                radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.15), transparent 40%),
+                linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(17, 24, 39, 0.95) 100%);
+            border-radius: 32px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(to right, var(--accent-purple), var(--accent-indigo), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Section Specific Colors */
+        .sec-concept .section-title {
+            color: var(--accent-purple);
+        }
+
+        .sec-concept .section-number {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-indigo));
+        }
+
+        .sec-arch .section-title {
+            color: var(--accent-blue);
+        }
+
+        .sec-arch .section-number {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+        }
+
+        .sec-flow .section-title {
+            color: var(--accent-green);
+        }
+
+        .sec-flow .section-number {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-teal));
+        }
+
+        .sec-context .section-title {
+            color: var(--accent-rose);
+        }
+
+        .sec-context .section-number {
+            background: linear-gradient(135deg, var(--accent-rose), var(--accent-amber));
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+            max-width: 900px;
+        }
+
+        /* Diagram Container */
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .sec-concept .card:hover {
+            border-color: var(--accent-purple);
+        }
+
+        .sec-arch .card:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .sec-flow .card:hover {
+            border-color: var(--accent-green);
+        }
+
+        .sec-context .card:hover {
+            border-color: var(--accent-rose);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sec-concept .card-title {
+            color: var(--accent-purple);
+        }
+
+        .sec-arch .card-title {
+            color: var(--accent-blue);
+        }
+
+        .sec-flow .card-title {
+            color: var(--accent-green);
+        }
+
+        .sec-context .card-title {
+            color: var(--accent-rose);
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+            list-style-type: disc;
+        }
+
+        .card-description li {
+            margin-bottom: 5px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-blue);
+            font-size: 0.9em;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 15px;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .section {
+                padding: 25px;
+                margin-bottom: 40px;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .section-description {
+                padding-left: 0;
+            }
+
+            .diagram-container {
+                padding: 15px;
+                margin: 20px -10px;
+                /* Slight negative margin to maximize width */
+                border-radius: 12px;
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+                /* Force single column on mobile */
+            }
+        }
+
+        .diagram-caption {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 15px;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>Power Policy & Suspend</h1>
+            <p class="subtitle">Deep Sleep, Suspend-to-RAM, and Audio Context Preservation in AAOS</p>
+        </header>
+
+        <!-- Section 1: Concept -->
+        <section class="section sec-concept">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                개념 정리: Deep Sleep & Suspend-to-RAM
+            </h2>
+            <p class="section-description">
+                AAOS에서 시동을 끄면(Ignition Off), AP(Application Processor)는 완전 종료(Shutdown)가 아니라
+                <strong>Deep Sleep (Suspend-to-RAM, STR)</strong> 모드로 진입합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">💤</span> Suspend-to-RAM (STR)</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>전원 차단:</strong> 디스플레이, CPU, 대부분의 주변 장치 OFF.</li>
+                            <li><strong>메모리 유지:</strong> DRAM만 Self-Refresh 상태로 유지하여 커널 및 프로세스 메모리 보존.</li>
+                            <li><strong>실행 중지:</strong> 코드 실행은 완전히 멈춤 (타이머/스레드 동작 없음).</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🛑</span> Shutdown Prepare</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>UI Off:</strong> 운전자는 화면이 꺼진 것을 보고 종료되었다고 생각함.</li>
+                            <li><strong>OS Alive:</strong> 안드로이드는 아직 실행 중이며, 정리 작업(DB 저장 등) 수행 가능.</li>
+                            <li><strong>Context Save:</strong> 오디오/미디어 컨텍스트 저장은 이 시점에 이루어짐.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture -->
+        <section class="section sec-arch">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                AAOS 전원 관리 아키텍처
+            </h2>
+            <p class="section-description">
+                차량의 전원 상태는 VMCU에서 시작되어 VHAL을 거쳐 안드로이드 프레임워크(CPMS)로 전달됩니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph LR
+                    VMCU[VMCU<br />Microcontroller] -->|IGN/ACC Signal| VHAL[Vehicle HAL]
+                    VHAL -->|Power State Property| CPMS[CarPowerManagementService]
+                    CPMS -->|Apply Policy| Policy[CarPowerPolicyService]
+                    Policy -->|Enable/Disable| Components[Components<br />Audio, Media, Display, etc.]
+
+                    style VMCU fill:#1a1f35,stroke:#9ca3af
+                    style VHAL fill:#10b981,stroke:#fff
+                    style CPMS fill:#3b82f6,stroke:#fff
+                    style Policy fill:#8b5cf6,stroke:#fff
+                    style Components fill:#ec4899,stroke:#fff
+                </div>
+                <p class="diagram-caption">하드웨어(VMCU) 신호가 VHAL을 통해 안드로이드 프레임워크(CPMS)로 전달되고, 정책 서비스가 각 컴포넌트를 제어하는 흐름입니다.
+                </p>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚙️</span> CarPowerManagementService (CPMS)</h3>
+                    <div class="card-description">
+                        안드로이드 전원 상태 머신(State Machine)을 담당합니다. VHAL 이벤트를 받아 각 서비스에 Sleep/Shutdown 알림을 보내고, Deep Sleep 진입과
+                        복귀를 조율합니다.
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📜</span> CarPowerPolicy</h3>
+                    <div class="card-description">
+                        "어떤 컴포넌트를 켤지/끌지"를 정의한 정책입니다.
+                        <br>예: <code>ShutdownPrepare</code> 상태에서는 <strong>AUDIO=OFF, MEDIA=OFF, DISPLAY=OFF</strong> 정책이
+                        적용됩니다.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: CPMS Integration -->
+        <section class="section sec-arch">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                CPMS와 Media Framework 연결
+            </h2>
+            <p class="section-description">
+                <code>CarAudioService</code>와 <code>CarMediaService</code>는 CPMS에 리스너를 등록하여 전원 상태 변화를 감지합니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.1rem;">
+                CarAudioService Integration</h3>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant CAS as CarAudioService
+                    participant CPMS as CarPowerManagementService
+                    participant Policy as CarPowerPolicy
+
+                    Note over CAS, CPMS: 1. Listener Registration (Boot Phase)
+                    CAS->>CAS: Create Filter (Component: AUDIO)
+                    CAS->>CPMS: addPowerPolicyListener(filter, listener)
+                    CPMS-->>CAS: Success
+
+                    Note over CPMS, Policy: 2. Policy Change Event
+                    CPMS->>CPMS: Detect Power State Change
+                    CPMS->>Policy: Get Current Policy
+                    CPMS->>CAS: onPolicyChanged(policy)
+
+                    activate CAS
+                    CAS->>Policy: isComponentEnabled(AUDIO)
+                    alt AUDIO Enabled
+                    CAS->>CAS: setAudioEnabled(true)
+                    CAS->>CAS: Unmute / Restore Focus
+                    else AUDIO Disabled
+                    CAS->>CAS: setAudioEnabled(false)
+                    CAS->>CAS: Mute / Reject Focus
+                    end
+                    deactivate CAS
+                </div>
+                <p class="diagram-caption">CarAudioService는 리스너 등록 후, 정책 변경 시 AUDIO 컴포넌트 활성화 여부에 따라 Mute 또는 Focus 처리를
+                    수행합니다.</p>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-green); font-size: 1.1rem;">
+                CarMediaService Integration</h3>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant CMS as CarMediaService
+                    participant CPMS as CarPowerManagementService
+                    participant Policy as CarPowerPolicy
+                    participant App as Media App
+
+                    Note over CMS, CPMS: 1. Listener Registration
+                    CMS->>CMS: Create Filter (Component: MEDIA)
+                    CMS->>CPMS: addPowerPolicyListener(filter, listener)
+
+                    Note over CPMS, Policy: 2. Policy Change Event
+                    CPMS->>CAS: onPolicyChanged(policy)
+
+                    activate CMS
+                    CMS->>Policy: isComponentEnabled(MEDIA)
+                    alt MEDIA Disabled (Suspend)
+                    CMS->>App: Pause Playback
+                    CMS->>CMS: Save Last Media Source
+                    else MEDIA Enabled (Resume)
+                    CMS->>CMS: Load Last Media Source
+                    opt Auto Resume
+                    CMS->>App: Play (Restore Context)
+                    end
+                    end
+                    deactivate CMS
+                </div>
+                <p class="diagram-caption">CarMediaService는 MEDIA 컴포넌트가 비활성화되면 재생을 멈추고 소스를 저장하며, 활성화되면 다시 불러와 자동 재생을
+                    시도합니다.</p>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎧</span> CarAudioService</h3>
+                    <div class="card-description">
+                        <strong>AUDIO OFF 감지 시:</strong>
+                        <ul>
+                            <li>새로운 오디오 포커스 요청 거절 (Reject).</li>
+                            <li>기존 비치명적(Non-critical) 포커스 해제 (Abandon).</li>
+                            <li>볼륨 그룹 Mute (경고음 제외).</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎬</span> CarMediaService</h3>
+                    <div class="card-description">
+                        <strong>MEDIA OFF 감지 시:</strong>
+                        <ul>
+                            <li>현재 활성 MediaSession 찾기.</li>
+                            <li>재생 중이면 <code>pause()</code> 호출.</li>
+                            <li>마지막 재생 앱(Source) 정보 저장.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Sequence Flows -->
+        <section class="section sec-flow">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                진입 및 복귀 시퀀스 (Deep Dive)
+            </h2>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-green); font-size: 1.3rem;">4-1. 진입
+                시퀀스 (Ignition OFF)</h3>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant Driver
+                    participant VMCU
+                    participant CPMS
+                    participant Policy as PowerPolicy
+                    participant Audio as CarAudioService
+                    participant Media as CarMediaService
+                    participant App
+                    participant Kernel
+
+                    Driver->>VMCU: Ignition OFF
+                    VMCU->>CPMS: SHUTDOWN_PREPARE Req
+                    CPMS->>Policy: Apply "No User Interaction" Policy
+
+                    par Notify Components
+                    Policy->>Audio: AUDIO = Disabled
+                    Audio->>Audio: Mute / Reject Focus
+
+                    Policy->>Media: MEDIA = Disabled
+                    Media->>App: Pause Playback
+                    Media->>Media: Save Last Source
+                    App->>App: Save Position to DB
+                    end
+
+                    CPMS->>CPMS: onSleepEntry() (Cleanup)
+                    CPMS->>VMCU: Ready for Suspend
+                    VMCU->>Kernel: Trigger Deep Sleep
+                    Note over Kernel: CPU OFF / DRAM Self-Refresh
+                </div>
+                <p class="diagram-caption">Ignition OFF 시 VMCU가 CPMS에 알리고, CPMS는 정책을 적용하여 오디오/미디어를 끈 후 커널을 Deep Sleep으로
+                    전환합니다.</p>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-green); font-size: 1.3rem;">4-2. 복귀
+                시퀀스 (Ignition ON)</h3>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant VMCU
+                    participant Kernel
+                    participant CPMS
+                    participant Policy as PowerPolicy
+                    participant Audio as CarAudioService
+                    participant Media as CarMediaService
+                    participant App
+
+                    VMCU->>Kernel: Wake Up
+                    Kernel->>CPMS: Resume
+                    CPMS->>CPMS: onSleepExit()
+                    CPMS->>Policy: Apply "System On" Policy
+
+                    par Notify Components
+                    Policy->>Audio: AUDIO = Enabled
+                    Audio->>Audio: Unmute / Allow Focus
+
+                    Policy->>Media: MEDIA = Enabled
+                    Media->>Media: Load Last Source
+                    opt Auto Resume
+                    Media->>App: Connect & Play
+                    App->>App: Restore Position & Play
+                    end
+                    end
+                </div>
+                <p class="diagram-caption">VMCU가 깨어나면 커널이 Resume되고, CPMS는 시스템 정책을 적용하여 오디오/미디어를 다시 활성화합니다.</p>
+            </div>
+        </section>
+
+        <!-- Section 5: Context Preservation -->
+        <section class="section sec-context">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                오디오 컨텍스트 저장 및 복구
+            </h2>
+            <p class="section-description">
+                "오디오 컨텍스트"는 시스템 레벨과 앱 레벨로 나뉘어 관리됩니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🏛️</span> 시스템 레벨 (CarAudioContext)</h3>
+                    <div class="card-description">
+                        <strong>CarAudioService 관리</strong>
+                        <ul>
+                            <li><strong>Volume Group:</strong> 각 그룹(Music, Navi, Voice)의 볼륨 레벨.</li>
+                            <li><strong>Routing:</strong> 오디오가 출력될 Zone 및 Device.</li>
+                            <li><strong>Focus State:</strong> 현재 포커스를 가진 앱 (Resume 시 복구 여부 결정).</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📱</span> 앱 레벨 (Playback Context)</h3>
+                    <div class="card-description">
+                        <strong>앱(MediaSession) 관리</strong>
+                        <ul>
+                            <li><strong>Media ID:</strong> 재생 중이던 곡/콘텐츠 식별자.</li>
+                            <li><strong>Position:</strong> 재생 위치 (ms).</li>
+                            <li><strong>Playlist:</strong> 현재 대기열 및 셔플/반복 모드.</li>
+                        </ul>
+                        <p style="margin-top: 10px; font-size: 0.9em; color: var(--accent-rose);">
+                            * 앱은 <code>onPause()</code> 또는 <code>onStop()</code> 시점에 이 정보를 영구 저장소(DB/Prefs)에 저장해야 합니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Developer Checklist -->
+        <section class="section sec-context">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                개발자 체크리스트
+            </h2>
+            <p class="section-description">
+                미디어 앱 개발자가 AAOS의 전원 정책에 올바르게 대응하기 위한 가이드입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">✅</span> 필수 구현 사항</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>MediaSession & AudioFocus:</strong> 표준 API를 준수하여 구현.</li>
+                            <li><strong>Focus Loss 대응:</strong> 포커스 잃을 시 즉시 <code>pause()</code> 및 상태 저장.</li>
+                            <li><strong>PlaybackState 관리:</strong> <code>STATE_PAUSED</code>로 정확히 업데이트.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">💾</span> 상태 저장 (Persistence)</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>저장 시점:</strong> <code>onPause()</code>, <code>onStop()</code>,
+                                <code>ACTION_SHUTDOWN</code>.
+                            </li>
+                            <li><strong>저장 항목:</strong> Media ID, Position, Playlist, Shuffle Mode.</li>
+                            <li><strong>복구:</strong> 앱 재시작 또는 <code>onPlay()</code> 호출 시 마지막 상태에서 이어하기.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <a href="index.html" class="nav-button">← Back to Dashboard</a>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                darkMode: true,
+                background: '#111827',
+                primaryColor: '#3b82f6',
+                secondaryColor: '#ec4899',
+                tertiaryColor: '#0f172a',
+                primaryTextColor: '#e5e7eb',
+                secondaryTextColor: '#9ca3af',
+                lineColor: '#334155'
+            }
+        });
+    </script>
+</body>
+
+</html>

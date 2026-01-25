@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dolby Codecs & AOSP Integration | Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+
+            /* Enhanced Palette */
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --accent-rose: #f43f5e;
+            --accent-amber: #f59e0b;
+
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #0f172a 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--accent-blue);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 80px 20px;
+            background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.15), transparent 40%),
+                radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.15), transparent 40%),
+                linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(17, 24, 39, 0.95) 100%);
+            border-radius: 32px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(to right, var(--accent-cyan), var(--accent-blue), var(--accent-purple), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Section Specific Colors */
+        .sec-audio .section-title {
+            color: var(--accent-cyan);
+        }
+
+        .sec-audio .section-number {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+        }
+
+        .sec-video .section-title {
+            color: var(--accent-pink);
+        }
+
+        .sec-video .section-number {
+            background: linear-gradient(135deg, var(--accent-pink), var(--accent-rose));
+        }
+
+        .sec-arch .section-title {
+            color: var(--accent-purple);
+        }
+
+        .sec-arch .section-number {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+            max-width: 900px;
+        }
+
+        /* Diagram Container */
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .sec-audio .card:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .sec-video .card:hover {
+            border-color: var(--accent-pink);
+        }
+
+        .sec-arch .card:hover {
+            border-color: var(--accent-purple);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sec-audio .card-title {
+            color: var(--accent-cyan);
+        }
+
+        .sec-video .card-title {
+            color: var(--accent-pink);
+        }
+
+        .sec-arch .card-title {
+            color: var(--accent-purple);
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        /* Code styling */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-tertiary);
+            font-size: 0.9em;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 30px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 18px 24px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--accent-cyan);
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .comparison-table td {
+            background: var(--bg-secondary);
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tr:hover td {
+            background: var(--bg-card-hover);
+        }
+
+        /* Tag Styles */
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .tag-audio {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+
+        .tag-video {
+            background: rgba(236, 72, 153, 0.15);
+            color: var(--accent-pink);
+            border: 1px solid rgba(236, 72, 153, 0.3);
+        }
+
+        .tag-new {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>Dolby Codecs & AOSP Integration</h1>
+            <p class="subtitle">Comprehensive guide to Dolby Audio (Atmos, AC-4) and Dolby Vision architecture in
+                Android</p>
+        </header>
+
+        <!-- Section 1: Dolby Audio Codecs -->
+        <section class="section sec-audio">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Dolby Audio Codecs
+            </h2>
+            <p class="section-description">
+                Dolby 오디오 기술은 채널 기반(Channel-based)에서 객체 기반(Object-based) 오디오로 진화해왔습니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-cyan); font-size: 1.5rem;">Standard &
+                Broadcast</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Dolby Digital Plus (E-AC-3)
+                    </h3>
+                    <div class="card-description">
+                        <span class="tag tag-audio">Mainstream</span>
+                        <p style="margin-top: 10px;">방송, 스트리밍, 시네마 등에서 가장 널리 사용되는 서라운드 사운드 포맷입니다.
+                            최대 7.1 채널을 지원하며, 높은 압축 효율과 호환성을 제공합니다. Android 생태계의 표준 오디오 포맷입니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-cyan); font-size: 1.5rem;">
+                Next-Generation Audio</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎧</span>
+                        Dolby Atmos (Object-based)
+                    </h3>
+                    <div class="card-description">
+                        <span class="tag tag-new">Immersive</span>
+                        <p style="margin-top: 10px;">객체 기반 오디오(Object-based Audio) 기술로, 소리의 위치를 3차원 공간에 정확하게 배치합니다.
+                            E-AC-3 (JOC) 또는 AC-4 코덱을 기반으로 전송되며, 몰입감 넘치는 경험을 제공합니다.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📻</span>
+                        Dolby AC-4
+                    </h3>
+                    <div class="card-description">
+                        <span class="tag tag-new">Next-Gen</span>
+                        <p style="margin-top: 10px;">차세대 오디오 코덱으로, 낮은 비트레이트에서 고품질을 제공하며 객체 기반 오디오 및 개인화된 오디오 경험(Dialogue
+                            Enhancement 등)을 지원합니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 20px; color: var(--text-primary); font-size: 1.5rem;">Dolby
+                Audio Comparison</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Dolby Digital (AC-3)</th>
+                        <th>Dolby Digital Plus (E-AC-3)</th>
+                        <th>Dolby AC-4</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Channels</strong></td>
+                        <td>Up to 5.1</td>
+                        <td>Up to 15.1 (Typ. 7.1)</td>
+                        <td>Immersive (7.1.4+)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Object Audio</strong></td>
+                        <td>No</td>
+                        <td>Yes (via Atmos metadata)</td>
+                        <td>Native Support</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Efficiency</strong></td>
+                        <td>Standard</td>
+                        <td>High</td>
+                        <td>Very High (50% > E-AC-3)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Key Use Case</strong></td>
+                        <td>DVD, Legacy Broadcast</td>
+                        <td>Streaming (Netflix), Blu-ray</td>
+                        <td>Next-Gen Broadcast, Streaming</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 2: Dolby Vision -->
+        <section class="section sec-video">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Dolby Vision (HDR)
+            </h2>
+            <p class="section-description">
+                Dolby Vision은 동적 메타데이터(Dynamic Metadata)를 사용하여 장면별(Scene-by-scene) 또는 프레임별(Frame-by-frame)로
+                밝기와 색상을 최적화하는 고급 HDR 기술입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph LR
+                    Source[Video Source] -- "Base Layer (BL)" --> Decoder[HEVC Decoder]
+                    Source -- "Enhancement Layer (EL)" --> Composer[Dolby Vision Composer]
+                    Source -- "Metadata (RPU)" --> Display[Display Manager]
+
+                    Decoder --> Composer
+                    Composer --> Display
+                    Display --> Screen[HDR Screen]
+
+                    style Composer fill:#ec4899,stroke:#fff,color:#fff
+                    style Source fill:#1a1f35,stroke:#f43f5e
+                    style Decoder fill:#1a1f35,stroke:#f43f5e
+                    style Display fill:#1a1f35,stroke:#f43f5e
+                    style Screen fill:#1a1f35,stroke:#f43f5e
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-pink); font-size: 1.3rem;">Supported
+                Profiles in Android</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📺</span> Profile 5</h3>
+                    <div class="card-description">스트리밍 서비스(Netflix 등)에서 주로 사용. 독자적인 IPTPQc2 색공간 사용.</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔄</span> Profile 8.1</h3>
+                    <div class="card-description">HDR10과 하위 호환성을 가지는 프로파일.</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📹</span> Profile 8.4</h3>
+                    <div class="card-description">HLG(Hybrid Log-Gamma) 기반으로, 방송 및 사용자 제작 콘텐츠(User Generated Content)에
+                        적합.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: AOSP Audio Integration Architecture -->
+        <section class="section sec-arch">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                AOSP Audio Integration (DAP)
+            </h2>
+            <p class="section-description">
+                Android에서 Dolby Audio를 지원하기 위해서는 <strong>Dolby Audio Processing (DAP)</strong> 엔진을 Audio HAL 레벨에 통합해야
+                합니다. 일반적으로 <code>libdolbyms12.so</code>와 같은 독점 라이브러리가 사용됩니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TD
+                    subgraph Framework
+                    App[Media App] --> AF[AudioFlinger]
+                    AF --> APM[AudioPolicyManager]
+                    end
+
+                    subgraph HAL [Audio HAL Vendor Implementation]
+                    AF -- "AudioTrack (PCM)" --> AudioHAL[Audio HAL Core]
+                    APM -- "Routing / Effects Control" --> AudioHAL
+
+                    subgraph DolbyEngine [Dolby Engine DAP MS12]
+                    Decoder[Dolby Decoder<br />AC-3 / E-AC-3 / AC-4]
+                    PostProc[Post Processing<br />Virtualizer / Vol Leveler]
+                    end
+
+                    AudioHAL -- "Bitstream / PCM" --> Decoder
+                    Decoder --> PostProc
+                    end
+
+                    subgraph Kernel
+                    PostProc --> Driver[ALSA Driver]
+                    end
+
+                    style DolbyEngine fill:#3b82f6,stroke:#fff,color:#fff
+                    style HAL fill:#1e293b,stroke:#8b5cf6
+                    style Framework fill:#1a1f35,stroke:#8b5cf6
+                    style Kernel fill:#1a1f35,stroke:#8b5cf6
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">
+                Integration Key Points</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎛️</span> AudioPolicyManager</h3>
+                    <div class="card-description">Dolby 포맷(AC-3, E-AC-3)에 대한 Direct Output 플래그 설정 및 라우팅 정책 수정 필요.</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔌</span> Audio HAL (AIDL/HIDL)</h3>
+                    <div class="card-description"><code>libdolbyms12</code> 라이브러리를 로드하고, 오디오 스트림을 Dolby 엔진으로 바이패스하거나
+                        디코딩하도록 구현.</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📦</span> MediaCodec</h3>
+                    <div class="card-description">프레임워크 레벨에서 Dolby 디코더를 노출하여 앱이 <code>MediaCodec</code>을 통해 디코딩할 수 있도록
+                        지원 (Software or Hardware Offload).</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: AOSP Video Integration Architecture -->
+        <section class="section sec-video">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                AOSP Video Integration (Dolby Vision)
+            </h2>
+            <p class="section-description">
+                Dolby Vision 통합은 <strong>MediaCodec</strong> 및 <strong>Codec2</strong> 프레임워크를 통해 이루어집니다.
+                하드웨어 디코더가 Dolby Vision 프로파일을 지원해야 하며, 디스플레이 파이프라인이 10/12-bit 및 HDR 메타데이터를 처리할 수 있어야 합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TD
+                    subgraph Application
+                    Player[ExoPlayer / Media3]
+                    Surface[SurfaceView HDR]
+                    end
+
+                    subgraph Framework
+                    MC[MediaCodec API]
+                    C2[Codec2 Framework]
+                    end
+
+                    subgraph Vendor [Vendor Implementation]
+                    C2Comp[C2 Component<br />c2.vendor.dv.decoder]
+                    HW[Hardware Video Decoder]
+                    Display[Display Processor<br />Tone Mapping]
+                    end
+
+                    Player -- "video/dolby-vision" --> MC
+                    MC --> C2
+                    C2 --> C2Comp
+                    C2Comp -- "Bitstream" --> HW
+                    HW -- "YUV P010 + Metadata" --> Surface
+                    Surface --> Display
+
+                    style C2Comp fill:#ec4899,stroke:#fff,color:#fff
+                    style Vendor fill:#1e293b,stroke:#f43f5e
+                    style Application fill:#1a1f35,stroke:#f43f5e
+                    style Framework fill:#1a1f35,stroke:#f43f5e
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        Dolby Vision Capture (Android 13+)
+                    </h3>
+                    <div class="card-description">
+                        <p>
+                            Android 13부터는 Dolby Vision <strong>녹화(Capture)</strong>를 공식 지원합니다.
+                            Camera2 API를 통해 10-bit HDR 스트림을 캡처하고, MediaCodec을 통해 Dolby Vision Profile 8.4 (HLG 호환)로 인코딩할
+                            수 있습니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                darkMode: true,
+                background: '#111827',
+                primaryColor: '#3b82f6',
+                secondaryColor: '#ec4899',
+                tertiaryColor: '#0f172a',
+                primaryTextColor: '#e5e7eb',
+                secondaryTextColor: '#9ca3af',
+                lineColor: '#334155'
+            }
+        });
+    </script>
+</body>
+
+</html>

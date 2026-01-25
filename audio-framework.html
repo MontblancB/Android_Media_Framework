@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Audio Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #ec4899;
+            --accent-secondary: #f472b6;
+            --accent-tertiary: #fb7185;
+            --accent-green: #10b981;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glow-color: rgba(236, 72, 153, 0.3);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f2e 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(236, 72, 153, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.05) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), #c084fc);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(236, 72, 153, 0.3);
+            box-shadow: 0 10px 40px rgba(236, 72, 153, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(236, 72, 153, 0.4);
+            box-shadow: 0 5px 20px rgba(236, 72, 153, 0.15);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(236, 72, 153, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-primary);
+            font-size: 0.9em;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(124, 58, 237, 0.1));
+            border-left: 4px solid var(--accent-primary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-primary);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .subtitle {
+                font-size: 1.1rem;
+            }
+
+            .section {
+                padding: 25px;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--accent-secondary), #c084fc);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>🎵 Audio Framework</h1>
+            <p class="subtitle">Android 오디오 처리 파이프라인 및 핵심 컴포넌트</p>
+        </header>
+
+        <!-- Section 1: Audio Framework Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Audio Framework 개요
+            </h2>
+            <p class="section-description">
+                Android Audio Framework는 모든 오디오 기능을 관리하는 핵심 시스템입니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Audio Framework란?</strong> 애플리케이션부터 하드웨어까지 오디오 재생, 녹음, 믹싱, 라우팅을 담당하는
+                완전한 오디오 처리 스택입니다.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        주요 기능
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>오디오 재생 및 녹음</li>
+                            <li>다중 스트림 믹싱</li>
+                            <li>오디오 라우팅 및 포커스 관리</li>
+                            <li>볼륨 제어 및 음향 효과</li>
+                            <li>저지연 오디오 처리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        핵심 컴포넌트
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>AudioFlinger</code>: 오디오 믹싱 엔진</li>
+                            <li><code>AudioPolicyService</code>: 라우팅 정책</li>
+                            <li><code>Audio HAL</code>: 하드웨어 추상화</li>
+                            <li><code>AudioTrack/AudioRecord</code>: API</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        처리 특성
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>실시간 저지연 처리</li>
+                            <li>32-bit 부동소수점 믹싱</li>
+                            <li>멀티스레드 아키텍처</li>
+                            <li>IPC 기반 통신 (Binder)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Core Audio Architecture -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Audio Framework 전체 아키텍처
+            </h2>
+            <p class="section-description">
+                애플리케이션 레이어부터 하드웨어까지 5개의 주요 레이어로 구성됩니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    APP["📱 Application Layer<br /><br />AudioTrack, AudioRecord<br />MediaPlayer, AAudio API"]
+
+                    FW["🔧 Framework Layer<br /><br />AudioManager<br />AudioService"]
+
+                    NATIVE["⚡ Native Layer<br /><br />AudioFlinger (Mixing Engine)<br />AudioPolicyService (Routing &
+                    Policy)"]
+
+                    HAL["🔌 Audio HAL<br /><br />IDeviceFactory, IDevice<br />IStreamOut, IStreamIn<br />(HIDL/AIDL
+                    Interface)"]
+
+                    KERNEL["🐧 Linux Kernel<br /><br />ALSA Drivers<br />Audio Hardware Drivers"]
+
+                    APP --> FW
+                    FW --> NATIVE
+                    NATIVE --> HAL
+                    HAL --> KERNEL
+
+                    style APP fill:#1a1f35,stroke:#ec4899,stroke-width:3px,color:#e5e7eb
+                    style FW fill:#1a1f35,stroke:#f472b6,stroke-width:3px,color:#e5e7eb
+                    style NATIVE fill:#1a1f35,stroke:#c084fc,stroke-width:3px,color:#e5e7eb
+                    style HAL fill:#1a1f35,stroke:#7c3aed,stroke-width:2px,color:#e5e7eb
+                    style KERNEL fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: AudioFlinger -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                AudioFlinger - 오디오 믹싱 엔진
+            </h2>
+            <p class="section-description">
+                AudioFlinger는 Android 오디오 시스템의 핵심으로, 모든 오디오 스트림을 믹싱하고 처리합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎛️</span>
+                        주요 역할
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>오디오 믹싱</strong>: 다중 스트림을 하나로 합성</li>
+                            <li><strong>스레드 관리</strong>: PlaybackThread, RecordThread</li>
+                            <li><strong>효과 처리</strong>: 이퀄라이저, 리버브 등</li>
+                            <li><strong>HAL 통신</strong>: 하드웨어 제어</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        스레드 아키텍처
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>PlaybackThread</code>: 재생 처리</li>
+                            <li><code>MixerThread</code>: 믹싱 수행</li>
+                            <li><code>RecordThread</code>: 녹음 처리</li>
+                            <li><code>OffloadThread</code>: 하드웨어 오프로드</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎚️</span>
+                        믹싱 특성
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>32-bit float 믹싱 (Android 9+)</li>
+                            <li>샘플레이트 리샘플링</li>
+                            <li>채널 믹싱 (모노/스테레오)</li>
+                            <li>볼륨 제어 및 페이드</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph LR
+                    subgraph AudioFlinger
+                    AT1[AudioTrack 1]
+                    AT2[AudioTrack 2]
+                    AT3[AudioTrack 3]
+
+                    MIXER[MixerThread<br />32-bit Float Mixing]
+
+                    EFFECTS[Audio Effects<br />EQ, Reverb, etc.]
+
+                    AT1 --> MIXER
+                    AT2 --> MIXER
+                    AT3 --> MIXER
+                    MIXER --> EFFECTS
+                    end
+
+                    EFFECTS --> HAL_OUT[Audio HAL<br />IStreamOut]
+                    HAL_OUT --> HW[Hardware<br />Speaker/DAC]
+
+                    style AT1 fill:#1a1f35,stroke:#ec4899,stroke-width:2px,color:#e5e7eb
+                    style AT2 fill:#1a1f35,stroke:#ec4899,stroke-width:2px,color:#e5e7eb
+                    style AT3 fill:#1a1f35,stroke:#ec4899,stroke-width:2px,color:#e5e7eb
+                    style MIXER fill:#1a1f35,stroke:#c084fc,stroke-width:3px,color:#e5e7eb
+                    style EFFECTS fill:#1a1f35,stroke:#7c3aed,stroke-width:2px,color:#e5e7eb
+                    style HAL_OUT fill:#1a1f35,stroke:#f472b6,stroke-width:2px,color:#e5e7eb
+                    style HW fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: AudioPolicyService -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                AudioPolicyService - 라우팅 및 정책
+            </h2>
+            <p class="section-description">
+                AudioPolicyService는 오디오 라우팅, 볼륨, 디바이스 관리를 결정하는 정책 관리자입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        정책 결정
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>라우팅</strong>: 어느 디바이스로 출력할지</li>
+                            <li><strong>볼륨</strong>: 스트림별 볼륨 수준</li>
+                            <li><strong>스트림 타입</strong>: MUSIC, VOICE_CALL 등</li>
+                            <li><strong>우선순위</strong>: 포커스 기반 우선순위</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        디바이스 관리
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>연결된 오디오 디바이스 추적</li>
+                            <li>헤드폰/블루투스 감지</li>
+                            <li>자동 라우팅 전환</li>
+                            <li>멀티 디바이스 출력 (Android 12+)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🤝</span>
+                        AudioFlinger 협업
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>정책 결정자</strong>: AudioPolicyService</li>
+                            <li><strong>정책 실행자</strong>: AudioFlinger</li>
+                            <li>느슨한 결합으로 독립적 확장</li>
+                            <li>Binder IPC로 통신</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    APP[Application<br />AudioManager]
+
+                    APS[AudioPolicyService<br />Policy Maker]
+
+                    AF[AudioFlinger<br />Policy Executor]
+
+                    subgraph Decision["Policy Decisions"]
+                    ROUTE[Routing<br />Speaker vs Headphone]
+                    VOL[Volume Control<br />Per Stream Type]
+                    DEV[Device Selection<br />Bluetooth, USB, etc.]
+                    end
+
+                    HAL[Audio HAL]
+
+                    APP --> APS
+                    APS --> ROUTE
+                    APS --> VOL
+                    APS --> DEV
+                    ROUTE --> AF
+                    VOL --> AF
+                    DEV --> AF
+                    AF --> HAL
+
+                    style APP fill:#1a1f35,stroke:#ec4899,stroke-width:2px,color:#e5e7eb
+                    style APS fill:#1a1f35,stroke:#c084fc,stroke-width:3px,color:#e5e7eb
+                    style AF fill:#1a1f35,stroke:#7c3aed,stroke-width:3px,color:#e5e7eb
+                    style Decision fill:#0a0e1a,stroke:#f472b6,stroke-width:2px
+                    style HAL fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Audio Pipeline Flows -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                오디오 파이프라인 플로우
+            </h2>
+            <p class="section-description">
+                재생과 녹음 시 데이터가 흐르는 전체 경로를 시각화합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">📤 재생 파이프라인 (Playback)
+            </h3>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph LR
+                    APP[Application<br />MediaPlayer/AAudio]
+                    AT[AudioTrack API]
+                    BINDER1[Binder IPC]
+                    AF[AudioFlinger<br />Mixer Thread]
+                    HAL[Audio HAL<br />IStreamOut]
+                    ALSA[ALSA Driver]
+                    HW[Speaker/DAC]
+
+                    APP --> AT
+                    AT --> BINDER1
+                    BINDER1 --> AF
+                    AF --> HAL
+                    HAL --> ALSA
+                    ALSA --> HW
+
+                    style APP fill:#1a1f35,stroke:#ec4899,stroke-width:3px,color:#e5e7eb
+                    style AT fill:#1a1f35,stroke:#f472b6,stroke-width:2px,color:#e5e7eb
+                    style BINDER1 fill:#1a1f35,stroke:#c084fc,stroke-width:2px,color:#e5e7eb
+                    style AF fill:#1a1f35,stroke:#7c3aed,stroke-width:3px,color:#e5e7eb
+                    style HAL fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+                    style ALSA fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+                    style HW fill:#1a1f35,stroke:#10b981,stroke-width:2px,color:#e5e7eb
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">📥 녹음 파이프라인 (Capture)
+            </h3>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph RL
+                    HW[Microphone]
+                    ALSA[ALSA Driver]
+                    HAL[Audio HAL<br />IStreamIn]
+                    AF[AudioFlinger<br />Record Thread]
+                    BINDER2[Binder IPC]
+                    AR[AudioRecord API]
+                    APP[Application<br />MediaRecorder]
+
+                    HW --> ALSA
+                    ALSA --> HAL
+                    HAL --> AF
+                    AF --> BINDER2
+                    BINDER2 --> AR
+                    AR --> APP
+
+                    style HW fill:#1a1f35,stroke:#10b981,stroke-width:2px,color:#e5e7eb
+                    style ALSA fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+                    style HAL fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+                    style AF fill:#1a1f35,stroke:#7c3aed,stroke-width:3px,color:#e5e7eb
+                    style BINDER2 fill:#1a1f35,stroke:#c084fc,stroke-width:2px,color:#e5e7eb
+                    style AR fill:#1a1f35,stroke:#f472b6,stroke-width:2px,color:#e5e7eb
+                    style APP fill:#1a1f35,stroke:#ec4899,stroke-width:3px,color:#e5e7eb
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Audio HAL Interface -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Audio HAL 인터페이스
+            </h2>
+            <p class="section-description">
+                Audio Hardware Abstraction Layer는 프레임워크와 하드웨어 드라이버 사이의 표준 인터페이스입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        HAL 버전
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>HIDL</strong>: Android 13 이전</li>
+                            <li><strong>AIDL</strong>: Android 14+ (최신)</li>
+                            <li>.hal 파일 및 XSD 스키마</li>
+                            <li>Binder RPC 기반 통신</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📐</span>
+                        핵심 인터페이스
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>IDeviceFactory</code>: HAL 진입점</li>
+                            <li><code>IDevice / IPrimaryDevice</code>: 디바이스 제어</li>
+                            <li><code>IStreamOut</code>: 재생 스트림</li>
+                            <li><code>IStreamIn</code>: 녹음 스트림</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        HAL 구성
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Core HAL</strong>: 재생 및 라우팅</li>
+                            <li><strong>Effects HAL</strong>: 오디오 효과</li>
+                            <li><strong>Common HAL</strong>: 공유 데이터 타입</li>
+                            <li>XML 설정 파일 (audio_policy.conf)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Audio Focus Management -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Audio Focus 관리
+            </h2>
+            <p class="section-description">
+                여러 앱이 동시에 오디오를 재생할 때 충돌을 방지하는 협업 메커니즘입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Focus 상태
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>AUDIOFOCUS_GAIN</code>: 포커스 획득, 재생 시작/재개</li>
+                            <li><code>AUDIOFOCUS_LOSS</code>: 포커스 영구 손실, 정지</li>
+                            <li><code>AUDIOFOCUS_LOSS_TRANSIENT</code>: 일시 손실, 일시정지</li>
+                            <li><code>AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK</code>: 볼륨 감소</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Focus 플로우
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>앱이 <code>requestAudioFocus()</code> 호출</li>
+                            <li>AudioManager가 요청 평가</li>
+                            <li>기존 포커스 소유자에게 통지</li>
+                            <li>새 앱에게 포커스 부여</li>
+                            <li><code>abandonAudioFocus()</code>로 해제</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        자동 Fade (Android 12+)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>시스템이 자동으로 페이드 아웃</li>
+                            <li>부드러운 오디오 전환</li>
+                            <li>사용자 경험 개선</li>
+                            <li>앱 개발자 부담 감소</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App1 as Music App
+                    participant AM as AudioManager
+                    participant App2 as Navigation App
+
+                    App1->>AM: requestAudioFocus(GAIN)
+                    AM-->>App1: AUDIOFOCUS_GAIN
+                    Note over App1: 음악 재생 중
+
+                    App2->>AM: requestAudioFocus(GAIN_TRANSIENT)
+                    AM->>App1: onAudioFocusChange(LOSS_TRANSIENT)
+                    Note over App1: 음악 일시정지
+                    AM-->>App2: AUDIOFOCUS_GAIN
+                    Note over App2: 내비게이션 안내
+
+                    App2->>AM: abandonAudioFocus()
+                    AM->>App1: onAudioFocusChange(GAIN)
+                    Note over App1: 음악 재개
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Audio Routing -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Audio Routing
+            </h2>
+            <p class="section-description">
+                오디오 스트림을 적절한 출력 디바이스로 자동으로 라우팅하는 시스템입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔀</span>
+                        라우팅 결정 요소
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>연결된 디바이스</strong>: 헤드폰, 블루투스, USB</li>
+                            <li><strong>스트림 타입</strong>: MUSIC, VOICE_CALL, ALARM</li>
+                            <li><strong>오디오 모드</strong>: NORMAL, RINGTONE, IN_CALL</li>
+                            <li><strong>사용자 설정</strong>: 기본 출력 선택</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎧</span>
+                        출력 디바이스
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Earpiece</strong>: 통화용 스피커</li>
+                            <li><strong>Speaker</strong>: 일반 스피커</li>
+                            <li><strong>Wired Headset</strong>: 유선 헤드폰</li>
+                            <li><strong>Bluetooth</strong>: 블루투스 디바이스</li>
+                            <li><strong>USB</strong>: USB DAC/헤드폰</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        특수 라우팅
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>멀티 디바이스</strong>: 동시 출력 (Android 12+)</li>
+                            <li><strong>차량 멀티존</strong>: 구역별 오디오 (AAOS)</li>
+                            <li><strong>오디오 캡처</strong>: 앱간 오디오 공유</li>
+                            <li><strong>Bit-perfect</strong>: USB DAC 직접 출력</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TD
+                    APP[Application]
+                    AM[AudioManager<br />setAudioMode]
+                    APS[AudioPolicyService]
+
+                    subgraph Routing["Routing Decision"]
+                    DEV_CHECK{Connected<br />Devices?}
+                    STREAM_CHECK{Stream<br />Type?}
+                    end
+
+                    subgraph Devices["Output Devices"]
+                    SPK[Speaker]
+                    HP[Headphone]
+                    BT[Bluetooth]
+                    USB_DAC[USB DAC]
+                    end
+
+                    AF[AudioFlinger]
+
+                    APP --> AM
+                    AM --> APS
+                    APS --> DEV_CHECK
+                    DEV_CHECK --> STREAM_CHECK
+
+                    STREAM_CHECK -->|Music| HP
+                    STREAM_CHECK -->|Music| BT
+                    STREAM_CHECK -->|Call| SPK
+                    STREAM_CHECK -->|HiFi| USB_DAC
+
+                    HP --> AF
+                    BT --> AF
+                    SPK --> AF
+                    USB_DAC --> AF
+
+                    style APP fill:#1a1f35,stroke:#ec4899,stroke-width:2px,color:#e5e7eb
+                    style AM fill:#1a1f35,stroke:#f472b6,stroke-width:2px,color:#e5e7eb
+                    style APS fill:#1a1f35,stroke:#c084fc,stroke-width:3px,color:#e5e7eb
+                    style Routing fill:#0a0e1a,stroke:#7c3aed,stroke-width:2px
+                    style Devices fill:#0a0e1a,stroke:#10b981,stroke-width:2px
+                    style AF fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#ec4899',
+                lineColor: '#f472b6',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#1a1f35',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                tertiaryBkg: '#0a0e1a',
+                nodeBorder: '#ec4899',
+                clusterBkg: '#0a0e1a',
+                clusterBorder: '#ec4899',
+                titleColor: '#e5e7eb',
+                edgeLabelBackground: '#1a1f35',
+                actorBorder: '#ec4899',
+                actorBkg: '#1a1f35',
+                actorTextColor: '#e5e7eb',
+                actorLineColor: '#f472b6',
+                signalColor: '#e5e7eb',
+                signalTextColor: '#e5e7eb',
+                labelBoxBkgColor: '#1a1f35',
+                labelBoxBorderColor: '#ec4899',
+                labelTextColor: '#e5e7eb',
+                loopTextColor: '#e5e7eb',
+                noteBorderColor: '#ec4899',
+                noteBkgColor: '#111827',
+                noteTextColor: '#e5e7eb',
+                activationBorderColor: '#f472b6',
+                activationBkgColor: '#1a1f35',
+                sequenceNumberColor: '#e5e7eb'
+            }
+        });
+    </script>
+</body>
+
+</html>

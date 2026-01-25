@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Media Service Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7c3aed;
+            --accent-tertiary: #ec4899;
+            --accent-car: #f59e0b;
+            /* Automotive Theme Color */
+            --accent-success: #10b981;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f2e 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: var(--accent-car);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-car), var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-car), var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(245, 158, 11, 0.3);
+            box-shadow: 0 10px 40px rgba(245, 158, 11, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-car);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-car), var(--accent-primary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(245, 158, 11, 0.4);
+            box-shadow: 0 5px 20px rgba(245, 158, 11, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-car);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(245, 158, 11, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-car);
+            font-size: 0.9em;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(0, 212, 255, 0.1));
+            border-left: 4px solid var(--accent-car);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-car);
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-car), var(--accent-primary));
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>🚗 Car Media Service</h1>
+            <p class="subtitle">Android Automotive OS 미디어 및 오디오 관리 아키텍처</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overview: CarMedia vs CarAudio
+            </h2>
+            <p class="section-description">
+                Android Automotive OS (AAOS)에서 미디어 경험을 관리하는 두 가지 핵심 서비스의 역할과 차이점을 설명합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        CarMediaService
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>"무엇(What)"을 관리</strong></p>
+                        <ul>
+                            <li><strong>Active Media Source</strong>: 현재 선택된 미디어 앱 관리</li>
+                            <li><strong>Source Selection</strong>: 사용자/시스템에 의한 소스 변경 추적</li>
+                            <li><strong>Resumption</strong>: 시동 재시작 시 이전 미디어 복원</li>
+                            <li><strong>Browsing</strong>: 미디어 브라우징을 위한 연결 관리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        CarAudioService
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>"어떻게(How)"를 관리</strong></p>
+                        <ul>
+                            <li><strong>Audio Focus</strong>: 앱 간 오디오 우선순위 조정</li>
+                            <li><strong>Routing</strong>: Zone별 오디오 출력 장치 결정</li>
+                            <li><strong>Volume Groups</strong>: 컨텍스트별 볼륨 그룹 관리</li>
+                            <li><strong>Ducking</strong>: 안내 방송 시 미디어 볼륨 자동 조절</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                AAOS Media Architecture
+            </h2>
+            <p class="section-description">
+                CarMediaService와 CarAudioService가 표준 Android Media Framework와 상호작용하는 전체 아키텍처입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APPS ["Media Applications"]
+                    SPOTIFY["Spotify<br />(MediaSession)"]
+                    YT["YouTube Music<br />(MediaSession)"]
+                    RADIO["Radio App<br />(MediaSession)"]
+                    end
+
+                    subgraph CAR_SERVICE ["Car Service (System Server)"]
+                    CMS["CarMediaService<br />(Active Source Manager)"]
+                    CAS["CarAudioService<br />(Focus & Routing Policy)"]
+
+                    CMS -.->|Tracks| SPOTIFY
+                    CMS -.->|Tracks| YT
+                    CMS -.->|Tracks| RADIO
+
+                    CAS -.->|Manages Focus| APPS
+                    end
+
+                    subgraph ANDROID_FW ["Android Framework"]
+                    AUDIO_SVC["AudioService"]
+                    MEDIA_SESSION["MediaSessionService"]
+                    end
+
+                    subgraph HAL ["Hardware Abstraction Layer"]
+                    AUDIO_HAL["Audio HAL<br />(Output Devices)"]
+                    VEHICLE_HAL["Vehicle HAL<br />(Events)"]
+                    end
+
+                    APPS -->|AudioAttributes| AUDIO_SVC
+                    APPS -->|PlaybackState| MEDIA_SESSION
+
+                    CAS -->|Routing Policy| AUDIO_SVC
+                    AUDIO_SVC -->|Stream| AUDIO_HAL
+
+                    VEHICLE_HAL -->|User Events| CMS
+
+                    style CMS fill:#1a1f35,stroke:#f59e0b,stroke-width:3px
+                    style CAS fill:#1a1f35,stroke:#00d4ff,stroke-width:3px
+                    style APPS fill:#0a0e1a,stroke:#10b981,stroke-width:2px
+                    style ANDROID_FW fill:#111827,stroke:#6b7280,stroke-width:2px
+                    style HAL fill:#0a0e1a,stroke:#7c3aed,stroke-width:2px
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Media Source Management -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Media Source Management
+            </h2>
+            <p class="section-description">
+                CarMediaService가 활성 미디어 소스를 선택하고 관리하는 프로세스입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant User
+                    participant UI as Car UI (Launcher)
+                    participant CMS as CarMediaService
+                    participant App as Media App
+                    participant Session as MediaSession
+
+                    Note over User,Session: 소스 변경 (Source Selection)
+                    User->>UI: 미디어 앱 선택 (Spotify)
+                    UI->>CMS: setMediaSource(Spotify)
+                    CMS->>CMS: Update Active Source
+                    CMS->>UI: onMediaSourceChanged()
+
+                    Note over User,Session: 재생 재개 (Resumption)
+                    CMS->>App: Start Service / Browse
+                    App->>Session: Create Session
+                    Session->>CMS: Session Active
+                    CMS->>App: Play Command
+                    App->>Session: setPlaybackState(PLAYING)
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Active Media Source
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>단일 활성 소스 관리</strong></p>
+                        <ul>
+                            <li>시스템 내 유일한 '활성 미디어 소스' 유지 (Playback & Browsing)</li>
+                            <li>MediaSessionManager와 달리, 차량 UI에 표시될 <strong>단 하나의 앱</strong>만 추적</li>
+                            <li>현재 선택된 소스의 ComponentName, PlaybackState, 타임스탬프 저장</li>
+                            <li>Media Center 등 시스템 UI는 이 정보를 참조하여 컨텐츠 표시</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">👆</span>
+                        Source Selection
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>소스 변경 메커니즘</strong></p>
+                        <ul>
+                            <li><strong>트리거</strong>: 사용자 터치(Launcher), 하드웨어 버튼, 음성 명령</li>
+                            <li><strong>프로세스</strong>: <code>setMediaSource()</code> 호출 → Active Source 업데이트 → 옵저버 알림
+                            </li>
+                            <li><code>car-media-common</code> 라이브러리의 Source Selector Intent 지원</li>
+                            <li>소스 변경 시 이전 앱은 정지(Stop) 또는 일시정지 처리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Resumption
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>재생 복원 로직</strong></p>
+                        <ul>
+                            <li>차량 시동(Ignition On) 시 마지막 Active Source 자동 복원</li>
+                            <li>앱은 <code>onPlaybackResumption()</code> 콜백 구현 필요</li>
+                            <li><strong>LMS (Last Media Source)</strong> 정보를 Persistent Storage에 저장</li>
+                            <li>부팅 직후 서비스 바인딩 및 세션 복구 수행</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📂</span>
+                        Browsing
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>미디어 탐색 연결</strong></p>
+                        <ul>
+                            <li>Active Source의 <code>MediaBrowserService</code>에 자동 연결</li>
+                            <li><code>onGetRoot()</code> → <code>onLoadChildren()</code> 호출로 컨텐츠 트리 구성</li>
+                            <li>시스템 UI(Media Center)가 앱의 컨텐츠를 대신 그려줌</li>
+                            <li>운전 중 제한(UX Restrictions)에 따른 리스트 필터링 적용</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Audio Focus & Routing -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Audio Focus & Routing
+            </h2>
+            <p class="section-description">
+                CarAudioService가 오디오 포커스를 관리하고 다중 존(Multi-zone)으로 라우팅하는 메커니즘입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    flowchart LR
+                    subgraph INPUT ["Audio Focus Request"]
+                    REQ_MEDIA["Media App<br />(USAGE_MEDIA)"]
+                    REQ_NAV["Nav App<br />(USAGE_ASSISTANCE_NAVIGATION)"]
+                    REQ_CALL["Phone<br />(USAGE_VOICE_COMMUNICATION)"]
+                    end
+
+                    subgraph CAS ["CarAudioService"]
+                    MATRIX["Interaction Matrix<br />(Exclusive / Concurrent / Reject)"]
+                    ZONES["Zone Manager<br />(Driver / Passenger)"]
+                    GROUPS["Volume Groups"]
+                    end
+
+                    subgraph OUTPUT ["Audio Output"]
+                    SPK_MAIN["Main Speakers"]
+                    SPK_NAV["Driver Headrest"]
+                    SPK_REAR["Rear Speakers"]
+                    end
+
+                    REQ_MEDIA --> MATRIX
+                    REQ_NAV --> MATRIX
+                    REQ_CALL --> MATRIX
+
+                    MATRIX --> ZONES
+                    ZONES --> GROUPS
+
+                    GROUPS -- "Zone 1" --> SPK_MAIN
+                    GROUPS -- "Zone 1 (Nav)" --> SPK_NAV
+                    GROUPS -- "Zone 2" --> SPK_REAR
+
+                    style CAS fill:#1a1f35,stroke:#00d4ff,stroke-width:3px
+                    style MATRIX fill:#111827,stroke:#f59e0b,stroke-width:2px
+                    style ZONES fill:#111827,stroke:#10b981,stroke-width:2px
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎛️</span>
+                        Interaction Matrix
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>오디오 간섭 규칙 정의</strong></p>
+                        <ul>
+                            <li><strong>Exclusive</strong>: 한 번에 하나만 재생 (예: 음악 vs 음악)</li>
+                            <li><strong>Concurrent</strong>: 동시 재생 (예: 음악 + 네비게이션)</li>
+                            <li><strong>Reject</strong>: 요청 거부 (예: 통화 중 음악 요청)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔉</span>
+                        Ducking & Fading
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>자동 볼륨 조절</strong></p>
+                        <ul>
+                            <li>네비게이션 안내 시 음악 볼륨 자동 감소</li>
+                            <li>긴급 경보 시 다른 모든 오디오 음소거</li>
+                            <li>부드러운 전환을 위한 Fading 처리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Multi-Zone Audio
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>좌석별 독립 오디오</strong></p>
+                        <ul>
+                            <li>운전석: 네비게이션 + 라디오</li>
+                            <li>뒷좌석: 유튜브 키즈 (헤드폰)</li>
+                            <li>각 존(Zone)별 독립적인 포커스 및 볼륨 관리</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Android Automotive OS Media Architecture</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                CarMediaService & CarAudioService Deep Dive
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-car); text-decoration: none;">
+                    ← AOSP Media Framework로 돌아가기
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#f59e0b',
+                lineColor: '#7c3aed',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#0a0e1a',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                border1: '#f59e0b',
+                border2: '#00d4ff',
+                note: '#ec4899',
+                noteBkgColor: 'rgba(236, 72, 153, 0.1)',
+                noteBorderColor: '#ec4899',
+                fontFamily: 'Noto Sans KR'
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 50
+            },
+            sequence: {
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35
+            }
+        });
+
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+</body>
+
+</html>

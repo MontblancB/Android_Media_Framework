@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Automotive OS (AAOS)</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #8b5cf6;
+            --accent-secondary: #a78bfa;
+            --accent-tertiary: #c4b5fd;
+            --accent-orange: #f59e0b;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glow-color: rgba(139, 92, 246, 0.3);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f2e 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.05) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-orange));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 5px 20px rgba(139, 92, 246, 0.15);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(139, 92, 246, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-primary);
+            font-size: 0.9em;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(245, 158, 11, 0.1));
+            border-left: 4px solid var(--accent-primary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-primary);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2));
+            color: var(--accent-primary);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .comparison-table td {
+            background: var(--bg-secondary);
+        }
+
+        .comparison-table tr:hover td {
+            background: var(--bg-card-hover);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .subtitle {
+                font-size: 1.1rem;
+            }
+
+            .section {
+                padding: 25px;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--accent-secondary), var(--accent-orange));
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>🚗 Android Automotive OS</h1>
+            <p class="subtitle">차량 인포테인먼트를 위한 Android 플랫폼</p>
+        </header>
+
+        <!-- Section 1: AAOS Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                AAOS 개요
+            </h2>
+            <p class="section-description">
+                Android Automotive OS는 차량 인포테인먼트 시스템(IVI)을 위해 특별히 설계된 Android 플랫폼입니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>AAOS란?</strong> 일반 AOSP에 차량 특화 레이어를 추가하여 ECU, CAN 버스 등 차량 하드웨어와 직접 통신할 수 있는 완전한 차량용 운영체제입니다.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        주요 목적
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>차량 인포테인먼트 시스템(IVI) 구동</li>
+                            <li>차량 데이터 접근 및 제어</li>
+                            <li>운전자 안전을 위한 UI/UX</li>
+                            <li>멀티 유저/멀티존 지원</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏭</span>
+                        주요 제조사
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Volvo</strong>: Polestar, XC40 Recharge</li>
+                            <li><strong>GM</strong>: Chevrolet, GMC, Cadillac</li>
+                            <li><strong>Ford</strong>: Lincoln 시리즈</li>
+                            <li><strong>Honda</strong>: Acura 모델</li>
+                            <li><strong>Renault</strong>: Megane E-Tech</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        핵심 차별점
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Vehicle HAL (VHAL) 추가</li>
+                            <li>Car Services 레이어</li>
+                            <li>android.car API 패키지</li>
+                            <li>운전자 주의 산만 방지 가이드라인</li>
+                            <li>Car UI Library 템플릿</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: AAOS Architecture -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                AAOS 전체 아키텍처
+            </h2>
+            <p class="section-description">
+                AOSP 기반 위에 차량 특화 레이어를 추가한 6-layer 아키텍처입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    APP["🎨 Vehicle Apps<br /><br />Navigation, Media, HVAC Control<br />Car Settings"]
+
+                    CAR_SERVICES["🚙 Car Services Layer<br /><br />Car API (android.car.*)<br />CarPropertyManager,
+                    CarAudioService<br />CarPowerService, CarUserService"]
+
+                    FW["📱 Android Framework<br /><br />Activity Manager, Window Manager<br />Package Manager, Audio
+                    Manager"]
+
+                    ART["☕ Android Runtime<br /><br />ART, Core Libraries"]
+
+                    VHAL["🔌 Vehicle HAL (VHAL)<br /><br />Vehicle Properties<br />AIDL/HIDL Interface"]
+
+                    VEHICLE_HW["⚡ Vehicle Hardware<br /><br />ECU, CAN Bus<br />Vehicle Sensors (Speed, Fuel, Gear)"]
+
+                    APP --> CAR_SERVICES
+                    CAR_SERVICES --> FW
+                    FW --> ART
+                    ART --> VHAL
+                    VHAL --> VEHICLE_HW
+
+                    style APP fill:#1a1f35,stroke:#8b5cf6,stroke-width:3px,color:#e5e7eb
+                    style CAR_SERVICES fill:#1a1f35,stroke:#f59e0b,stroke-width:3px,color:#e5e7eb
+                    style FW fill:#1a1f35,stroke:#a78bfa,stroke-width:2px,color:#e5e7eb
+                    style ART fill:#1a1f35,stroke:#c4b5fd,stroke-width:2px,color:#e5e7eb
+                    style VHAL fill:#1a1f35,stroke:#10b981,stroke-width:3px,color:#e5e7eb
+                    style VEHICLE_HW fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Car Services -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Car Services
+            </h2>
+            <p class="section-description">
+                Car Services는 앱과 차량 하드웨어 사이의 중재자로, 차량 기능을 Android API로 노출합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        주요 역할
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>중재자</strong>: 앱과 차량 데이터 중개</li>
+                            <li><strong>보안</strong>: 권한 기반 접근 제어</li>
+                            <li><strong>추상화</strong>: 하드웨어 복잡도 숨김</li>
+                            <li><strong>상호운용성</strong>: 제조사 간 호환성</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        핵심 서비스
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>CarPropertyManager</code>: 차량 속성 관리</li>
+                            <li><code>CarAudioService</code>: 멀티존 오디오</li>
+                            <li><code>CarPowerService</code>: 전원 관리</li>
+                            <li><code>CarUserService</code>: 멀티 유저</li>
+                            <li><code>CarInputService</code>: 입력 이벤트</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        보안 및 권한
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Automotive 특화 권한 시스템</li>
+                            <li>민감한 차량 데이터 보호</li>
+                            <li>앱별 접근 권한 제어</li>
+                            <li>OEM 전용 권한</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph LR
+                    APP[Vehicle App]
+
+                    subgraph Car_Services["Car Services"]
+                    CAR_API[android.car API]
+                    CPM[CarPropertyManager]
+                    end
+
+                    VHAL[Vehicle HAL]
+                    ECU[ECU/CAN Bus]
+
+                    APP -->|Request Speed| CAR_API
+                    CAR_API -->|getProperty| CPM
+                    CPM -->|VHAL Property| VHAL
+                    VHAL -->|CAN Message| ECU
+                    ECU -->|Speed Data| VHAL
+                    VHAL -->|VehiclePropValue| CPM
+                    CPM -->|Property Value| CAR_API
+                    CAR_API -->|Speed| APP
+
+                    style APP fill:#1a1f35,stroke:#8b5cf6,stroke-width:2px,color:#e5e7eb
+                    style Car_Services fill:#0a0e1a,stroke:#f59e0b,stroke-width:3px
+                    style VHAL fill:#1a1f35,stroke:#10b981,stroke-width:2px,color:#e5e7eb
+                    style ECU fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Vehicle HAL -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Vehicle HAL (VHAL)
+            </h2>
+            <p class="section-description">
+                Vehicle Hardware Abstraction Layer는 Android와 차량 하드웨어 사이의 표준 인터페이스입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        VHAL 개념
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>차량 하드웨어 추상화 계층</li>
+                            <li>ECU/CAN 버스와 Android 간 번역기</li>
+                            <li>차량 데이터를 속성(Property)으로 노출</li>
+                            <li>AIDL/HIDL 기반 인터페이스</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        차량 속성(Property)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>속도</strong>: PERF_VEHICLE_SPEED</li>
+                            <li><strong>연료</strong>: FUEL_LEVEL_LOW, FUEL_LEVEL</li>
+                            <li><strong>기어</strong>: GEAR_SELECTION</li>
+                            <li><strong>HVAC</strong>: HVAC_TEMPERATURE_SET</li>
+                            <li><strong>도어</strong>: DOOR_LOCK, DOOR_POS</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        속성 타입
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Access</strong>: READ, WRITE, READ_WRITE</li>
+                            <li><strong>Change Mode</strong>:
+                                <ul>
+                                    <li>STATIC: 변하지 않음</li>
+                                    <li>ON_CHANGE: 변경 시 알림</li>
+                                    <li>CONTINUOUS: 주기적 업데이트</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph VHAL_Layer["Vehicle HAL Layer"]
+                    VHAL_IF[VHAL Interface<br />AIDL/HIDL]
+                    PROPS[Vehicle Properties<br />Speed, Fuel, HVAC, Gear]
+                    end
+
+                    subgraph Vehicle["Vehicle Hardware"]
+                    ECU1[Engine ECU]
+                    ECU2[Body ECU]
+                    CAN[CAN Bus]
+                    SENSORS[Sensors]
+                    end
+
+                    CAR_SVC[Car Services]
+
+                    CAR_SVC -->|Get/Set Property| VHAL_IF
+                    VHAL_IF --> PROPS
+                    PROPS -->|Translate| CAN
+                    CAN --> ECU1 & ECU2
+                    SENSORS --> CAN
+
+                    style VHAL_Layer fill:#0a0e1a,stroke:#10b981,stroke-width:3px
+                    style Vehicle fill:#0a0e1a,stroke:#6b7280,stroke-width:2px
+                    style CAR_SVC fill:#1a1f35,stroke:#f59e0b,stroke-width:2px,color:#e5e7eb
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Multi-User Support -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Multi-User Support
+            </h2>
+            <p class="section-description">
+                AAOS는 차량 내 여러 탑승자가 독립적인 프로필과 앱을 사용할 수 있도록 멀티 유저를 지원합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">👥</span>
+                        사용자 격리
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>각 사용자별 독립 계정</li>
+                            <li>앱 및 데이터 격리</li>
+                            <li>개인 설정 및 환경</li>
+                            <li>프라이버시 보호</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🪑</span>
+                        Occupant Zones
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>탑승자 구역별 사용자 매핑</li>
+                            <li>디스플레이 할당</li>
+                            <li>오디오 존 연결</li>
+                            <li>User ID ↔ Occupant Zone 매핑</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        사용자 전환
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>빠른 사용자 전환</li>
+                            <li>Guest 모드 지원</li>
+                            <li>운전자 vs 승객 모드</li>
+                            <li>자동 로그인 옵션</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Multi-Zone Audio -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Multi-Zone Audio
+            </h2>
+            <p class="section-description">
+                차량 내 여러 구역에서 독립적인 오디오를 동시에 재생할 수 있는 멀티존 오디오 시스템입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        오디오 존 개념
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>독립적 오디오 출력 그룹</li>
+                            <li>각 존별 독립 포커스</li>
+                            <li>각 존별 독립 볼륨</li>
+                            <li>예: 운전석 vs 뒷좌석</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        설정 및 관리
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>car_audio_configuration.xml</code></li>
+                            <li>Volume Groups 정의</li>
+                            <li>Output 디바이스 매핑</li>
+                            <li>CarAudioService 자동 라우팅</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✨</span>
+                        Android 14 기능
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>동적 존 구성</li>
+                            <li>Primary Zone Passenger Cast</li>
+                            <li>승객이 메인 캐빈으로 캐스트</li>
+                            <li>운전자 제어권 유지</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Zone1["Audio Zone 1 (Front)"]
+                    USER1[Driver<br />User ID: 10]
+                    APP1[Navigation App]
+                    AUDIO1[Front Speakers]
+                    end
+
+                    subgraph Zone2["Audio Zone 2 (Rear)"]
+                    USER2[Passenger<br />User ID: 11]
+                    APP2[Media App]
+                    AUDIO2[Rear Speakers]
+                    end
+
+                    CAR_AUDIO[CarAudioService<br />Dynamic Audio Policy]
+
+                    USER1 --> APP1
+                    APP1 --> CAR_AUDIO
+                    CAR_AUDIO -->|Zone 1<br />Focus & Volume| AUDIO1
+
+                    USER2 --> APP2
+                    APP2 --> CAR_AUDIO
+                    CAR_AUDIO -->|Zone 2<br />Focus & Volume| AUDIO2
+
+                    style Zone1 fill:#0a0e1a,stroke:#8b5cf6,stroke-width:2px
+                    style Zone2 fill:#0a0e1a,stroke:#a78bfa,stroke-width:2px
+                    style CAR_AUDIO fill:#1a1f35,stroke:#f59e0b,stroke-width:3px,color:#e5e7eb
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Car UI Library -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Car UI Library
+            </h2>
+            <p class="section-description">
+                운전자 안전을 위해 설계된 템플릿 기반 UI 라이브러리입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        Driver Distraction Guidelines
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>주행 중 제한된 인터랙션</li>
+                            <li>몇 초 내 완료 가능한 작업</li>
+                            <li>비디오/게임/긴 텍스트 금지</li>
+                            <li>'Distraction Optimized' 태그 필수</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📐</span>
+                        템플릿 기반 UI
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>androidx.car.app</code> 라이브러리</li>
+                            <li><code>MediaTemplate</code>: 미디어 플레이어</li>
+                            <li><code>PaneTemplate</code>: 정보 표시</li>
+                            <li><code>MessageTemplate</code>: 메시지/확인</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎤</span>
+                        Voice-First 디자인
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Google Assistant 통합</li>
+                            <li>핸즈프리 작업</li>
+                            <li>음성 명령 우선</li>
+                            <li>화면 인터랙션 최소화</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚦</span>
+                        Context-Aware UX
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>CarUxRestrictionsManager</code></li>
+                            <li>주행 중: 간소화된 UI</li>
+                            <li>정차 시: 풍부한 UI</li>
+                            <li>동적 입력 필드 비활성화</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: AOSP vs AAOS -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                AOSP vs AAOS 비교
+            </h2>
+            <p class="section-description">
+                일반 AOSP와 차량용 AAOS의 주요 차이점을 비교합니다.
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>항목</th>
+                        <th>AOSP (일반)</th>
+                        <th>AAOS (Automotive)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>목적</strong></td>
+                        <td>스마트폰, 태블릿, TV</td>
+                        <td>차량 인포테인먼트 (IVI)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HAL</strong></td>
+                        <td>Camera, Audio, Sensor HAL</td>
+                        <td><strong>+ Vehicle HAL (VHAL)</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>추가 레이어</strong></td>
+                        <td>없음</td>
+                        <td><strong>Car Services Layer</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>API 패키지</strong></td>
+                        <td>android.* 패키지</td>
+                        <td><strong>+ android.car.* 패키지</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>차량 데이터</strong></td>
+                        <td>접근 불가</td>
+                        <td><strong>속도, 연료, 기어, HVAC 접근</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>멀티 유저</strong></td>
+                        <td>기본 멀티 유저</td>
+                        <td><strong>Occupant Zones 기반</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>오디오</strong></td>
+                        <td>단일 출력</td>
+                        <td><strong>Multi-Zone Audio</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>UI 가이드라인</strong></td>
+                        <td>일반 Material Design</td>
+                        <td><strong>Driver Distraction Guidelines</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>UI 라이브러리</strong></td>
+                        <td>표준 Android UI</td>
+                        <td><strong>Car UI Library (템플릿)</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>통신</strong></td>
+                        <td>Wi-Fi, Cellular, Bluetooth</td>
+                        <td><strong>+ CAN Bus, Vehicle Network</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>앱 카테고리</strong></td>
+                        <td>모든 카테고리</td>
+                        <td><strong>제한적 (Navigation, Media, Communication)</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>보안</strong></td>
+                        <td>표준 권한</td>
+                        <td><strong>+ Automotive 특화 권한</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>핵심 요약:</strong> AAOS는 AOSP 위에 <strong>Car Services</strong>, <strong>Vehicle HAL</strong>,
+                <strong>android.car API</strong>를 추가하여
+                차량 하드웨어와의 완전한 통합을 제공하며, 운전자 안전을 최우선으로 하는 UI/UX 가이드라인을 적용한 차량 전용 플랫폼입니다.
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#8b5cf6',
+                lineColor: '#a78bfa',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#1a1f35',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                tertiaryBkg: '#0a0e1a',
+                nodeBorder: '#8b5cf6',
+                clusterBkg: '#0a0e1a',
+                clusterBorder: '#8b5cf6',
+                titleColor: '#e5e7eb',
+                edgeLabelBackground: '#1a1f35',
+                actorBorder: '#8b5cf6',
+                actorBkg: '#1a1f35',
+                actorTextColor: '#e5e7eb',
+                actorLineColor: '#a78bfa',
+                signalColor: '#e5e7eb',
+                signalTextColor: '#e5e7eb',
+                labelBoxBkgColor: '#1a1f35',
+                labelBoxBorderColor: '#8b5cf6',
+                labelTextColor: '#e5e7eb',
+                loopTextColor: '#e5e7eb',
+                noteBorderColor: '#8b5cf6',
+                noteBkgColor: '#111827',
+                noteTextColor: '#e5e7eb'
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Automotive Services (GAS) 아키텍처</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7c3aed;
+            --accent-tertiary: #ec4899;
+            --accent-automotive: #f59e0b;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glow-color: rgba(0, 212, 255, 0.3);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f2e 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        /* Header Styles */
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.05) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-automotive), var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-automotive), var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(245, 158, 11, 0.3);
+            box-shadow: 0 10px 40px rgba(245, 158, 11, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-automotive);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-automotive), var(--accent-primary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        /* Diagram Container */
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--accent-automotive), var(--accent-primary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(245, 158, 11, 0.4);
+            box-shadow: 0 5px 20px rgba(245, 158, 11, 0.15);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-automotive);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        /* Code styling */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(245, 158, 11, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-automotive);
+            font-size: 0.9em;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(0, 212, 255, 0.2));
+            color: var(--accent-automotive);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .comparison-table td {
+            background: var(--bg-secondary);
+        }
+
+        .comparison-table tr:hover td {
+            background: var(--bg-card-hover);
+        }
+
+        /* Tag Styles */
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 4px;
+        }
+
+        .tag-aaos {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(0, 212, 255, 0.2));
+            color: var(--accent-automotive);
+            border: 1px solid var(--accent-automotive);
+        }
+
+        .tag-proprietary {
+            background: rgba(124, 58, 237, 0.2);
+            color: var(--accent-secondary);
+            border: 1px solid var(--accent-secondary);
+        }
+
+        .tag-oem {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(124, 58, 237, 0.2));
+            color: var(--accent-tertiary);
+            border: 1px solid var(--accent-tertiary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .subtitle {
+                font-size: 1.1rem;
+            }
+
+            .section {
+                padding: 25px;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scroll Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-automotive), var(--accent-primary));
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+        }
+
+        /* Highlight box */
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(0, 212, 255, 0.1));
+            border-left: 4px solid var(--accent-automotive);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-automotive);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>🚗 Google Automotive Services</h1>
+            <p class="subtitle">차량용 인포테인먼트를 위한 구글 서비스 생태계</p>
+        </header>
+
+        <!-- Section 1: GAS Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                GAS 개요
+            </h2>
+            <p class="section-description">
+                Google Automotive Services (GAS)는 Android Automotive OS (AAOS) 기반 차량에서 실행되는
+                Google의 애플리케이션 및 서비스 모음입니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>핵심 차이점:</strong> GAS는 차량에 내장된 시스템에서 <strong>네이티브로 실행</strong>되며,
+                Android Auto처럼 스마트폰에서 투사(projection)하는 방식이 아닙니다.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        GAS란?
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Google Automotive Services</strong></p>
+                        <ul>
+                            <li>AAOS 위에서 실행되는 Google 앱 모음</li>
+                            <li>OEM이 라이센스를 통해 차량에 통합</li>
+                            <li>스마트폰 없이 독립적으로 동작</li>
+                            <li>차량 하드웨어와 직접 통합</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        vs Android Auto
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Android Auto</strong>: 스마트폰 앱을 차량 디스플레이에 투사</li>
+                            <li><strong>GAS/AAOS</strong>: 차량 시스템에 내장된 OS</li>
+                            <li>Android Auto는 스마트폰 필요</li>
+                            <li>GAS는 완전히 독립적</li>
+                            <li>GAS는 차량 제어 기능 통합 가능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏢</span>
+                        주요 제조사
+                    </h3>
+                    <div class="card-description">
+                        <p>GAS를 탑재한 차량 브랜드:</p>
+                        <ul>
+                            <li><strong>Volvo</strong> (Polestar 포함)</li>
+                            <li><strong>Renault</strong></li>
+                            <li><strong>Ford</strong></li>
+                            <li><strong>GM</strong> (Chevrolet, GMC, Cadillac)</li>
+                            <li><strong>Honda</strong></li>
+                            <li><strong>BMW</strong> (일부 모델)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✨</span>
+                        주요 장점
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>스마트폰 연결 불필요</li>
+                            <li>차량 에어컨, 시트 등 제어 통합</li>
+                            <li>OTA 업데이트로 지속적 개선</li>
+                            <li>익숙한 Google 사용자 경험</li>
+                            <li>Google 계정 동기화</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: AAOS + GAS Architecture -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                AAOS + GAS 아키텍처
+            </h2>
+            <p class="section-description">
+                Android Automotive OS와 Google Automotive Services의 계층 구조 및 관계를 보여줍니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph VEHICLE["Vehicle System"]
+                    HW["Vehicle Hardware<br />(IVI, ECU, CAN Bus)"]
+                    end
+
+                    subgraph AAOS["Android Automotive OS (Open Source)"]
+                    AOS["Android OS Core<br />(Linux Kernel, HAL)"]
+                    AF["Android Framework<br />(Activity Manager, Window Manager)"]
+                    CAR_API["Android Car API<br />(CarPropertyManager, CarSensorManager)"]
+                    VEHICLE_HAL["Vehicle HAL<br />(HIDL/AIDL Interface)"]
+                    end
+
+                    subgraph GAS["Google Automotive Services (Proprietary)"]
+                    GMAP["Google Maps<br />&amp; Navigation"]
+                    GASSIST["Google<br />Assistant"]
+                    GPLAY["Google<br />Play Store"]
+                    GSERVICES["Google Play<br />Services"]
+                    OTHER["YouTube Music<br />Chrome, etc."]
+                    end
+
+                    subgraph OEM["OEM Customization"]
+                    OEM_APPS["OEM Apps<br />(Climate, Radio)"]
+                    OEM_UI["Custom UI/UX"]
+                    end
+
+                    subgraph USER["User Applications"]
+                    THIRD_PARTY["3rd Party Apps<br />(Spotify, Waze)"]
+                    end
+
+                    HW --> VEHICLE_HAL
+                    VEHICLE_HAL --> CAR_API
+                    CAR_API --> AF
+                    AF --> AOS
+
+                    AOS --> GSERVICES
+                    GSERVICES --> GMAP & GASSIST & GPLAY & OTHER
+
+                    AF --> OEM_APPS & OEM_UI
+                    GPLAY --> THIRD_PARTY
+                    AF --> THIRD_PARTY
+
+                    style VEHICLE fill:#1a1f35,stroke:#6b7280,stroke-width:2px
+                    style AAOS fill:#1a1f35,stroke:#00d4ff,stroke-width:3px
+                    style GAS fill:#1a1f35,stroke:#f59e0b,stroke-width:3px
+                    style OEM fill:#1a1f35,stroke:#7c3aed,stroke-width:2px
+                    style USER fill:#1a1f35,stroke:#ec4899,stroke-width:2px
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        AAOS (오픈소스)
+                        <span class="tag tag-aaos">Open Source</span>
+                    </h3>
+                    <div class="card-description">
+                        <p>Android 기반 차량용 운영체제</p>
+                        <ul>
+                            <li>Linux 커널 및 Android 프레임워크</li>
+                            <li>Vehicle HAL을 통한 차량 하드웨어 연결</li>
+                            <li>Android Car API로 차량 센서/제어 접근</li>
+                            <li>OEM이 자유롭게 커스터마이징 가능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        GAS (독점)
+                        <span class="tag tag-proprietary">Proprietary</span>
+                    </h3>
+                    <div class="card-description">
+                        <p>Google의 라이센스 서비스 모음</p>
+                        <ul>
+                            <li>Google Maps, Assistant, Play Store 등</li>
+                            <li>OEM 라이센스 계약 필요</li>
+                            <li>Google 인증 AAOS 필수</li>
+                            <li>정기적인 OTA 업데이트 제공</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏭</span>
+                        OEM 커스터마이징
+                        <span class="tag tag-oem">OEM</span>
+                    </h3>
+                    <div class="card-description">
+                        <p>제조사별 맞춤화</p>
+                        <ul>
+                            <li>브랜드 고유 UI/UX 디자인</li>
+                            <li>차량 제어 앱 (에어컨, 시트 등)</li>
+                            <li>라디오, 내비게이션 통합</li>
+                            <li>Vehicle HAL 구현</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        서드파티 앱
+                    </h3>
+                    <div class="card-description">
+                        <p>Google Play Store를 통한 확장</p>
+                        <ul>
+                            <li>Spotify, Audible, Waze 등</li>
+                            <li>차량용으로 최적화된 UI</li>
+                            <li>운전 중 안전을 고려한 디자인</li>
+                            <li>Voice 제어 지원</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: GAS Core Services -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                GAS 핵심 서비스
+            </h2>
+            <p class="section-description">
+                Google Automotive Services에 포함된 주요 애플리케이션과 서비스를 상세히 설명합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🗺️</span>
+                        Google Maps
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>차량 최적화 내비게이션</strong></p>
+                        <ul>
+                            <li>실시간 교통 정보 및 경로 재탐색</li>
+                            <li>EV 충전소 찾기 (전기차)</li>
+                            <li>주차장 정보 및 가용성</li>
+                            <li>목적지 검색 및 자동완성</li>
+                            <li>차량 디스플레이에 최적화된 UI</li>
+                            <li>Google 계정 저장 장소 동기화</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎤</span>
+                        Google Assistant
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>음성 제어 도우미</strong></p>
+                        <ul>
+                            <li>"Hey Google"로 핸즈프리 활성화</li>
+                            <li>내비게이션 음성 제어</li>
+                            <li>통화 및 메시지 전송</li>
+                            <li>음악 재생 제어</li>
+                            <li>차량 기능 제어 (에어컨, 시트 등)</li>
+                            <li>날씨, 뉴스 등 정보 조회</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Google Play Store
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>차량용 앱 마켓플레이스</strong></p>
+                        <ul>
+                            <li>차량용 인증 앱만 제공</li>
+                            <li>운전 중 안전 기준 충족 앱</li>
+                            <li>음악: Spotify, YouTube Music</li>
+                            <li>팟캐스트: Pocket Casts</li>
+                            <li>오디오북: Audible</li>
+                            <li>내비게이션: Waze</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Google Play Services
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>백그라운드 서비스</strong></p>
+                        <ul>
+                            <li>Google 계정 인증 및 동기화</li>
+                            <li>위치 서비스 제공</li>
+                            <li>푸시 알림 (Cloud Messaging)</li>
+                            <li>앱 업데이트 관리</li>
+                            <li>보안 및 개인정보 보호</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        YouTube Music
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>음악 스트리밍</strong></p>
+                        <ul>
+                            <li>수백만 곡 스트리밍</li>
+                            <li>오프라인 다운로드</li>
+                            <li>추천 플레이리스트</li>
+                            <li>음성 제어로 재생</li>
+                            <li>Google 계정 동기화</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        Chrome Browser
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>웹 브라우징 (주차 시)</strong></p>
+                        <ul>
+                            <li>주차 상태에서만 사용 가능</li>
+                            <li>북마크 동기화</li>
+                            <li>안전한 브라우징</li>
+                            <li>Google 계정 로그인</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: OEM Integration -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                OEM 통합 프로세스
+            </h2>
+            <p class="section-description">
+                자동차 제조사가 GAS를 차량에 통합하는 과정과 요구사항을 설명합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant OEM as OEM<br />(자동차 제조사)
+                    participant Google as Google
+                    participant DEV as AAOS Development
+                    participant CERT as Certification
+                    participant PROD as Production Vehicle
+
+                    OEM->>Google: 1. GAS 라이센스 협상
+                    Google-->>OEM: 계약 체결 (모델별)
+
+                    OEM->>DEV: 2. AAOS 커스터마이징
+                    DEV->>DEV: Vehicle HAL 구현
+                    DEV->>DEV: OEM UI/UX 개발
+                    DEV->>DEV: 차량 기능 통합
+
+                    DEV->>Google: 3. Google 인증 빌드 요청
+                    Google->>CERT: 하드웨어/소프트웨어 검증
+                    CERT->>CERT: 보안 테스트
+                    CERT->>CERT: 성능 테스트
+                    CERT-->>Google: 인증 완료
+
+                    Google-->>OEM: 4. GAS 설치 패키지 제공
+                    OEM->>PROD: 5. 차량에 AAOS + GAS 설치
+
+                    PROD->>Google: 6. OTA 업데이트 수신
+                    Google-->>PROD: 정기 업데이트 배포
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📋 요구사항 및 제약사항
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📜</span>
+                        라이센싱
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Google과 모델별 계약 필요</li>
+                            <li>라이센스 비용은 공개되지 않음</li>
+                            <li>다년간 지원 계약 포함</li>
+                            <li>OTA 업데이트 권한 부여</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💻</span>
+                        하드웨어 요구사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>충분한 CPU/GPU 성능</li>
+                            <li>최소 4GB RAM 권장</li>
+                            <li>터치스크린 디스플레이</li>
+                            <li>GPS/GNSS 모듈</li>
+                            <li>셀룰러 연결 (OTA 업데이트)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        Google 인증
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>인증된 AAOS 빌드 사용 필수</li>
+                            <li>보안 및 개인정보 보호 기준</li>
+                            <li>Google Play Protect 통합</li>
+                            <li>SafetyNet 검증</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        Vehicle HAL
+                    </h3>
+                    <div class="card-description">
+                        <p>OEM이 구현해야 하는 인터페이스</p>
+                        <ul>
+                            <li>차량 센서 데이터 (속도, 연료 등)</li>
+                            <li>HVAC 제어 (에어컨, 히터)</li>
+                            <li>오디오 라우팅</li>
+                            <li>CAN 버스 통신</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎨</span>
+                        커스터마이징 범위
+                    </h3>
+                    <div class="card-description">
+                        <p>OEM이 변경 가능한 부분</p>
+                        <ul>
+                            <li>런처 및 홈 화면 UI</li>
+                            <li>앱 아이콘 및 테마</li>
+                            <li>차량 제어 앱 개발</li>
+                            <li>자체 내비게이션 통합 가능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        OTA 업데이트
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Google이 GAS 앱 직접 업데이트</li>
+                            <li>OEM은 시스템 업데이트 관리</li>
+                            <li>Wi-Fi 또는 셀룰러 통해 배포</li>
+                            <li>A/B 파티션으로 안전한 업데이트</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: GAS vs Android Auto -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                GAS vs Android Auto 비교
+            </h2>
+            <p class="section-description">
+                두 가지 Google 차량용 솔루션의 차이점을 명확하게 비교합니다.
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>항목</th>
+                        <th>Google Automotive Services (GAS)</th>
+                        <th>Android Auto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>실행 위치</strong></td>
+                        <td>차량 IVI 시스템 (네이티브)</td>
+                        <td>스마트폰 (투사)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>스마트폰 필요</strong></td>
+                        <td>불필요</td>
+                        <td>필수</td>
+                    </tr>
+                    <tr>
+                        <td><strong>운영체제</strong></td>
+                        <td>Android Automotive OS (AAOS)</td>
+                        <td>차량 자체 시스템</td>
+                    </tr>
+                    <tr>
+                        <td><strong>앱 설치</strong></td>
+                        <td>Google Play Store에서 직접 설치</td>
+                        <td>스마트폰 앱 미러링</td>
+                    </tr>
+                    <tr>
+                        <td><strong>차량 제어</strong></td>
+                        <td>에어컨, 시트 등 직접 제어 가능</td>
+                        <td>제한적 (오디오, 내비게이션만)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>OEM 통합</strong></td>
+                        <td>차량 설계 단계부터 통합</td>
+                        <td>후장 (Aftermarket) 지원 가능</td>
+                    </tr>
+                    <tr>
+                        <td><strong>업데이트</strong></td>
+                        <td>OTA로 차량에서 직접</td>
+                        <td>스마트폰 앱 업데이트</td>
+                    </tr>
+                    <tr>
+                        <td><strong>사용자 경험</strong></td>
+                        <td>차량 통합형, 부팅 즉시 사용</td>
+                        <td>폰 연결 후 사용</td>
+                    </tr>
+                    <tr>
+                        <td><strong>라이센스</strong></td>
+                        <td>OEM 라이센스 필요</td>
+                        <td>무료 (앱 다운로드)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>주요 제조사</strong></td>
+                        <td>Volvo, GM, Renault, Ford</td>
+                        <td>대부분의 차량 제조사</td>
+                    </tr>
+                    <tr>
+                        <td><strong>연결 방식</strong></td>
+                        <td>내장 셀룰러/Wi-Fi</td>
+                        <td>USB 또는 무선 (Wi-Fi)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 두 시스템 공존 가능:</strong> 일부 GAS 탑재 차량은 Android Auto도 지원하여,
+                사용자가 스마트폰 연결 시 Android Auto로 전환할 수 있습니다.
+            </div>
+        </section>
+
+        <!-- Section 6: Benefits & Challenges -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                장점 및 도전 과제
+            </h2>
+            <p class="section-description">
+                GAS 도입의 이점과 제조사가 직면하는 과제를 분석합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        사용자 이점
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>스마트폰 없이 완전한 기능</li>
+                            <li>부팅 즉시 사용 가능</li>
+                            <li>Google 계정 통합 경험</li>
+                            <li>최신 지도 및 트래픽 정보</li>
+                            <li>친숙한 Google UI/UX</li>
+                            <li>지속적인 기능 개선</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏭</span>
+                        OEM 이점
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>검증된 인포테인먼트 솔루션</li>
+                            <li>자체 개발 비용 절감</li>
+                            <li>Google 브랜드 신뢰도 활용</li>
+                            <li>정기 업데이트로 최신 유지</li>
+                            <li>개발자 생태계 활용</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        도전 과제
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>라이센스 비용 부담</li>
+                            <li>Google 의존도 증가</li>
+                            <li>OEM 브랜드 차별화 어려움</li>
+                            <li>데이터 프라이버시 우려</li>
+                            <li>중국 등 일부 시장 제한</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔮</span>
+                        미래 전망
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>더 많은 OEM 채택 예상</li>
+                            <li>AI 어시스턴트 강화</li>
+                            <li>EV 통합 (충전, 배터리 관리)</li>
+                            <li>자율주행 차량 통합</li>
+                            <li>차량-홈 연동 확대</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        보안 및 프라이버시
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Google Play Protect 내장</li>
+                            <li>정기 보안 패치</li>
+                            <li>위치 데이터 수집 관리</li>
+                            <li>사용자 제어 가능한 권한</li>
+                            <li>GDPR 준수</li>
+                        </ul>
+                    </div>
+                    </card>
+
+                    <div class="card">
+                        <h3 class="card-title">
+                            <span class="card-icon">🌍</span>
+                            글로벌 전개
+                        </h3>
+                        <div class="card-description">
+                            <ul>
+                                <li>북미, 유럽에서 빠른 확산</li>
+                                <li>아시아 시장 점진적 진출</li>
+                                <li>중국은 자체 솔루션 선호</li>
+                                <li>현지화 및 언어 지원 확대</li>
+                                <li>지역별 규제 대응</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Google Automotive Services (GAS) Architecture</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                차량용 인포테인먼트의 미래 · AAOS + GAS
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-automotive); text-decoration: none;">
+                    ← AOSP Media Framework로 돌아가기
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#f59e0b',
+                lineColor: '#7c3aed',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#0a0e1a',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                border1: '#f59e0b',
+                border2: '#00d4ff',
+                note: '#ec4899',
+                noteBkgColor: 'rgba(236, 72, 153, 0.1)',
+                noteBorderColor: '#ec4899',
+                fontFamily: 'Noto Sans KR'
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 50
+            },
+            sequence: {
+                diagramMarginX: 50,
+                diagramMarginY: 10,
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35
+            }
+        });
+
+        // Add scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android MediaProvider Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #7c3aed;
+            --accent-secondary: #a78bfa;
+            --accent-tertiary: #c4b5fd;
+            --accent-success: #10b981;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f2e 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(124, 58, 237, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(124, 58, 237, 0.3);
+            box-shadow: 0 10px 40px rgba(124, 58, 237, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(124, 58, 237, 0.4);
+            box-shadow: 0 5px 20px rgba(124, 58, 237, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(124, 58, 237, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-secondary);
+            font-size: 0.9em;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(167, 139, 250, 0.1));
+            border-left: 4px solid var(--accent-primary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-primary);
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>🗄️ MediaProvider</h1>
+            <p class="subtitle">Android 미디어 데이터 관리 및 Scoped Storage 아키텍처</p>
+            <div style="margin-top: 30px;">
+                <a href="media-playback.html"
+                    style="display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(167, 139, 250, 0.2)); border: 2px solid #8b5cf6; border-radius: 12px; color: #a78bfa; text-decoration: none; font-weight: 600; font-size: 1.1rem; transition: all 0.3s ease; position: relative; z-index: 2;">
+                    🎬 미디어 재생 플로우 →
+                </a>
+            </div>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overview: MediaProvider의 역할
+            </h2>
+            <p class="section-description">
+                MediaProvider는 Android 시스템에서 미디어 파일의 메타데이터를 관리하고, 앱의 파일 접근을 제어하는 핵심 컴포넌트입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        MediaStore 관리
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>미디어 메타데이터 인덱싱</strong></p>
+                        <ul>
+                            <li>Audio, Video, Images 파일의 메타데이터 최적화 및 인덱싱</li>
+                            <li>내부/외부 저장소(SD카드, USB) 스캔 및 데이터베이스 구축</li>
+                            <li><code>MediaStore</code> API를 통한 앱 접근 제공</li>
+                            <li>MIME 타입 자동 감지 및 분류</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        Scoped Storage 보안
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>앱별 격리된 저장소</strong></p>
+                        <ul>
+                            <li>Android 10+ 필수 적용 (Scoped Storage)</li>
+                            <li>앱은 자신의 데이터에만 직접 접근 가능</li>
+                            <li>다른 앱의 미디어는 <code>MediaStore</code>를 통해서만 접근</li>
+                            <li>위치 정보 등 민감 메타데이터 자동 삭제(Redaction)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        FUSE 파일 시스템
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>User-space 파일 핸들링</strong></p>
+                        <ul>
+                            <li>Android 11+에서 FUSE Daemon으로 동작</li>
+                            <li>커널 파일 작업을 User-space에서 가로채기</li>
+                            <li>파일 접근 시 실시간 권한 검사 및 필터링</li>
+                            <li>FUSE Passthrough로 성능 최적화 (Android 12+)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Mainline 모듈
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>독립 업데이트 가능</strong></p>
+                        <ul>
+                            <li>APK-in-APEX 형태로 배포 (Android 11+)</li>
+                            <li>OS 업데이트 없이 보안 패치 및 기능 추가</li>
+                            <li>새로운 미디어 포맷 지원 신속 대응</li>
+                            <li>Google Play를 통한 자동 업데이트</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                MediaProvider Architecture
+            </h2>
+            <p class="section-description">
+                Application부터 File System까지 MediaProvider가 관여하는 전체 아키텍처입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP ["Application Layer"]
+                    GALLERY["Gallery App"]
+                    MUSIC["Music Player"]
+                    CAMERA["Camera App"]
+                    end
+
+                    subgraph FRAMEWORK ["Android Framework"]
+                    CR["ContentResolver"]
+                    MS_API["MediaStore API<br />(Contract)"]
+                    end
+
+                    subgraph PROVIDER ["MediaProvider Module"]
+                    MP["MediaProvider<br />(ContentProvider)"]
+                    DB["SQLite Database<br />(Metadata)"]
+                    SCANNER["Media Scanner"]
+                    end
+
+                    subgraph FUSE_LAYER ["FUSE Layer (Android 11+)"]
+                    FD["FuseDaemon<br />(User-space Handler)"]
+                    KERNEL_FUSE["FUSE Driver<br />(Kernel)"]
+                    end
+
+                    subgraph STORAGE ["File System"]
+                    INT_STORAGE["Internal Storage"]
+                    EXT_STORAGE["External Storage<br />(SD Card, USB)"]
+                    end
+
+                    APP --> CR
+                    CR --> MS_API
+                    MS_API --> MP
+                    MP --> DB
+                    MP --> SCANNER
+                    MP <--> FD
+                        FD <--> KERNEL_FUSE
+                            KERNEL_FUSE <--> INT_STORAGE
+                                KERNEL_FUSE <--> EXT_STORAGE
+                                    SCANNER -.->|Scan Files| INT_STORAGE
+                                    SCANNER -.->|Scan Files| EXT_STORAGE
+
+                                    style MP fill:#1a1f35,stroke:#7c3aed,stroke-width:3px
+                                    style FD fill:#1a1f35,stroke:#a78bfa,stroke-width:3px
+                                    style DB fill:#111827,stroke:#7c3aed,stroke-width:2px
+                                    style APP fill:#0a0e1a,stroke:#10b981,stroke-width:2px
+                                    style STORAGE fill:#0a0e1a,stroke:#6b7280,stroke-width:2px
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>핵심 포인트:</strong>
+                <ul>
+                    <li><strong>ContentResolver</strong>: 앱이 MediaProvider와 통신하는 유일한 인터페이스</li>
+                    <li><strong>MediaProvider</strong>: ContentProvider를 구현하여 CRUD 작업 처리</li>
+                    <li><strong>FuseDaemon</strong>: 파일 시스템 작업을 가로채 권한 검사 수행</li>
+                    <li><strong>SQLite DB</strong>: 미디어 메타데이터를 저장하여 빠른 쿼리 지원</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 3: Data Flow -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                MediaStore Data Flow
+            </h2>
+            <p class="section-description">
+                앱이 MediaStore API를 통해 미디어 데이터를 쿼리하고 조작하는 전체 흐름입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App as Application
+                    participant CR as ContentResolver
+                    participant MP as MediaProvider
+                    participant DB as SQLite DB
+                    participant FS as File System
+
+                    Note over App,FS: Query 작업 (미디어 검색)
+                    App->>CR: query(MediaStore.Images.EXTERNAL_CONTENT_URI)
+                    CR->>MP: query() 호출
+                    MP->>DB: SELECT * FROM images WHERE...
+                    DB-->>MP: Cursor (결과셋)
+                    MP-->>CR: Cursor 반환
+                    CR-->>App: Cursor 반환
+                    App->>App: Cursor 순회 및 데이터 추출
+
+                    Note over App,FS: Insert 작업 (새 미디어 추가)
+                    App->>CR: insert(uri, ContentValues)
+                    CR->>MP: insert() 호출
+                    MP->>DB: INSERT INTO images VALUES(...)
+                    DB-->>MP: Row ID
+                    MP->>FS: 파일 생성 준비
+                    MP-->>CR: 새 미디어 URI 반환
+                    CR-->>App: URI 반환
+                    App->>FS: OutputStream으로 파일 쓰기
+
+                    Note over App,FS: Delete 작업 (미디어 삭제)
+                    App->>CR: delete(uri)
+                    CR->>MP: delete() 호출
+                    MP->>DB: DELETE FROM images WHERE _id=...
+                    MP->>FS: 실제 파일 삭제
+                    FS-->>MP: 삭제 완료
+                    MP-->>CR: 삭제된 행 수 반환
+                    CR-->>App: 결과 반환
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        Query (조회)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>미디어 검색 및 필터링</strong></p>
+                        <ul>
+                            <li><code>contentResolver.query()</code> 호출</li>
+                            <li>MediaProvider가 SQLite DB에서 메타데이터 검색</li>
+                            <li>Cursor 객체로 결과 반환 (Worker Thread 권장)</li>
+                            <li>Projection, Selection, Sort Order 지원</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">➕</span>
+                        Insert (추가)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>새 미디어 파일 등록</strong></p>
+                        <ul>
+                            <li><code>contentResolver.insert()</code>로 메타데이터 등록</li>
+                            <li>MediaProvider가 DB에 레코드 생성</li>
+                            <li>새 미디어 URI 반환 (파일 경로 포함)</li>
+                            <li>OutputStream으로 실제 파일 데이터 쓰기</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✏️</span>
+                        Update (수정)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>메타데이터 업데이트</strong></p>
+                        <ul>
+                            <li><code>contentResolver.update()</code>로 수정</li>
+                            <li>자신의 미디어는 자유롭게 수정 가능</li>
+                            <li>다른 앱의 미디어는 사용자 동의 필요</li>
+                            <li><code>is_favorite</code>, <code>is_trashed</code> 등 플래그 변경</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🗑️</span>
+                        Delete (삭제)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>미디어 파일 제거</strong></p>
+                        <ul>
+                            <li><code>contentResolver.delete()</code>로 삭제</li>
+                            <li>DB 레코드 및 실제 파일 모두 제거</li>
+                            <li>다른 앱의 미디어 삭제 시 사용자 확인 필요</li>
+                            <li>휴지통(<code>is_trashed</code>) 기능 지원 (Android 11+)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Scoped Storage -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Scoped Storage Model
+            </h2>
+            <p class="section-description">
+                Android 10부터 도입된 Scoped Storage는 앱의 파일 접근을 제한하여 사용자 프라이버시를 강화합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    flowchart TB
+                    subgraph LEGACY ["Legacy Storage (Android 9 이하)"]
+                    L_APP["App"]
+                    L_PERM["READ/WRITE_EXTERNAL_STORAGE"]
+                    L_FS["전체 파일 시스템 접근"]
+
+                    L_APP --> L_PERM
+                    L_PERM --> L_FS
+                    end
+
+                    subgraph SCOPED ["Scoped Storage (Android 10+)"]
+                    S_APP["App"]
+                    S_OWN["자신의 앱 전용 디렉토리<br />(권한 불필요)"]
+                    S_MEDIA["MediaStore를 통한<br />미디어 접근"]
+                    S_SAF["Storage Access Framework<br />(사용자 선택)"]
+
+                    S_APP --> S_OWN
+                    S_APP --> S_MEDIA
+                    S_APP --> S_SAF
+                    end
+
+                    LEGACY -.->|Android 10+| SCOPED
+
+                    style LEGACY fill:#1a1f35,stroke:#6b7280,stroke-width:2px,stroke-dasharray: 5 5
+                    style SCOPED fill:#1a1f35,stroke:#7c3aed,stroke-width:3px
+                    style S_OWN fill:#111827,stroke:#10b981,stroke-width:2px
+                    style S_MEDIA fill:#111827,stroke:#7c3aed,stroke-width:2px
+                    style S_SAF fill:#111827,stroke:#a78bfa,stroke-width:2px
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏠</span>
+                        App-specific Directory
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>앱 전용 저장소</strong></p>
+                        <ul>
+                            <li><code>getExternalFilesDir()</code>로 접근</li>
+                            <li>권한 없이 읽기/쓰기 가능</li>
+                            <li>앱 삭제 시 자동으로 데이터 제거</li>
+                            <li>다른 앱은 접근 불가 (격리)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📸</span>
+                        MediaStore Collections
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>공유 미디어 접근</strong></p>
+                        <ul>
+                            <li>자신의 미디어: 권한 불필요</li>
+                            <li>다른 앱의 미디어 읽기: <code>READ_MEDIA_*</code> 권한</li>
+                            <li>다른 앱의 미디어 수정: 사용자 동의 필요</li>
+                            <li><code>Images</code>, <code>Video</code>, <code>Audio</code> 컬렉션</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Privacy Protection
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>민감 정보 보호</strong></p>
+                        <ul>
+                            <li>위치 메타데이터 자동 삭제 (Redaction)</li>
+                            <li>앱 클러터 방지 (앱 삭제 시 데이터 정리)</li>
+                            <li>파일 접근 이력 추적 가능</li>
+                            <li>사용자 중심의 권한 모델</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Special Permissions
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>특수 권한</strong></p>
+                        <ul>
+                            <li><code>MANAGE_EXTERNAL_STORAGE</code>: 전체 파일 접근</li>
+                            <li>파일 관리자, 백업 앱 등에만 허용</li>
+                            <li>Play Store 정책으로 엄격히 제한</li>
+                            <li>일반 앱은 MediaStore/SAF 사용 권장</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: FUSE Daemon -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                FUSE Daemon Architecture
+            </h2>
+            <p class="section-description">
+                Android 11부터 MediaProvider는 FUSE(Filesystem in Userspace) 데몬으로 동작하여 파일 접근을 실시간으로 제어합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App as Application
+                    participant Kernel as FUSE Driver (Kernel)
+                    participant FD as FuseDaemon (MediaProvider)
+                    participant FS as Underlying File System
+
+                    Note over App,FS: 파일 열기 (open)
+                    App->>Kernel: open("/storage/emulated/0/DCIM/photo.jpg")
+                    Kernel->>FD: FUSE_OPEN 요청
+                    FD->>FD: 권한 검사 (앱 UID, 파일 소유자)
+                    alt 권한 있음
+                    FD->>FS: 실제 파일 열기
+                    FS-->>FD: File Descriptor
+                    FD->>Kernel: FUSE Passthrough 설정 (Android 12+)
+                    FD-->>Kernel: 허용 응답
+                    Kernel-->>App: File Descriptor 반환
+                    else 권한 없음
+                    FD-->>Kernel: 거부 응답 (EACCES)
+                    Kernel-->>App: 에러 반환
+                    end
+
+                    Note over App,FS: 파일 읽기 (read) - Passthrough 활성화 시
+                    App->>Kernel: read(fd, buffer, size)
+                    Kernel->>FS: 직접 읽기 (FuseDaemon 우회)
+                    FS-->>Kernel: 데이터
+                    Kernel-->>App: 데이터 반환
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        Access Control
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>실시간 권한 검사</strong></p>
+                        <ul>
+                            <li>모든 파일 작업을 User-space에서 가로채기</li>
+                            <li>앱 UID와 파일 소유자 비교</li>
+                            <li>Scoped Storage 정책 적용</li>
+                            <li>허용/거부/Redaction 결정</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        FUSE Passthrough
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>성능 최적화 (Android 12+)</strong></p>
+                        <ul>
+                            <li>권한 확인 후 직접 파일 시스템 접근 허용</li>
+                            <li>Read/Write 작업 시 FuseDaemon 우회</li>
+                            <li>User-space ↔ Kernel-space 전환 오버헤드 제거</li>
+                            <li>I/O 성능 대폭 향상</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        JNI Integration
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Java ↔ Native 통신</strong></p>
+                        <ul>
+                            <li>FuseDaemon은 C++ Native 코드로 구현</li>
+                            <li>MediaProviderWrapper로 Java 레이어와 통신</li>
+                            <li>권한 검사 로직은 Java에서 처리</li>
+                            <li><code>/dev/fuse</code> 노드를 통한 커널 통신</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        Per-User Instance
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>사용자별 데몬</strong></p>
+                        <ul>
+                            <li>각 사용자(u0, u10 등)마다 FuseDaemon 인스턴스 생성</li>
+                            <li>부팅 시 시작, 종료 시까지 지속 실행</li>
+                            <li><code>fuse_session_loop_mt</code>로 멀티스레드 처리</li>
+                            <li>사용자별 독립적인 파일 접근 제어</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Android MediaProvider Architecture</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                MediaStore, Scoped Storage & FUSE Daemon Deep Dive
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-primary); text-decoration: none;">
+                    ← AOSP Media Framework로 돌아가기
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#7c3aed',
+                lineColor: '#a78bfa',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#0a0e1a',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                border1: '#7c3aed',
+                border2: '#a78bfa',
+                note: '#c4b5fd',
+                noteBkgColor: 'rgba(124, 58, 237, 0.1)',
+                noteBorderColor: '#7c3aed',
+                fontFamily: 'Noto Sans KR'
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 50
+            },
+            sequence: {
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35
+            }
+        });
+
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+</body>
+
+</html>

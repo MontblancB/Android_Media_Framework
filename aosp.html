@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android AOSP 아키텍처</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7c3aed;
+            --accent-tertiary: #ec4899;
+            --accent-green: #10b981;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glow-color: rgba(0, 212, 255, 0.3);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f2e 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 10px 40px rgba(16, 185, 129, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-green);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-primary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--accent-green), var(--accent-primary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.15);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-green);
+            font-size: 0.9em;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(0, 212, 255, 0.2));
+            color: var(--accent-green);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .comparison-table td {
+            background: var(--bg-secondary);
+        }
+
+        .comparison-table tr:hover td {
+            background: var(--bg-card-hover);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 4px;
+        }
+
+        .tag-aosp {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(0, 212, 255, 0.2));
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        .tag-aaos {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid #f59e0b;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .subtitle {
+                font-size: 1.1rem;
+            }
+
+            .section {
+                padding: 25px;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-green), var(--accent-primary));
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(0, 212, 255, 0.1));
+            border-left: 4px solid var(--accent-green);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-green);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>🤖 Android AOSP</h1>
+            <p class="subtitle">Android Open Source Project 전체 아키텍처</p>
+        </header>
+
+        <!-- Section 1: AOSP Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                AOSP 개요
+            </h2>
+            <p class="section-description">
+                Android Open Source Project (AOSP)는 Google이 주도하는 Android 운영체제의 오픈소스 기반입니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>AOSP란?</strong> 스마트폰, 태블릿, TV, 웨어러블, 자동차 등 다양한 디바이스에서 실행 가능한
+                완전한 Android 플랫폼의 소스코드와 툴체인을 제공합니다.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📖</span>
+                        AOSP 정의
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Google 주도의 오픈소스 프로젝트</li>
+                            <li>Apache 2.0 라이센스</li>
+                            <li>누구나 무료로 사용, 수정, 배포 가능</li>
+                            <li>다양한 하드웨어 플랫폼 지원</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌍</span>
+                        주요 사용처
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>스마트폰/태블릿</strong>: Samsung, Xiaomi, OnePlus</li>
+                            <li><strong>Android TV</strong>: Sony, TCL TV</li>
+                            <li><strong>Wear OS</strong>: 스마트워치</li>
+                            <li><strong>Android Automotive</strong>: 차량 인포테인먼트</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        핵심 특징
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>계층화된 아키텍처</li>
+                            <li>Linux 커널 기반</li>
+                            <li>Java/Kotlin 앱 개발 지원</li>
+                            <li>HAL을 통한 하드웨어 추상화</li>
+                            <li>강력한 보안 모델</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🆚</span>
+                        AOSP vs GMS
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>AOSP</strong>: 오픈소스, 무료</li>
+                            <li><strong>GMS (Google Mobile Services)</strong>: 독점, 라이센스 필요</li>
+                            <li>GMS: Play Store, Gmail, Maps 등 Google 앱</li>
+                            <li>AOSP만으로 완전한 Android 기기 제작 가능</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: AOSP Architecture -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                AOSP 전체 아키텍처
+            </h2>
+            <p class="section-description">
+                AOSP는 Linux 커널부터 애플리케이션까지 6개의 주요 레이어로 구성됩니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    APP["🎨 Application Layer<br /><br />System Apps, OEM Apps, 3rd Party Apps<br />(Phone, Contacts,
+                    Settings)"]
+
+                    FW["📱 Android Framework<br /><br />Activity Manager, Window Manager<br />Package Manager,
+                    Notification Manager<br />Content Providers, View System"]
+
+                    ART_LAYER["☕ Android Runtime (ART)<br /><br />ART/Dalvik Runtime<br />Core Libraries (java.*,
+                    android.*)"]
+
+                    NATIVE["⚡ Native Layer<br /><br />libc (Bionic), SSL/Crypto<br />Media Framework, SQLite, WebView"]
+
+                    SERVICES["🔧 System Services<br /><br />system_server, SurfaceFlinger<br />AudioFlinger,
+                    MediaService"]
+
+                    HAL_LAYER["🔌 Hardware Abstraction Layer (HAL)<br /><br />Camera HAL, Audio HAL<br />Sensor HAL,
+                    Codec HAL"]
+
+                    KERNEL["🐧 Linux Kernel<br /><br />Device Drivers, Memory Management<br />Process Management,
+                    Security (SELinux)"]
+
+                    APP --> FW
+                    FW --> ART_LAYER
+                    ART_LAYER --> NATIVE
+                    NATIVE --> SERVICES
+                    SERVICES --> HAL_LAYER
+                    HAL_LAYER --> KERNEL
+
+                    style APP fill:#1a1f35,stroke:#10b981,stroke-width:3px,color:#e5e7eb
+                    style FW fill:#1a1f35,stroke:#00d4ff,stroke-width:3px,color:#e5e7eb
+                    style ART_LAYER fill:#1a1f35,stroke:#7c3aed,stroke-width:2px,color:#e5e7eb
+                    style NATIVE fill:#1a1f35,stroke:#ec4899,stroke-width:2px,color:#e5e7eb
+                    style SERVICES fill:#1a1f35,stroke:#f59e0b,stroke-width:2px,color:#e5e7eb
+                    style HAL_LAYER fill:#1a1f35,stroke:#14b8a6,stroke-width:2px,color:#e5e7eb
+                    style KERNEL fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Layer Details -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                레이어별 상세 구조
+            </h2>
+            <p class="section-description">
+                각 레이어의 역할과 주요 컴포넌트를 상세히 설명합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎨</span>
+                        Application Layer
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>사용자 직접 상호작용</strong></p>
+                        <ul>
+                            <li>System Apps: Phone, Contacts, Settings</li>
+                            <li>OEM Apps: 제조사 앱</li>
+                            <li>3rd Party Apps: Play Store 앱</li>
+                            <li>Java/Kotlin으로 개발</li>
+                            <li>Android API 사용</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Android Framework
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>앱 개발을 위한 Java API</strong></p>
+                        <ul>
+                            <li>Activity Manager: 앱 생명주기</li>
+                            <li>Window Manager: 윈도우 관리</li>
+                            <li>Package Manager: 앱 설치/제거</li>
+                            <li>Notification Manager: 알림</li>
+                            <li>Content Providers: 데이터 공유</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">☕</span>
+                        Android Runtime (ART)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Java/Kotlin 실행 환경</strong></p>
+                        <ul>
+                            <li>Ahead-Of-Time (AOT) 컴파일</li>
+                            <li>Garbage Collection</li>
+                            <li>Core Libraries (java.*, android.*)</li>
+                            <li>이전 Dalvik 대체 (Android 5.0+)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Native Layer
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>C/C++ 라이브러리</strong></p>
+                        <ul>
+                            <li>libc (Bionic): C 표준 라이브러리</li>
+                            <li>SSL/Crypto: 보안 및 암호화</li>
+                            <li>Media Framework: 오디오/비디오</li>
+                            <li>SQLite: 데이터베이스</li>
+                            <li>WebView: 웹 브라우징</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        System Services
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>백그라운드 시스템 프로세스</strong></p>
+                        <ul>
+                            <li>system_server: 핵심 시스템 서비스</li>
+                            <li>SurfaceFlinger: 화면 렌더링</li>
+                            <li>AudioFlinger: 오디오 믹싱</li>
+                            <li>MediaService: 미디어 재생</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        HAL (Hardware Abstraction Layer)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>하드웨어 추상화</strong></p>
+                        <ul>
+                            <li>Camera HAL: 카메라 제어</li>
+                            <li>Audio HAL: 오디오 입출력</li>
+                            <li>Sensor HAL: 센서 데이터</li>
+                            <li>HIDL/AIDL 인터페이스</li>
+                            <li>벤더별 구현</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🐧</span>
+                        Linux Kernel
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>하드웨어 직접 제어</strong></p>
+                        <ul>
+                            <li>Device Drivers: 하드웨어 드라이버</li>
+                            <li>Process Management: 프로세스 관리</li>
+                            <li>Memory Management: 메모리 관리</li>
+                            <li>Security (SELinux): 보안</li>
+                            <li>Power Management: 전원 관리</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+<!-- Section 4: AOSP Boot Process -->
+<section class="section">
+    <h2 class="section-title">
+        <span class="section-number">4</span>
+        AOSP 부팅 프로세스
+    </h2>
+    <p class="section-description">
+        Android 시스템이 부팅되는 전체 과정을 단계별로 설명합니다.
+    </p>
+
+    <div class="diagram-container">
+        <div class="mermaid">
+            graph TB
+            BOOTROM[Boot ROM<br />Power On]
+            BOOTLOADER[Bootloader<br />U-Boot]
+            KERNEL[Linux Kernel<br />초기화]
+            INIT[Init Process<br />PID 1]
+            DAEMONS[Native Daemons<br />servicemanager, vold, etc.]
+            ZYGOTE[Zygote Process<br />Core Libraries 로드]
+            SYSSERVER[System Server<br />System Services 시작]
+            LAUNCHER[Launcher<br />홈 화면]
+            BOOTROM --> BOOTLOADER
+            BOOTLOADER --> KERNEL
+            KERNEL --> INIT
+            INIT --> DAEMONS
+            INIT --> ZYGOTE
+            ZYGOTE --> SYSSERVER
+            SYSSERVER --> LAUNCHER
+
+            style BOOTROM fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+            style BOOTLOADER fill:#1a1f35,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+            style KERNEL fill:#1a1f35,stroke:#7c3aed,stroke-width:3px,color:#e5e7eb
+            style INIT fill:#1a1f35,stroke:#10b981,stroke-width:3px,color:#e5e7eb
+            style DAEMONS fill:#1a1f35,stroke:#00d4ff,stroke-width:2px,color:#e5e7eb
+            style ZYGOTE fill:#1a1f35,stroke:#ec4899,stroke-width:3px,color:#e5e7eb
+            style SYSSERVER fill:#1a1f35,stroke:#f59e0b,stroke-width:3px,color:#e5e7eb
+            style LAUNCHER fill:#1a1f35,stroke:#10b981,stroke-width:2px,color:#e5e7eb
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔧</span>
+                Init Process (PID 1)
+            </h3>
+            <div class="card-description">
+                <p><strong>첫 번째 사용자 공간 프로세스</strong></p>
+                <ul>
+                    <li>Linux 커널이 시작하는 첫 프로세스</li>
+                    <li><code>init.rc</code> 설정 파일 읽기</li>
+                    <li>파일 시스템 마운트</li>
+                    <li>필수 서비스(데몬) 시작</li>
+                    <li>Zygote 프로세스 실행</li>
+                    <li>서비스 감시 및 재시작</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🥚</span>
+                Zygote Process
+            </h3>
+            <div class="card-description">
+                <p><strong>앱 프로세스 생성 최적화</strong></p>
+                <ul>
+                    <li>모든 코어 라이브러리 사전 로드</li>
+                    <li>공통 리소스 메모리에 로드</li>
+                    <li>앱 실행 시 fork하여 빠른 시작</li>
+                    <li>Copy-on-Write 메커니즘</li>
+                    <li>System Server fork 생성</li>
+                    <li>64-bit Zygote 별도 실행</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">⚙️</span>
+                System Server
+            </h3>
+            <div class="card-description">
+                <p><strong>모든 시스템 서비스 호스팅</strong></p>
+                <ul>
+                    <li>Zygote에 의해 fork됨</li>
+                    <li>ActivityManagerService 시작</li>
+                    <li>PackageManagerService 시작</li>
+                    <li>WindowManagerService 시작</li>
+                    <li>60+ 시스템 서비스 초기화</li>
+                    <li>부팅 완료 브로드캐스트</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section 5: System Services -->
+<section class="section">
+    <h2 class="section-title">
+        <span class="section-number">5</span>
+        시스템 서비스 (System Services)
+    </h2>
+    <p class="section-description">
+        System Server 프로세스 내에서 실행되는 핵심 시스템 서비스들입니다.
+    </p>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">📱</span>
+                ActivityManagerService
+            </h3>
+            <div class="card-description">
+                <p><strong>앱 생명주기 관리</strong></p>
+                <ul>
+                    <li>Activity 스택 관리</li>
+                    <li>앱 프로세스 시작/종료</li>
+                    <li>Task 및 Back Stack</li>
+                    <li>OOM (Out of Memory) 관리</li>
+                    <li>브로드캐스트 전달</li>
+                    <li>Content Provider 관리</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">📦</span>
+                PackageManagerService
+            </h3>
+            <div class="card-description">
+                <p><strong>앱 설치 및 정보 관리</strong></p>
+                <ul>
+                    <li>APK 파일 파싱</li>
+                    <li>앱 설치/제거/업데이트</li>
+                    <li>권한 관리</li>
+                    <li>Intent 필터 해석</li>
+                    <li>앱 정보 쿼리</li>
+                    <li>패키지 검증</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🪟</span>
+                WindowManagerService
+            </h3>
+            <div class="card-description">
+                <p><strong>윈도우 및 디스플레이</strong></p>
+                <ul>
+                    <li>윈도우 레이아웃 관리</li>
+                    <li>Z-order 및 레이어링</li>
+                    <li>입력 이벤트 라우팅</li>
+                    <li>애니메이션 제어</li>
+                    <li>화면 회전 처리</li>
+                    <li>SurfaceFlinger와 협업</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔔</span>
+                NotificationManagerService
+            </h3>
+            <div class="card-description">
+                <p><strong>알림 관리</strong></p>
+                <ul>
+                    <li>알림 표시 및 제거</li>
+                    <li>알림 채널 관리</li>
+                    <li>우선순위 및 중요도</li>
+                    <li>Do Not Disturb 모드</li>
+                    <li>알림 권한 제어</li>
+                    <li>알림 리스너 서비스</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔋</span>
+                PowerManagerService
+            </h3>
+            <div class="card-description">
+                <p><strong>전원 및 절전</strong></p>
+                <ul>
+                    <li>WakeLock 관리</li>
+                    <li>화면 밝기 제어</li>
+                    <li>절전 모드 (Doze)</li>
+                    <li>앱 대기 모드</li>
+                    <li>배터리 최적화</li>
+                    <li>전원 버튼 이벤트</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🌐</span>
+                ConnectivityService
+            </h3>
+            <div class="card-description">
+                <p><strong>네트워크 연결</strong></p>
+                <ul>
+                    <li>Wi-Fi, Cellular, Ethernet</li>
+                    <li>네트워크 전환 관리</li>
+                    <li>VPN 연결</li>
+                    <li>데이터 사용량 모니터링</li>
+                    <li>네트워크 정책</li>
+                    <li>백그라운드 데이터 제한</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section 6: Binder IPC -->
+<section class="section">
+    <h2 class="section-title">
+        <span class="section-number">6</span>
+        Binder IPC
+    </h2>
+    <p class="section-description">
+        Android의 프로세스 간 통신(IPC)을 담당하는 핵심 메커니즘입니다.
+    </p>
+
+    <div class="highlight-box">
+        <strong>Binder란?</strong> Android의 경량화된 고성능 IPC 프레임워크로, 앱과 시스템 서비스 간 안전하고 효율적인 통신을 가능하게 합니다.
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔗</span>
+                Binder 구성요소
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Binder Driver</strong>: 커널 모듈</li>
+                    <li><strong>Binder Objects</strong>: 원격 서비스 표현</li>
+                    <li><strong>Parcels</strong>: 데이터 직렬화</li>
+                    <li><strong>Service Manager</strong>: 서비스 등록/검색</li>
+                    <li><strong>AIDL</strong>: 인터페이스 정의 언어</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">⚡</span>
+                Binder 특징
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>효율성</strong>: 단일 복사로 데이터 전달</li>
+                    <li><strong>보안</strong>: 프로세스 ID 인증</li>
+                    <li><strong>권한</strong>: 세밀한 권한 제어</li>
+                    <li><strong>동기/비동기</strong>: 양방향 지원</li>
+                    <li><strong>객체 참조</strong>: 원격 객체 호출</li>
+                    <li><strong>Death Notification</strong>: 프로세스 종료 감지</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🛠️</span>
+                AIDL (Android Interface Definition Language)
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li>Binder 인터페이스 정의</li>
+                    <li><code>.aidl</code> 파일 작성</li>
+                    <li>자동 스텁/프록시 생성</li>
+                    <li>타입 안정성 보장</li>
+                    <li>프로세스 경계 추상화</li>
+                    <li>고수준 IPC API</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="diagram-container">
+        <div class="mermaid">
+            graph LR
+            APP[App Process<br />Client]
+            PROXY[Proxy<br />AIDL Stub]
+            BINDER_DRIVER[Binder Driver<br />Kernel]
+            SERVICE_MGR[Service Manager]
+            STUB[Stub<br />AIDL Interface]
+            SERVICE[System Service<br />Server]
+
+            APP -->|1. Call Method| PROXY
+            PROXY -->|2. Serialize| BINDER_DRIVER
+            BINDER_DRIVER -->|3. Route| STUB
+            STUB -->|4. Deserialize| SERVICE
+            SERVICE -->|5. Execute| STUB
+            STUB -->|6. Return| BINDER_DRIVER
+            BINDER_DRIVER -->|7. Route Back| PROXY
+            PROXY -->|8. Return| APP
+
+            SERVICE_MGR -.->|Register/Lookup| BINDER_DRIVER
+
+            style APP fill:#1a1f35,stroke:#10b981,stroke-width:2px,color:#e5e7eb
+            style PROXY fill:#1a1f35,stroke:#00d4ff,stroke-width:2px,color:#e5e7eb
+            style BINDER_DRIVER fill:#1a1f35,stroke:#7c3aed,stroke-width:3px,color:#e5e7eb
+            style SERVICE_MGR fill:#1a1f35,stroke:#ec4899,stroke-width:2px,color:#e5e7eb
+            style STUB fill:#1a1f35,stroke:#00d4ff,stroke-width:2px,color:#e5e7eb
+            style SERVICE fill:#1a1f35,stroke:#f59e0b,stroke-width:2px,color:#e5e7eb
+        </div>
+    </div>
+</section>
+
+<!-- Section 7: AOSP vs AAOS Link -->
+<section class="section">
+    <h2 class="section-title">
+        <span class="section-number">7</span>
+        Android Automotive OS (AAOS)
+    </h2>
+    <p class="section-description">
+        차량용 Android 플랫폼에 대해 알아보세요.
+    </p>
+
+    <div class="highlight-box">
+        <strong>AAOS란?</strong> AOSP에 차량 특화 레이어를 추가한 플랫폼으로, <strong>Vehicle HAL, Car Services, Car API</strong>를 통해
+        차량 하드웨어(ECU, CAN Bus, 센서)와 직접 통신하고 제어할 수 있습니다.
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🚗</span>
+                AAOS 주요 특징
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Vehicle HAL (VHAL)</strong>: 차량 하드웨어 추상화</li>
+                    <li><strong>Car Services</strong>: 차량 데이터 관리</li>
+                    <li><strong>android.car.* API</strong>: 차량 제어 API</li>
+                    <li><strong>Multi-Zone Audio</strong>: 구역별 독립 오디오</li>
+                    <li><strong>Driver Distraction Guidelines</strong>: 운전자 안전 UI</li>
+                    <li><strong>Car UI Library</strong>: 템플릿 기반 UI</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🏭</span>
+                AAOS 채택 제조사
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Volvo</strong>: Polestar, XC40 Recharge</li>
+                    <li><strong>GM</strong>: Chevrolet, GMC, Cadillac</li>
+                    <li><strong>Ford</strong>: Lincoln 시리즈</li>
+                    <li><strong>Honda</strong>: Acura 모델</li>
+                    <li><strong>Renault</strong>: Megane E-Tech</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">📚</span>
+                자세히 알아보기
+            </h3>
+            <div class="card-description">
+                <p style="margin-bottom: 15px;">Android Automotive OS의 상세한 아키텍처, Vehicle HAL, Car Services, 멀티존 오디오 등에
+                    대한 포괄적인 정보는 전용 페이지에서 확인하세요.</p>
+                <a href="aaos.html"
+                    style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600; transition: all 0.3s ease;">
+                    AAOS 상세 페이지로 이동 →
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Android Open Source Project (AOSP) Architecture</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                오픈소스 Android 플랫폼의 기반
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-green); text-decoration: none;">
+                    ← AOSP Media Framework로 돌아가기
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#10b981',
+                lineColor: '#7c3aed',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#0a0e1a',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                border1: '#10b981',
+                border2: '#00d4ff',
+                note: '#ec4899',
+                noteBkgColor: 'rgba(236, 72, 153, 0.1)',
+                noteBorderColor: '#ec4899',
+                fontFamily: 'Noto Sans KR'
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 50
+            }
+        });
+
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+</body>
+
+</html>

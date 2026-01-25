@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Codec 2.0 Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #06b6d4;
+            --accent-secondary: #22d3ee;
+            --accent-tertiary: #67e8f9;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #0a1a1e 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(34, 211, 238, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(6, 182, 212, 0.3);
+            box-shadow: 0 10px 40px rgba(6, 182, 212, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(6, 182, 212, 0.4);
+            box-shadow: 0 5px 20px rgba(6, 182, 212, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(6, 182, 212, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-secondary);
+            font-size: 0.9em;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(34, 211, 238, 0.1));
+            border-left: 4px solid var(--accent-primary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-primary);
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.1));
+            border-left: 4px solid var(--accent-warning);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .warning-box strong {
+            color: var(--accent-warning);
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>⚙️ Codec 2.0</h1>
+            <p class="subtitle">차세대 Android 미디어 코덱 아키텍처</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overview: Codec 2.0이란?
+            </h2>
+            <p class="section-description">
+                Codec 2.0은 Android Q(10)에서 도입된 차세대 멀티미디어 프레임워크로, 기존 ACodec/OpenMAX를 대체합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        주요 목표
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>성능 및 보안 향상</strong></p>
+                        <ul>
+                            <li>Zero-Copy 버퍼 관리로 성능 향상</li>
+                            <li>HAL 기반 보안 강화</li>
+                            <li>Mainline 모듈로 독립 업데이트</li>
+                            <li>하드웨어 가속 최적화</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        기존 시스템 대체
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>ACodec + OpenMAX IL 대체</strong></p>
+                        <ul>
+                            <li>더 단순하고 유연한 API</li>
+                            <li>컴포넌트 체이닝 지원</li>
+                            <li>필터 플러그인 지원</li>
+                            <li>구성 쿼리 기능 향상</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Zero-Copy 버퍼
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>핵심 성능 최적화</strong></p>
+                        <ul>
+                            <li>데이터 복사 오버헤드 제거</li>
+                            <li>C2Buffer를 통한 효율적 전달</li>
+                            <li>C2Allocator로 메모리 관리</li>
+                            <li>ION/Gralloc 활용</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        HAL 인터페이스
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>android.hardware.media.c2</strong></p>
+                        <ul>
+                            <li>HIDL/AIDL 기반 HAL</li>
+                            <li>벤더 구현 분리</li>
+                            <li>프로세스 간 통신 최적화</li>
+                            <li>독립적인 업데이트 가능</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                전체 아키텍처
+            </h2>
+            <p class="section-description">
+                MediaCodec API부터 하드웨어 코덱까지 Codec 2.0의 전체 구조를 시각화합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP ["Application Layer"]
+                    MEDIA_APP[Media App]
+                    end
+
+                    subgraph FRAMEWORK ["Android Framework"]
+                    MEDIACODEC[MediaCodec API]
+                    CCODEC[CCodec<br />Entry Point]
+                    BUFFER_CH[CCodecBufferChannel<br />Buffer Delivery]
+                    end
+
+                    subgraph CODEC2_CLIENT ["Codec2 Client"]
+                    C2_CLIENT[Codec2Client]
+                    LISTENER[mClientListener<br />Callbacks]
+                    end
+
+                    subgraph HAL ["HAL Interface - android.hardware.media.c2"]
+                    HIDL_AIDL[HIDL/AIDL<br />IPC Layer]
+                    end
+
+                    subgraph VENDOR ["Vendor Implementation"]
+                    COMP_STORE[C2ComponentStore<br />Library Entry Point]
+                    C2_COMP[C2Component<br />Encoder/Decoder]
+                    C2_INTF[C2Component Interface<br />Configuration]
+                    C2_ALLOC[C2Allocator<br />Memory Management]
+                    C2_POOL[C2BlockPool<br />Buffer Pool]
+                    end
+
+                    subgraph HW ["Hardware"]
+                    HW_CODEC[Hardware Codec<br />DSP/GPU]
+                    ION[ION Allocator]
+                    GRALLOC[Gralloc<br />Graphics Buffer]
+                    end
+
+                    MEDIA_APP --> MEDIACODEC
+                    MEDIACODEC --> CCODEC
+                    CCODEC --> BUFFER_CH
+                    CCODEC --> C2_CLIENT
+                    C2_CLIENT --> LISTENER
+                    C2_CLIENT --> HIDL_AIDL
+
+                    HIDL_AIDL --> COMP_STORE
+                    COMP_STORE --> C2_COMP
+                    C2_COMP --> C2_INTF
+                    C2_COMP --> C2_ALLOC
+                    C2_ALLOC --> C2_POOL
+
+                    C2_COMP --> HW_CODEC
+                    C2_ALLOC --> ION
+                    C2_ALLOC --> GRALLOC
+
+                    style CCODEC fill:#1a1f35,stroke:#06b6d4,stroke-width:3px
+                    style C2_COMP fill:#1a1f35,stroke:#22d3ee,stroke-width:3px
+                    style C2_ALLOC fill:#1a1f35,stroke:#67e8f9,stroke-width:2px
+                    style HIDL_AIDL fill:#1a1f35,stroke:#10b981,stroke-width:2px
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>핵심 컴포넌트:</strong>
+                <ul>
+                    <li><strong>CCodec</strong>: Stagefright와 Codec 2.0 프레임워크 간 인터페이스</li>
+                    <li><strong>Codec2Client</strong>: CCodec이 Codec 2.0 컴포넌트와 상호작용하는 클라이언트</li>
+                    <li><strong>C2ComponentStore</strong>: 벤더별 코덱 라이브러리 진입점</li>
+                    <li><strong>C2Component</strong>: 실제 인코더/디코더 구현체</li>
+                    <li><strong>C2Allocator</strong>: Zero-Copy를 위한 메모리 할당 및 관리</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 3: Component Lifecycle -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                컴포넌트 생명주기
+            </h2>
+            <p class="section-description">
+                C2Component의 생성부터 소멸까지의 전체 생명주기를 설명합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App
+                    participant MC as MediaCodec
+                    participant CC as CCodec
+                    participant C2C as Codec2Client
+                    participant HAL as HIDL/AIDL
+                    participant CS as C2ComponentStore
+                    participant COMP as C2Component
+
+                    App->>MC: createByCodecName()
+                    MC->>CC: CCodec 생성
+                    CC->>C2C: Codec2Client::CreateFromService()
+                    C2C->>HAL: HAL Service 연결
+                    HAL->>CS: getComponentStore()
+                    CS-->>HAL: ComponentStore 반환
+                    HAL-->>C2C: Store 반환
+
+                    App->>MC: configure()
+                    MC->>CC: configure()
+                    CC->>C2C: createComponent()
+                    C2C->>HAL: createComponent(name)
+                    HAL->>CS: createComponent()
+                    CS->>COMP: C2Component 인스턴스 생성
+                    COMP-->>CS: Component 반환
+                    CS-->>HAL: Component 반환
+                    HAL-->>C2C: Component 반환
+                    C2C-->>CC: Component 반환
+
+                    CC->>C2C: query() - 파라미터 조회
+                    C2C->>COMP: Component Interface 접근
+                    COMP-->>C2C: 설정값 반환
+
+                    App->>MC: start()
+                    MC->>CC: start()
+                    CC->>C2C: start()
+                    C2C->>HAL: start()
+                    HAL->>COMP: start()
+
+                    loop 데이터 처리
+                    App->>MC: queueInputBuffer()
+                    MC->>CC: C2Work 생성
+                    CC->>C2C: queue(C2Work)
+                    C2C->>HAL: queue(work)
+                    HAL->>COMP: process(work)
+                    COMP->>COMP: 인코딩/디코딩
+                    COMP-->>HAL: onWorkDone()
+                    HAL-->>C2C: onWorkDone()
+                    C2C-->>CC: Listener 콜백
+                    CC-->>MC: 출력 버퍼 전달
+                    MC-->>App: dequeueOutputBuffer()
+                    end
+
+                    App->>MC: stop()
+                    MC->>CC: stop()
+                    CC->>C2C: stop()
+                    C2C->>HAL: stop()
+                    HAL->>COMP: stop()
+
+                    App->>MC: release()
+                    MC->>CC: release()
+                    CC->>C2C: release()
+                    C2C->>HAL: release()
+                    HAL->>COMP: release()
+                    COMP->>COMP: 리소스 정리
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Buffer Management -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Zero-Copy 버퍼 관리
+            </h2>
+            <p class="section-description">
+                Codec 2.0의 핵심 기능인 Zero-Copy 버퍼 메커니즘을 상세히 설명합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    flowchart TB
+                    START[앱에서 인코딩/디코딩 요청] --> ALLOC{버퍼 할당 필요?}
+
+                    ALLOC -->|Yes| C2ALLOC[C2Allocator 호출]
+                    C2ALLOC --> POOL[C2BlockPool에서<br />메모리 블록 획득]
+
+                    POOL --> TYPE{버퍼 타입}
+                    TYPE -->|Linear| ION_ALLOC[ION Allocator<br />연속 메모리]
+                    TYPE -->|Graphic| GRALLOC_ALLOC[Gralloc<br />그래픽 버퍼]
+
+                    ION_ALLOC --> C2BUFFER[C2Buffer 생성]
+                    GRALLOC_ALLOC --> C2BUFFER
+
+                    ALLOC -->|No| C2BUFFER
+
+                    C2BUFFER --> C2WORK[C2Work에 C2Buffer 첨부]
+                    C2WORK --> QUEUE[Component에 queue]
+
+                    QUEUE --> PROCESS[Component에서 처리]
+                    PROCESS --> ZEROCOPY{Zero-Copy 가능?}
+
+                    ZEROCOPY -->|Yes| DIRECT[메모리 직접 접근<br />복사 없음]
+                    ZEROCOPY -->|No| COPY[필요시 복사]
+
+                    DIRECT --> OUTPUT[출력 C2Buffer 생성]
+                    COPY --> OUTPUT
+
+                    OUTPUT --> RETURN[앱으로 반환]
+                    RETURN --> RECYCLE[C2BlockPool로 재활용]
+                    RECYCLE --> END[완료]
+
+                    style C2ALLOC fill:#1a1f35,stroke:#06b6d4,stroke-width:2px
+                    style C2BUFFER fill:#1a1f35,stroke:#22d3ee,stroke-width:2px
+                    style ZEROCOPY fill:#1a1f35,stroke:#10b981,stroke-width:2px
+                    style DIRECT fill:#1a1f35,stroke:#10b981,stroke-width:3px
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 버퍼 관리 컴포넌트
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        C2Buffer
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>미디어 데이터 컨테이너</strong></p>
+                        <ul>
+                            <li>오디오/비디오 프레임 담기</li>
+                            <li>메타데이터 포함</li>
+                            <li>Zero-Copy 지원</li>
+                            <li>프로세스 간 전달 가능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎛️</span>
+                        C2Allocator
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>메모리 할당 관리자</strong></p>
+                        <ul>
+                            <li>버퍼 메모리 할당</li>
+                            <li>재활용 및 상태 추적</li>
+                            <li>ION/Gralloc 활용</li>
+                            <li>메모리 효율성 최적화</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏊</span>
+                        C2BlockPool
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>버퍼 풀 관리</strong></p>
+                        <ul>
+                            <li>메모리 블록 풀링</li>
+                            <li>빠른 할당/해제</li>
+                            <li>메모리 재사용</li>
+                            <li>성능 향상</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Zero-Copy 장점
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>성능 최적화</strong></p>
+                        <ul>
+                            <li>CPU 사용량 감소</li>
+                            <li>메모리 대역폭 절약</li>
+                            <li>지연 시간 단축</li>
+                            <li>전력 소비 감소</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: C2Component Structure -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                C2Component 구조
+            </h2>
+            <p class="section-description">
+                실제 인코더/디코더를 구현하는 C2Component의 내부 구조를 설명합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph COMPONENT ["C2Component"]
+                    COMP_INTF[C2Component Interface<br />파라미터 설정]
+                    COMP_IMPL[Component Implementation<br />실제 코덱 로직]
+
+                    subgraph CONFIG ["Configuration"]
+                    PARAMS[C2Param<br />설정 파라미터]
+                    QUERY[Query<br />능력 조회]
+                    TUNING[Tuning<br />동적 조정]
+                    end
+
+                    subgraph PROCESSING ["Processing"]
+                    INPUT_Q[Input Queue<br />입력 대기열]
+                    WORK_PROC[Work Processor<br />작업 처리]
+                    OUTPUT_Q[Output Queue<br />출력 대기열]
+                    end
+
+                    subgraph CALLBACKS ["Callbacks"]
+                    WORK_DONE[onWorkDone<br />작업 완료]
+                    TRIGGERED[onTriggered<br />이벤트 발생]
+                    ERROR[onError<br />에러 처리]
+                    end
+                    end
+
+                    COMP_INTF --> CONFIG
+                    COMP_IMPL --> PROCESSING
+                    COMP_IMPL --> CALLBACKS
+
+                    INPUT_Q --> WORK_PROC
+                    WORK_PROC --> OUTPUT_Q
+
+                    WORK_PROC --> WORK_DONE
+                    WORK_PROC --> TRIGGERED
+                    WORK_PROC --> ERROR
+
+                    style COMP_INTF fill:#1a1f35,stroke:#06b6d4,stroke-width:2px
+                    style COMP_IMPL fill:#1a1f35,stroke:#22d3ee,stroke-width:2px
+                    style WORK_PROC fill:#1a1f35,stroke:#67e8f9,stroke-width:2px
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔍 주요 인터페이스
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        C2Component Interface
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>설정 및 쿼리</strong></p>
+                        <ul>
+                            <li><code>query()</code>: 파라미터 조회</li>
+                            <li><code>config()</code>: 파라미터 설정</li>
+                            <li><code>querySupportedParams()</code>: 지원 파라미터 확인</li>
+                            <li><code>querySupportedValues()</code>: 지원 값 범위</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Work Processing
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>데이터 처리</strong></p>
+                        <ul>
+                            <li><code>queue()</code>: C2Work 제출</li>
+                            <li><code>flush()</code>: 대기열 비우기</li>
+                            <li><code>drain()</code>: 출력 완료 대기</li>
+                            <li><code>start()</code> / <code>stop()</code>: 상태 제어</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        C2Param
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>파라미터 타입</strong></p>
+                        <ul>
+                            <li>비트레이트, 프레임레이트</li>
+                            <li>해상도, 색상 포맷</li>
+                            <li>프로파일, 레벨</li>
+                            <li>버퍼 크기, 지연 시간</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Listener Callbacks
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>이벤트 알림</strong></p>
+                        <ul>
+                            <li><code>onWorkDone()</code>: 작업 완료</li>
+                            <li><code>onTriggered()</code>: 트리거 이벤트</li>
+                            <li><code>onError()</code>: 에러 발생</li>
+                            <li><code>onFramesRendered()</code>: 프레임 렌더링</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: HAL Communication -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                HAL 통신 메커니즘
+            </h2>
+            <p class="section-description">
+                HIDL/AIDL을 통한 프레임워크와 벤더 구현 간 통신 방식을 설명합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant FC as Framework<br />Codec2Client
+                    participant HIDL as HIDL/AIDL<br />Binder IPC
+                    participant VS as Vendor Service<br />C2ComponentStore
+                    participant VC as Vendor<br />C2Component
+
+                    Note over FC,VC: 컴포넌트 생성
+                    FC->>HIDL: createComponent(name)
+                    HIDL->>VS: createComponent()
+                    VS->>VC: new C2Component()
+                    VC-->>VS: Component 인스턴스
+                    VS-->>HIDL: IComponent 반환
+                    HIDL-->>FC: Component Proxy
+
+                    Note over FC,VC: 파라미터 설정
+                    FC->>HIDL: config(params)
+                    HIDL->>HIDL: 데이터 직렬화
+                    HIDL->>VC: config()
+                    VC->>VC: 파라미터 적용
+                    VC-->>HIDL: 결과
+                    HIDL->>HIDL: 데이터 역직렬화
+                    HIDL-->>FC: 설정 완료
+
+                    Note over FC,VC: Work 처리
+                    FC->>HIDL: queue(workBundle)
+                    HIDL->>HIDL: C2Work 직렬화<br />C2Buffer FD 전달
+                    HIDL->>VC: queue()
+                    VC->>VC: 인코딩/디코딩
+                    VC->>HIDL: onWorkDone()
+                    HIDL->>HIDL: 결과 직렬화
+                    HIDL->>FC: Listener 콜백
+                    FC->>FC: 출력 처리
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔌 HAL 인터페이스 계층
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📡</span>
+                        HIDL (Legacy)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Hardware Interface Definition Language</strong></p>
+                        <ul>
+                            <li>Android 10~12에서 사용</li>
+                            <li>Binderized HAL</li>
+                            <li>프로세스 간 통신</li>
+                            <li>안정적인 ABI</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🆕</span>
+                        AIDL (Current)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Android Interface Definition Language</strong></p>
+                        <ul>
+                            <li>Android 13+ 권장</li>
+                            <li>향상된 안정성</li>
+                            <li>더 나은 유연성</li>
+                            <li>간소화된 구문</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        데이터 직렬화
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>프로세스 간 데이터 전달</strong></p>
+                        <ul>
+                            <li>C2Param 직렬화</li>
+                            <li>C2Buffer FD 공유</li>
+                            <li>Zero-Copy 유지</li>
+                            <li>효율적인 IPC</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        보안 및 격리
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>프로세스 분리</strong></p>
+                        <ul>
+                            <li>벤더 프로세스 격리</li>
+                            <li>크래시 영향 최소화</li>
+                            <li>권한 분리</li>
+                            <li>SELinux 정책 적용</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Codec 2.0 vs OMX -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Codec 2.0 vs OpenMAX 비교
+            </h2>
+            <p class="section-description">
+                기존 OpenMAX IL과 Codec 2.0의 주요 차이점을 비교합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔴</span>
+                        OpenMAX IL (Legacy)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>버퍼 관리</strong>: 복사 기반, 성능 오버헤드</li>
+                            <li><strong>API</strong>: 복잡하고 경직된 구조</li>
+                            <li><strong>업데이트</strong>: OS 업데이트 필요</li>
+                            <li><strong>확장성</strong>: 제한적</li>
+                            <li><strong>HAL</strong>: 직접 통합, 보안 취약</li>
+                            <li><strong>필터</strong>: 지원 제한적</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🟢</span>
+                        Codec 2.0 (Modern)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>버퍼 관리</strong>: Zero-Copy, 고성능</li>
+                            <li><strong>API</strong>: 단순하고 유연한 구조</li>
+                            <li><strong>업데이트</strong>: Mainline 모듈, 독립 업데이트</li>
+                            <li><strong>확장성</strong>: 컴포넌트 체이닝, 플러그인</li>
+                            <li><strong>HAL</strong>: HIDL/AIDL 기반, 보안 강화</li>
+                            <li><strong>필터</strong>: 필터 플러그인 지원 (HDR→SDR 등)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ 마이그레이션 고려사항:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Android 10+에서 Codec 2.0이 기본값</li>
+                    <li>기존 OMX 코덱은 호환성 레이어를 통해 계속 동작</li>
+                    <li>새로운 하드웨어 코덱은 Codec 2.0으로 구현 권장</li>
+                    <li>벤더는 C2ComponentStore를 통해 코덱 노출</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Android Codec 2.0 Architecture</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                Next-Generation Media Codec Framework
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-primary); text-decoration: none;">
+                    ← AOSP Media Framework로 돌아가기
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#06b6d4',
+                lineColor: '#22d3ee',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#0a0e1a',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                border1: '#06b6d4',
+                border2: '#22d3ee',
+                note: '#67e8f9',
+                noteBkgColor: 'rgba(6, 182, 212, 0.1)',
+                noteBorderColor: '#06b6d4',
+                fontFamily: 'Noto Sans KR'
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 50
+            },
+            sequence: {
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35
+            }
+        });
+
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+</body>
+
+</html>

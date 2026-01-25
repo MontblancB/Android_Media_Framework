@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Ready Mobile Apps (CarMa)</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #10b981;
+            --accent-secondary: #34d399;
+            --accent-tertiary: #6ee7b7;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glow-color: rgba(16, 185, 129, 0.3);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #064e3b 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 10px 40px rgba(16, 185, 129, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: #064e3b;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.15);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-primary);
+            font-size: 0.9em;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 78, 59, 0.3));
+            border-left: 4px solid var(--accent-primary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-primary);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .subtitle {
+                font-size: 1.1rem;
+            }
+
+            .section {
+                padding: 25px;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--accent-secondary), var(--accent-tertiary));
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>📱 Car Ready Mobile Apps (CarMa)</h1>
+            <p class="subtitle">기존 모바일 앱을 자동차로 확장하는 Google의 새로운 프로그램</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                프로그램 개요
+            </h2>
+            <p class="section-description">
+                Google I/O 2024에서 발표된 'Car Ready Mobile Apps' 프로그램은 기존 모바일 앱을 최소한의 수정으로 자동차 인포테인먼트 시스템(AAOS)에서 실행할 수 있게
+                해주는 이니셔티브입니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>핵심 목표:</strong> 개발자가 별도의 차량용 앱을 처음부터 개발하지 않고도, 기존 태블릿/대화면 대응 모바일 앱을 자동차 사용자에게 제공할 수 있도록 지원합니다.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        대상 카테고리
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>비디오 앱</strong>: YouTube, Netflix 등 스트리밍 서비스</li>
+                            <li><strong>게임</strong>: 터치 기반 캐주얼 게임</li>
+                            <li><strong>브라우저</strong>: 웹 서핑을 위한 브라우저 앱</li>
+                            <li><strong>날씨/IoT</strong>: (향후 확장 가능성)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🅿️</span>
+                        실행 조건
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>주차 상태(Parked)</strong>에서만 실행 가능</li>
+                            <li>주행 중에는 실행이 차단되거나 오디오만 재생</li>
+                            <li>운전자 주의 분산 방지 가이드라인 준수 필요</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✨</span>
+                        주요 이점
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>개발 비용 절감</strong>: 기존 코드 재사용</li>
+                            <li><strong>빠른 배포</strong>: 자동 호환성 검토</li>
+                            <li><strong>Google Play</strong>: 차량용 Play 스토어 등록</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture & Flow -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                동작 원리 및 아키텍처
+            </h2>
+            <p class="section-description">
+                Car Ready Mobile Apps는 AAOS의 '호환성 모드(Compatibility Mode)' 위에서 동작합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Mobile_App["📱 Existing Mobile App"]
+                    UI[Phone/Tablet UI Layout]
+                    Logic[App Logic]
+                    end
+
+                    subgraph AAOS["🚗 Android Automotive OS"]
+                    Compat[Compatibility Mode Container]
+                    Window[Window Manager]
+                    Input[Input Manager]
+                    end
+
+                    subgraph Safety["🛡️ Safety Layer"]
+                    Driving[Driving State Monitor]
+                    Block[UX Restriction Engine]
+                    end
+
+                    UI -->|Rendered in| Compat
+                    Compat -->|Managed by| Window
+                    Input -->|Touch/Key Events| Compat
+
+                    Driving -->|Check State| Block
+                    Block -->|If Driving| Compat
+
+                    style Mobile_App fill:#1a1f35,stroke:#10b981,stroke-width:2px,color:#e5e7eb
+                    style AAOS fill:#0a0e1a,stroke:#34d399,stroke-width:3px
+                    style Safety fill:#1a1f35,stroke:#ef4444,stroke-width:2px,color:#e5e7eb
+                    style Compat fill:#064e3b,stroke:#6ee7b7,stroke-width:2px,color:#fff
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        호환성 모드 (Compatibility Mode)
+                    </h3>
+                    <div class="card-description">
+                        <p>앱이 차량 디스플레이에 맞게 렌더링되도록 돕는 시스템 컨테이너입니다.</p>
+                        <ul>
+                            <li><strong>화면 비율 조정</strong>: 다양한 차량 디스플레이에 맞춰 레터박스/필러박스 처리</li>
+                            <li><strong>입력 변환</strong>: 로터리 노브 등의 입력을 터치 이벤트로 변환하거나 제한</li>
+                            <li><strong>시스템 바 처리</strong>: 상태 표시줄 및 내비게이션 바와의 조화</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        안전 메커니즘
+                    </h3>
+                    <div class="card-description">
+                        <p>운전자의 안전을 최우선으로 고려하여 동작을 제어합니다.</p>
+                        <ul>
+                            <li><strong>주행 감지</strong>: 기어가 D/R에 있거나 속도가 0이 아니면 앱 화면 차단</li>
+                            <li><strong>미디어 처리</strong>: 비디오 앱의 경우 주행 중 영상은 끄고 오디오만 재생(Background Play)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Requirements -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                개발 및 배포 요구사항
+            </h2>
+            <p class="section-description">
+                Car Ready Mobile Apps 프로그램에 참여하기 위한 주요 기술적 요구사항입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        대화면 지원 필수
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>태블릿 및 폴더블 기기 대응 레이아웃</li>
+                            <li>가로 모드(Landscape) 지원 필수</li>
+                            <li>반응형 디자인 (Responsive Design)</li>
+                            <li><code>resizablActivity="true"</code> 설정</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        품질 가이드라인
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>터치 타겟</strong>: 최소 48dp 이상 (주행 중 조작은 불가하지만 정차 중 편의성)</li>
+                            <li><strong>텍스트 크기</strong>: 가독성 확보를 위한 적절한 크기</li>
+                            <li><strong>권한 요청</strong>: 차량에서 불필요한 권한(카메라, 위치 등) 우아하게 처리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧪</span>
+                        테스트 및 검증
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Android Studio Emulator</strong>: Automotive with Play Store 이미지 사용</li>
+                            <li><strong>System Image</strong>: API Level 33+ (Tiramisu 이상) 권장</li>
+                            <li><strong>Desktop Head Unit (DHU)</strong>: 개발자용 헤드 유닛 시뮬레이터 활용</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer
+            style="text-align: center; margin-top: 60px; padding: 40px; color: var(--text-muted); border-top: 1px solid var(--border-color);">
+            <p>© Android Media Framework Documentation</p>
+        </footer>
+    </div>
+</body>
+
+</html>

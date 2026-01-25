@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Media</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #60a5fa;
+            --accent-tertiary: #93c5fd;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glow-color: rgba(59, 130, 246, 0.3);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #0f172a 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 80px;
+            margin-top: 40px;
+            padding: 100px 20px;
+            background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.15), transparent 40%),
+                radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.15), transparent 40%),
+                linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(17, 24, 39, 0.95) 100%);
+            border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
+            animation: pulse 10s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.6;
+            }
+        }
+
+        h1 {
+            font-size: 5rem;
+            font-weight: 800;
+            letter-spacing: -2px;
+            background: linear-gradient(to right, #60a5fa, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 0 30px rgba(192, 132, 252, 0.3));
+        }
+
+        .subtitle {
+            font-size: 1.4rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            margin: 0 auto;
+            line-height: 1.6;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .subtitle::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, #60a5fa, #c084fc);
+            margin: 30px auto 0;
+            border-radius: 2px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            padding: 20px 0;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 30px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .card.active {
+            cursor: pointer;
+        }
+
+        .card.active:hover {
+            transform: translateY(-5px);
+            background: var(--bg-card-hover);
+            border-color: var(--accent-secondary);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.15);
+        }
+
+        .card.disabled {
+            opacity: 0.6;
+            cursor: default;
+            background: rgba(26, 31, 53, 0.5);
+        }
+
+        .card-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-status {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .status-ready {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            padding: 0;
+            font-size: 0;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+            vertical-align: middle;
+        }
+
+        .status-preparation {
+            width: 8px;
+            height: 8px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            display: inline-block;
+            padding: 0;
+            font-size: 0;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+            vertical-align: middle;
+        }
+
+        .status-soon {
+            background: rgba(107, 114, 128, 0.2);
+            color: #9ca3af;
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            line-height: 1.3;
+        }
+
+        .card-desc {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+            flex-grow: 1;
+        }
+
+        .card-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-secondary);
+            font-weight: 600;
+            text-decoration: none;
+            margin-top: auto;
+            transition: gap 0.2s ease;
+        }
+
+        .card.active:hover .card-link {
+            gap: 12px;
+            color: #ffffff;
+        }
+
+        .multi-links {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            text-align: center;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-secondary);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: #ef4444;
+            color: white;
+            border-color: #ef4444;
+        }
+
+        /* Category Colors */
+        .cat-arch {
+            border-top: 4px solid #3b82f6;
+        }
+
+        /* Blue */
+        .cat-media {
+            border-top: 4px solid #f59e0b;
+        }
+
+        /* Amber */
+        .cat-audio {
+            border-top: 4px solid #ec4899;
+        }
+
+        /* Pink */
+        .cat-drm {
+            border-top: 4px solid #10b981;
+        }
+
+        /* Emerald */
+        .cat-car {
+            border-top: 4px solid #8b5cf6;
+        }
+
+        /* Violet */
+        .cat-test {
+            border-top: 4px solid #ef4444;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Android Media</h1>
+            <p class="subtitle">Comprehensive Documentation & Architecture Visualization</p>
+        </header>
+
+        <div class="grid">
+            <!-- 1. Android AOSP Architecture -->
+            <div class="card active cat-arch" onclick="location.href='aosp.html'">
+                <div class="card-number">
+                    01
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">Android AOSP Architecture</h3>
+                <p class="card-desc">Android 전체 시스템 아키텍처 및 미디어 프레임워크의 위치</p>
+                <a href="aosp.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 2. Android Version History -->
+            <div class="card active cat-arch" onclick="window.location.href='android-version-history.html'">
+                <div class="card-number">
+                    02
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">Android Version History</h3>
+                <p class="card-desc">Android 미디어 프레임워크의 버전별 진화 및 API 변경 사항</p>
+                <a href="android-version-history.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 3. Android Automotive OS (AAOS) -->
+            <div class="card active cat-car" onclick="location.href='aaos.html'">
+                <div class="card-number">
+                    03
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">Android Automotive OS (AAOS)</h3>
+                <p class="card-desc">차량용 Android 운영체제 개요 및 구조</p>
+                <a href="aaos.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 4. Media Framework Core -->
+            <div class="card active cat-media" onclick="location.href='media-framework-core.html'">
+                <div class="card-number">
+                    04
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">Media Framework Core</h3>
+                <p class="card-desc">Application Framework와 Native Framework의 핵심 상호작용</p>
+                <a href="media-framework-core.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 5. Codec 2.0 & Media HAL -->
+            <div class="card active cat-media" onclick="location.href='codec2.html'">
+                <div class="card-number">
+                    05
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">Codec 2.0 & Media HAL</h3>
+                <p class="card-desc">최신 코덱 프레임워크 아키텍처 및 HAL 통신</p>
+                <a href="codec2.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 6. Dolby Codecs & AOSP -->
+            <div class="card active cat-media" onclick="window.location.href='dolby-codecs.html'">
+                <div class="card-number">
+                    06
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">Dolby Codecs & AOSP</h3>
+                <p class="card-desc">Dolby Atmos, AC-4, Vision 코덱 사양 및 AOSP 통합 아키텍처</p>
+                <a href="dolby-codecs.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 7. Media Pipeline & Data Flow -->
+            <div class="card active cat-media" onclick="location.href='media-playback.html'">
+                <div class="card-number">
+                    07
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">Media Pipeline & Data Flow</h3>
+                <p class="card-desc">미디어 재생 시 데이터 흐름 및 컴포넌트 간 상호작용 시각화</p>
+                <a href="media-playback.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 8. MediaExtractor & Container -->
+            <div class="card active cat-media" onclick="location.href='media-extractor.html'">
+                <div class="card-number">
+                    08
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">MediaExtractor & Container</h3>
+                <p class="card-desc">미디어 컨테이너 파싱, 디먹싱 및 Extractor 아키텍처</p>
+                <a href="media-extractor.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 9. MediaSession Framework -->
+            <div class="card active cat-media" onclick="location.href='mediasession.html'">
+                <div class="card-number">
+                    09
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">MediaSession Framework</h3>
+                <p class="card-desc">미디어 재생 제어 및 세션 관리 아키텍처</p>
+                <a href="mediasession.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 10. MediaProvider & Storage Access -->
+            <div class="card active cat-media" onclick="location.href='mediaprovider.html'">
+                <div class="card-number">
+                    10
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">MediaProvider & Storage Access</h3>
+                <p class="card-desc">미디어 파일 인덱싱, 데이터베이스 관리 및 스토리지 접근</p>
+                <a href="mediaprovider.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 11. Audio Framework -->
+            <div class="card active cat-audio" onclick="location.href='audio-framework.html'">
+                <div class="card-number">
+                    11
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">Audio Framework</h3>
+                <p class="card-desc">AudioFlinger, AudioPolicyService 및 오디오 처리 파이프라인</p>
+                <a href="audio-framework.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 12. Car Media Service -->
+            <div class="card active cat-car" onclick="location.href='carmedia.html'">
+                <div class="card-number">
+                    12
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">Car Media Service</h3>
+                <p class="card-desc">차량 특화 미디어 서비스 및 오디오 라우팅</p>
+                <a href="carmedia.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 13. AAOS Key Event Handling -->
+            <div class="card active cat-car" onclick="window.location.href='aaos-key-events.html'">
+                <div class="card-number">
+                    13
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">AAOS Key Event Handling</h3>
+                <p class="card-desc">CarService, Input Framework, UX Restriction 및 미디어 키 처리 구조</p>
+                <a href="aaos-key-events.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 14. AAOS Last Media & Autoplay -->
+            <div class="card active cat-car" onclick="window.location.href='aaos-last-media.html'">
+                <div class="card-number">
+                    14
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">AAOS Last Media & Autoplay</h3>
+                <p class="card-desc">Last Media Source 저장 구조, 자동 재생(Autoplay) 정책 및 복원 메커니즘</p>
+                <a href="aaos-last-media.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 15. Power Policy & Suspend -->
+            <div class="card active cat-car" onclick="window.location.href='power-policy-suspend.html'">
+                <div class="card-number">
+                    15
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">Power Policy & Suspend</h3>
+                <p class="card-desc">Deep Sleep, Suspend-to-RAM 메커니즘 및 오디오 컨텍스트 보존 로직</p>
+                <a href="power-policy-suspend.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 16. DRM & Widevine Architecture -->
+            <div class="card active cat-drm" onclick="location.href='widevine.html'">
+                <div class="card-number">
+                    16
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">DRM & Widevine Architecture</h3>
+                <p class="card-desc">콘텐츠 보호를 위한 DRM 프레임워크 및 Widevine 구현</p>
+                <a href="widevine.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 17. Google Automotive Services (GAS) -->
+            <div class="card active cat-car" onclick="location.href='gas.html'">
+                <div class="card-number">
+                    17
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">Google Automotive Services (GAS)</h3>
+                <p class="card-desc">GAS 구성 요소 및 차량용 Google 서비스 통합</p>
+                <a href="gas.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 18. Car Ready Mobile Apps (CarMa) -->
+            <div class="card active cat-arch" onclick="location.href='carma.html'">
+                <div class="card-number">
+                    18
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">Car Ready Mobile Apps (CarMa)</h3>
+                <p class="card-desc">기존 모바일 앱을 자동차로 확장하는 Google의 새로운 프로그램</p>
+                <a href="carma.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 19. Media App Layer & APIs -->
+            <div class="card active cat-media" onclick="window.location.href='media-app-layer.html'">
+                <div class="card-number">
+                    19
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">Media App Layer & APIs</h3>
+                <p class="card-desc">MediaPlayer, ExoPlayer, Media3, MediaSession API 상세 가이드</p>
+                <a href="media-app-layer.html" class="card-link">Explore →</a>
+            </div>
+
+            <!-- 20. CTS / VTS / GTS / CDD -->
+            <div class="card cat-test">
+                <div class="card-number">
+                    20
+                    <span class="card-status status-ready">Ready</span>
+                </div>
+                <h3 class="card-title">CTS / VTS / GTS / CDD</h3>
+                <p class="card-desc">Android 호환성 테스트 스위트 및 정책 문서</p>
+                <div class="multi-links">
+                    <a href="cts.html" class="btn-sm btn-danger">xTS Testing</a>
+                    <a href="cdd.html" class="btn-sm btn-primary">CDD Policy</a>
+                </div>
+            </div>
+        </div>
+
+        <footer
+            style="text-align: center; margin-top: 60px; padding: 40px; color: var(--text-muted); border-top: 1px solid var(--border-color);">
+            <p>© Android Media Framework Documentation</p>
+        </footer>
+    </div>
+
+
+</body>
+
+</html>

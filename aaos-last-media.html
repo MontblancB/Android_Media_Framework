@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAOS Last Media & Autoplay | Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+
+            /* Enhanced Palette */
+            --accent-blue: #3b82f6;
+            --accent-indigo: #6366f1;
+            --accent-teal: #14b8a6;
+            --accent-green: #10b981;
+            --accent-rose: #f43f5e;
+            --accent-amber: #f59e0b;
+            --accent-purple: #8b5cf6;
+
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #0f172a 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+            word-break: keep-all;
+            overflow-wrap: break-word;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--accent-blue);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 80px 20px;
+            background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.15), transparent 40%),
+                radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.15), transparent 40%),
+                linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(17, 24, 39, 0.95) 100%);
+            border-radius: 32px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(to right, var(--accent-purple), var(--accent-indigo), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Section Specific Colors */
+        .sec-concept .section-title {
+            color: var(--accent-purple);
+        }
+
+        .sec-concept .section-number {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-indigo));
+        }
+
+        .sec-arch .section-title {
+            color: var(--accent-blue);
+        }
+
+        .sec-arch .section-number {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+        }
+
+        .sec-logic .section-title {
+            color: var(--accent-amber);
+        }
+
+        .sec-logic .section-number {
+            background: linear-gradient(135deg, var(--accent-amber), var(--accent-rose));
+        }
+
+        .sec-restore .section-title {
+            color: var(--accent-rose);
+        }
+
+        .sec-restore .section-number {
+            background: linear-gradient(135deg, var(--accent-rose), var(--accent-purple));
+        }
+
+        .sec-dev .section-title {
+            color: var(--accent-green);
+        }
+
+        .sec-dev .section-number {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-teal));
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+            margin-bottom: 30px;
+            padding-left: 65px;
+            max-width: 100%;
+        }
+
+        /* Diagram Container */
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 200px;
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .sec-concept .card:hover {
+            border-color: var(--accent-purple);
+        }
+
+        .sec-arch .card:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .sec-logic .card:hover {
+            border-color: var(--accent-amber);
+        }
+
+        .sec-restore .card:hover {
+            border-color: var(--accent-rose);
+        }
+
+        .sec-dev .card:hover {
+            border-color: var(--accent-green);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sec-concept .card-title {
+            color: var(--accent-purple);
+        }
+
+        .sec-arch .card-title {
+            color: var(--accent-blue);
+        }
+
+        .sec-logic .card-title {
+            color: var(--accent-amber);
+        }
+
+        .sec-restore .card-title {
+            color: var(--accent-rose);
+        }
+
+        .sec-dev .card-title {
+            color: var(--accent-green);
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        /* Code styling */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-blue);
+            font-size: 0.9em;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        pre {
+            background: #111827;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            margin-top: 15px;
+        }
+
+        pre code {
+            background: transparent;
+            padding: 0;
+            border: none;
+            color: #e5e7eb;
+            font-size: 0.85rem;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>AAOS Last Media & Autoplay</h1>
+            <p class="subtitle">Comprehensive guide to Last Media Source, Playback State restoration, and Autoplay
+                policies in Android Automotive OS.</p>
+        </header>
+
+        <!-- Section 1: Concept -->
+        <section class="section sec-concept">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                What is "Last Media"?
+            </h2>
+            <p class="section-description">
+                AAOS에서 "Last Media"는 차량 재시동이나 사용자 전환 시 이전 미디어 경험을 끊김 없이 이어주기 위한 핵심 개념입니다. 크게 두 가지 정보를 저장하고 관리합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎵</span> Last Media Source</h3>
+                    <div class="card-description">
+                        마지막으로 사용된 미디어 앱/서비스(ComponentName) 입니다.
+                        <br>(예: <code>com.spotify.music</code>, <code>com.google.android.apps.youtube.music</code>)
+                        <br>CarMediaService가 <strong>SharedPreferences</strong>에 Per-User, Per-Mode (PLAYBACK/BROWSE)로
+                        히스토리를 저장합니다.
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">▶️</span> Last Playback State</h3>
+                    <div class="card-description">
+                        해당 소스에서 마지막으로 재생 중이었는지(PLAYING), 일시정지(PAUSED) 상태였는지에 대한 정보입니다.
+                        <br>이 상태를 기반으로 차량 시동 시 <strong>자동 재생 (Autoplay)</strong>을 할지 말지 결정합니다.
+                    </div>
+                </div>
+            </div>
+            <p
+                style="margin-top: 20px; color: var(--text-secondary); padding-left: 10px; border-left: 3px solid var(--accent-purple);">
+                사용자 UX의 "마지막에 듣던 음악 다시 재생해줘", 차량 시동 후 자동으로 이전 미디어를 이어 재생, 혹은 "Connect and play last media source" 같은
+                음성/버튼 액션이 전부 이 개념 위에 구축되어 있습니다.
+            </p>
+        </section>
+
+        <!-- Section 2: Architecture Overview -->
+        <section class="section sec-arch">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Architecture Overview
+            </h2>
+            <p class="section-description">
+                Last Media 기능은 <code>CarMediaService</code>를 중심으로 <code>MediaConnectorService</code>와 각 미디어 앱 간의 유기적인
+                협력으로 동작합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TD
+                    User[User / Voice Command] -- "Play Last Media" --> CMS[CarMediaService]
+
+                    subgraph System Services
+                    CMS -- "Store/Retrieve History" --> Prefs[(SharedPreferences)]
+                    CMS -- "Start with EXTRA_AUTOPLAY" --> MCS[MediaConnectorService]
+                    end
+
+                    subgraph Media App
+                    MCS -- "MediaBrowser.connect()" --> MBS[MediaBrowserService]
+                    MBS -- "Session Token" --> MCS
+                    MCS -- "TransportControls.play()" --> Session[MediaSession]
+                    end
+
+                    style CMS fill:#3b82f6,stroke:#fff,color:#fff
+                    style MCS fill:#6366f1,stroke:#fff,color:#fff
+                    style MBS fill:#10b981,stroke:#fff,color:#fff
+                    style Session fill:#10b981,stroke:#fff,color:#fff
+                    style Prefs fill:#1a1f35,stroke:#9ca3af
+                    style User fill:#1a1f35,stroke:#9ca3af
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📱</span> Media App (Spotify, etc.)</h3>
+                    <div class="card-description">
+                        <code>MediaBrowserService</code> + <code>MediaSession</code> (혹은
+                        <code>MediaSessionCompat</code>)을 구현해야 합니다.
+                        자신의 재생 상태를 시스템에 알리고, 연결 요청에 응답합니다.
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🧠</span> CarMediaService</h3>
+                    <div class="card-description">
+                        핵심 관리자입니다. 현재 Primary Media Source, Browse Source, Last Media History, Playback State를 저장하고
+                        관리합니다.
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔌</span> MediaConnectorService</h3>
+                    <div class="card-description">
+                        OEM/AAOS 시스템 서비스로, CarMediaService의 지시를 받아 해당 Media Source에 바인드(Bind)하고,
+                        필요 시 <code>EXTRA_AUTOPLAY</code>로 "자동재생"을 시도합니다.
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🚗</span> CarService / Car API</h3>
+                    <div class="card-description">
+                        차량 전원/슬립 상태에서 Snapshot을 기반으로 복원하고, 재기동 시 Last Media 관련 상태를 이어받습니다.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Internal Logic & Storage -->
+        <section class="section sec-logic">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Internal Logic: How it works
+            </h2>
+            <p class="section-description">
+                CarMediaService 내부에서 Last Media 정보가 어떻게 저장되고, 자동 재생 여부가 어떻게 결정되는지 상세 로직입니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">3-1. Last
+                Media Source 저장 구조</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                <code>SharedPreferences</code>를 사용하여 Per-User, Per-Mode로 History를 저장합니다.
+                <br>Key: <code>SOURCE_KEY</code>, <code>PLAYBACK_STATE_KEY</code>
+            </p>
+
+            <div class="content-grid">
+                <div class="card" style="grid-column: span 2;">
+                    <h3 class="card-title"><span class="card-icon">💾</span> Logic Summary</h3>
+                    <div class="card-description">
+                        <pre><code>private void setPlaybackMediaSource(ComponentName playbackMediaSource) {
+    // ... Stop existing callbacks ...
+    synchronized (mLock) {
+        mPrimaryMediaComponents[MEDIA_SOURCE_MODE_PLAYBACK] = playbackMediaSource;
+    }
+    if (playbackMediaSource != null) {
+        if (!isCurrentUserEphemeral()) {
+            saveLastMediaSource(playbackMediaSource, MEDIA_SOURCE_MODE_PLAYBACK);
+        }
+    }
+    // ... Notify listeners & Start MediaConnectorService ...
+}</code></pre>
+                        <p style="margin-top: 10px;">
+                            <code>saveLastMediaSource()</code>는 History(Deque)를 관리합니다. 새 소스를 가장 앞에 추가하고, 중복을 제거한 뒤 직렬화하여
+                            저장합니다.
+                            이를 통해 <strong>"최근 사용 Media Source 리스트"</strong>를 유지합니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">3-2. Last
+                Playback State & Autoplay</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                <code>MediaController.Callback</code>에서 <code>onPlaybackStateChanged</code>를 감지하여 상태를 저장합니다.
+                이 값은 <code>shouldStartPlayback()</code>에서 자동 재생 여부를 판단하는 데 사용됩니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚙️</span> Autoplay Config Policies</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>AUTOPLAY_CONFIG_NEVER</code>: 자동 재생 안 함.</li>
+                            <li><code>AUTOPLAY_CONFIG_ALWAYS</code>: 무조건 재생 시도.</li>
+                            <li><code>RETAIN_PER_SOURCE</code>: "이 앱에서 마지막 상태가 PLAYING이었으면" 다시 자동 재생.</li>
+                            <li><code>RETAIN_PREVIOUS</code>: CarMediaService가 기억하는 마지막 상태가 PLAYING이면 재생.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Restoration Flow -->
+        <section class="section sec-restore">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Restoration Flow
+            </h2>
+            <p class="section-description">
+                시스템 레벨에서 Last Media가 어떻게 복원되는지, 부팅 시나리오와 UX 시나리오로 나누어 봅니다.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">4-1. Boot /
+                Resume Scenario</h3>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant CarService
+                    participant CMS as CarMediaService
+                    participant MCS as MediaConnectorService
+                    participant App as Media App
+
+                    Note over CarService: Vehicle Ignition ON (Resume)
+                    CarService->>CMS: Restore State (Snapshot)
+                    CMS->>CMS: getLastMediaSource() -> Set Default
+
+                    Note over CMS: Power Policy / User Unlock
+                    CMS->>CMS: shouldStartPlayback() -> true/false
+
+                    alt Autoplay Allowed
+                    CMS->>MCS: startMediaConnectorService(EXTRA_AUTOPLAY=true)
+                    MCS->>App: MediaBrowser.connect()
+                    MCS->>App: MediaController.play()
+                    else Autoplay Denied
+                    CMS->>MCS: startMediaConnectorService(EXTRA_AUTOPLAY=false)
+                    MCS->>App: MediaBrowser.connect()
+                    Note right of App: Only Connect (Ready State)
+                    end
+                </div>
+            </div>
+            <p style="color: var(--text-secondary); margin-top: 15px;">
+                CarService는 Suspend에서 Resume될 때 VHAL에 다시 붙지 않고, 마지막 Snapshot (Suspend-to-RAM 상태)에서 상태를 복원합니다.
+                이후 Config에 따라 자동 재생을 시도하거나, 단순히 "마지막 소스"만 UI에 노출합니다.
+            </p>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">4-2. Voice
+                / UX Interaction</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🗣️</span> Voice Commands</h3>
+                    <div class="card-description">
+                        "Play last media source", "Resume music" 같은 명령은 내부적으로 CarMediaService를 통해
+                        <strong>"Last Media Source + Autoplay 여부"</strong>를 얻어 실행됩니다.
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">👆</span> Home Screen UI</h3>
+                    <div class="card-description">
+                        홈 화면이나 미디어 위젯의 "마지막 미디어 재생" 카드 또한 동일한 메커니즘을 사용하여
+                        최근 앱을 표시하고 터치 시 재생을 재개합니다.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Developer & OEM Guide -->
+        <section class="section sec-dev">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Developer & OEM Guide
+            </h2>
+            <p class="section-description">
+                Last Media 기능을 100% 활용하기 위한 가이드라인입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">👨‍💻</span> For App Developers</h3>
+                    <div class="card-description">
+                        앱 개발자가 해야 할 일은 의외로 단순합니다.
+                        <ul>
+                            <li><strong>MediaSession 구현:</strong> <code>PlaybackState</code> (STATE_PLAYING 등)를 올바르게
+                                갱신하세요.</li>
+                            <li><strong>Browse Service Extras:</strong> 세션 Extras에
+                                <code>CAR_EXTRA_BROWSE_SERVICE_FOR_SESSION</code> 값을 넣어 Browse Service를 명시할 수 있습니다.
+                            </li>
+                            <li><strong>Self-Restoration:</strong> 앱이 재시작될 때 큐(Queue)와 재생 위치(Position)를 복원하는 것은
+                                <strong>앱의 책임</strong>입니다. OS는 단지 "재생 버튼"을 눌러줄 뿐입니다.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🏭</span> For OEMs / Platform</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Autoplay Policy:</strong> <code>config_mediaSourceAutoplayConfig</code>를 오버레이하여
+                                자동 재생 동작을 제어하세요.</li>
+                            <li><strong>Default Source:</strong> <code>config_defaultMediaSource</code>로 히스토리가 없을 때의 기본
+                                앱을 지정하세요.</li>
+                            <li><strong>User Types:</strong> <code>isCurrentUserEphemeral()</code>이 true인 게스트/임시 유저는
+                                Last Media가 저장되지 않을 수 있음을 확인하세요.</li>
+                            <li><strong>Independent Playback:</strong> <code>mIndependentPlaybackConfig</code> 설정을 통해
+                                라디오와 미디어 앱의 소스 분리 여부를 결정하세요.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Summary -->
+        <section class="section"
+            style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1)); border-color: var(--accent-indigo);">
+            <h2 class="section-title" style="color: var(--text-primary);">
+                <span class="section-number" style="background: var(--accent-indigo);">6</span>
+                Summary
+            </h2>
+            <p class="section-description" style="color: var(--text-primary); font-weight: 500;">
+                AAOS의 "Last Media"는 CarMediaService가 사용자의 마지막 미디어 소스와 재생 상태를 Per-User로 저장해 두었다가, 차량 재기동/음성명령/UX 상에서 이
+                정보를 바탕으로 적절히 앱을 재연결하고, 정책 (Autoplay Config)에 따라 자동 재생까지 제어하는 전체 메커니즘입니다.
+            </p>
+            <p style="margin-top: 10px; color: var(--text-secondary);">
+                앱 개발자는 올바른 MediaSession/PlaybackState 구현에 집중하면 되고,
+                플랫폼/OEM 개발자는 CarMediaService와 관련 Config를 튜닝함으로써 "마지막에 듣던 걸 얼마나 적극적으로 다시 틀어줄지"를 조절하는 구조입니다.
+            </p>
+        </section>
+
+        <a href="index.html" class="nav-button">← Back to Dashboard</a>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                darkMode: true,
+                background: '#111827',
+                primaryColor: '#3b82f6',
+                secondaryColor: '#ec4899',
+                tertiaryColor: '#0f172a',
+                primaryTextColor: '#e5e7eb',
+                secondaryTextColor: '#9ca3af',
+                lineColor: '#334155'
+            }
+        });
+    </script>
+</body>
+
+</html>

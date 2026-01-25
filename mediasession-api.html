@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediaSession API 플로우</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7c3aed;
+            --accent-tertiary: #ec4899;
+            --accent-media: #f97316;
+            --accent-success: #10b981;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f2e 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(249, 115, 22, 0.1);
+            border-color: var(--accent-media);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-media), var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-media), var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(249, 115, 22, 0.3);
+            box-shadow: 0 10px 40px rgba(249, 115, 22, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-media);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-media), var(--accent-primary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(249, 115, 22, 0.4);
+            box-shadow: 0 5px 20px rgba(249, 115, 22, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-media);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(249, 115, 22, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-media);
+            font-size: 0.9em;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(0, 212, 255, 0.1));
+            border-left: 4px solid var(--accent-media);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-media);
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-media), var(--accent-primary));
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="mediasession.html" class="nav-button">
+            ← MediaSession Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>🎯 MediaSession API</h1>
+            <p class="subtitle">케이스별 상세 플로우 및 처리 로직</p>
+        </header>
+
+        <!-- Section 1: Audio Focus Management -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Audio Focus 관리
+            </h2>
+            <p class="section-description">
+                여러 앱의 동시 재생을 방지하고 오디오 출력을 조정하는 Audio Focus 처리 플로우입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App as Media App
+                    participant Session as MediaSession
+                    participant AudioMgr as AudioManager
+                    participant System as Android System
+                    participant OtherApp as Other App
+
+                    Note over App,System: 재생 시작 시
+                    App->>Session: onPlay() callback
+                    Session->>AudioMgr: requestAudioFocus(AudioFocusRequest)
+                    AudioMgr->>System: Focus 요청
+                    System-->>AudioMgr: AUDIOFOCUS_REQUEST_GRANTED
+                    AudioMgr-->>Session: Focus 획득
+                    Session->>App: player.play()
+                    App->>App: 재생 시작
+
+                    Note over App,OtherApp: 다른 앱이 Focus 요청
+                    OtherApp->>System: requestAudioFocus()
+                    System->>AudioMgr: Focus 변경
+                    AudioMgr->>Session: onAudioFocusChange(AUDIOFOCUS_LOSS)
+                    Session->>App: player.pause()
+                    App->>App: 재생 일시정지
+
+                    Note over App,System: 재생 종료 시
+                    App->>Session: onStop()
+                    Session->>AudioMgr: abandonAudioFocusRequest()
+                    AudioMgr->>System: Focus 반환
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Focus Request
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>재생 시작 시 Focus 요청</strong></p>
+                        <ul>
+                            <li><code>requestAudioFocus(AudioFocusRequest)</code></li>
+                            <li>onPlay() 콜백에서 호출</li>
+                            <li>AUDIOFOCUS_REQUEST_GRANTED 확인</li>
+                            <li>획득 후에만 재생 시작</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📢</span>
+                        Focus Change
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Focus 변경 처리</strong></p>
+                        <ul>
+                            <li><code>onAudioFocusChange()</code> 리스너</li>
+                            <li><strong>LOSS</strong>: 재생 정지</li>
+                            <li><strong>LOSS_TRANSIENT</strong>: 일시정지</li>
+                            <li><strong>LOSS_TRANSIENT_CAN_DUCK</strong>: 볼륨 감소</li>
+                            <li><strong>GAIN</strong>: 재생 재개</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        Focus Abandon
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>재생 완료 시 반환</strong></p>
+                        <ul>
+                            <li><code>abandonAudioFocusRequest()</code></li>
+                            <li>onStop() 에서 호출</li>
+                            <li>일시정지 시에는 유지</li>
+                            <li>완전 종료 시에만 반환</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Volume Control -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Volume Control 처리
+            </h2>
+            <p class="section-description">
+                VolumeProvider를 통한 원격 볼륨 제어 및 조정 플로우입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant User as User
+                    participant Controller as MediaController
+                    participant Session as MediaSession
+                    participant Provider as VolumeProvider
+                    participant Player as Player
+
+                    Note over User,Player: 볼륨 증가 요청
+                    User->>Controller: 볼륨 업 버튼
+                    Controller->>Session: adjustVolume(ADJUST_RAISE)
+                    Session->>Provider: onAdjustVolume(ADJUST_RAISE)
+                    Provider->>Provider: currentVolume++
+                    Provider->>Session: setCurrentVolume(newVolume)
+                    Session->>Controller: onVolumeChanged()
+                    Controller->>User: UI 업데이트
+
+                    Note over User,Player: 절대 볼륨 설정
+                    User->>Controller: 볼륨 슬라이더 조정
+                    Controller->>Session: setVolumeTo(50)
+                    Session->>Provider: onSetVolumeTo(50)
+                    Provider->>Provider: currentVolume = 50
+                    Provider->>Session: setCurrentVolume(50)
+                    Session->>Player: setVolume(0.5f)
+                    Player->>Player: 볼륨 변경
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        VolumeProvider 설정
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>원격 볼륨 제어 활성화</strong></p>
+                        <ul>
+                            <li><code>setPlaybackToRemote(VolumeProvider)</code></li>
+                            <li><strong>VOLUME_CONTROL_FIXED</strong>: 변경 불가</li>
+                            <li><strong>VOLUME_CONTROL_RELATIVE</strong>: 상대 조정</li>
+                            <li><strong>VOLUME_CONTROL_ABSOLUTE</strong>: 절대값 설정</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⬆️</span>
+                        adjustVolume
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>상대적 볼륨 조정</strong></p>
+                        <ul>
+                            <li><code>onAdjustVolume(direction)</code></li>
+                            <li>ADJUST_RAISE: 증가</li>
+                            <li>ADJUST_LOWER: 감소</li>
+                            <li>ADJUST_SAME: 유지</li>
+                            <li>setCurrentVolume()로 업데이트</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎚️</span>
+                        setVolumeTo
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>절대 볼륨 설정</strong></p>
+                        <ul>
+                            <li><code>onSetVolumeTo(value)</code></li>
+                            <li>0 ~ maxVolume 범위</li>
+                            <li>VOLUME_CONTROL_ABSOLUTE 필요</li>
+                            <li>즉시 볼륨 변경</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Media Button Events -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Media Button Events
+            </h2>
+            <p class="section-description">
+                Bluetooth 헤드셋, 차량 컨트롤 등의 미디어 버튼 KeyEvent 처리 플로우입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant Device as BT Headset
+                    participant System as Android System
+                    participant Session as MediaSession
+                    participant Callback as Session.Callback
+                    participant Player as Player
+
+                    Note over Device,Player: 재생/일시정지 버튼
+                    Device->>System: KEYCODE_MEDIA_PLAY_PAUSE
+                    System->>Session: onMediaButtonEvent(Intent)
+                    Session->>Session: Extract KeyEvent
+                    Session->>Callback: Default behavior
+
+                    alt Playing State
+                    Callback->>Player: onPause()
+                    Player->>Player: 일시정지
+                    else Paused State
+                    Callback->>Player: onPlay()
+                    Player->>Player: 재생
+                    end
+
+                    Note over Device,Player: 다음 트랙 버튼
+                    Device->>System: KEYCODE_MEDIA_NEXT
+                    System->>Session: onMediaButtonEvent(Intent)
+                    Session->>Callback: onSkipToNext()
+                    Callback->>Player: skipToNext()
+                    Player->>Player: 다음 트랙 재생
+
+                    Note over Device,Player: 커스텀 처리
+                    Device->>System: KEYCODE_MEDIA_STOP
+                    System->>Session: onMediaButtonEvent(Intent)
+                    Session->>Callback: Custom onMediaButtonEvent()
+                    Callback->>Callback: Handle custom logic
+                    Callback-->>Session: return true (consumed)
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⌨️</span>
+                        KeyEvent 종류
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>미디어 버튼 KeyCode</strong></p>
+                        <ul>
+                            <li><code>KEYCODE_MEDIA_PLAY_PAUSE</code></li>
+                            <li><code>KEYCODE_MEDIA_PLAY</code></li>
+                            <li><code>KEYCODE_MEDIA_PAUSE</code></li>
+                            <li><code>KEYCODE_MEDIA_NEXT</code></li>
+                            <li><code>KEYCODE_MEDIA_PREVIOUS</code></li>
+                            <li><code>KEYCODE_MEDIA_STOP</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Default Behavior
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>자동 Callback 매핑</strong></p>
+                        <ul>
+                            <li>PLAY_PAUSE → onPlay() / onPause()</li>
+                            <li>NEXT → onSkipToNext()</li>
+                            <li>PREVIOUS → onSkipToPrevious()</li>
+                            <li>STOP → onStop()</li>
+                            <li>상태 기반 자동 판단</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Custom Handling
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>커스텀 이벤트 처리</strong></p>
+                        <ul>
+                            <li><code>onMediaButtonEvent(Intent)</code> 오버라이드</li>
+                            <li>Intent에서 KeyEvent 추출</li>
+                            <li>커스텀 로직 구현</li>
+                            <li>return true로 소비 표시</li>
+                            <li>FLAG_HANDLES_MEDIA_BUTTONS 설정</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Queue Management -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Queue 관리
+            </h2>
+            <p class="section-description">
+                MediaSession을 통한 재생 큐 관리 및 트랙 네비게이션 플로우입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant UI as UI / Controller
+                    participant Session as MediaSession
+                    participant Callback as Session.Callback
+                    participant Player as Player
+                    participant Queue as Queue Manager
+
+                    Note over UI,Queue: 큐 설정
+                    UI->>Session: setQueue(queueItems)
+                    Session->>Queue: Store queue
+                    Session->>UI: onQueueChanged()
+
+                    Note over UI,Queue: 트랙 선택
+                    UI->>Session: skipToQueueItem(id)
+                    Session->>Callback: onSkipToQueueItem(id)
+                    Callback->>Queue: getItemById(id)
+                    Queue-->>Callback: MediaItem
+                    Callback->>Player: prepare(mediaItem)
+                    Player->>Player: Load & Play
+
+                    Note over UI,Queue: 다음/이전 트랙
+                    UI->>Session: skipToNext()
+                    Session->>Callback: onSkipToNext()
+                    Callback->>Queue: getNextItem()
+                    Queue-->>Callback: Next MediaItem
+                    Callback->>Player: prepare(nextItem)
+                    Player->>Player: Play next track
+
+                    Session->>Session: setMetadata(nextTrackInfo)
+                    Session->>UI: onMetadataChanged()
+                    UI->>UI: UI 업데이트
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        Queue 설정
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>재생 목록 설정</strong></p>
+                        <ul>
+                            <li><code>setQueue(List&lt;QueueItem&gt;)</code></li>
+                            <li>각 QueueItem은 고유 ID</li>
+                            <li>MediaDescription 포함</li>
+                            <li>setQueueTitle() 제목 설정</li>
+                            <li>Auto/Wear에 자동 표시</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏭️</span>
+                        Skip Callbacks
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>트랙 네비게이션</strong></p>
+                        <ul>
+                            <li><code>onSkipToNext()</code>: 다음 트랙</li>
+                            <li><code>onSkipToPrevious()</code>: 이전 트랙</li>
+                            <li><code>onSkipToQueueItem(id)</code>: 특정 트랙</li>
+                            <li>Queue에서 MediaItem 조회</li>
+                            <li>Player에 준비 및 재생</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Active Queue Item
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>현재 재생 트랙 표시</strong></p>
+                        <ul>
+                            <li><code>setActiveQueueItemId(id)</code></li>
+                            <li>현재 재생 중인 항목 식별</li>
+                            <li>UI에 하이라이트 표시</li>
+                            <li>Auto/Wear 동기화</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Error Handling -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                에러 처리 및 상태 관리
+            </h2>
+            <p class="section-description">
+                MediaSession에서 발생하는 에러 상황 처리 및 상태 전환 플로우입니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    NONE["STATE_NONE<br />(초기 상태)"]
+                    BUFFERING["STATE_BUFFERING<br />(버퍼링 중)"]
+                    PLAYING["STATE_PLAYING<br />(재생 중)"]
+                    PAUSED["STATE_PAUSED<br />(일시정지)"]
+                    STOPPED["STATE_STOPPED<br />(정지)"]
+                    ERROR["STATE_ERROR<br />(에러)"]
+
+                    NONE --> BUFFERING
+                    BUFFERING --> PAUSED
+                    BUFFERING --> PLAYING
+                    NONE -->|prepare| BUFFERING
+                    BUFFERING -->|Ready| PAUSED
+                    BUFFERING -->|play| PLAYING
+                    BUFFERING -->|Error| ERROR
+
+                    PLAYING -->|pause| PAUSED
+                    PLAYING -->|stop| STOPPED
+                    PLAYING -->|Error| ERROR
+                    PLAYING -->|Buffering| BUFFERING
+
+                    PAUSED -->|play| PLAYING
+                    PAUSED -->|stop| STOPPED
+
+                    STOPPED -->|prepare| BUFFERING
+
+                    ERROR -->|reset| NONE
+                    ERROR -->|retry| BUFFERING
+
+                    style NONE fill:#1a1f35,stroke:#6b7280,stroke-width:2px
+                    style BUFFERING fill:#1a1f35,stroke:#f59e0b,stroke-width:2px
+                    style PLAYING fill:#1a1f35,stroke:#10b981,stroke-width:3px
+                    style PAUSED fill:#1a1f35,stroke:#00d4ff,stroke-width:2px
+                    style STOPPED fill:#1a1f35,stroke:#7c3aed,stroke-width:2px
+                    style ERROR fill:#1a1f35,stroke:#ef4444,stroke-width:3px
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        에러 상태 설정
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>에러 정보 전달</strong></p>
+                        <ul>
+                            <li><code>setState(STATE_ERROR)</code></li>
+                            <li>setErrorMessage() 에러 메시지</li>
+                            <li>PlaybackStateCompat.ERROR_CODE_* 코드</li>
+                            <li>Controller에 자동 전달</li>
+                            <li>UI에서 에러 표시</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        재시도 로직
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>에러 복구</strong></p>
+                        <ul>
+                            <li>네트워크 에러: 재시도</li>
+                            <li>Audio Focus 실패: 대기 후 재요청</li>
+                            <li>Player 에러: reset() 후 재준비</li>
+                            <li>최대 재시도 횟수 제한</li>
+                            <li>백오프 전략 적용</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        상태 전환
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>PlaybackState 관리</strong></p>
+                        <ul>
+                            <li>모든 상태 변경 시 setState()</li>
+                            <li>Position, Speed 업데이트</li>
+                            <li>Available Actions 설정</li>
+                            <li>Custom Actions 추가</li>
+                            <li>Controller에 즉시 반영</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        방어적 프로그래밍
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>안정성 확보</strong></p>
+                        <ul>
+                            <li>Null 체크 철저히</li>
+                            <li>생명주기 상태 확인</li>
+                            <li>Try-Catch로 예외 처리</li>
+                            <li>리소스 해제 보장</li>
+                            <li>크래시 방지</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>MediaSession API 상세 플로우</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                케이스별 처리 로직 및 Best Practices
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="mediasession.html" style="color: var(--accent-media); text-decoration: none;">
+                    ← MediaSession Framework로 돌아가기
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#f97316',
+                lineColor: '#7c3aed',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#0a0e1a',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                border1: '#f97316',
+                border2: '#00d4ff',
+                note: '#ec4899',
+                noteBkgColor: 'rgba(236, 72, 153, 0.1)',
+                noteBorderColor: '#ec4899',
+                fontFamily: 'Noto Sans KR'
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 50
+            },
+            sequence: {
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35
+            }
+        });
+    </script>
+</body>
+
+</html>

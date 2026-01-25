@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media App Layer & APIs</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222844;
+            --accent-primary: #06b6d4;
+            --accent-secondary: #0ea5e9;
+            --accent-tertiary: #38bdf8;
+            --accent-orange: #f59e0b;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glow-color: rgba(6, 182, 212, 0.3);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 50%, #1a0f1e 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button:hover {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            margin-top: 40px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.05) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-orange));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: rgba(6, 182, 212, 0.3);
+            box-shadow: 0 10px 40px rgba(6, 182, 212, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-left: 65px;
+        }
+
+        .diagram-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            border-color: rgba(6, 182, 212, 0.4);
+            box-shadow: 0 5px 20px rgba(6, 182, 212, 0.15);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-description ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .card-description li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(6, 182, 212, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-primary);
+            font-size: 0.9em;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(245, 158, 11, 0.1));
+            border-left: 4px solid var(--accent-primary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--accent-primary);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(245, 158, 11, 0.2));
+            color: var(--accent-primary);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .comparison-table td {
+            background: var(--bg-secondary);
+        }
+
+        .comparison-table tr:hover td {
+            background: var(--bg-card-hover);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .tag-recommended {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+
+        .tag-legacy {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid #f59e0b;
+        }
+
+        .tag-advanced {
+            background: rgba(6, 182, 212, 0.2);
+            color: #06b6d4;
+            border: 1px solid #06b6d4;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .subtitle {
+                font-size: 1.1rem;
+            }
+
+            .section {
+                padding: 25px;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--accent-secondary), var(--accent-orange));
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>📱 Media App Layer & APIs</h1>
+            <p class="subtitle">Android 미디어 앱 개발을 위한 API 가이드</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Media App Layer 개요
+            </h2>
+            <p class="section-description">
+                Android는 다양한 추상화 수준의 미디어 API를 제공하여 개발자가 필요에 맞는 적절한 도구를 선택할 수 있습니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>핵심 원칙:</strong> Android 미디어 API는 높은 수준의 간단한 API부터 낮은 수준의 세밀한 제어 API까지 레이어로 구성되어 있습니다.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        High-Level APIs
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Media3</strong>: 최신 통합 미디어 라이브러리</li>
+                            <li><strong>MediaPlayer</strong>: 간단한 재생용</li>
+                            <li><strong>MediaSession</strong>: 미디어 제어 표준화</li>
+                            <li>빠른 개발, 적은 코드</li>
+                            <li>일반적 사용 사례에 최적화</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Mid-Level APIs
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>ExoPlayer</strong>: 고급 미디어 플레이어</li>
+                            <li><strong>Camera2</strong>: 현대적 카메라 API</li>
+                            <li>커스터마이징 가능</li>
+                            <li>고급 기능 지원</li>
+                            <li>적응형 스트리밍, DRM</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        Low-Level APIs
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>AudioTrack</strong>: Raw 오디오 재생</li>
+                            <li><strong>AudioRecord</strong>: Raw 오디오 녹음</li>
+                            <li><strong>MediaCodec</strong>: 코덱 직접 제어</li>
+                            <li>최대한의 제어</li>
+                            <li>오디오 합성, DSP 처리</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Media App 아키텍처
+            </h2>
+            <p class="section-description">
+                Android 미디어 앱의 전체 레이어 구조를 이해합니다.
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP["App Layer"]
+                    MEDIA3[Media3<br />ExoPlayer]
+                    MEDIAPLAYER[MediaPlayer]
+                    CAMERA[Camera2]
+                    end
+
+                    subgraph SESSION["MediaSession Layer"]
+                    MSESSION[MediaSession]
+                    MCONTROLLER[MediaController]
+                    end
+
+                    subgraph FW["Framework Layer"]
+                    AUDIOMANAGER[AudioManager]
+                    MEDIASERVICE[MediaService]
+                    end
+
+                    subgraph NATIVE["Native Layer"]
+                    AUDIOTRACK[AudioTrack]
+                    AUDIORECORD[AudioRecord]
+                    MEDIACODEC[MediaCodec]
+                    end
+
+                    subgraph HAL["HAL Layer"]
+                    AUDIOHAL[Audio HAL]
+                    CAMERAHAL[Camera HAL]
+                    end
+
+                    MEDIA3 --> MSESSION
+                    MEDIAPLAYER --> MSESSION
+                    MSESSION <--> MCONTROLLER
+                        MSESSION --> AUDIOTRACK
+                        MEDIASERVICE --> MEDIACODEC
+                        AUDIOTRACK --> AUDIOHAL
+                        AUDIORECORD --> AUDIOHAL
+                        CAMERA --> CAMERAHAL
+
+                        style APP fill:#0a0e1a,stroke:#06b6d4,stroke-width:3px
+                        style SESSION fill:#0a0e1a,stroke:#0ea5e9,stroke-width:2px
+                        style FW fill:#0a0e1a,stroke:#38bdf8,stroke-width:2px
+                        style NATIVE fill:#0a0e1a,stroke:#f59e0b,stroke-width:2px
+                        style HAL fill:#0a0e1a,stroke:#6b7280,stroke-width:2px
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: MediaPlayer -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                MediaPlayer API
+                <span class="tag tag-legacy">Legacy</span>
+            </h2>
+            <p class="section-description">
+                Android Framework에 내장된 기본 미디어 플레이어입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        장점
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>간단한 API, 빠른 구현</li>
+                            <li>Framework 내장, 추가 의존성 불필요</li>
+                            <li>일반적인 포맷 지원</li>
+                            <li>간단한 재생에 적합</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        단점
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>제한적인 커스터마이징</li>
+                            <li>DASH/HLS 지원 부족</li>
+                            <li>DRM 처리 복잡</li>
+                            <li>Android 버전 종속적</li>
+                            <li>고급 기능 부족</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        사용 사례
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>로컬 파일 재생</li>
+                            <li>간단한 스트리밍</li>
+                            <li>빠른 프로토타입</li>
+                            <li>교육용 앱</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>권장사항:</strong> 새로운 프로젝트는 Media3 사용을 권장합니다. MediaPlayer는 간단한 사용 사례나 레거시 지원용으로만 사용하세요.
+            </div>
+        </section>
+
+        <!-- Section 4: ExoPlayer -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                ExoPlayer
+                <span class="tag tag-advanced">Advanced</span>
+            </h2>
+            <p class="section-description">
+                Google이 개발한 Application-level 미디어 플레이어 라이브러리입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        주요 특징
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>적응형 스트리밍</strong>: DASH, HLS, SmoothStreaming</li>
+                            <li><strong>DRM</strong>: Widevine, PlayReady</li>
+                            <li><strong>커스터마이징</strong>: 모든 컴포넌트 교체 가능</li>
+                            <li><strong>독립 업데이트</strong>: OS 버전 무관</li>
+                            <li><strong>오픈소스</strong>: 커뮤니티 기여</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧩</span>
+                        모듈형 아키텍처
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>MediaSource</strong>: 미디어 콘텐츠 제공</li>
+                            <li><strong>Renderer</strong>: 비디오/오디오 렌더링</li>
+                            <li><strong>TrackSelector</strong>: 트랙 선택 로직</li>
+                            <li><strong>LoadControl</strong>: 버퍼링 제어</li>
+                            <li>각 컴포넌트 독립 교체 가능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        사용 사례
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>OTT 스트리밍 서비스</li>
+                            <li>라이브 방송</li>
+                            <li>프리미엄 동영상 앱</li>
+                            <li>맞춤형 재생 UI 필요 시</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph LR
+                    UI[UI Layer]
+                    PLAYER[ExoPlayer]
+                    MS[MediaSource]
+                    RENDERER[Renderer]
+                    TRACK[TrackSelector]
+                    LOAD[LoadControl]
+
+                    UI --> PLAYER
+                    PLAYER --> MS
+                    PLAYER --> RENDERER
+                    PLAYER --> TRACK
+                    PLAYER --> LOAD
+                    MS -->|Media Data| RENDERER
+
+                    style UI fill:#0a0e1a,stroke:#06b6d4,stroke-width:2px,color:#e5e7eb
+                    style PLAYER fill:#0a0e1a,stroke:#0ea5e9,stroke-width:3px,color:#e5e7eb
+                    style MS fill:#0a0e1a,stroke:#38bdf8,stroke-width:2px,color:#e5e7eb
+                    style RENDERER fill:#0a0e1a,stroke:#f59e0b,stroke-width:2px,color:#e5e7eb
+                    style TRACK fill:#0a0e1a,stroke:#10b981,stroke-width:2px,color:#e5e7eb
+                    style LOAD fill:#0a0e1a,stroke:#6b7280,stroke-width:2px,color:#e5e7eb
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Media3 -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Media3 Library
+                <span class="tag tag-recommended">Recommended</span>
+            </h2>
+            <p class="section-description">
+                Jetpack Media3는 Android 미디어 지원 라이브러리의 새로운 통합 버전입니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Media3란?</strong> ExoPlayer를 포함한 모든 미디어 API를 통합하고 단순화한 최신 라이브러리입니다.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        핵심 개선사항
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>통합 Player 인터페이스</strong>: 일관된 API</li>
+                            <li><strong>ExoPlayer 내장</strong>: 기본 구현 제공</li>
+                            <li><strong>간소화된 아키텍처</strong>: 어댑터 불필요</li>
+                            <li><strong>MediaSession 통합</strong>: 자동 연결</li>
+                            <li><strong>UI 모듈</strong>: 플레이어 컨트롤 제공</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        주요 모듈
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>media3-exoplayer</code>: ExoPlayer 구현</li>
+                            <li><code>media3-session</code>: MediaSession 지원</li>
+                            <li><code>media3-ui</code>: UI 컴포넌트</li>
+                            <li><code>media3-common</code>: 공통 인터페이스</li>
+                            <li><code>media3-datasource</code>: 데이터 소스</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✨</span>
+                        장점
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>최신 베스트 프랙티스 반영</li>
+                            <li>Jetpack 통합</li>
+                            <li>지속적인 업데이트</li>
+                            <li>간단한 마이그레이션 경로</li>
+                            <li>풍부한 문서</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: MediaSession -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                MediaSession & MediaController
+            </h2>
+            <p class="section-description">
+                표준화된 미디어 제어를 위한 핵심 컴포넌트입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎛️</span>
+                        MediaSession
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>실제 미디어 플레이어 관리</li>
+                            <li>재생 상태 유지</li>
+                            <li>메타데이터 제공</li>
+                            <li>재생 명령 수신</li>
+                            <li>여러 Controller와 통신</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎮</span>
+                        MediaController
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>UI에서 Session 제어</li>
+                            <li>재생 명령 전송 (play, pause, skip)</li>
+                            <li>재생 정보 조회</li>
+                            <li>여러 위치에서 사용 가능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        외부 제어
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Lock Screen</strong>: 잠금 화면 컨트롤</li>
+                            <li><strong>Notification</strong>: 알림 미디어 컨트롤</li>
+                            <li><strong>Android Auto</strong>: 차량 인포테인먼트</li>
+                            <li><strong>Wear OS</strong>: 웨어러블 제어</li>
+                            <li><strong>Google Assistant</strong>: 음성 명령</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TB
+                    PLAYER[Media Player<br />ExoPlayer]
+                    SESSION[MediaSession]
+
+                    subgraph Controllers["MediaControllers"]
+                    APP_UI[App UI]
+                    LOCKSCREEN[Lock Screen]
+                    AUTO[Android Auto]
+                    WEAR[Wear OS]
+                    ASSISTANT[Assistant]
+                    end
+
+                    PLAYER <--> SESSION
+                        SESSION <--> APP_UI
+                            SESSION <--> LOCKSCREEN
+                                SESSION <--> AUTO
+                                    SESSION <--> WEAR
+                                        SESSION <--> ASSISTANT
+
+                                            style PLAYER fill:#0a0e1a,stroke:#06b6d4,stroke-width:2px,color:#e5e7eb
+                                            style SESSION fill:#0a0e1a,stroke:#0ea5e9,stroke-width:3px,color:#e5e7eb
+                                            style Controllers fill:#111827,stroke:#f59e0b,stroke-width:2px
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: AudioTrack & AudioRecord -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                AudioTrack & AudioRecord
+            </h2>
+            <p class="section-description">
+                Low-level 오디오 API로 PCM 오디오 데이터를 직접 제어합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        AudioTrack
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Raw PCM 오디오 재생</strong></p>
+                        <ul>
+                            <li><strong>MODE_STREAM</strong>: 연속 스트리밍<br />- 큰 오디오 데이터<br />- 실시간 생성</li>
+                            <li><strong>MODE_STATIC</strong>: 한 번에 로드<br />- 짧은 사운드<br />- 낮은 지연시간</li>
+                            <li>오디오 합성</li>
+                            <li>DSP 처리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎤</span>
+                        AudioRecord
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Raw PCM 오디오 녹음</strong></p>
+                        <ul>
+                            <li>마이크에서 직접 녹음</li>
+                            <li>실시간 오디오 처리</li>
+                            <li>오디오 분석</li>
+                            <li>음성 인식 전처리</li>
+                            <li>RECORD_AUDIO 권한 필요</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        사용 사례
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>AudioTrack</strong>:
+                                <ul>
+                                    <li>음악 신디사이저</li>
+                                    <li>게임 효과음</li>
+                                    <li>VoIP 앱</li>
+                                </ul>
+                            </li>
+                            <li><strong>AudioRecord</strong>:
+                                <ul>
+                                    <li>음성 분석</li>
+                                    <li>실시간 이펙트</li>
+                                    <li>오디오 시각화</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Camera2 -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Camera2 API
+            </h2>
+            <p class="section-description">
+                현대적이고 강력한 카메라 제어 API입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📷</span>
+                        핵심 컴포넌트
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>CameraManager</strong>: 카메라 장치 관리</li>
+                            <li><strong>CameraDevice</strong>: 개별 카메라 제어</li>
+                            <li><strong>CameraCaptureSession</strong>: 캡처 세션</li>
+                            <li><strong>CaptureRequest</strong>: 캡처 설정</li>
+                            <li><strong>TextureView</strong>: 프리뷰 표시</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        고급 제어
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>수동 노출 제어</li>
+                            <li>ISO 설정</li>
+                            <li>화이트 밸런스</li>
+                            <li>RAW 캡처</li>
+                            <li>렌즈/플래시 제어</li>
+                            <li>버스트 캡처</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🆚</span>
+                        Camera2 vs CameraX
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Camera2</strong>:
+                                <ul>
+                                    <li>최대 제어</li>
+                                    <li>복잡한 API</li>
+                                    <li>프로 카메라 앱</li>
+                                </ul>
+                            </li>
+                            <li><strong>CameraX</strong>:
+                                <ul>
+                                    <li>간단한 API</li>
+                                    <li>일반적 사용 사례</li>
+                                    <li>권장됨</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 9: API Comparison -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                API 비교 및 선택 가이드
+            </h2>
+            <p class="section-description">
+                사용 사례에 따른 적절한 API 선택 가이드입니다.
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>API</th>
+                        <th>기능</th>
+                        <th>권장 사용 사례</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Media3</strong></td>
+                        <td>스트리밍, DRM, 고급 기능</td>
+                        <td>새로운 미디어 앱 (추천)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ExoPlayer</strong></td>
+                        <td>커스터마이징, DASH/HLS</td>
+                        <td>고급 스트리밍 요구사항</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MediaPlayer</strong></td>
+                        <td>기본 재생</td>
+                        <td>간단한 로컬 재생</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MediaSession</strong></td>
+                        <td>외부 제어, 백그라운드</td>
+                        <td>모든 미디어 앱 (필수)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AudioTrack</strong></td>
+                        <td>PCM 재생, DSP</td>
+                        <td>오디오 합성, 게임</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AudioRecord</strong></td>
+                        <td>PCM 녹음, 분석</td>
+                        <td>음성 처리, 분석</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Camera2</strong></td>
+                        <td>수동 제어, RAW</td>
+                        <td>프로 카메라 앱</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CameraX</strong></td>
+                        <td>간편한 카메라</td>
+                        <td>일반 카메라 기능</td>
+                    </tr>
+                </tbody>
+            </table>
+
+
+        </section>
+
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1a1f35',
+                primaryTextColor: '#e5e7eb',
+                primaryBorderColor: '#06b6d4',
+                lineColor: '#0ea5e9',
+                secondaryColor: '#111827',
+                tertiaryColor: '#0a0e1a',
+                background: '#1a1f35',
+                mainBkg: '#1a1f35',
+                secondBkg: '#111827',
+                tertiaryBkg: '#0a0e1a',
+                nodeBorder: '#06b6d4',
+                clusterBkg: '#0a0e1a',
+                clusterBorder: '#06b6d4',
+                titleColor: '#e5e7eb',
+                edgeLabelBackground: '#1a1f35',
+                actorBorder: '#06b6d4',
+                actorBkg: '#1a1f35',
+                actorTextColor: '#e5e7eb',
+                actorLineColor: '#0ea5e9',
+                signalColor: '#e5e7eb',
+                signalTextColor: '#e5e7eb',
+                labelBoxBkgColor: '#1a1f35',
+                labelBoxBorderColor: '#06b6d4',
+                labelTextColor: '#e5e7eb',
+                loopTextColor: '#e5e7eb',
+                noteBorderColor: '#06b6d4',
+                noteBkgColor: '#111827',
+                noteTextColor: '#e5e7eb'
+            }
+        });
+    </script>
+</body>
+
+</html>
