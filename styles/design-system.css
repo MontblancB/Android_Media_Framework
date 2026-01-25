@@ -1957,3 +1957,363 @@ footer {
         font-size: 0.9rem;
     }
 }
+
+/* ========================================
+   Interactive Diagram Modal Styles
+   ======================================== */
+
+.diagram-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.diagram-modal.show {
+    opacity: 1;
+}
+
+.diagram-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+}
+
+.diagram-modal-content {
+    position: relative;
+    background: var(--color-surface);
+    border: 2px solid var(--color-accent);
+    border-radius: 20px;
+    padding: var(--spacing-xl);
+    max-width: 700px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 212, 255, 0.4),
+                0 0 100px rgba(0, 212, 255, 0.2);
+    transform: scale(0.9) translateY(30px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.diagram-modal.show .diagram-modal-content {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* 모달 스크롤바 */
+.diagram-modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.diagram-modal-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.diagram-modal-content::-webkit-scrollbar-thumb {
+    background: var(--color-accent);
+    border-radius: 4px;
+}
+
+.diagram-modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 1;
+}
+
+.diagram-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: var(--color-accent);
+    transform: rotate(90deg);
+}
+
+.diagram-modal-close svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--color-text-primary);
+}
+
+.diagram-modal-header {
+    margin-bottom: var(--spacing-lg);
+    padding-right: 40px;
+}
+
+.diagram-modal-title {
+    font-family: var(--font-heading);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--spacing-sm) 0;
+    line-height: 1.2;
+}
+
+.diagram-layer-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, var(--color-accent), #0369a1);
+    color: #ffffff;
+    border-radius: 20px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.diagram-modal-body {
+    margin-bottom: var(--spacing-lg);
+}
+
+.diagram-modal-description {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-lg);
+}
+
+.diagram-modal-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.diagram-modal-section h3 {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--spacing-sm) 0;
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+}
+
+.diagram-component-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.diagram-component-list li {
+    padding: var(--spacing-xs) 0 var(--spacing-xs) var(--spacing-md);
+    position: relative;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+.diagram-component-list li::before {
+    content: "▸";
+    position: absolute;
+    left: 0;
+    color: var(--color-accent);
+    font-weight: bold;
+}
+
+.diagram-code-block {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 8px;
+    padding: var(--spacing-md);
+    overflow-x: auto;
+    margin: 0;
+}
+
+.diagram-code-block code {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #e8eaed;
+}
+
+.diagram-path {
+    display: block;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(0, 212, 255, 0.1);
+    border-left: 3px solid var(--color-accent);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--color-accent);
+    word-break: break-all;
+}
+
+.diagram-modal-footer {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    padding-top: var(--spacing-md);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.diagram-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.diagram-btn svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.diagram-btn-primary {
+    background: linear-gradient(135deg, var(--color-accent), #0369a1);
+    color: #ffffff;
+    border: none;
+}
+
+.diagram-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 212, 255, 0.4);
+}
+
+.diagram-btn-secondary {
+    background: transparent;
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent);
+}
+
+.diagram-btn-secondary:hover {
+    background: rgba(0, 212, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+/* ========================================
+   Interactive Diagram Tooltip Styles
+   ======================================== */
+
+.diagram-tooltip {
+    position: absolute;
+    z-index: 9999;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-accent);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6),
+                0 0 20px rgba(0, 212, 255, 0.3);
+    pointer-events: none;
+    max-width: 280px;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: all 0.2s ease;
+}
+
+.diagram-tooltip.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.diagram-tooltip strong {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+}
+
+.diagram-tooltip span {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-accent);
+    margin-bottom: var(--spacing-xs);
+}
+
+.diagram-tooltip p {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Light Theme */
+[data-theme="light"] .diagram-modal-overlay {
+    background: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme="light"] .diagram-modal-content {
+    background: #ffffff;
+    border-color: var(--color-accent);
+    box-shadow: 0 20px 60px rgba(3, 105, 161, 0.3);
+}
+
+[data-theme="light"] .diagram-code-block {
+    background: #f5f5f4;
+    border-color: rgba(3, 105, 161, 0.3);
+}
+
+[data-theme="light"] .diagram-code-block code {
+    color: #292524;
+}
+
+[data-theme="light"] .diagram-tooltip {
+    background: #ffffff;
+    border-color: var(--color-accent);
+    box-shadow: 0 8px 24px rgba(41, 37, 36, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .diagram-modal-content {
+        width: 95%;
+        max-height: 90vh;
+        padding: var(--spacing-lg);
+        border-radius: 16px;
+    }
+
+    .diagram-modal-title {
+        font-size: 1.5rem;
+        padding-right: 0;
+    }
+
+    .diagram-modal-close {
+        top: 12px;
+        right: 12px;
+        width: 32px;
+        height: 32px;
+    }
+
+    .diagram-modal-footer {
+        flex-direction: column;
+    }
+
+    .diagram-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .diagram-tooltip {
+        max-width: 200px;
+        font-size: 0.8rem;
+    }
+}
