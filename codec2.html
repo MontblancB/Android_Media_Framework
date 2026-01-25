@@ -677,6 +677,800 @@
             </div>
         </section>
 
+        <!-- Section 8: MediaCodec API Usage Examples -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                MediaCodec API 사용 예시
+            </h2>
+            <p class="section-description">
+                앱 개발자가 MediaCodec API를 통해 Codec 2.0을 사용하는 실제 코드 예시입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        비디오 디코더 초기화
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Kotlin 코드 예시</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// H.264 비디오 디코더 생성
+val decoder = MediaCodec.createDecoderByType("video/avc")
+
+// MediaFormat 설정
+val format = MediaFormat().apply {
+    setString(MediaFormat.KEY_MIME, "video/avc")
+    setInteger(MediaFormat.KEY_WIDTH, 1920)
+    setInteger(MediaFormat.KEY_HEIGHT, 1080)
+    setInteger(MediaFormat.KEY_FRAME_RATE, 30)
+}
+
+// Surface 출력 설정 (화면 렌더링)
+decoder.configure(format, surface, null, 0)
+decoder.start()
+
+// 또는 ByteBuffer 출력 (후처리용)
+// decoder.configure(format, null, null, 0)</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📥</span>
+                        입력 버퍼 처리
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>압축된 비디오 프레임 입력</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// 입력 버퍼 인덱스 획득 (타임아웃 10ms)
+val inputIndex = decoder.dequeueInputBuffer(10000)
+
+if (inputIndex >= 0) {
+    val inputBuffer = decoder.getInputBuffer(inputIndex)
+    inputBuffer?.clear()
+
+    // 압축된 H.264 NAL 유닛 복사
+    val sampleSize = extractor.readSampleData(inputBuffer, 0)
+    val presentationTimeUs = extractor.sampleTime
+
+    decoder.queueInputBuffer(
+        inputIndex,
+        0,
+        sampleSize,
+        presentationTimeUs,
+        0  // flags
+    )
+
+    extractor.advance()
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📤</span>
+                        출력 버퍼 처리
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>디코딩된 프레임 수신</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>val bufferInfo = MediaCodec.BufferInfo()
+val outputIndex = decoder.dequeueOutputBuffer(bufferInfo, 10000)
+
+when (outputIndex) {
+    MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+        val newFormat = decoder.outputFormat
+        Log.d(TAG, "Output format: $newFormat")
+    }
+    MediaCodec.INFO_TRY_AGAIN_LATER -> {
+        // 출력 버퍼 없음, 대기
+    }
+    else -> {
+        if (outputIndex >= 0) {
+            // Surface 렌더링
+            decoder.releaseOutputBuffer(outputIndex, true)
+
+            // 또는 ByteBuffer 접근
+            // val outputBuffer = decoder.getOutputBuffer(outputIndex)
+            // decoder.releaseOutputBuffer(outputIndex, false)
+        }
+    }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        비디오 인코더 예시
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>H.264 인코딩 설정</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>val encoder = MediaCodec.createEncoderByType("video/avc")
+
+val format = MediaFormat.createVideoFormat(
+    "video/avc", 1920, 1080
+).apply {
+    setInteger(MediaFormat.KEY_COLOR_FORMAT,
+        MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
+    setInteger(MediaFormat.KEY_BIT_RATE, 6000000)  // 6Mbps
+    setInteger(MediaFormat.KEY_FRAME_RATE, 30)
+    setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)  // 1초
+    setInteger(MediaFormat.KEY_PROFILE,
+        MediaCodecInfo.CodecProfileLevel.AVCProfileHigh)
+}
+
+val inputSurface = MediaCodec.createPersistentInputSurface()
+encoder.configure(format, null, null,
+    MediaCodec.CONFIGURE_FLAG_ENCODE)
+encoder.setInputSurface(inputSurface)
+encoder.start()</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Codec 2.0 자동 선택</strong><br/>
+                <code>MediaCodec.createDecoderByType()</code>을 사용하면 시스템이 자동으로 최적의 코덱을 선택합니다:
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Android 10+</strong>: Codec 2.0 구현 우선 선택</li>
+                    <li><strong>하드웨어 코덱</strong>: 사용 가능한 경우 자동 사용</li>
+                    <li><strong>소프트웨어 폴백</strong>: HW 실패 시 SW 코덱으로 전환</li>
+                    <li><strong>명시적 선택</strong>: <code>MediaCodec.createByCodecName("c2.android.avc.decoder")</code></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: Vendor Implementation Guide -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                벤더 구현 가이드
+            </h2>
+            <p class="section-description">
+                하드웨어 제조사가 커스텀 Codec 2.0 컴포넌트를 구현하고 등록하는 방법입니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Implementation["벤더 구현"]
+                        COMP_IMPL["C2Component 구현<br/>(H.264/VP9/AV1 등)"]
+                        STORE_IMPL["C2ComponentStore 구현<br/>(Factory)"]
+                        SERVICE["Codec2 HAL Service<br/>(HIDL/AIDL)"]
+                    end
+
+                    subgraph Build["빌드 설정"]
+                        BP["Android.bp<br/>(cc_library_shared)"]
+                        XML["media_codecs.xml<br/>(코덱 선언)"]
+                        MANIFEST["manifest.xml<br/>(HAL Service)"]
+                    end
+
+                    subgraph Registration["등록 및 발견"]
+                        HWSERVICE["hwservicemanager<br/>(Service Registry)"]
+                        FRAMEWORK["Framework<br/>(Codec2Client)"]
+                    end
+
+                    COMP_IMPL --> STORE_IMPL
+                    STORE_IMPL --> SERVICE
+
+                    BP --> COMP_IMPL
+                    XML --> STORE_IMPL
+                    MANIFEST --> SERVICE
+
+                    SERVICE --> HWSERVICE
+                    HWSERVICE --> FRAMEWORK
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📝 구현 단계
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        C2Component 구현
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>커스텀 코덱 클래스 작성</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// vendor/mycompany/codec2/MyAvcDecoder.h
+class MyAvcDecoder : public SimpleC2Component {
+public:
+    MyAvcDecoder(const char* name,
+                 c2_node_id_t id,
+                 const std::shared_ptr&lt;IntfImpl&gt;& intfImpl);
+
+    // 필수 메서드 구현
+    c2_status_t onInit() override;
+    c2_status_t onStop() override;
+    void onReset() override;
+    void onRelease() override;
+    c2_status_t onFlush_sm() override;
+    void process(
+        const std::unique_ptr&lt;C2Work&gt;& work,
+        const std::shared_ptr&lt;C2BlockPool&gt;& pool
+    ) override;
+
+private:
+    // 하드웨어 디코더 핸들
+    void* mHwHandle;
+};</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        C2ComponentStore 구현
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>컴포넌트 팩토리</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// MyComponentStore.cpp
+class MyComponentStore : public C2ComponentStore {
+public:
+    MyComponentStore()
+        : mReflector(std::make_shared&lt;C2ReflectorHelper&gt;()) {}
+
+    c2_status_t createComponent(
+        c2_node_id_t id,
+        std::shared_ptr&lt;C2Component&gt;* component) override {
+
+        if (name == "c2.vendor.avc.decoder") {
+            *component = std::make_shared&lt;MyAvcDecoder&gt;(
+                name, id, intfImpl);
+            return C2_OK;
+        }
+        return C2_NOT_FOUND;
+    }
+
+    std::vector&lt;std::shared_ptr&lt;C2Component::Traits&gt;&gt;
+    listComponents() override;
+};</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">3️⃣</span>
+                        Android.bp 빌드 설정
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Soong 빌드 파일</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Android.bp
+cc_library_shared {
+    name: "libcodec2_vendor_mycompany",
+    vendor: true,
+
+    srcs: [
+        "MyAvcDecoder.cpp",
+        "MyComponentStore.cpp",
+    ],
+
+    shared_libs: [
+        "libcodec2",
+        "libcodec2_vndk",
+        "libcodec2_soft_common",
+        "liblog",
+        "libutils",
+    ],
+
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">4️⃣</span>
+                        media_codecs.xml 선언
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>코덱 능력 정의</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>&lt;!-- device/mycompany/mydevice/media_codecs.xml --&gt;
+&lt;MediaCodecs&gt;
+    &lt;Decoders&gt;
+        &lt;MediaCodec name="c2.vendor.avc.decoder"
+                    type="video/avc"&gt;
+            &lt;Limit name="size" min="64x64" max="3840x2160"/&gt;
+            &lt;Limit name="alignment" value="2x2"/&gt;
+            &lt;Limit name="block-size" value="16x16"/&gt;
+            &lt;Limit name="frame-rate" range="1-60"/&gt;
+            &lt;Limit name="bitrate" range="1-120000000"/&gt;
+            &lt;Feature name="adaptive-playback"/&gt;
+            &lt;Feature name="secure-playback"/&gt;
+        &lt;/MediaCodec&gt;
+    &lt;/Decoders&gt;
+&lt;/MediaCodecs&gt;</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ 벤더 구현 주의사항:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>네이밍 규칙</strong>: <code>c2.vendor.&lt;company&gt;.&lt;codec&gt;.&lt;type&gt;</code> (예: c2.vendor.qcom.avc.decoder)</li>
+                    <li><strong>Secure Codec</strong>: DRM 재생을 위해 <code>.secure</code> 서픽스 추가</li>
+                    <li><strong>SELinux</strong>: HAL 서비스에 대한 적절한 정책 설정 필요</li>
+                    <li><strong>CDD 준수</strong>: CDD(Compatibility Definition Document) 요구사항 만족 필수</li>
+                    <li><strong>CTS 테스트</strong>: CTS MediaCodec 테스트 통과 필수</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 10: Debugging and Troubleshooting -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                디버깅 및 트러블슈팅
+            </h2>
+            <p class="section-description">
+                Codec 2.0 개발 및 통합 과정에서 발생하는 일반적인 문제와 해결 방법입니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                🔍 디버깅 도구
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        adb logcat 필터링
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Codec 2.0 관련 로그 추출</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Codec2 전체 로그
+adb logcat -s Codec2Client Codec2 CCodec
+
+# 특정 컴포넌트만
+adb logcat -s c2.android.avc.decoder
+
+# HAL 통신 로그
+adb logcat -s android.hardware.media.c2
+
+# 버퍼 관련 디버그
+adb logcat | grep -i "c2buffer\|c2work"
+
+# 에러만 필터링
+adb logcat *:E | grep -i codec</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        dumpsys 명령어
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>시스템 상태 조회</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># 사용 가능한 Codec2 컴포넌트 목록
+adb shell dumpsys media.codec2
+
+# MediaCodec 인스턴스 상태
+adb shell dumpsys media.player
+
+# 현재 활성화된 코덱 세션
+adb shell dumpsys media.codec
+
+# 하드웨어 코덱 사용 현황
+adb shell dumpsys media.resource_manager</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        시스템 속성 (System Properties)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>런타임 설정 변경</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Codec2 강제 활성화
+adb shell setprop debug.stagefright.ccodec 1
+
+# OpenMAX 강제 사용 (테스트용)
+adb shell setprop debug.stagefright.ccodec 0
+
+# 상세 로그 활성화
+adb shell setprop debug.codec2.platform.loglevel 3
+
+# 재부팅 후 적용
+adb reboot</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧪</span>
+                        CTS 테스트 실행
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>호환성 테스트</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># MediaCodec CTS 테스트
+adb shell am instrument -w -e class \
+  android.media.cts.MediaCodecTest \
+  android.media.cts/.MediaCodecTestRunner
+
+# Codec2 특화 테스트
+adb shell /data/nativetest64/C2ComponentTest/C2ComponentTest
+
+# 성능 벤치마크
+adb shell am start -n \
+  com.android.cts.media/.MediaCodecBenchmark</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ⚠️ 일반적인 문제 및 해결책
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>문제</th>
+                        <th>원인</th>
+                        <th>해결 방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>코덱을 찾을 수 없음</strong></td>
+                        <td>HAL 서비스 미등록 또는 media_codecs.xml 설정 오류</td>
+                        <td><code>dumpsys media.codec2</code>로 등록 확인, manifest.xml 및 SELinux 정책 점검</td>
+                    </tr>
+                    <tr>
+                        <td><strong>configure() 실패</strong></td>
+                        <td>지원하지 않는 해상도/프로파일/레벨</td>
+                        <td>MediaCodecInfo.getCapabilitiesForType()로 지원 범위 확인</td>
+                    </tr>
+                    <tr>
+                        <td><strong>출력 버퍼가 나오지 않음</strong></td>
+                        <td>입력 데이터 형식 오류 (SPS/PPS 누락 등)</td>
+                        <td>MediaExtractor 사용 또는 올바른 NAL 유닛 구성 확인</td>
+                    </tr>
+                    <tr>
+                        <td><strong>디코딩 화면 깨짐</strong></td>
+                        <td>잘못된 타임스탬프, 동기화 실패</td>
+                        <td>presentationTimeUs 정확히 설정, releaseOutputBuffer(index, true) 사용</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HW 코덱 크래시</strong></td>
+                        <td>벤더 HAL 구현 버그, 메모리 부족</td>
+                        <td>SW 코덱으로 폴백, dumpsys로 메모리 사용 확인</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Zero-Copy 동작 안함</strong></td>
+                        <td>ION/Gralloc 할당 실패</td>
+                        <td>C2Allocator 로그 확인, 버퍼 크기 조정</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DRM 재생 실패</strong></td>
+                        <td>Secure 코덱 미지원 또는 HDCP 인증 실패</td>
+                        <td>c2.*.decoder.secure 코덱 존재 확인, Widevine 레벨 점검</td>
+                    </tr>
+                    <tr>
+                        <td><strong>성능 저하</strong></td>
+                        <td>SW 코덱 사용, 불필요한 복사</td>
+                        <td>HW 코덱 우선 선택, Surface 직접 렌더링 사용</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 디버깅 팁</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>로그 레벨 조정</strong>: <code>adb shell setprop log.tag.Codec2 VERBOSE</code></li>
+                    <li><strong>프레임 덤프</strong>: MediaMuxer로 디코딩된 YUV 저장 후 분석</li>
+                    <li><strong>타이밍 분석</strong>: Systrace로 큐잉/디큐잉 타이밍 프로파일링</li>
+                    <li><strong>벤더 로그</strong>: 벤더별 커스텀 로그 태그 확인 (예: qcom.*, exynos.*)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 11: AOSP Source Code Reference -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                AOSP 소스 코드 참조
+            </h2>
+            <p class="section-description">
+                Codec 2.0의 실제 구현을 이해하기 위한 주요 AOSP 소스 코드 위치와 역할입니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                📂 주요 디렉토리 구조
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Framework 레이어
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>frameworks/av/</strong></p>
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>media/codec2/sfplugin/</code><br/>
+                            → CCodec, CCodecBufferChannel 구현</li>
+                            <li><code>media/codec2/vndk/</code><br/>
+                            → Codec2Client, C2Component 인터페이스</li>
+                            <li><code>media/libstagefright/</code><br/>
+                            → MediaCodec.cpp (앱 API 진입점)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        HAL 인터페이스
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>hardware/interfaces/</strong></p>
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>media/c2/1.0/</code><br/>
+                            → HIDL 인터페이스 정의 (Android 10-12)</li>
+                            <li><code>media/c2/aidl/</code><br/>
+                            → AIDL 인터페이스 정의 (Android 13+)</li>
+                            <li><code>media/c2/1.0/default/</code><br/>
+                            → 기본 HAL 구현 참조</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💾</span>
+                        소프트웨어 코덱
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>frameworks/av/media/codec2/components/</strong></p>
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>base/</code><br/>
+                            → SimpleC2Component (기본 클래스)</li>
+                            <li><code>avc/C2SoftAvcDec.cpp</code><br/>
+                            → H.264 SW 디코더 샘플</li>
+                            <li><code>vpx/C2SoftVpxDec.cpp</code><br/>
+                            → VP8/VP9 SW 디코더</li>
+                            <li><code>aom/C2SoftAomDec.cpp</code><br/>
+                            → AV1 SW 디코더</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Core 라이브러리
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>frameworks/av/media/codec2/core/</strong></p>
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>include/C2Component.h</code><br/>
+                            → C2Component 인터페이스</li>
+                            <li><code>include/C2Buffer.h</code><br/>
+                            → C2Buffer, C2Block 정의</li>
+                            <li><code>include/C2Param.h</code><br/>
+                            → C2Param 파라미터 타입</li>
+                            <li><code>C2AllocatorGralloc.cpp</code><br/>
+                            → Gralloc 기반 할당자</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔬 참고할 샘플 구현
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📝</span>
+                        H.264 디코더 구현
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>C2SoftAvcDec.cpp</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/av/media/codec2/components/avc/C2SoftAvcDec.cpp
+
+class C2SoftAvcDec : public SimpleC2Component {
+    void process(
+        const std::unique_ptr&lt;C2Work&gt;& work,
+        const std::shared_ptr&lt;C2BlockPool&gt;& pool) override {
+
+        // 입력 버퍼에서 H.264 NAL 추출
+        C2ReadView rView = work->input.buffers[0]->data().linearBlocks().front().map().get();
+
+        // libavcdec (H.264 SW 디코더) 호출
+        mDecHandle->decode(rView.data(), rView.capacity());
+
+        // 출력 버퍼 할당 및 YUV 복사
+        std::shared_ptr&lt;C2GraphicBlock&gt; block;
+        C2MemoryUsage usage = { C2MemoryUsage::CPU_READ, C2MemoryUsage::CPU_WRITE };
+        c2_status_t err = pool->fetchGraphicBlock(mWidth, mHeight, HAL_PIXEL_FORMAT_YV12, usage, &block);
+
+        // 디코딩된 프레임을 출력 Work에 첨부
+        auto fillWork = [buffer = createGraphicBuffer(block)](const std::unique_ptr&lt;C2Work&gt;& work) {
+            work->worklets.front()->output.buffers.push_back(buffer);
+        };
+        fillWork(work);
+    }
+};</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏭</span>
+                        ComponentStore 구현
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>C2SoftCodecComponentStore.cpp</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/av/media/codec2/components/base/SimpleC2Component.cpp
+
+std::shared_ptr&lt;C2ComponentStore&gt; GetCodec2PlatformComponentStore() {
+    static std::mutex mutex;
+    static std::weak_ptr&lt;C2ComponentStore&gt; platformStore;
+    std::lock_guard&lt;std::mutex&gt; lock(mutex);
+    std::shared_ptr&lt;C2ComponentStore&gt; store = platformStore.lock();
+
+    if (store == nullptr) {
+        store = std::make_shared&lt;C2PlatformComponentStore&gt;();
+        platformStore = store;
+    }
+    return store;
+}
+
+// 컴포넌트 등록 매크로
+REGISTER_C2COMPONENT(C2SoftAvcDec, "c2.android.avc.decoder");
+REGISTER_C2COMPONENT(C2SoftVpxDec, "c2.android.vp8.decoder");
+REGISTER_C2COMPONENT(C2SoftAomDec, "c2.android.av1.decoder");</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔗 유용한 링크</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>AOSP 소스 브라우저</strong>: <a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/av/media/codec2/" target="_blank" style="color: var(--accent-primary);">cs.android.com (Codec2)</a></li>
+                    <li><strong>Codec2 공식 문서</strong>: <a href="https://source.android.com/docs/core/media/codec2" target="_blank" style="color: var(--accent-primary);">source.android.com</a></li>
+                    <li><strong>CTS 테스트 코드</strong>: <code>cts/tests/tests/media/codec/</code></li>
+                    <li><strong>VTS 테스트 코드</strong>: <code>test/vts-testcase/hal/media/c2/</code></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 12: Related Pages -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                관련 상세 문서
+            </h2>
+            <p class="section-description">
+                Codec 2.0와 관련된 미디어 프레임워크의 다른 주제들을 탐색하세요.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        <p>전체 미디어 프레임워크 아키텍처</p>
+                        <ul>
+                            <li>AOSP 5-Layer 구조</li>
+                            <li>Application → HAL 데이터 플로우</li>
+                            <li>MediaCodec API 위치</li>
+                            <li>Codec2가 전체 구조에서 차지하는 역할</li>
+                        </ul>
+                        <a href="media-framework-core.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Media Playback Pipeline
+                    </h3>
+                    <div class="card-description">
+                        <p>미디어 재생 파이프라인 상세</p>
+                        <ul>
+                            <li>NuPlayer의 Codec2 통합</li>
+                            <li>End-to-End 데이터 플로우</li>
+                            <li>버퍼 관리 및 A/V 동기화</li>
+                            <li>성능 최적화 기법</li>
+                        </ul>
+                        <a href="media-playback.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        MediaExtractor
+                    </h3>
+                    <div class="card-description">
+                        <p>컨테이너 파싱 및 디먹싱</p>
+                        <ul>
+                            <li>MP4/MKV/WebM 파싱</li>
+                            <li>트랙 분리 및 메타데이터 추출</li>
+                            <li>Codec2로 전달되는 압축 데이터</li>
+                            <li>Extractor 플러그인 구조</li>
+                        </ul>
+                        <a href="media-extractor.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>오디오 처리 파이프라인</p>
+                        <ul>
+                            <li>오디오 코덱 (AAC, MP3, Opus)</li>
+                            <li>AudioFlinger 믹싱 엔진</li>
+                            <li>Audio HAL 인터페이스</li>
+                            <li>Codec2 오디오 컴포넌트</li>
+                        </ul>
+                        <a href="audio-framework.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Dolby Codecs
+                    </h3>
+                    <div class="card-description">
+                        <p>프리미엄 오디오/비디오 코덱</p>
+                        <ul>
+                            <li>Dolby Atmos (AC-4, E-AC-3)</li>
+                            <li>Dolby Vision (HDR)</li>
+                            <li>Codec2 기반 Dolby 통합</li>
+                            <li>벤더 구현 가이드</li>
+                        </ul>
+                        <a href="dolby-codecs.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Widevine DRM
+                    </h3>
+                    <div class="card-description">
+                        <p>DRM 보호 콘텐츠 재생</p>
+                        <ul>
+                            <li>Widevine L1/L2/L3</li>
+                            <li>Secure Codec2 컴포넌트</li>
+                            <li>TEE 기반 보안 파이프라인</li>
+                            <li>MediaDrm + MediaCodec 통합</li>
+                        </ul>
+                        <a href="widevine.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            자세히 보기 →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Footer -->
         <footer
             style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
