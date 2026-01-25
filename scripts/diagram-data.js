@@ -3,6 +3,51 @@
  * 인터렉티브 다이어그램에서 클릭/호버 시 표시할 정보를 정의합니다.
  */
 
+// Mermaid 노드 ID → 사람이 읽을 수 있는 이름 매핑
+const NODE_ID_MAPPING = {
+    // aosp.html - AOSP 아키텍처
+    'APP': 'System Apps',
+    'FW': 'Framework',
+    'SERVICES': 'System Server',
+    'ART': 'Android Runtime',
+    'NATIVE': 'Native Libraries',
+    'HAL': 'Hardware Abstraction Layer',
+    'KERNEL': 'Linux Kernel',
+
+    // aosp.html - 미디어 프레임워크
+    'MEDIA_API': 'Media APIs',
+    'MEDIA_SESSION': 'MediaSession',
+    'MEDIA_ROUTER': 'MediaRouter',
+    'MEDIA_CODEC_SERVICE': 'MediaCodecService',
+    'AUDIO_FLINGER': 'AudioFlinger',
+    'SURFACE_FLINGER': 'SurfaceFlinger',
+    'CODEC_HAL': 'Codec HAL',
+    'AUDIO_HAL': 'Audio HAL',
+    'CAMERA_HAL': 'Camera HAL',
+
+    // 그래픽 스택
+    'APP_VIEW': 'View System',
+    'SURFACE': 'Surface',
+    'BUFFER_QUEUE': 'BufferQueue',
+    'HWC': 'Hardware Composer',
+    'DISPLAY': 'Display Driver',
+
+    // 부팅 프로세스
+    'BOOTROM': 'Boot ROM',
+    'BOOTLOADER': 'Bootloader',
+    'INIT': 'Init Process',
+    'DAEMONS': 'Native Daemons',
+    'ZYGOTE': 'Zygote',
+    'SYSSERVER': 'System Server',
+    'LAUNCHER': 'Launcher',
+
+    // Binder IPC
+    'BINDER': 'Binder Driver',
+    'SERVICE_MGR': 'Service Manager',
+    'PROXY': 'Binder Proxy',
+    'STUB': 'Binder Stub'
+};
+
 const DIAGRAM_NODE_DATA = {
     // ========================================
     // AOSP 레이어별 노드
@@ -23,6 +68,105 @@ const DIAGRAM_NODE_DATA = {
         path: 'packages/apps/',
         doc: 'https://source.android.com/docs/core/architecture',
         relatedSections: ['section-1', 'section-2']
+    },
+
+    'Framework': {
+        title: 'Java API Framework',
+        layer: 'Framework Layer',
+        description: 'Android 앱 개발에 사용되는 Java/Kotlin API 프레임워크입니다. View System, Activity Manager, Package Manager 등을 포함합니다.',
+        components: [
+            'View System - UI 렌더링',
+            'Activity Manager - 액티비티 생명주기',
+            'Package Manager - 앱 설치/관리',
+            'Window Manager - 창 관리',
+            'Notification Manager - 알림',
+            'Content Providers - 데이터 공유'
+        ],
+        path: 'frameworks/base/core/java/android/',
+        doc: 'https://developer.android.com/reference',
+        codeExample: `
+// Activity 생성
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+    }
+}
+        `.trim()
+    },
+
+    'Android Runtime': {
+        title: 'Android Runtime (ART)',
+        layer: 'Runtime',
+        description: 'Android 앱을 실행하는 런타임 환경입니다. AOT 컴파일, 가비지 컬렉션, JIT 컴파일을 담당합니다.',
+        components: [
+            'AOT (Ahead-of-Time) Compilation',
+            'JIT (Just-in-Time) Compilation',
+            'Garbage Collection (GC)',
+            'Core Libraries',
+            'DEX Bytecode 실행'
+        ],
+        path: 'art/',
+        doc: 'https://source.android.com/docs/core/runtime',
+        codeExample: `
+# ART 정보 확인
+adb shell getprop dalvik.vm.heapsize
+adb shell dumpsys meminfo com.example.app
+
+# 컴파일 모드 확인
+adb shell cmd package compile -m speed -f com.example.app
+        `.trim()
+    },
+
+    'Native Libraries': {
+        title: 'Native C/C++ Libraries',
+        layer: 'Native Layer',
+        description: 'Android 시스템의 핵심 기능을 제공하는 C/C++ 네이티브 라이브러리입니다. Media, Graphics, Audio 등을 포함합니다.',
+        components: [
+            'Media Framework (libstagefright)',
+            'SurfaceFlinger - 화면 합성',
+            'AudioFlinger - 오디오 믹싱',
+            'libc (Bionic) - C 표준 라이브러리',
+            'WebView (Chromium)',
+            'SSL/Crypto 라이브러리'
+        ],
+        path: 'frameworks/native/',
+        doc: 'https://source.android.com/docs/core',
+        codeExample: `
+// JNI로 네이티브 라이브러리 호출
+class NativeLib {
+    external fun processAudio(): Int
+
+    companion object {
+        init {
+            System.loadLibrary("native-lib")
+        }
+    }
+}
+        `.trim()
+    },
+
+    'Hardware Abstraction Layer': {
+        title: 'Hardware Abstraction Layer (HAL)',
+        layer: 'HAL',
+        description: '하드웨어를 추상화하는 계층입니다. HIDL/AIDL 인터페이스로 표준화되어 있습니다.',
+        components: [
+            'Audio HAL - 오디오 하드웨어',
+            'Camera HAL - 카메라 센서',
+            'Codec HAL - 하드웨어 코덱',
+            'Graphics HAL - GPU',
+            'Sensor HAL - 센서',
+            'Vehicle HAL - 차량 제어 (AAOS)'
+        ],
+        path: 'hardware/interfaces/',
+        doc: 'https://source.android.com/docs/core/architecture/hal',
+        codeExample: `
+// HAL 서비스 확인
+adb shell lshal
+
+# 특정 HAL 정보
+adb shell dumpsys android.hardware.audio@7.0::IDevicesFactory/default
+        `.trim()
     },
 
     'View System': {

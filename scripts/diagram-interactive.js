@@ -129,30 +129,52 @@ function attachInteractiveHandlers(container, diagramIndex) {
  */
 function extractNodeId(node) {
     // Mermaid의 노드 ID는 여러 방식으로 저장될 수 있음
-    // 1. data-id 속성
-    // 2. id 속성
-    // 3. 텍스트 내용
+    // 1. id 속성 (가장 확실함)
+    // 2. class 속성
+    // 3. data-id 속성
 
-    // 1. data-id 시도
-    if (node.dataset && node.dataset.id) {
-        return cleanNodeId(node.dataset.id);
-    }
+    let rawId = null;
 
-    // 2. id 속성 시도
+    // 1. id 속성 시도 (예: "flowchart-APP-123")
     if (node.id) {
-        return cleanNodeId(node.id);
+        rawId = node.id;
+        console.log(`      [ID 추출] id 속성: "${rawId}"`);
     }
 
-    // 3. 텍스트 추출 (Mermaid는 레이블을 <tspan>에 저장)
-    const textElement = node.querySelector('text');
-    if (textElement) {
-        const text = textElement.textContent.trim();
-        // 줄바꿈 제거하고 첫 줄만 사용
-        const firstLine = text.split('\n')[0].trim();
-        return cleanNodeId(firstLine);
+    // 2. class에서 추출 시도
+    if (!rawId && node.classList) {
+        const classList = Array.from(node.classList);
+        const nodeClass = classList.find(c => c !== 'node' && c !== 'default');
+        if (nodeClass) {
+            rawId = nodeClass;
+            console.log(`      [ID 추출] class 속성: "${rawId}"`);
+        }
     }
 
-    return null;
+    // 3. data-id 시도
+    if (!rawId && node.dataset && node.dataset.id) {
+        rawId = node.dataset.id;
+        console.log(`      [ID 추출] data-id 속성: "${rawId}"`);
+    }
+
+    if (!rawId) {
+        console.warn('      [ID 추출 실패] 노드 ID를 찾을 수 없음');
+        return null;
+    }
+
+    // ID 정리
+    const cleanedId = cleanNodeId(rawId);
+    console.log(`      [ID 정리] "${rawId}" → "${cleanedId}"`);
+
+    // 매핑 테이블에서 사람이 읽을 수 있는 이름으로 변환
+    if (typeof NODE_ID_MAPPING !== 'undefined' && NODE_ID_MAPPING[cleanedId]) {
+        const mappedId = NODE_ID_MAPPING[cleanedId];
+        console.log(`      [ID 매핑] "${cleanedId}" → "${mappedId}"`);
+        return mappedId;
+    }
+
+    // 매핑이 없으면 정리된 ID 그대로 반환
+    return cleanedId;
 }
 
 /**
@@ -180,17 +202,27 @@ function cleanNodeId(id) {
  * 노드 클릭 핸들러
  */
 function handleNodeClick(nodeId, node) {
+    console.log(`\n🖱️ 노드 클릭 이벤트 발생!`);
+    console.log(`   노드 ID: "${nodeId}"`);
+    console.log(`   노드 요소:`, node);
+
     const nodeData = DIAGRAM_NODE_DATA[nodeId];
 
     if (!nodeData) {
-        console.warn(`⚠️ 노드 "${nodeId}"의 데이터를 찾을 수 없습니다.`);
+        console.error(`❌ 노드 데이터를 찾을 수 없습니다!`);
+        console.error(`   검색한 키: "${nodeId}"`);
+        console.error(`   사용 가능한 키:`, Object.keys(DIAGRAM_NODE_DATA));
+
+        // 사용자에게 알림 표시
+        alert(`노드 정보를 찾을 수 없습니다.\n\n노드 ID: ${nodeId}\n\n개발자 도구 콘솔을 확인해주세요.`);
         return;
     }
 
-    console.log(`🖱️ 노드 클릭: ${nodeId}`);
+    console.log(`✅ 노드 데이터 발견:`, nodeData);
 
     // 기존 모달 닫기
     if (activeModal) {
+        console.log(`   기존 모달 제거`);
         activeModal.remove();
     }
 
@@ -198,6 +230,7 @@ function handleNodeClick(nodeId, node) {
     highlightNode(node);
 
     // 모달 표시
+    console.log(`   모달 생성 시작...`);
     showNodeModal(nodeData);
 }
 
@@ -327,21 +360,33 @@ function showNodeModal(nodeData) {
 
     document.body.appendChild(modal);
     activeModal = modal;
+    console.log(`   ✅ 모달이 DOM에 추가됨`);
+    console.log(`   모달 요소:`, modal);
 
     // 애니메이션 시작
     requestAnimationFrame(() => {
         modal.classList.add('show');
+        console.log(`   ✅ 'show' 클래스 추가 (애니메이션 시작)`);
     });
 
     // 닫기 이벤트
     const closeBtn = modal.querySelector('.diagram-modal-close');
     const overlay = modal.querySelector('.diagram-modal-overlay');
 
-    closeBtn.addEventListener('click', closeModal);
-    overlay.addEventListener('click', closeModal);
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeModal);
+        console.log(`   ✅ 닫기 버튼 이벤트 연결`);
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', closeModal);
+        console.log(`   ✅ 오버레이 이벤트 연결`);
+    }
 
     // ESC 키로 닫기
     document.addEventListener('keydown', handleEscKey);
+    console.log(`   ✅ ESC 키 이벤트 연결`);
+    console.log(`\n모달 표시 완료! 🎉\n`);
 }
 
 /**
