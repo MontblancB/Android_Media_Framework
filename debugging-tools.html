@@ -1,0 +1,2030 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Media Debugging & Profiling Tools - Android Media Framework</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #1a1f35;
+            --bg-tertiary: #252b45;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --accent-red: #ef4444;
+            --border-color: rgba(148, 163, 184, 0.1);
+            --code-bg: #1e293b;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1420 100%);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 300;
+        }
+
+        section {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 2rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 3px;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin: 2rem 0 1rem 0;
+            color: var(--accent-purple);
+            font-weight: 600;
+        }
+
+        h4 {
+            font-size: 1.25rem;
+            margin: 1.5rem 0 1rem 0;
+            color: var(--accent-green);
+            font-weight: 500;
+        }
+
+        p, li {
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        ul, ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            background: var(--code-bg);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: var(--accent-green);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            border: none;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+        }
+
+        .mermaid {
+            background: var(--bg-tertiary);
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid var(--accent-blue);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+        }
+
+        .warning-box {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--accent-yellow);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+        }
+
+        .success-box {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--accent-green);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+        }
+
+        .error-box {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--accent-red);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+        }
+
+        .badge-tool {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+        }
+
+        .badge-command {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+        }
+
+        .badge-advanced {
+            background: rgba(139, 92, 246, 0.2);
+            color: var(--accent-purple);
+        }
+
+        .badge-critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+        }
+
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .tool-card {
+            background: var(--bg-tertiary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
+        }
+
+        .tool-card h4 {
+            margin-top: 0;
+            color: var(--accent-blue);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            section {
+                padding: 1.5rem;
+            }
+
+            .tool-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛠️ Android Media Debugging & Profiling Tools</h1>
+            <p class="subtitle">미디어 프레임워크 디버깅 및 성능 분석 완전 가이드</p>
+        </header>
+
+        <!-- Section 1: 개요 -->
+        <section>
+            <h2>1. 개요</h2>
+
+            <p>Android 미디어 프레임워크 디버깅은 <strong>멀티레이어 아키텍처</strong> 특성상 Framework, Native, HAL, Kernel 레벨을 모두 추적해야 합니다. 이 페이지는 실전 디버깅 도구와 워크플로우를 단계별로 제공합니다.</p>
+
+            <h3>1.1 디버깅 레벨별 도구 매핑</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>레벨</th>
+                        <th>주요 컴포넌트</th>
+                        <th>도구</th>
+                        <th>출력 형식</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>App Layer</strong></td>
+                        <td>MediaPlayer, ExoPlayer, Media3</td>
+                        <td>Android Studio Profiler, logcat</td>
+                        <td>CPU/Memory timeline, log stream</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Framework</strong></td>
+                        <td>MediaSession, AudioManager</td>
+                        <td>dumpsys, adb shell pm</td>
+                        <td>Service state dump, JSON</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Native</strong></td>
+                        <td>MediaCodec, AudioFlinger</td>
+                        <td>perfetto, systrace</td>
+                        <td>Trace protobuf, HTML timeline</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HAL</strong></td>
+                        <td>Codec2, Audio HAL</td>
+                        <td>hidl-test, aidl dump</td>
+                        <td>Test report, interface dump</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Kernel</strong></td>
+                        <td>Binder, ION allocator</td>
+                        <td>ftrace, /proc, /sys</td>
+                        <td>Kernel trace, sysfs values</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>1.2 디버깅 워크플로우</h3>
+            <div class="mermaid">
+graph TD
+    A[Issue 발생] --> B{Log에 에러?}
+    B -->|Yes| C[logcat 필터링]
+    B -->|No| D{성능 문제?}
+
+    C --> E[Framework 스택?]
+    C --> F[Native 스택?]
+
+    D -->|Yes| G[perfetto 트레이스]
+    D -->|No| H[dumpsys 상태 확인]
+
+    E --> I[dumpsys media.*]
+    F --> J[Native 로그 분석]
+
+    G --> K[CPU/GPU 프로파일]
+    H --> L[Service state 검증]
+
+    I --> M[해결책 적용]
+    J --> M
+    K --> M
+    L --> M
+
+    M --> N[재현 테스트]
+    N --> O{해결?}
+    O -->|No| P[Bugreport 생성]
+    O -->|Yes| Q[종료]
+
+    P --> R[AOSP Issue 리포트]
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Tip: 디버깅 순서</strong>
+                <ol>
+                    <li><strong>logcat</strong>으로 에러 스택 확인 (5분)</li>
+                    <li><strong>dumpsys</strong>로 서비스 상태 확인 (3분)</li>
+                    <li><strong>perfetto</strong>로 타임라인 분석 (10분)</li>
+                    <li><strong>Bugreport</strong> 생성 후 전문가 분석 (30분~)</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- Section 2: logcat 필터링 -->
+        <section>
+            <h2>2. logcat 필터링 패턴</h2>
+
+            <p>logcat은 Android 디버깅의 <strong>첫 번째 진입점</strong>입니다. 미디어 관련 로그는 초당 수백 줄이 출력되므로 효과적인 필터링이 필수입니다.</p>
+
+            <h3>2.1 기본 필터링</h3>
+
+            <h4>미디어 전체 로그</h4>
+            <pre><code># 모든 미디어 관련 로그
+adb logcat -s MediaPlayer MediaCodec ExoPlayerImpl MediaSession AudioFlinger
+
+# 우선순위 필터 (Warning 이상만)
+adb logcat *:W | grep -E "Media|Audio|Codec"
+
+# 특정 패키지만
+adb logcat --pid=$(adb shell pidof -s com.example.mediaplayer)</code></pre>
+
+            <h4>에러 로그만 추출</h4>
+            <pre><code># Java Exception 스택
+adb logcat -s AndroidRuntime:E
+
+# Native Crash
+adb logcat -s DEBUG:I libc:I
+
+# ANR (Application Not Responding)
+adb logcat -s ActivityManager:I | grep "ANR in"</code></pre>
+
+            <h3>2.2 컴포넌트별 필터</h3>
+
+            <div class="tool-grid">
+                <div class="tool-card">
+                    <h4>MediaCodec</h4>
+                    <pre><code>adb logcat -s \
+  MediaCodec \
+  MediaCodecList \
+  ACodec \
+  CCodec \
+  OMXClient</code></pre>
+                </div>
+
+                <div class="tool-card">
+                    <h4>ExoPlayer / Media3</h4>
+                    <pre><code>adb logcat -s \
+  ExoPlayerImpl \
+  MediaCodecRenderer \
+  MediaCodecVideoRenderer \
+  MediaCodecAudioRenderer \
+  DefaultTrackSelector</code></pre>
+                </div>
+
+                <div class="tool-card">
+                    <h4>AudioFlinger</h4>
+                    <pre><code>adb logcat -s \
+  AudioFlinger \
+  AudioPolicyService \
+  AudioTrack \
+  AudioFocus</code></pre>
+                </div>
+
+                <div class="tool-card">
+                    <h4>MediaSession</h4>
+                    <pre><code>adb logcat -s \
+  MediaSessionService \
+  MediaController \
+  MediaBrowserService \
+  MediaNotificationManager</code></pre>
+                </div>
+
+                <div class="tool-card">
+                    <h4>Car Media (AAOS)</h4>
+                    <pre><code>adb logcat -s \
+  CarMediaService \
+  CarAudioService \
+  VehicleHal \
+  CarInputService</code></pre>
+                </div>
+
+                <div class="tool-card">
+                    <h4>DRM (Widevine)</h4>
+                    <pre><code>adb logcat -s \
+  MediaDrm \
+  Drm \
+  WVCdm \
+  ClearKeyDrm</code></pre>
+                </div>
+            </div>
+
+            <h3>2.3 정규식 패턴</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>문제 유형</th>
+                        <th>grep 패턴</th>
+                        <th>설명</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Codec 에러</td>
+                        <td><code>grep -E "codec.*error|configure.*failed"</code></td>
+                        <td>configure/start 실패</td>
+                    </tr>
+                    <tr>
+                        <td>Buffer 에러</td>
+                        <td><code>grep -E "dequeue.*timeout|ETIMEDOUT"</code></td>
+                        <td>dequeueOutputBuffer 타임아웃</td>
+                    </tr>
+                    <tr>
+                        <td>DRM 에러</td>
+                        <td><code>grep -E "license.*error|provision.*failed"</code></td>
+                        <td>라이선스 획득 실패</td>
+                    </tr>
+                    <tr>
+                        <td>Audio Focus</td>
+                        <td><code>grep -E "AudioFocus.*LOSS|abandonAudioFocus"</code></td>
+                        <td>포커스 손실 이벤트</td>
+                    </tr>
+                    <tr>
+                        <td>ANR</td>
+                        <td><code>grep "Input dispatching timed out"</code></td>
+                        <td>5초 이상 UI 블록</td>
+                    </tr>
+                    <tr>
+                        <td>OOM</td>
+                        <td><code>grep "OutOfMemoryError"</code></td>
+                        <td>메모리 부족</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>2.4 실전 예시: Codec 에러 추적</h3>
+            <pre><code># Step 1: 에러 발생 시점 확인
+adb logcat -t 500 | grep -E "MediaCodec|ACodec|CCodec"
+
+# 출력 예시:
+# 01-25 10:32:15.421  1234  5678 E MediaCodec: configure failed with err 0xffffffe2
+# 01-25 10:32:15.422  1234  5678 E ACodec   : [OMX.qcom.video.decoder.avc] ERROR(0x80001001)
+
+# Step 2: 에러 코드 해석
+# 0xffffffe2 = -30 (INVALID_OPERATION)
+# 0x80001001 = OMX_ErrorInsufficientResources
+
+# Step 3: 설정값 덤프
+adb logcat -s MediaCodec:V | grep "format"
+# 출력: MediaFormat: {mime=video/avc, width=3840, height=2160, ...}
+
+# Step 4: Capabilities 확인
+adb shell dumpsys media.codec | grep "avc"</code></pre>
+
+            <div class="warning-box">
+                <strong>⚠️ 주의: logcat 버퍼 크기</strong>
+                <p>기본 logcat 버퍼는 256KB로 빠르게 덮어써집니다. 장시간 디버깅 시 버퍼 증가:</p>
+                <pre><code>adb logcat -G 16M   # 16MB로 증가
+adb logcat -g       # 현재 버퍼 크기 확인</code></pre>
+            </div>
+
+            <h3>2.5 로그 파일 저장 및 공유</h3>
+            <pre><code># 파일로 저장 (Timestamp 포함)
+adb logcat -v threadtime > logcat_$(date +%Y%m%d_%H%M%S).txt
+
+# 특정 시간 동안만 (30초)
+timeout 30 adb logcat > logcat_30s.txt
+
+# 이미 출력된 로그 전체 (-d: dump mode)
+adb logcat -d > logcat_dump.txt
+
+# 압축하여 저장
+adb logcat -d | gzip > logcat.txt.gz</code></pre>
+        </section>
+
+        <!-- Section 3: dumpsys 명령어 -->
+        <section>
+            <h2>3. dumpsys 명령어 컬렉션</h2>
+
+            <p>dumpsys는 Android 시스템 서비스의 <strong>런타임 상태를 덤프</strong>하는 도구입니다. 미디어 관련 서비스는 약 15개 이상 존재합니다.</p>
+
+            <h3>3.1 주요 미디어 서비스</h3>
+
+            <h4>3.1.1 media.player (MediaPlayerService)</h4>
+            <pre><code># 전체 덤프
+adb shell dumpsys media.player
+
+# 출력 예시:
+# MediaPlayerService:
+#   Clients:
+#     pid(1234) uid(10123) connId(5)
+#       IMediaPlayer[OMX.qcom.video.decoder.avc]
+#         state: started
+#         position: 125300 ms
+#         duration: 300000 ms</code></pre>
+
+            <div class="info-box">
+                <strong>주요 정보:</strong>
+                <ul>
+                    <li><strong>Clients</strong>: 현재 재생 중인 클라이언트 목록</li>
+                    <li><strong>state</strong>: idle/prepared/started/paused/stopped</li>
+                    <li><strong>Audio routing</strong>: 출력 디바이스 (speaker/headset/bluetooth)</li>
+                </ul>
+            </div>
+
+            <h4>3.1.2 media.codec (MediaCodecService)</h4>
+            <pre><code># Codec 리스트 및 Capabilities
+adb shell dumpsys media.codec
+
+# 출력 예시 (일부):
+# Decoder: OMX.qcom.video.decoder.avc (video/avc)
+#   Max instances: 4
+#   Current instances: 1
+#   Supported sizes: 64x64 ~ 3840x2160
+#   Frame rates: 1fps ~ 240fps
+#   Color formats: YUV420Flexible, YUV420Planar</code></pre>
+
+            <h4>특정 코덱 검색</h4>
+            <pre><code># H.264 디코더만
+adb shell dumpsys media.codec | grep -A 20 "video/avc.*decoder"
+
+# H.265 인코더만
+adb shell dumpsys media.codec | grep -A 20 "video/hevc.*encoder"</code></pre>
+
+            <h4>3.1.3 media.audio_flinger (AudioFlinger)</h4>
+            <pre><code># AudioFlinger 전체 상태
+adb shell dumpsys media.audio_flinger
+
+# 출력 구조:
+# - Hardware status (HAL 상태)
+# - Playback threads (각 오디오 스트림)
+# - Active tracks (현재 재생 중인 트랙)
+# - FastMixer status (저지연 믹서)
+# - Global effects (이퀄라이저, 리버브 등)</code></pre>
+
+            <div class="success-box">
+                <strong>✅ 활용 예시: Audio glitch 디버깅</strong>
+                <pre><code># FastMixer 상태 확인
+adb shell dumpsys media.audio_flinger | grep -A 50 "FastMixer"
+
+# 출력 분석:
+# - underruns: 0 → 정상
+# - underruns: 152 → Buffer underrun 발생 (glitch 원인)</code></pre>
+            </div>
+
+            <h4>3.1.4 media.audio_policy (AudioPolicyService)</h4>
+            <pre><code># Audio 라우팅 정책
+adb shell dumpsys media.audio_policy
+
+# 주요 정보:
+# - Available audio devices (사용 가능한 출력 장치)
+# - Audio streams (MUSIC, ALARM, NOTIFICATION 등)
+# - Volume curves (볼륨 곡선)
+# - Audio focus stack (현재 포커스 소유자)</code></pre>
+
+            <h3>3.2 Automotive (AAOS) 서비스</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>서비스</th>
+                        <th>명령어</th>
+                        <th>주요 정보</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>CarMediaService</strong></td>
+                        <td><code>dumpsys car_service --services CarMediaService</code></td>
+                        <td>Last media source, autoplay 상태</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CarAudioService</strong></td>
+                        <td><code>dumpsys car_service --services CarAudioService</code></td>
+                        <td>Audio zones, volume groups, ducking</td>
+                    </tr>
+                    <tr>
+                        <td><strong>VehicleHal</strong></td>
+                        <td><code>dumpsys android.hardware.automotive.vehicle@2.0::IVehicle/default</code></td>
+                        <td>Vehicle properties (speed, gear, etc.)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CarInputService</strong></td>
+                        <td><code>dumpsys car_service --services CarInputService</code></td>
+                        <td>Key event routing, inject events</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CarPowerManagement</strong></td>
+                        <td><code>dumpsys car_service --services CarPowerManagementService</code></td>
+                        <td>Power state, suspend listeners</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>CarMediaService 상세</h4>
+            <pre><code># Last media source 확인
+adb shell dumpsys car_service --services CarMediaService | grep "last.*source"
+
+# 출력 예시:
+# mPrimaryMediaSource: [MediaSource:
+#   packageName=com.spotify.music
+#   className=com.spotify.music.MusicService]
+
+# Autoplay 설정
+# mPlayOnBootConfiguration: RETAIN
+# mPlayOnMediaSourceChanged: ENABLE</code></pre>
+
+            <h3>3.3 MediaSession</h3>
+            <pre><code># 전체 세션 리스트
+adb shell dumpsys media_session
+
+# 출력 구조:
+# Sessions Stack:
+#   User 0:
+#     - com.spotify.music/MediaSessionService (priority: 100, active: true)
+#       controller: PendingIntent{...}
+#       metadata: {title=Song Name, artist=Artist Name, ...}
+#       playbackState: {state=3(PLAYING), position=45123, ...}</code></pre>
+
+            <div class="tool-card">
+                <h4>특정 앱의 MediaSession만 필터링</h4>
+                <pre><code>adb shell dumpsys media_session | grep -A 30 "com.spotify.music"</code></pre>
+            </div>
+
+            <h3>3.4 DRM 관련</h3>
+            <pre><code># MediaDrm 플러그인
+adb shell dumpsys media.drm
+
+# 출력:
+# Drm Plugins:
+#   Plugin: libwvdrmengine.so (Widevine CDM)
+#     UUID: edef8ba9-79d6-4ace-a3c8-27dcd51d21ed
+#     Description: Widevine Content Decryption Module
+#     Algorithms: AES/CBC/NoPadding
+#   Plugin: libclearkeydrmengine.so (ClearKey)
+#     UUID: e2719d58-a985-b3c9-781a-b030af78d30e</code></pre>
+
+            <h3>3.5 종합 스크립트</h3>
+            <pre><code>#!/bin/bash
+# media_debug_dump.sh - 미디어 디버깅 종합 덤프
+
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+OUTPUT_DIR="media_dump_${TIMESTAMP}"
+mkdir -p "${OUTPUT_DIR}"
+
+echo "🔍 Collecting media debugging data..."
+
+# 1. logcat (최근 1000줄)
+adb logcat -t 1000 > "${OUTPUT_DIR}/logcat.txt"
+
+# 2. dumpsys 전체
+adb shell dumpsys media.player > "${OUTPUT_DIR}/media.player.txt"
+adb shell dumpsys media.codec > "${OUTPUT_DIR}/media.codec.txt"
+adb shell dumpsys media.audio_flinger > "${OUTPUT_DIR}/audio_flinger.txt"
+adb shell dumpsys media.audio_policy > "${OUTPUT_DIR}/audio_policy.txt"
+adb shell dumpsys media_session > "${OUTPUT_DIR}/media_session.txt"
+
+# 3. Car services (AAOS only)
+adb shell dumpsys car_service > "${OUTPUT_DIR}/car_service.txt" 2>/dev/null
+
+# 4. 프로세스 정보
+adb shell ps -A | grep -E "media|audio" > "${OUTPUT_DIR}/processes.txt"
+
+# 5. 메모리
+adb shell dumpsys meminfo com.example.mediaplayer > "${OUTPUT_DIR}/meminfo.txt"
+
+# 압축
+tar -czf "${OUTPUT_DIR}.tar.gz" "${OUTPUT_DIR}"
+echo "✅ Done: ${OUTPUT_DIR}.tar.gz"</code></pre>
+        </section>
+
+        <!-- Section 4: perfetto / systrace -->
+        <section>
+            <h2>4. perfetto / systrace 트레이싱</h2>
+
+            <p><strong>perfetto</strong>는 Android 10+의 차세대 시스템 트레이싱 도구로, 기존 systrace를 대체합니다. 미디어 파이프라인의 <strong>타임라인 레벨 분석</strong>이 가능합니다.</p>
+
+            <h3>4.1 perfetto vs systrace 비교</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>특성</th>
+                        <th>perfetto (Android 10+)</th>
+                        <th>systrace (Legacy)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>출력 형식</td>
+                        <td>Protobuf (binary)</td>
+                        <td>HTML (텍스트)</td>
+                    </tr>
+                    <tr>
+                        <td>파일 크기</td>
+                        <td>작음 (압축)</td>
+                        <td>큼 (비압축)</td>
+                    </tr>
+                    <tr>
+                        <td>뷰어</td>
+                        <td>ui.perfetto.dev (웹)</td>
+                        <td>chrome://tracing</td>
+                    </tr>
+                    <tr>
+                        <td>기능</td>
+                        <td>CPU, GPU, Memory, Power</td>
+                        <td>CPU, ftrace만</td>
+                    </tr>
+                    <tr>
+                        <td>권장</td>
+                        <td>✅ Android 10+ 필수</td>
+                        <td>⚠️ Android 9 이하만</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>4.2 perfetto 기본 사용법</h3>
+
+            <h4>4.2.1 설치 (PC)</h4>
+            <pre><code># Linux / macOS
+curl -O https://get.perfetto.dev/perfetto
+chmod +x perfetto
+sudo mv perfetto /usr/local/bin/
+
+# 또는 AOSP 빌드 환경에서
+source build/envsetup.sh
+lunch aosp_cf_x86_64_phone-userdebug
+perfetto --help</code></pre>
+
+            <h4>4.2.2 미디어 트레이싱 설정</h4>
+            <pre><code># config.pbtx (perfetto 설정 파일)
+cat > media_trace_config.pbtx << 'EOF'
+# 트레이스 지속 시간: 10초
+duration_ms: 10000
+
+buffers {
+  size_kb: 65536  # 64MB 버퍼
+  fill_policy: RING_BUFFER
+}
+
+# ftrace (Kernel events)
+data_sources {
+  config {
+    name: "linux.ftrace"
+    ftrace_config {
+      # Scheduler (CPU)
+      ftrace_events: "sched/sched_switch"
+      ftrace_events: "sched/sched_wakeup"
+
+      # Binder IPC
+      ftrace_events: "binder/binder_transaction"
+      ftrace_events: "binder/binder_transaction_received"
+
+      # Graphics
+      ftrace_events: "fence/fence_wait_start"
+      ftrace_events: "fence/fence_wait_end"
+    }
+  }
+}
+
+# atrace (Android Framework)
+data_sources {
+  config {
+    name: "linux.ftrace"
+    ftrace_config {
+      atrace_categories: "video"
+      atrace_categories: "audio"
+      atrace_categories: "camera"
+      atrace_categories: "gfx"
+      atrace_categories: "view"
+      atrace_categories: "am"  # ActivityManager
+      atrace_categories: "dalvik"
+      atrace_apps: "com.example.mediaplayer"
+    }
+  }
+}
+
+# Process stats
+data_sources {
+  config {
+    name: "linux.process_stats"
+    process_stats_config {
+      scan_all_processes_on_start: true
+    }
+  }
+}
+EOF</code></pre>
+
+            <h4>4.2.3 트레이스 캡처</h4>
+            <pre><code># Method 1: 설정 파일 사용 (권장)
+adb shell perfetto \
+  -c - --txt \
+  -o /data/misc/perfetto-traces/media_trace.perfetto-trace \
+  < media_trace_config.pbtx
+
+# Method 2: 커맨드라인 플래그 (간단한 경우)
+adb shell perfetto \
+  -o /data/misc/perfetto-traces/trace.perfetto-trace \
+  -t 10s \
+  sched freq idle am wm gfx view binder_driver \
+  video audio camera
+
+# PC로 다운로드
+adb pull /data/misc/perfetto-traces/media_trace.perfetto-trace ./
+
+# 웹 뷰어에서 열기
+# https://ui.perfetto.dev 접속 → Open trace file</code></pre>
+
+            <div class="info-box">
+                <strong>💡 Tip: 실시간 트레이싱</strong>
+                <p>perfetto는 <code>traced</code> 데몬이 항상 실행되므로 즉시 캡처 가능:</p>
+                <pre><code># 앱 실행 직전에 트레이스 시작
+adb shell perfetto -o /data/misc/perfetto-traces/trace.pb -t 10s video audio &
+# 앱 실행
+adb shell am start -n com.example.app/.MainActivity
+# 10초 대기 후 자동 종료</code></pre>
+            </div>
+
+            <h3>4.3 미디어 트레이스 분석</h3>
+
+            <h4>4.3.1 주요 확인 포인트</h4>
+            <div class="tool-grid">
+                <div class="tool-card">
+                    <h4>① CPU 스케줄링</h4>
+                    <p><strong>Thread States</strong> 트랙에서:</p>
+                    <ul>
+                        <li>🟢 <strong>Running</strong>: CPU 실행 중</li>
+                        <li>🟡 <strong>Runnable</strong>: 실행 대기 (CPU 경합)</li>
+                        <li>🔴 <strong>Sleeping</strong>: I/O 대기</li>
+                    </ul>
+                </div>
+
+                <div class="tool-card">
+                    <h4>② MediaCodec 파이프라인</h4>
+                    <p><code>video</code> 카테고리에서:</p>
+                    <ul>
+                        <li><code>C2SoftAvcDec::process</code></li>
+                        <li><code>dequeueInputBuffer</code></li>
+                        <li><code>queueInputBuffer</code></li>
+                        <li><code>dequeueOutputBuffer</code></li>
+                    </ul>
+                </div>
+
+                <div class="tool-card">
+                    <h4>③ AudioFlinger 믹싱</h4>
+                    <p><code>audio</code> 카테고리에서:</p>
+                    <ul>
+                        <li><code>AudioMixer::process</code></li>
+                        <li><code>FastMixer::threadLoop</code></li>
+                        <li><code>write</code> (HAL 호출)</li>
+                    </ul>
+                </div>
+
+                <div class="tool-card">
+                    <h4>④ Binder IPC</h4>
+                    <p><code>binder_driver</code> 카테고리:</p>
+                    <ul>
+                        <li>Transaction 지연 (>100ms 경고)</li>
+                        <li>동기 호출 vs 비동기 호출</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h4>4.3.2 Frame Drop 분석 예시</h4>
+            <pre><code># 1. 트레이스에서 "Choreographer#doFrame" 검색
+# 2. Frame 타임라인 확인:
+#    - 정상: 16.6ms 간격 (60fps)
+#    - Frame drop: >33ms 간격 (프레임 스킵)
+#
+# 3. 원인 추적:
+#    - UI Thread 블록? → Main Thread에서 긴 작업
+#    - RenderThread 지연? → GPU 오버로드
+#    - MediaCodec 지연? → dequeueOutputBuffer 타임아웃</code></pre>
+
+            <div class="mermaid">
+sequenceDiagram
+    participant App as App Thread
+    participant Codec as MediaCodec
+    participant HAL as Codec2 HAL
+    participant HW as Hardware Decoder
+
+    Note over App,HW: perfetto trace timeline →
+
+    App->>Codec: dequeueInputBuffer()
+    activate Codec
+    Codec-->>App: inputBufferId
+    deactivate Codec
+
+    App->>Codec: queueInputBuffer(data)
+    activate Codec
+    Codec->>HAL: C2Work (input buffer)
+    activate HAL
+    HAL->>HW: DMA transfer
+    activate HW
+    HW-->>HAL: decode done
+    deactivate HW
+    HAL-->>Codec: C2Work (output buffer)
+    deactivate HAL
+    deactivate Codec
+
+    App->>Codec: dequeueOutputBuffer()
+    activate Codec
+    Note right of Codec: ⚠️ 만약 HAL이 늦으면<br/>여기서 TIMEOUT
+    Codec-->>App: outputBufferId
+    deactivate Codec
+
+    App->>Codec: releaseOutputBuffer(render=true)
+    activate Codec
+    Codec->>App: renderOutputBuffer (SurfaceFlinger)
+    deactivate Codec
+            </div>
+
+            <h3>4.4 systrace (Legacy - Android 9 이하)</h3>
+            <pre><code># AOSP 환境
+cd $ANDROID_BUILD_TOP
+python systrace.py --time=10 -o trace.html \
+  sched freq idle am wm gfx view binder_driver hal \
+  video audio camera
+
+# 또는 간단 버전
+adb shell atrace --async_start -b 32768 sched gfx view video audio
+# ... 재현 ...
+adb shell atrace --async_stop > trace.txt
+# chrome://tracing에서 열기</code></pre>
+
+            <h3>4.5 고급: Custom Trace Points</h3>
+            <pre><code>// Kotlin/Java
+import android.os.Trace
+
+class MyMediaPlayer {
+    fun decodeFrame() {
+        Trace.beginSection("MyMediaPlayer::decodeFrame")
+        try {
+            // decode logic
+        } finally {
+            Trace.endSection()
+        }
+    }
+}</code></pre>
+
+            <pre><code>// C++ (Native)
+#include <cutils/trace.h>
+
+void decodeFrame() {
+    ATRACE_CALL();  // 함수 이름 자동
+    // 또는
+    ATRACE_BEGIN("decodeFrame");
+    // decode logic
+    ATRACE_END();
+}</code></pre>
+
+            <div class="success-box">
+                <strong>✅ 이제 perfetto에서 "MyMediaPlayer::decodeFrame" 커스텀 이벤트가 표시됩니다!</strong>
+            </div>
+        </section>
+
+        <!-- Section 5: adb 미디어 디버깅 -->
+        <section>
+            <h2>5. adb 미디어 디버깅 명령어</h2>
+
+            <p>adb shell을 통해 디바이스에서 직접 디버깅 명령을 실행할 수 있습니다.</p>
+
+            <h3>5.1 MediaPlayer 제어</h3>
+
+            <h4>미디어 재생 테스트</h4>
+            <pre><code># 로컬 파일 재생
+adb shell am start -a android.intent.action.VIEW \
+  -d file:///sdcard/test.mp4 \
+  -t video/mp4
+
+# HTTP 스트리밍
+adb shell am start -a android.intent.action.VIEW \
+  -d "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+
+# Intent로 특정 앱 실행
+adb shell am start -n com.google.android.apps.youtube.music/.MainActivity</code></pre>
+
+            <h4>미디어 키 이벤트 주입</h4>
+            <pre><code># Play/Pause
+adb shell input keyevent KEYCODE_MEDIA_PLAY_PAUSE  # 85
+
+# Play
+adb shell input keyevent KEYCODE_MEDIA_PLAY  # 126
+
+# Pause
+adb shell input keyevent KEYCODE_MEDIA_PAUSE  # 127
+
+# Next
+adb shell input keyevent KEYCODE_MEDIA_NEXT  # 87
+
+# Previous
+adb shell input keyevent KEYCODE_MEDIA_PREVIOUS  # 88
+
+# Stop
+adb shell input keyevent KEYCODE_MEDIA_STOP  # 86
+
+# Volume Up/Down
+adb shell input keyevent KEYCODE_VOLUME_UP  # 24
+adb shell input keyevent KEYCODE_VOLUME_DOWN  # 25</code></pre>
+
+            <div class="tool-card">
+                <h4>자동화 스크립트</h4>
+                <pre><code>#!/bin/bash
+# test_media_keys.sh
+
+echo "Testing media keys..."
+adb shell input keyevent KEYCODE_MEDIA_PLAY
+sleep 2
+adb shell input keyevent KEYCODE_MEDIA_PAUSE
+sleep 1
+adb shell input keyevent KEYCODE_MEDIA_NEXT
+echo "Done"</code></pre>
+            </div>
+
+            <h3>5.2 파일 시스템 탐색</h3>
+
+            <h4>미디어 파일 검색</h4>
+            <pre><code># 전체 미디어 파일 (MP4, MKV, MP3 등)
+adb shell find /sdcard -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.mp3" \)
+
+# 특정 디렉토리
+adb shell ls -lh /sdcard/Music/
+adb shell ls -lh /sdcard/Movies/
+
+# MediaProvider DB 직접 쿼리
+adb shell content query --uri content://media/external/video/media \
+  --projection _id,_data,title,duration</code></pre>
+
+            <h4>파일 전송</h4>
+            <pre><code># PC → 디바이스
+adb push test.mp4 /sdcard/Download/
+
+# 디바이스 → PC
+adb pull /sdcard/Download/test.mp4 ./
+
+# 대용량 파일 (진행률 표시)
+adb push large_video.mp4 /sdcard/ | pv</code></pre>
+
+            <h3>5.3 Codec 정보 조회</h3>
+            <pre><code># MediaCodecList 전체 출력
+adb shell am broadcast -a android.media.action.QUERY_CODEC_SUPPORT
+
+# 또는 직접 클래스 호출
+adb shell cmd media_codec list
+
+# 출력 예시:
+# Decoders:
+#   OMX.qcom.video.decoder.avc (video/avc)
+#     Supported sizes: 64x64 - 3840x2160
+#     Color formats: 0x7f000789, 0x13
+#   c2.android.avc.decoder (video/avc)
+#     ...</code></pre>
+
+            <h3>5.4 Audio 라우팅</h3>
+
+            <h4>출력 장치 확인</h4>
+            <pre><code># 현재 오디오 장치
+adb shell dumpsys audio | grep "Devices:"
+
+# 출력 예시:
+# - device:0x2 (SPEAKER)
+# - device:0x4 (WIRED_HEADSET)
+# - device:0x80 (BLUETOOTH_A2DP)
+
+# Bluetooth 장치 강제 연결
+adb shell cmd bluetooth_manager connect-audio <device_mac></code></pre>
+
+            <h4>볼륨 제어</h4>
+            <pre><code># 현재 볼륨 확인
+adb shell dumpsys audio | grep "STREAM_MUSIC"
+
+# 출력 예시:
+# - STREAM_MUSIC:
+#     Current: 8 (range: 0..15)
+
+# 볼륨 설정 (0~15)
+adb shell media volume --stream 3 --set 10
+# stream 3 = STREAM_MUSIC</code></pre>
+
+            <h3>5.5 DRM / 보안</h3>
+            <pre><code># Widevine 보안 레벨 확인
+adb shell getprop drm.service.enabled  # true/false
+adb shell getprop ro.vendor.mtk_widevine_drm_level  # L1/L3 (Vendor specific)
+
+# ClearKey DRM 테스트
+adb shell am start -a android.intent.action.VIEW \
+  -d "https://storage.googleapis.com/shaka-demo-assets/angel-one-clearkey/dash.mpd"</code></pre>
+
+            <h3>5.6 성능 모니터링</h3>
+
+            <h4>CPU 사용률 (실시간)</h4>
+            <pre><code># 전체 프로세스
+adb shell top -m 10
+
+# 특정 앱만
+adb shell top -p $(adb shell pidof com.example.mediaplayer)</code></pre>
+
+            <h4>메모리 사용률</h4>
+            <pre><code># 앱별 메모리
+adb shell dumpsys meminfo com.example.mediaplayer
+
+# 출력 주요 항목:
+# - Native Heap: 45MB (MediaCodec 버퍼)
+# - Graphics: 120MB (SurfaceFlinger)
+# - Total PSS: 180MB</code></pre>
+
+            <h4>GPU 렌더링 프로파일</h4>
+            <pre><code># GPU 렌더링 프로파일 활성화
+adb shell setprop debug.hwui.profile true
+adb shell setprop debug.hwui.profile.maxframes 128
+
+# 앱 재시작 후 덤프
+adb shell dumpsys gfxinfo com.example.mediaplayer
+
+# 출력: 각 프레임의 Draw/Process/Execute 시간</code></pre>
+
+            <h3>5.7 Automotive (AAOS) 전용</h3>
+
+            <h4>Vehicle Property 읽기/쓰기</h4>
+            <pre><code># Vehicle Speed 읽기
+adb shell dumpsys android.hardware.automotive.vehicle@2.0::IVehicle/default \
+  --get PERF_VEHICLE_SPEED
+
+# Gear Selection
+adb shell dumpsys android.hardware.automotive.vehicle@2.0::IVehicle/default \
+  --get GEAR_SELECTION
+
+# Property 주입 (테스트 목적)
+adb shell cmd car_service inject-vhal-event PERF_VEHICLE_SPEED 50</code></pre>
+
+            <h4>Car Audio Zone 테스트</h4>
+            <pre><code># Primary zone 볼륨 설정
+adb shell cmd car_service set-audio-zone-volume 0 1 10
+# zone=0 (primary), group=1 (music), volume=10
+
+# Rear zone 볼륨
+adb shell cmd car_service set-audio-zone-volume 1 1 5</code></pre>
+
+            <h3>5.8 종합 모니터링 스크립트</h3>
+            <pre><code>#!/bin/bash
+# real_time_monitor.sh - 미디어 앱 실시간 모니터링
+
+PACKAGE="com.example.mediaplayer"
+PID=$(adb shell pidof "$PACKAGE")
+
+if [ -z "$PID" ]; then
+    echo "❌ App not running: $PACKAGE"
+    exit 1
+fi
+
+echo "📱 Monitoring: $PACKAGE (PID: $PID)"
+echo "-----------------------------------"
+
+while true; do
+    clear
+    echo "=== $(date) ==="
+
+    # CPU %
+    CPU=$(adb shell top -n 1 -p "$PID" | tail -1 | awk '{print $9}')
+    echo "CPU: ${CPU}%"
+
+    # Memory (PSS)
+    PSS=$(adb shell dumpsys meminfo "$PID" | grep TOTAL | awk '{print $2}')
+    echo "Memory: ${PSS} KB"
+
+    # Audio Focus
+    FOCUS=$(adb shell dumpsys media_session | grep -A 5 "$PACKAGE" | grep "playbackState")
+    echo "Playback: $FOCUS"
+
+    sleep 2
+done</code></pre>
+        </section>
+
+        <!-- Section 6: Android Studio Profiler -->
+        <section>
+            <h2>6. Android Studio Profiler</h2>
+
+            <p>Android Studio의 <strong>Profiler</strong>는 실시간 GUI 기반 프로파일링 도구로, CPU/Memory/Network/Energy를 동시에 모니터링할 수 있습니다.</p>
+
+            <h3>6.1 Profiler 시작</h3>
+            <ol>
+                <li><strong>View → Tool Windows → Profiler</strong> 선택</li>
+                <li>연결된 디바이스에서 앱 프로세스 선택</li>
+                <li>4개 타임라인 자동 표시: CPU, Memory, Network, Energy</li>
+            </ol>
+
+            <div class="info-box">
+                <strong>💡 Tip: Debuggable Build</strong>
+                <p>정확한 프로파일링을 위해 <code>build.gradle</code>에서:</p>
+                <pre><code>android {
+    buildTypes {
+        debug {
+            debuggable true
+            minifyEnabled false
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3>6.2 CPU Profiler</h3>
+
+            <h4>6.2.1 Trace 종류</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Trace Type</th>
+                        <th>오버헤드</th>
+                        <th>용도</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Sample Java Methods</strong></td>
+                        <td>낮음 (~5%)</td>
+                        <td>전체 CPU 사용률 개요</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Trace Java Methods</strong></td>
+                        <td>높음 (~30%)</td>
+                        <td>모든 메소드 호출 기록 (정확)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sample C/C++ Functions</strong></td>
+                        <td>낮음</td>
+                        <td>Native 코드 프로파일링</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Trace System Calls</strong></td>
+                        <td>매우 높음</td>
+                        <td>Binder/I/O 호출 추적</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>6.2.2 미디어 앱 분석 예시</h4>
+            <div class="success-box">
+                <strong>✅ 시나리오: ExoPlayer 버퍼링 지연</strong>
+                <ol>
+                    <li><strong>Record</strong> 버튼 클릭 → "Sample Java Methods" 선택</li>
+                    <li>앱에서 비디오 재생 → 버퍼링 발생</li>
+                    <li><strong>Stop</strong> 버튼 클릭</li>
+                    <li><strong>Flame Chart</strong>에서 분석:
+                        <ul>
+                            <li><code>ExoPlayerImpl.handleMessage()</code>: 45% CPU</li>
+                            <li><code>MediaCodecRenderer.render()</code>: 30% CPU</li>
+                            <li><code>DefaultLoadControl.shouldContinueLoading()</code>: 10% CPU</li>
+                        </ul>
+                    </li>
+                    <li><strong>결론</strong>: <code>handleMessage</code>에서 과도한 시간 소모 → UI Thread 블록 의심</li>
+                </ol>
+            </div>
+
+            <h4>6.2.3 Thread 분석</h4>
+            <p>Profiler는 모든 Thread를 개별 트랙으로 표시:</p>
+            <ul>
+                <li><strong>main</strong>: UI Thread (16ms 이내 완료 권장)</li>
+                <li><strong>ExoPlayer:Playback</strong>: ExoPlayer 재생 스레드</li>
+                <li><strong>ExoPlayer:Loader:Progressive</strong>: 다운로드 스레드</li>
+                <li><strong>RenderThread</strong>: GPU 렌더링</li>
+            </ul>
+
+            <div class="warning-box">
+                <strong>⚠️ Main Thread에서 I/O 금지</strong>
+                <p>만약 main Thread에서 <code>MediaExtractor.readSampleData()</code> 같은 I/O 호출이 보이면 즉시 Background Thread로 이동해야 합니다.</p>
+            </div>
+
+            <h3>6.3 Memory Profiler</h3>
+
+            <h4>6.3.1 메모리 타임라인</h4>
+            <ul>
+                <li><strong>Java Heap</strong>: Java 객체 메모리</li>
+                <li><strong>Native Heap</strong>: MediaCodec 버퍼 등</li>
+                <li><strong>Graphics</strong>: Texture, SurfaceFlinger 버퍼</li>
+                <li><strong>Stack</strong>: Thread 스택</li>
+                <li><strong>Code</strong>: APK 코드 메모리</li>
+            </ul>
+
+            <h4>6.3.2 Heap Dump 분석</h4>
+            <pre><code>1. 메모리 급증 구간 선택
+2. "Dump Java heap" 버튼 클릭
+3. Heap dump (.hprof) 자동 생성
+4. Instance View에서 큰 객체 검색:
+   - ByteBuffer[] (코덱 버퍼)
+   - Bitmap[] (썸네일)
+   - ArrayList<MediaItem> (플레이리스트)</code></pre>
+
+            <div class="error-box">
+                <strong>🔴 Memory Leak 탐지</strong>
+                <p>비디오 재생 후 Activity 종료 → Heap dump 생성 → Activity 인스턴스가 남아있으면 Leak!</p>
+                <pre><code>// Leak 예시
+class VideoActivity : AppCompatActivity() {
+    companion object {
+        var player: ExoPlayer? = null  // ❌ Static 변수에 저장 (Leak!)
+    }
+}</code></pre>
+            </div>
+
+            <h3>6.4 Network Profiler</h3>
+
+            <h4>HTTP 스트리밍 분석</h4>
+            <p>Network Profiler는 모든 HTTP/HTTPS 요청을 캡처:</p>
+            <ul>
+                <li><strong>Timeline</strong>: 초당 전송/수신 바이트</li>
+                <li><strong>Connection View</strong>: 각 요청의 URL, Size, Duration</li>
+                <li><strong>Response</strong>: HTTP 헤더 및 바디 (최대 1MB)</li>
+            </ul>
+
+            <div class="tool-card">
+                <h4>HLS/DASH 스트리밍 디버깅</h4>
+                <ol>
+                    <li>Network Profiler에서 <code>.m3u8</code> 또는 <code>.mpd</code> 요청 찾기</li>
+                    <li>Response 탭에서 Manifest 내용 확인</li>
+                    <li>각 Segment 요청의 Duration 확인 (>2초면 네트워크 병목)</li>
+                </ol>
+            </div>
+
+            <h3>6.5 Energy Profiler</h3>
+            <p>배터리 소모량을 컴포넌트별로 분해:</p>
+            <ul>
+                <li><strong>CPU</strong>: 프로세서 사용</li>
+                <li><strong>Network</strong>: WiFi/Cellular 전송</li>
+                <li><strong>Location</strong>: GPS 사용 (미디어 앱은 보통 0)</li>
+            </ul>
+
+            <div class="info-box">
+                <strong>💡 백그라운드 재생 최적화</strong>
+                <p>Energy Profiler에서 화면 꺼진 상태의 CPU 사용률 확인 → <strong>Audio Focus</strong> 손실 시 즉시 일시정지하여 배터리 절약</p>
+            </div>
+
+            <h3>6.6 Layout Inspector (Bonus)</h3>
+            <p>미디어 앱의 UI 레이아웃 실시간 검사:</p>
+            <pre><code>Tools → Layout Inspector → 디바이스 선택
+
+확인 항목:
+- PlayerView 크기 (match_parent 확인)
+- SurfaceView hierarchy (중첩 없는지)
+- VideoTextureView vs VideoSurfaceView 선택</code></pre>
+        </section>
+
+        <!-- Section 7: MediaMetrics -->
+        <section>
+            <h2>7. MediaMetrics 분석</h2>
+
+            <p><strong>MediaMetrics</strong>는 Android 11+에서 도입된 미디어 이벤트 수집 시스템으로, MediaCodec/AudioTrack/MediaPlayer의 생명주기와 성능 메트릭을 자동으로 기록합니다.</p>
+
+            <h3>7.1 MediaMetrics 개요</h3>
+            <div class="info-box">
+                <strong>주요 특징:</strong>
+                <ul>
+                    <li>자동 수집: 앱 수정 불필요</li>
+                    <li>프라이버시 보호: 개인정보 미포함</li>
+                    <li>시스템 전역: 모든 미디어 앱 통합</li>
+                    <li>Statsd 연동: 대시보드 시각화 가능</li>
+                </ul>
+            </div>
+
+            <h3>7.2 MediaMetrics 데이터 조회</h3>
+
+            <h4>7.2.1 dumpsys로 확인</h4>
+            <pre><code># 최근 MediaMetrics 이벤트
+adb shell dumpsys media.metrics
+
+# 출력 예시:
+# MediaMetrics:
+#   Item[0]: {
+#     "key": "codec.video.decoder.avc",
+#     "package": "com.example.mediaplayer",
+#     "timestamp": 1705825935421,
+#     "width": 1920,
+#     "height": 1080,
+#     "framerate": 30.0,
+#     "bitrate": 5000000,
+#     "encoder": 0,
+#     "secure": 0,
+#     "error_count": 0,
+#     "latency_max": 45,
+#     "latency_avg": 18
+#   }</code></pre>
+
+            <h4>7.2.2 주요 메트릭 항목</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>카테고리</th>
+                        <th>Key</th>
+                        <th>주요 필드</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>MediaCodec</strong></td>
+                        <td><code>codec.video.decoder.*</code></td>
+                        <td>width, height, framerate, bitrate, error_count, latency</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AudioTrack</strong></td>
+                        <td><code>audio.track.*</code></td>
+                        <td>sample_rate, channel_count, buffer_size, underrun_count</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MediaPlayer</strong></td>
+                        <td><code>mediaplayer.*</code></td>
+                        <td>duration, buffering_ms, seek_count</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MediaDrm</strong></td>
+                        <td><code>drm.*</code></td>
+                        <td>scheme, security_level, error_code</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>7.3 실전 분석 예시</h3>
+
+            <h4>Scenario: Codec 에러율 모니터링</h4>
+            <pre><code># 1. 전체 Codec 이벤트 추출
+adb shell dumpsys media.metrics | grep "codec.video" > codec_metrics.json
+
+# 2. Python으로 에러율 계산
+python3 << 'EOF'
+import json
+
+with open('codec_metrics.json') as f:
+    events = [json.loads(line) for line in f if line.strip()]
+
+total = len(events)
+errors = sum(1 for e in events if e.get('error_count', 0) > 0)
+
+print(f"Total codec sessions: {total}")
+print(f"Sessions with errors: {errors}")
+print(f"Error rate: {errors/total*100:.2f}%")
+EOF
+
+# 출력:
+# Total codec sessions: 152
+# Sessions with errors: 3
+# Error rate: 1.97%</code></pre>
+
+            <h4>Latency 분포 분석</h4>
+            <pre><code># latency_max 값 추출
+adb shell dumpsys media.metrics | jq -r '.[] | select(.key | contains("codec.video")) | .latency_max' | sort -n
+
+# 출력 (ms):
+# 12
+# 18
+# 22
+# ...
+# 87  ← P99 확인
+# 145 ← Outlier</code></pre>
+
+            <h3>7.4 Statsd 연동 (Advanced)</h3>
+
+            <p>MediaMetrics는 <code>StatsD</code>로 자동 전송되어 시스템 대시보드에 표시됩니다.</p>
+
+            <h4>Statsd 쿼리</h4>
+            <pre><code># Statsd 설정 확인
+adb shell dumpsys stats
+
+# MediaMetrics atom 조회 (Atom ID: 276)
+adb shell cmd stats print-stats 276
+
+# 출력: 최근 1시간 동안의 Codec 세션 수, 평균 latency 등</code></pre>
+
+            <div class="warning-box">
+                <strong>⚠️ 주의: Statsd는 시스템 권한 필요</strong>
+                <p>일반 앱에서는 접근 불가능하며, OEM/AOSP 빌드 환경에서만 사용 가능합니다.</p>
+            </div>
+
+            <h3>7.5 Custom MediaMetrics (앱 개발자용)</h3>
+
+            <p>Android 12+부터 앱에서 직접 MediaMetrics 이벤트를 기록할 수 있습니다:</p>
+
+            <pre><code>// Kotlin
+import android.media.metrics.MediaMetricsManager
+import android.media.metrics.PlaybackMetrics
+
+val metricsManager = getSystemService(MediaMetricsManager::class.java)
+val session = metricsManager.createPlaybackSession()
+
+// 재생 시작
+val playbackMetrics = PlaybackMetrics.Builder()
+    .setStreamSource(PlaybackMetrics.STREAM_SOURCE_NETWORK)
+    .setStreamType(PlaybackMetrics.STREAM_TYPE_OTHER)
+    .setMediaDurationMillis(300000)
+    .build()
+
+session.reportPlaybackMetrics(playbackMetrics)
+
+// 에러 리포트
+val errorMetrics = PlaybackErrorEvent.Builder()
+    .setErrorCode(PlaybackErrorEvent.ERROR_CODE_CODEC_ERROR)
+    .setSubErrorCode(MediaCodec.CodecException.ERROR_INSUFFICIENT_RESOURCE)
+    .build()
+
+session.reportPlaybackErrorEvent(errorMetrics)
+
+// 세션 종료
+session.close()</code></pre>
+
+            <div class="success-box">
+                <strong>✅ 이제 <code>dumpsys media.metrics</code>에서 커스텀 이벤트가 표시됩니다!</strong>
+            </div>
+        </section>
+
+        <!-- Section 8: Bugreport -->
+        <section>
+            <h2>8. Bugreport 생성 및 분석</h2>
+
+            <p><strong>Bugreport</strong>는 Android 시스템 전체의 상태를 담은 종합 진단 파일로, 복잡한 이슈 분석에 필수적입니다.</p>
+
+            <h3>8.1 Bugreport 생성</h3>
+
+            <h4>8.1.1 adb 명령어</h4>
+            <pre><code># Method 1: 간단 버전 (권장)
+adb bugreport bugreport_$(date +%Y%m%d_%H%M%S).zip
+
+# Method 2: 전체 버전 (더 상세)
+adb shell bugreportz
+# 출력: OK:/data/user_de/0/com.android.shell/files/bugreports/bugreport-...-.zip
+adb pull /data/user_de/0/com.android.shell/files/bugreports/bugreport-XXX.zip ./
+
+# Method 3: 디바이스 UI에서
+# Settings → About phone → (7번 탭) Developer options → Take bug report</code></pre>
+
+            <div class="info-box">
+                <strong>💡 Tip: 생성 시간</strong>
+                <p>Bugreport 생성은 디바이스 사양에 따라 <strong>30초~3분</strong> 소요됩니다. 생성 중에는 디바이스 사용을 최소화하세요.</p>
+            </div>
+
+            <h4>8.1.2 Bugreport 내용물</h4>
+            <p>ZIP 파일 내부:</p>
+            <ul>
+                <li><strong>bugreport-*.txt</strong>: 텍스트 덤프 (주요 분석 대상)</li>
+                <li><strong>dumpstate_board.bin</strong>: Vendor 로그 (OEM 전용)</li>
+                <li><strong>FS/</strong>: 파일 시스템 스냅샷</li>
+                <li><strong>proto/</strong>: Protobuf 형식 메트릭</li>
+            </ul>
+
+            <h3>8.2 Bugreport 분석 도구</h3>
+
+            <h4>8.2.1 Battery Historian</h4>
+            <p>Google의 배터리 분석 도구 (Bugreport 업로드 지원):</p>
+            <pre><code># Docker로 실행
+docker run -p 9999:9999 gcr.io/android-battery-historian/stable:3.1 --port 9999
+
+# 브라우저에서 접속
+# http://localhost:9999
+# Bugreport ZIP 업로드 → 배터리 사용량 타임라인 표시</code></pre>
+
+            <div class="success-box">
+                <strong>✅ 미디어 앱 배터리 소모 분석</strong>
+                <p>Battery Historian에서 "App Usage" 섹션 → 미디어 앱의 CPU/Wake Lock 시간 확인</p>
+            </div>
+
+            <h4>8.2.2 텍스트 검색</h4>
+            <pre><code># ZIP 압축 해제
+unzip bugreport_20260125.zip -d bugreport/
+
+# 주요 섹션 검색
+cd bugreport/
+
+# MediaCodec 에러
+grep -E "MediaCodec.*error|ACodec.*ERROR" *.txt
+
+# ANR 발생
+grep -A 100 "ANR in" *.txt
+
+# Native Crash
+grep -A 50 "Fatal signal" *.txt
+
+# Audio underrun
+grep "underrun" *.txt</code></pre>
+
+            <h3>8.3 Bugreport 주요 섹션</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>섹션 제목</th>
+                        <th>내용</th>
+                        <th>검색 키워드</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>DUMPSYS MEDIA.PLAYER</strong></td>
+                        <td>MediaPlayerService 상태</td>
+                        <td><code>grep -A 200 "DUMPSYS MEDIA.PLAYER"</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>DUMPSYS MEDIA.CODEC</strong></td>
+                        <td>Codec 리스트 및 사용 중인 인스턴스</td>
+                        <td><code>grep -A 500 "DUMPSYS MEDIA.CODEC"</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>DUMPSYS MEDIA.AUDIO_FLINGER</strong></td>
+                        <td>AudioFlinger 상태 (threads, tracks)</td>
+                        <td><code>grep -A 1000 "DUMPSYS MEDIA.AUDIO_FLINGER"</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>SYSTEM LOG</strong></td>
+                        <td>logcat 전체 (수천~수만 줄)</td>
+                        <td><code>grep -A 10000 "SYSTEM LOG"</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>KERNEL LOG</strong></td>
+                        <td>dmesg (커널 메시지)</td>
+                        <td><code>grep -A 5000 "KERNEL LOG"</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>PROCESSES AND THREADS</strong></td>
+                        <td>ps -A 출력</td>
+                        <td><code>grep -A 500 "PROCESSES AND THREADS"</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>8.4 실전 분석 워크플로우</h3>
+
+            <div class="tool-card">
+                <h4>Scenario: 비디오 재생 중 ANR 발생</h4>
+                <pre><code># Step 1: ANR 스택 추출
+grep -A 100 "ANR in com.example.mediaplayer" bugreport.txt > anr_stack.txt
+
+# Step 2: Main Thread 상태 확인
+# 출력 예시:
+# "main" prio=5 tid=1 Native
+#   | at android.os.MessageQueue.nativePollOnce(MessageQueue.java:0)
+#   | at android.os.Looper.loop(Looper.java:168)
+#   → Main Thread가 Message Queue에서 대기 중 (정상)
+
+# Step 3: Blocking Thread 찾기
+grep "ExoPlayer:Playback" anr_stack.txt
+# 출력:
+# "ExoPlayer:Playback" prio=5 tid=15 TimedWaiting
+#   | at java.lang.Thread.sleep(Thread.java:1000)
+#   | at com.google.android.exoplayer2.MediaCodecRenderer.render(...)
+#   → ExoPlayer Thread가 sleep 중 (codec timeout 의심)
+
+# Step 4: Codec 상태 확인
+grep -A 50 "DUMPSYS MEDIA.CODEC" bugreport.txt
+# 출력: Current instances: 5 / Max instances: 4
+# → Codec 인스턴스 초과! (원인 발견)</code></pre>
+            </div>
+
+            <h3>8.5 자동 분석 스크립트</h3>
+            <pre><code>#!/bin/bash
+# analyze_bugreport.sh - Bugreport 자동 분석
+
+BUGREPORT_ZIP=$1
+
+if [ ! -f "$BUGREPORT_ZIP" ]; then
+    echo "Usage: $0 <bugreport.zip>"
+    exit 1
+fi
+
+# 압축 해제
+TMPDIR=$(mktemp -d)
+unzip -q "$BUGREPORT_ZIP" -d "$TMPDIR"
+TXTFILE=$(find "$TMPDIR" -name "bugreport-*.txt")
+
+echo "📊 Bugreport Analysis Report"
+echo "============================="
+
+# 1. ANR 개수
+ANR_COUNT=$(grep -c "ANR in" "$TXTFILE")
+echo "ANR count: $ANR_COUNT"
+
+# 2. Native Crash 개수
+CRASH_COUNT=$(grep -c "Fatal signal" "$TXTFILE")
+echo "Native crashes: $CRASH_COUNT"
+
+# 3. Codec 에러
+CODEC_ERRORS=$(grep -c "MediaCodec.*error" "$TXTFILE")
+echo "MediaCodec errors: $CODEC_ERRORS"
+
+# 4. Audio underrun
+UNDERRUNS=$(grep -c "underrun" "$TXTFILE")
+echo "Audio underruns: $UNDERRUNS"
+
+# 5. 상위 CPU 사용 앱 (TOP 5)
+echo ""
+echo "Top CPU consumers:"
+grep -A 50 "PROCESSES AND THREADS" "$TXTFILE" | grep -E "^[0-9]+" | sort -k9 -rn | head -5
+
+# Cleanup
+rm -rf "$TMPDIR"</code></pre>
+
+            <div class="success-box">
+                <strong>✅ 사용 예시:</strong>
+                <pre><code>./analyze_bugreport.sh bugreport_20260125.zip
+
+# 출력:
+# 📊 Bugreport Analysis Report
+# =============================
+# ANR count: 1
+# Native crashes: 0
+# MediaCodec errors: 3
+# Audio underruns: 152
+#
+# Top CPU consumers:
+# 1234 u0_a123   20  0  2.1G 180M  45M S 38.2  ... com.example.mediaplayer
+# ...</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 9: 고급 디버깅 기법 -->
+        <section>
+            <h2>9. 고급 디버깅 기법</h2>
+
+            <h3>9.1 GDB를 이용한 Native 디버깅</h3>
+
+            <h4>9.1.1 gdbserver 설정</h4>
+            <pre><code># 1. gdbserver를 디바이스에 푸시
+adb push $ANDROID_NDK/prebuilt/android-arm64/gdbserver/gdbserver /data/local/tmp/
+
+# 2. 앱 실행 및 PID 확인
+PID=$(adb shell pidof com.example.mediaplayer)
+
+# 3. gdbserver attach
+adb shell /data/local/tmp/gdbserver :5039 --attach $PID
+
+# 4. PC에서 gdb 연결
+adb forward tcp:5039 tcp:5039
+$ANDROID_NDK/prebuilt/linux-x86_64/bin/gdb
+
+# gdb 프롬프트에서
+(gdb) target remote :5039
+(gdb) symbol-file /path/to/symbols/libmediaplayer.so
+(gdb) break MediaCodec::configure
+(gdb) continue</code></pre>
+
+            <h4>9.1.2 실전: Codec Crash 디버깅</h4>
+            <pre><code># Crash 발생 지점에서 backtrace
+(gdb) bt
+#0  0x00007f8a1c3d4e20 in OMX_GetHandle () from libstagefright_omx.so
+#1  0x00007f8a1c3d5123 in android::OMXClient::connect () from libstagefright.so
+#2  0x00007f8a1c3d6456 in android::ACodec::initiateAllocateComponent ()
+
+# 변수 검사
+(gdb) print componentName
+$1 = "OMX.qcom.video.decoder.avc"
+
+# 메모리 덤프
+(gdb) x/16x $sp</code></pre>
+
+            <h3>9.2 Simpleperf (Native Profiler)</h3>
+
+            <p>Android NDK의 프로파일링 도구로, Native 코드 성능 분석에 특화되어 있습니다.</p>
+
+            <pre><code># 1. simpleperf 설치 (NDK 포함)
+# 또는
+adb push $ANDROID_NDK/simpleperf/android/arm64/simpleperf /data/local/tmp/
+
+# 2. 프로파일링 (30초)
+adb shell /data/local/tmp/simpleperf record -p $(adb shell pidof com.example.mediaplayer) -o /data/local/tmp/perf.data --duration 30
+
+# 3. PC로 다운로드
+adb pull /data/local/tmp/perf.data ./
+
+# 4. 리포트 생성
+$ANDROID_NDK/simpleperf/report_html.py -i perf.data
+
+# 5. 브라우저에서 index.html 열기
+# → Flamegraph 형태로 Native 함수 CPU 사용률 표시</code></pre>
+
+            <h3>9.3 AddressSanitizer (ASan)</h3>
+
+            <p>메모리 에러 검출 도구 (Use-after-free, Buffer overflow 등):</p>
+
+            <pre><code># build.gradle에 추가
+android {
+    buildTypes {
+        debug {
+            externalNativeBuild {
+                cmake {
+                    arguments "-DANDROID_ARM_MODE=arm", "-DENABLE_ASAN=1"
+                }
+            }
+        }
+    }
+}
+
+# CMakeLists.txt
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+
+# 빌드 후 실행 → Crash 시 상세 스택 출력</code></pre>
+
+            <h3>9.4 MediaCodec 덤프 활성화</h3>
+
+            <p>MediaCodec 입출력 버퍼를 파일로 덤프하여 육안 검증:</p>
+
+            <pre><code># 시스템 프로퍼티 설정
+adb shell setprop debug.stagefright.ccodec_delayed_params 1
+adb shell setprop debug.stagefright.ccodec 4  # 로그 레벨
+
+# Input/Output 덤프
+adb shell setprop debug.stagefright.codecname OMX.qcom.video.decoder.avc
+adb shell setprop debug.stagefright.codecinput /sdcard/codec_input.h264
+adb shell setprop debug.stagefright.codecoutput /sdcard/codec_output.yuv
+
+# 재생 후 파일 다운로드
+adb pull /sdcard/codec_input.h264
+adb pull /sdcard/codec_output.yuv
+
+# ffmpeg로 검증
+ffmpeg -i codec_input.h264 -f null -
+ffplay -f rawvideo -pixel_format yuv420p -video_size 1920x1080 codec_output.yuv</code></pre>
+
+            <h3>9.5 Kernel ftrace</h3>
+
+            <p>perfetto 없이 순수 Kernel 이벤트만 추적:</p>
+
+            <pre><code># ftrace 활성화
+adb shell
+mount -t debugfs none /sys/kernel/debug
+cd /sys/kernel/debug/tracing
+
+# Binder 이벤트 활성화
+echo 1 > events/binder/enable
+
+# Trace 시작
+echo 1 > tracing_on
+# ... 재현 ...
+cat trace > /sdcard/kernel_trace.txt
+echo 0 > tracing_on
+
+# PC로 다운로드
+adb pull /sdcard/kernel_trace.txt</code></pre>
+
+            <h3>9.6 Remote Debugging (Android Studio)</h3>
+
+            <p>실 디바이스에서 실행 중인 앱에 디버거 attach:</p>
+
+            <pre><code>1. Android Studio → Run → Attach Debugger to Android Process
+2. 프로세스 선택: com.example.mediaplayer
+3. Breakpoint 설정:
+   - MediaCodecRenderer.java:324 (render 메소드)
+   - ExoPlayerImpl.java:567 (handleMessage)
+4. 변수 Inspection, Step Over/Into 실행</code></pre>
+
+            <div class="warning-box">
+                <strong>⚠️ 주의: Release 빌드는 코드 난독화로 디버깅 어려움</strong>
+                <p>ProGuard/R8 비활성화 또는 <code>-keepattributes SourceFile,LineNumberTable</code> 추가</p>
+            </div>
+        </section>
+
+        <!-- Section 10: 참고 문서 -->
+        <section>
+            <h2>10. 참고 문서 및 리소스</h2>
+
+            <h3>10.1 공식 문서</h3>
+            <ul>
+                <li><a href="https://source.android.com/docs/core/media" target="_blank">AOSP Media Framework</a></li>
+                <li><a href="https://developer.android.com/studio/profile" target="_blank">Android Studio Profiler</a></li>
+                <li><a href="https://perfetto.dev/docs/" target="_blank">Perfetto Documentation</a></li>
+                <li><a href="https://developer.android.com/studio/command-line/adb" target="_blank">adb Reference</a></li>
+            </ul>
+
+            <h3>10.2 도구 다운로드</h3>
+            <ul>
+                <li><a href="https://get.perfetto.dev/perfetto" target="_blank">perfetto CLI</a></li>
+                <li><a href="https://ui.perfetto.dev" target="_blank">perfetto Web UI</a></li>
+                <li><a href="https://github.com/google/battery-historian" target="_blank">Battery Historian</a></li>
+                <li><a href="https://developer.android.com/ndk/downloads" target="_blank">Android NDK (simpleperf, gdb)</a></li>
+            </ul>
+
+            <h3>10.3 관련 페이지</h3>
+            <ul>
+                <li><a href="common-media-issues.html">Common Media Issues & Solutions</a> - 실전 이슈 해결</li>
+                <li><a href="media-framework-core.html">Media Framework Core</a> - 아키텍처 이해</li>
+                <li><a href="codec2.html">Codec 2.0 & Media HAL</a> - Codec 심화</li>
+                <li><a href="audio-framework.html">Audio Framework</a> - AudioFlinger 상세</li>
+            </ul>
+
+            <h3>10.4 디버깅 체크리스트</h3>
+            <div class="success-box">
+                <strong>✅ 미디어 이슈 발생 시 순서:</strong>
+                <ol>
+                    <li><strong>logcat</strong>으로 에러 메시지 확인 (5분)</li>
+                    <li><strong>dumpsys</strong>로 서비스 상태 검증 (3분)</li>
+                    <li>재현 가능하면 <strong>perfetto</strong> 트레이스 (10분)</li>
+                    <li>복잡하면 <strong>Bugreport</strong> 생성 (30분~)</li>
+                    <li>Native Crash는 <strong>gdb/simpleperf</strong> (1시간~)</li>
+                </ol>
+            </div>
+
+            <h3>10.5 커뮤니티</h3>
+            <ul>
+                <li><a href="https://groups.google.com/g/android-platform" target="_blank">android-platform Google Group</a></li>
+                <li><a href="https://stackoverflow.com/questions/tagged/android-mediaplayer" target="_blank">Stack Overflow - android-mediaplayer</a></li>
+                <li><a href="https://issuetracker.google.com/issues?q=componentid:190923" target="_blank">Google Issue Tracker - Media</a></li>
+            </ul>
+        </section>
+
+        <!-- Back to Home -->
+        <section style="text-align: center; padding: 3rem;">
+            <a href="index.html" style="display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; transition: transform 0.3s ease;">
+                ← Back to Main Page
+            </a>
+        </section>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#3b82f6',
+                primaryTextColor: '#e2e8f0',
+                primaryBorderColor: '#1e293b',
+                lineColor: '#94a3b8',
+                secondaryColor: '#8b5cf6',
+                tertiaryColor: '#ec4899',
+                background: '#1a1f35',
+                mainBkg: '#1a1f35',
+                secondBkg: '#252b45',
+                textColor: '#e2e8f0',
+                border1: '#475569',
+                border2: '#64748b'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            sequence: {
+                useMaxWidth: true,
+                wrap: true
+            }
+        });
+    </script>
+</body>
+</html>
