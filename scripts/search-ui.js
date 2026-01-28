@@ -49,7 +49,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                     </svg>
                     <input type="text" class="search-input" placeholder="페이지, 용어, 트러블슈팅 검색..." autocomplete="off" />
-                    <kbd class="search-shortcut">ESC</kbd>
+                    <button type="button" class="search-close-btn" aria-label="닫기">ESC</button>
                 </div>
                 <div class="search-results"></div>
                 <div class="search-footer">
@@ -76,8 +76,11 @@
             searchInput.addEventListener('input', handleSearch);
             searchInput.addEventListener('keydown', handleKeydown);
             searchModal.querySelector('.search-modal-overlay').addEventListener('click', closeSearch);
+            searchModal.querySelector('.search-close-btn').addEventListener('click', closeSearch);
         }
 
+        // 모달 열릴 때 ESC 키 전역 리스너 추가
+        document.addEventListener('keydown', handleModalEscape);
         searchModal.classList.add('show');
         searchInput.value = '';
         searchResults.innerHTML = renderEmptyState();
@@ -95,6 +98,17 @@
     function closeSearch() {
         if (searchModal) {
             searchModal.classList.remove('show');
+            document.removeEventListener('keydown', handleModalEscape);
+        }
+    }
+
+    /**
+     * 모달 열린 상태에서 ESC 키 처리
+     */
+    function handleModalEscape(e) {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeSearch();
         }
     }
 

@@ -2652,27 +2652,38 @@ footer {
     font-weight: 400;
 }
 
-.search-shortcut {
-    padding: 6px 10px;
+.search-close-btn {
+    padding: 6px 12px;
     background: rgba(0, 212, 255, 0.1);
-    border: 1px solid rgba(0, 212, 255, 0.15);
+    border: 1px solid rgba(0, 212, 255, 0.2);
     border-radius: 6px;
     font-family: var(--font-mono);
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--color-accent);
-    opacity: 0.8;
-    transition: opacity 0.3s ease;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.search-input-wrapper:focus-within .search-shortcut {
-    opacity: 1;
+.search-close-btn:hover {
+    background: rgba(0, 212, 255, 0.2);
+    border-color: rgba(0, 212, 255, 0.4);
+    transform: scale(1.05);
 }
 
-[data-theme="light"] .search-shortcut {
+.search-close-btn:active {
+    transform: scale(0.95);
+}
+
+[data-theme="light"] .search-close-btn {
     background: rgba(0, 150, 200, 0.1);
     border-color: rgba(0, 150, 200, 0.2);
     color: #0096c8;
+}
+
+[data-theme="light"] .search-close-btn:hover {
+    background: rgba(0, 150, 200, 0.2);
+    border-color: rgba(0, 150, 200, 0.4);
 }
 
 /* Search Results - Enhanced */
