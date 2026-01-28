@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAOS 부팅 & 미디어 최적화 - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">← Android Media Framework</a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">AAOS 부팅 & 미디어 최적화</h1>
+            <p class="page-subtitle">차량 환경의 부팅 시간 단축 및 미디어 성능 최적화</p>
+        </header>
+
+        <!-- Section 1: 개요 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>차량 부팅 요구사항</h2>
+
+            <p>차량용 IVI 시스템은 <strong>빠른 부팅</strong>과 <strong>즉각적인 오디오 재생</strong>이 필수입니다. 사용자는 시동을 켜자마자 라디오나 음악이 재생되기를 기대합니다.</p>
+
+            <h3>1.1 부팅 목표 시간</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>단계</th>
+                        <th>목표 시간</th>
+                        <th>설명</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Cold Boot → 오디오</strong></td>
+                        <td>&lt; 3초</td>
+                        <td>전원 ON → 첫 소리 출력</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cold Boot → UI</strong></td>
+                        <td>&lt; 5초</td>
+                        <td>전원 ON → 화면 표시</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Resume (Suspend)</strong></td>
+                        <td>&lt; 1초</td>
+                        <td>절전 모드 → 완전 동작</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Resume → 오디오</strong></td>
+                        <td>&lt; 500ms</td>
+                        <td>절전 복귀 → 오디오 재생</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>1.2 부팅 시퀀스</h3>
+            <div class="mermaid">
+flowchart LR
+    subgraph BL["Bootloader<br/>(0.5s)"]
+        A[U-Boot/ABL]
+    end
+
+    subgraph KN["Kernel<br/>(1.0s)"]
+        B[Linux Kernel]
+        C[Early Audio]
+    end
+
+    subgraph AN["Android<br/>(2.3s)"]
+        D[Init/Zygote]
+        E[System Server]
+        F[CarService]
+    end
+
+    subgraph MD["Media<br/>(0.8s)"]
+        G[AudioFlinger]
+        H[MediaService]
+        I((First Audio))
+        J((App Ready))
+    end
+
+    A --> B
+    A -.-> C
+    B --> D
+    C -.->|Handoff| G
+    D --> E
+    D --> G
+    E --> F
+    E --> H
+    G --> I
+    F --> J
+            </div>
+            <p class="diagram-caption">총 목표 시간: 5초 이내 (First Audio: ~2초, App Ready: ~4초)</p>
+        </section>
+
+        <!-- Section 2: Cold Start 오디오 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>Cold Start 오디오 최적화</h2>
+
+            <h3>2.1 Early Audio 아키텍처</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph BOOT["Early Boot"]
+        BL[Bootloader]
+        KN[Kernel]
+        EA[Early Audio Driver]
+    end
+
+    subgraph ANDROID["Android Boot"]
+        AF[AudioFlinger]
+        AP[AudioPolicyService]
+        CAS[CarAudioService]
+    end
+
+    subgraph APP["Application"]
+        MA[Media App]
+        RA[Radio App]
+    end
+
+    BL --> KN
+    KN --> EA
+    EA -->|Handoff| AF
+    AF --> AP
+    AP --> CAS
+    CAS --> MA
+    CAS --> RA
+
+            </div>
+
+            <h3>2.2 Early Audio 구현</h3>
+            <pre><code>// Kernel Level Early Audio (drivers/audio/early_audio.c)
+
+static int early_audio_init(void) {
+    // 부트로더에서 전달받은 오디오 설정 사용
+    struct early_audio_config *config = get_bootloader_audio_config();
+
+    // 최소한의 오디오 경로 활성화
+    enable_audio_path(config->default_output);
+
+    // 부팅음 또는 마지막 라디오 주파수 재생
+    if (config->play_boot_sound) {
+        play_cached_audio(BOOT_SOUND_PATH);
+    } else if (config->last_radio_freq > 0) {
+        tune_radio(config->last_radio_freq);
+        unmute_radio();
+    }
+
+    return 0;
+}
+
+// 부팅 후 AudioFlinger에 핸드오프
+static void handoff_to_audioflinger(void) {
+    // AudioFlinger 준비 완료 대기
+    wait_for_audioflinger();
+
+    // 제어권 이전
+    transfer_audio_control();
+
+    // Early Audio 드라이버 정리
+    early_audio_cleanup();
+}</code></pre>
+
+            <h3>2.3 부팅음 재생 (Android Level)</h3>
+            <pre><code>// BootCompletedReceiver.java
+public class BootCompletedReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
+            // 마지막 미디어 상태 복원
+            restoreLastMediaState(context);
+        }
+    }
+
+    private void restoreLastMediaState(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(
+            "media_state", Context.MODE_PRIVATE);
+
+        String lastSource = prefs.getString("last_source", null);
+        boolean wasPlaying = prefs.getBoolean("was_playing", false);
+
+        if (lastSource != null) {
+            // CarMediaService를 통해 마지막 소스 복원
+            Car car = Car.createCar(context);
+            CarMediaManager mediaManager = (CarMediaManager)
+                car.getCarManager(Car.CAR_MEDIA_SERVICE);
+
+            ComponentName source = ComponentName.unflattenFromString(lastSource);
+            mediaManager.setMediaSource(source,
+                CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK);
+
+            if (wasPlaying) {
+                // 자동 재생
+                mediaManager.getMediaController().getTransportControls().play();
+            }
+        }
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 3: 부팅 시간 단축 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>부팅 시간 단축 기법</h2>
+
+            <h3>3.1 미디어 서비스 최적화</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>최적화 기법</th>
+                        <th>효과</th>
+                        <th>적용 대상</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Lazy Loading</strong></td>
+                        <td>-0.5초</td>
+                        <td>불필요한 서비스 지연 로딩</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Preload Cache</strong></td>
+                        <td>-0.3초</td>
+                        <td>미디어 메타데이터 캐싱</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AOT Compilation</strong></td>
+                        <td>-0.2초</td>
+                        <td>미디어 앱 사전 컴파일</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Parallel Init</strong></td>
+                        <td>-0.4초</td>
+                        <td>서비스 병렬 초기화</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ReadAhead</strong></td>
+                        <td>-0.2초</td>
+                        <td>파일시스템 사전 읽기</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>3.2 CarService 부팅 순서 최적화</h3>
+            <pre><code>&lt;!-- packages/services/Car/service/res/values/config.xml --&gt;
+&lt;resources&gt;
+    &lt;!-- 부팅 시 우선 초기화할 서비스 --&gt;
+    &lt;string-array name="config_earlyStartupServices"&gt;
+        &lt;item&gt;com.android.car.audio.CarAudioService&lt;/item&gt;
+        &lt;item&gt;com.android.car.media.CarMediaService&lt;/item&gt;
+        &lt;item&gt;com.android.car.input.CarInputService&lt;/item&gt;
+    &lt;/string-array&gt;
+
+    &lt;!-- 지연 초기화 가능한 서비스 --&gt;
+    &lt;string-array name="config_deferredServices"&gt;
+        &lt;item&gt;com.android.car.telemetry.CarTelemetryService&lt;/item&gt;
+        &lt;item&gt;com.android.car.watchdog.CarWatchdogService&lt;/item&gt;
+    &lt;/string-array&gt;
+&lt;/resources&gt;</code></pre>
+
+            <h3>3.3 미디어 앱 최적화</h3>
+            <pre><code>// 미디어 앱 Application 클래스
+class MediaApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+
+        // 백그라운드에서 무거운 초기화 수행
+        Executors.newSingleThreadExecutor().execute {
+            // 코덱 사전 로딩
+            preloadCodecs()
+
+            // 미디어 라이브러리 캐시
+            cacheMediaLibrary()
+
+            // 앨범아트 캐시
+            preloadAlbumArts()
+        }
+    }
+
+    private fun preloadCodecs() {
+        // 자주 사용하는 코덱 사전 인스턴스화
+        val codecList = MediaCodecList(MediaCodecList.REGULAR_CODECS)
+        codecList.codecInfos
+            .filter { it.supportedTypes.contains("audio/mp4a-latm") }
+            .take(2)
+            .forEach { info ->
+                try {
+                    MediaCodec.createByCodecName(info.name).release()
+                } catch (e: Exception) { }
+            }
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 4: Resume 최적화 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>Suspend/Resume 최적화</h2>
+
+            <h3>4.1 Suspend-to-RAM 흐름</h3>
+            <div class="mermaid">
+sequenceDiagram
+    participant Driver as Driver
+    participant VHAL as Vehicle HAL
+    participant CPS as CarPowerService
+    participant CAS as CarAudioService
+    participant AF as AudioFlinger
+
+    Driver->>VHAL: Ignition OFF
+    VHAL->>CPS: SHUTDOWN_PREPARE
+    CPS->>CAS: prepareForSuspend()
+    CAS->>CAS: saveAudioState()
+    CAS->>AF: suspendOutput()
+
+    Note over CPS: Suspend-to-RAM
+
+    Driver->>VHAL: Ignition ON
+    VHAL->>CPS: RESUME
+    CPS->>CAS: resumeFromSuspend()
+    CAS->>AF: resumeOutput()
+    CAS->>CAS: restoreAudioState()
+    AF-->>Driver: Audio Playing
+            </div>
+
+            <h3>4.2 미디어 상태 저장/복원</h3>
+            <pre><code>// CarAudioService 내 Suspend 처리
+class CarAudioService {
+    private var savedState: MediaState? = null
+
+    fun prepareForSuspend() {
+        // 현재 상태 저장
+        savedState = MediaState(
+            activeSource = currentMediaSource,
+            playbackState = currentPlaybackState,
+            position = currentPosition,
+            volume = currentVolume,
+            audioFocus = currentFocusHolder
+        )
+
+        // 오디오 출력 정지 (graceful)
+        audioManager.abandonAudioFocus(currentFocusHolder)
+
+        // HAL에 Suspend 준비 완료 알림
+        notifyReadyForSuspend()
+    }
+
+    fun resumeFromSuspend() {
+        savedState?.let { state ->
+            // 볼륨 복원
+            setVolume(state.volume)
+
+            // 미디어 소스 복원
+            setMediaSource(state.activeSource)
+
+            // 재생 위치 복원
+            if (state.playbackState == PlaybackState.PLAYING) {
+                seekTo(state.position)
+                play()
+            }
+        }
+    }
+}</code></pre>
+
+            <h3>4.3 빠른 Resume을 위한 설정</h3>
+            <pre><code># 시스템 프로퍼티 설정
+# Suspend 시 오디오 HAL 상태 유지
+persist.audio.keep_hal_active_on_suspend=true
+
+# Resume 시 오디오 경로 우선 복원
+persist.car.audio.priority_restore=true
+
+# 미디어 상태 캐시 활성화
+persist.car.media.state_cache=true
+
+# Wake-up 지연 시간 최소화
+persist.car.power.resume_delay_ms=100</code></pre>
+        </section>
+
+        <!-- Section 5: 메모리 관리 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>제한된 환경의 메모리 관리</h2>
+
+            <h3>5.1 차량 환경 메모리 제약</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>구분</th>
+                        <th>스마트폰</th>
+                        <th>차량 IVI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>총 RAM</strong></td>
+                        <td>8-12GB</td>
+                        <td>2-4GB</td>
+                    </tr>
+                    <tr>
+                        <td><strong>미디어 앱 할당</strong></td>
+                        <td>~512MB</td>
+                        <td>~128MB</td>
+                    </tr>
+                    <tr>
+                        <td><strong>코덱 버퍼</strong></td>
+                        <td>유연</td>
+                        <td>제한적</td>
+                    </tr>
+                    <tr>
+                        <td><strong>캐시 정책</strong></td>
+                        <td>적극적</td>
+                        <td>보수적</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>5.2 메모리 최적화 전략</h3>
+            <pre><code>// 미디어 앱 메모리 관리
+class MediaService : Service() {
+    private var thumbnailCache: LruCache&lt;String, Bitmap&gt;? = null
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // 메모리 상황에 따른 캐시 크기 결정
+        val maxMemory = (Runtime.getRuntime().maxMemory() / 1024).toInt()
+        val cacheSize = maxMemory / 8  // 최대 메모리의 1/8
+
+        thumbnailCache = object : LruCache&lt;String, Bitmap&gt;(cacheSize) {
+            override fun sizeOf(key: String, bitmap: Bitmap): Int {
+                return bitmap.byteCount / 1024
+            }
+        }
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+
+        when (level) {
+            TRIM_MEMORY_RUNNING_LOW -> {
+                // 캐시 50% 해제
+                thumbnailCache?.trimToSize(thumbnailCache!!.size() / 2)
+            }
+            TRIM_MEMORY_RUNNING_CRITICAL -> {
+                // 캐시 전체 해제
+                thumbnailCache?.evictAll()
+                releaseUnusedCodecs()
+            }
+        }
+    }
+
+    private fun releaseUnusedCodecs() {
+        // 사용하지 않는 코덱 인스턴스 해제
+        codecPool.values
+            .filter { !it.isActive }
+            .forEach { it.release() }
+    }
+}</code></pre>
+
+            <h3>5.3 Low Memory Killer 설정</h3>
+            <pre><code>&lt;!-- frameworks/base/core/res/res/values/config.xml --&gt;
+&lt;!-- 차량용 LMK 설정 --&gt;
+&lt;integer-array name="config_lowMemoryKillerOomAdj"&gt;
+    &lt;item&gt;0&lt;/item&gt;    &lt;!-- FOREGROUND_APP --&gt;
+    &lt;item&gt;100&lt;/item&gt;  &lt;!-- VISIBLE_APP --&gt;
+    &lt;item&gt;200&lt;/item&gt;  &lt;!-- PERCEPTIBLE_APP --&gt;
+    &lt;item&gt;250&lt;/item&gt;  &lt;!-- BACKUP_APP --&gt;
+    &lt;item&gt;900&lt;/item&gt;  &lt;!-- CACHED_APP --&gt;
+    &lt;item&gt;906&lt;/item&gt;  &lt;!-- EMPTY_APP --&gt;
+&lt;/integer-array&gt;
+
+&lt;!-- 미디어 앱 우선순위 보호 --&gt;
+&lt;string-array name="config_protectedPackages"&gt;
+    &lt;item&gt;com.android.car.media&lt;/item&gt;
+    &lt;item&gt;com.android.car.radio&lt;/item&gt;
+&lt;/string-array&gt;</code></pre>
+        </section>
+
+        <!-- Section 6: 프로파일링 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>부팅 성능 측정</h2>
+
+            <h3>6.1 Bootchart 수집</h3>
+            <pre><code># Bootchart 활성화
+adb shell 'echo 120 > /proc/sys/kernel/bootchart/enable'
+
+# 재부팅 후 수집
+adb reboot
+
+# Bootchart 데이터 추출
+adb shell 'tar -czf /data/local/tmp/bootchart.tgz /proc/bootchart'
+adb pull /data/local/tmp/bootchart.tgz
+
+# 분석 도구로 시각화
+bootchart bootchart.tgz</code></pre>
+
+            <h3>6.2 부팅 시간 측정 스크립트</h3>
+            <pre><code>#!/bin/bash
+# boot_time_measure.sh
+
+echo "=== Boot Time Measurement ==="
+
+# 재부팅
+adb reboot
+sleep 2
+
+# 부팅 완료 대기 및 시간 측정
+START=$(date +%s%3N)
+
+while true; do
+    BOOT_COMPLETED=$(adb shell getprop sys.boot_completed 2>/dev/null)
+    if [ "$BOOT_COMPLETED" = "1" ]; then
+        END=$(date +%s%3N)
+        BOOT_TIME=$((END - START))
+        echo "Boot completed in: ${BOOT_TIME}ms"
+        break
+    fi
+    sleep 0.1
+done
+
+# 미디어 서비스 시작 시간
+MEDIA_TIME=$(adb shell dmesg | grep "CarMediaService" | head -1 | awk '{print $2}')
+echo "CarMediaService started at: $MEDIA_TIME"
+
+# 첫 오디오 출력 시간
+AUDIO_TIME=$(adb shell dmesg | grep "first audio" | head -1 | awk '{print $2}')
+echo "First audio at: $AUDIO_TIME"</code></pre>
+
+            <h3>6.3 Perfetto 부팅 트레이스</h3>
+            <pre><code># 부팅 시 Perfetto 트레이스 수집
+adb shell setprop persist.debug.perfetto.boottrace 1
+adb reboot
+
+# 트레이스 추출
+adb pull /data/misc/perfetto-traces/boottrace.perfetto-trace
+
+# ui.perfetto.dev에서 분석</code></pre>
+        </section>
+
+        <!-- Section 7: 체크리스트 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>최적화 체크리스트</h2>
+
+            <h3>부팅 시간</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Cold Boot → 오디오 &lt; 3초</li>
+                <li><input type="checkbox"> Cold Boot → UI &lt; 5초</li>
+                <li><input type="checkbox"> Early Audio 동작 확인</li>
+                <li><input type="checkbox"> 불필요한 서비스 지연 로딩</li>
+            </ul>
+
+            <h3>Resume 성능</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Resume → 동작 &lt; 1초</li>
+                <li><input type="checkbox"> Resume → 오디오 &lt; 500ms</li>
+                <li><input type="checkbox"> 미디어 상태 정확히 복원</li>
+                <li><input type="checkbox"> 볼륨/위치 복원 확인</li>
+            </ul>
+
+            <h3>메모리</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> 미디어 앱 메모리 &lt; 128MB</li>
+                <li><input type="checkbox"> onTrimMemory 처리 구현</li>
+                <li><input type="checkbox"> 캐시 정책 최적화</li>
+                <li><input type="checkbox"> 메모리 누수 테스트</li>
+            </ul>
+
+            <h3>측정</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Bootchart 분석 완료</li>
+                <li><input type="checkbox"> Perfetto 부팅 트레이스 확인</li>
+                <li><input type="checkbox"> 자동화 테스트 구축</li>
+            </ul>
+        </section>
+
+        <!-- 관련 문서 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>관련 문서</h2>
+            <ul>
+                <li><a href="power-policy-suspend.html">Power Policy & Suspend</a> - Suspend/Resume 상세</li>
+                <li><a href="performance-optimization.html">Performance Optimization</a> - 일반 성능 최적화</li>
+                <li><a href="aaos-last-media.html">Last Media & Autoplay</a> - 미디어 상태 복원</li>
+                <li><a href="vehicle-hal-media.html">Vehicle HAL 미디어 연동</a> - 차량 연동</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="scripts/mermaid-theme.js"></script>
+    <script src="scripts/copy-code.js"></script>
+    <script src="scripts/toc-generator.js"></script>
+    <script src="scripts/page-navigation.js"></script>
+    <script src="scripts/diagram-data.js"></script>
+    <script src="scripts/diagram-interactive.js"></script>
+    <script src="scripts/theme-toggle.js"></script>
+</body>
+</html>

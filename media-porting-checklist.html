@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미디어 스택 포팅 체크리스트 - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
+    <style>
+        .phase-card {
+            background: var(--color-surface);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+        }
+        .phase-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+        .phase-number {
+            background: var(--color-accent);
+            color: var(--color-bg-primary);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        .phase-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--color-text-primary);
+        }
+        .phase-duration {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--color-text-tertiary);
+        }
+        .checklist-group {
+            margin-top: var(--spacing-md);
+        }
+        .checklist-group h4 {
+            color: var(--color-accent);
+            font-size: 0.95rem;
+            margin-bottom: var(--spacing-sm);
+        }
+        .progress-bar {
+            height: 8px;
+            background: var(--color-bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: var(--spacing-sm);
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-accent), #10b981);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media Framework
+        </a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">미디어 스택 포팅 체크리스트</h1>
+            <p class="page-subtitle">새로운 SoC/플랫폼으로 Android 미디어 스택을 포팅하는 단계별 가이드</p>
+        </header>
+
+        <!-- Section 1: 개요 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>포팅 개요</h2>
+
+            <p>새로운 하드웨어 플랫폼에 Android 미디어 스택을 포팅하는 것은 <strong>체계적인 접근</strong>이 필요합니다. 이 가이드는 SoC 벤더와 OEM 엔지니어가 미디어 포팅을 성공적으로 완료할 수 있도록 단계별 체크리스트를 제공합니다.</p>
+
+            <h3>1.1 포팅 로드맵</h3>
+            <div class="mermaid">
+flowchart LR
+    subgraph P1[Phase 1]
+        A[사전 준비<br/>1-2주]
+    end
+    subgraph P2[Phase 2-3]
+        B[코덱 HAL<br/>3-4주]
+        C[오디오 HAL<br/>2-3주]
+    end
+    subgraph P4[Phase 4]
+        D[DRM 포팅<br/>2-3주]
+    end
+    subgraph P5[Phase 5-6]
+        E[통합 테스트<br/>1-2주]
+        F[CTS/VTS<br/>2-3주]
+    end
+    subgraph P7[Phase 7]
+        G[GMS 인증<br/>1-2주]
+    end
+
+    A --> B
+    A --> C
+    B --> D
+    C --> E
+    D --> E
+    E --> F
+    F --> G
+            </div>
+
+            <h3>1.2 주요 구성 요소</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>구성 요소</th>
+                        <th>담당 영역</th>
+                        <th>필수 여부</th>
+                        <th>복잡도</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Codec2 HAL</strong></td>
+                        <td>비디오/오디오 코덱</td>
+                        <td>필수</td>
+                        <td>높음</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Audio HAL</strong></td>
+                        <td>오디오 입출력</td>
+                        <td>필수</td>
+                        <td>중간</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DRM HAL</strong></td>
+                        <td>콘텐츠 보호</td>
+                        <td>조건부</td>
+                        <td>높음</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Camera HAL</strong></td>
+                        <td>카메라 입력</td>
+                        <td>선택</td>
+                        <td>높음</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Display HAL</strong></td>
+                        <td>화면 출력</td>
+                        <td>필수</td>
+                        <td>중간</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Phase 1: 사전 준비 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>Phase 1: 사전 준비</h2>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-number">1</div>
+                    <div>
+                        <div class="phase-title">요구사항 분석 및 환경 구축</div>
+                        <div class="phase-duration">예상 소요: 1-2주</div>
+                    </div>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>1.1 하드웨어 요구사항 확인</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> HW 코덱 IP 스펙 확인 (지원 코덱, 해상도, 프로파일)</li>
+                        <li><input type="checkbox"> 오디오 DSP 사양 확인</li>
+                        <li><input type="checkbox"> 메모리 아키텍처 확인 (ION/DMA-BUF 지원)</li>
+                        <li><input type="checkbox"> 보안 하드웨어 확인 (TrustZone, TEE)</li>
+                        <li><input type="checkbox"> 디스플레이 출력 사양 확인</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>1.2 소프트웨어 요구사항</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> 타겟 Android 버전 결정</li>
+                        <li><input type="checkbox"> 필수 CDD 요구사항 검토</li>
+                        <li><input type="checkbox"> GMS 인증 요구사항 확인</li>
+                        <li><input type="checkbox"> 성능 목표 설정 (해상도, FPS, 지연시간)</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>1.3 개발 환경 구축</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> AOSP 소스 다운로드 및 빌드 환경 구축</li>
+                        <li><input type="checkbox"> Vendor 소스 트리 구조 설계</li>
+                        <li><input type="checkbox"> 빌드 시스템 설정 (Android.bp/mk)</li>
+                        <li><input type="checkbox"> CI/CD 파이프라인 구축</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>산출물</h3>
+            <pre><code># 프로젝트 구조 예시
+vendor/
+├── &lt;company&gt;/
+│   ├── &lt;platform&gt;/
+│   │   ├── Android.bp
+│   │   ├── BoardConfig.mk
+│   │   ├── device.mk
+│   │   └── proprietary/
+│   │       ├── media/
+│   │       ├── audio/
+│   │       └── drm/
+│   └── common/
+│       ├── media/
+│       └── sepolicy/</code></pre>
+        </section>
+
+        <!-- Phase 2: 코덱 HAL -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>Phase 2: 코덱 HAL 구현</h2>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-number">2</div>
+                    <div>
+                        <div class="phase-title">Codec2 HAL 구현</div>
+                        <div class="phase-duration">예상 소요: 3-4주</div>
+                    </div>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>2.1 기본 구조 구현</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> C2ComponentStore 구현</li>
+                        <li><input type="checkbox"> C2Component 기본 클래스 구현</li>
+                        <li><input type="checkbox"> 버퍼 관리 (C2Buffer, C2Block) 구현</li>
+                        <li><input type="checkbox"> HAL 서비스 데몬 작성</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>2.2 비디오 디코더 구현</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> H.264/AVC 디코더</li>
+                        <li><input type="checkbox"> H.265/HEVC 디코더</li>
+                        <li><input type="checkbox"> VP9 디코더</li>
+                        <li><input type="checkbox"> AV1 디코더 (선택)</li>
+                        <li><input type="checkbox"> Secure 디코더 (DRM용)</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>2.3 비디오 인코더 구현</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> H.264/AVC 인코더</li>
+                        <li><input type="checkbox"> H.265/HEVC 인코더</li>
+                        <li><input type="checkbox"> VP9 인코더 (선택)</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>2.4 오디오 코덱 구현</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> AAC 디코더/인코더</li>
+                        <li><input type="checkbox"> MP3 디코더</li>
+                        <li><input type="checkbox"> Opus 디코더</li>
+                        <li><input type="checkbox"> FLAC 디코더</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>2.5 설정 파일</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> media_codecs.xml 작성</li>
+                        <li><input type="checkbox"> media_codecs_performance.xml 작성</li>
+                        <li><input type="checkbox"> VINTF manifest 등록</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>media_codecs.xml 템플릿</h3>
+            <pre><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;MediaCodecs&gt;
+    &lt;Settings&gt;
+        &lt;Setting name="max-video-encoder-input-buffers" value="9" /&gt;
+    &lt;/Settings&gt;
+
+    &lt;Decoders&gt;
+        &lt;!-- Video Decoders --&gt;
+        &lt;MediaCodec name="c2.vendor.avc.decoder" type="video/avc" rank="0"&gt;
+            &lt;Limit name="size" min="16x16" max="4096x2160" /&gt;
+            &lt;Limit name="alignment" value="2x2" /&gt;
+            &lt;Limit name="block-size" value="16x16" /&gt;
+            &lt;Limit name="blocks-per-second" min="1" max="2073600" /&gt;
+            &lt;Limit name="bitrate" range="1-120000000" /&gt;
+            &lt;Limit name="concurrent-instances" max="16" /&gt;
+            &lt;Feature name="adaptive-playback" /&gt;
+            &lt;Feature name="secure-playback" required="true" /&gt;
+        &lt;/MediaCodec&gt;
+
+        &lt;MediaCodec name="c2.vendor.hevc.decoder" type="video/hevc" rank="0"&gt;
+            &lt;Limit name="size" min="16x16" max="8192x4320" /&gt;
+            &lt;Limit name="bitrate" range="1-160000000" /&gt;
+            &lt;Feature name="adaptive-playback" /&gt;
+        &lt;/MediaCodec&gt;
+    &lt;/Decoders&gt;
+
+    &lt;Encoders&gt;
+        &lt;MediaCodec name="c2.vendor.avc.encoder" type="video/avc" rank="0"&gt;
+            &lt;Limit name="size" min="16x16" max="4096x2160" /&gt;
+            &lt;Limit name="bitrate" range="1-80000000" /&gt;
+            &lt;Feature name="bitrate-modes" value="VBR,CBR,CQ" /&gt;
+        &lt;/MediaCodec&gt;
+    &lt;/Encoders&gt;
+&lt;/MediaCodecs&gt;</code></pre>
+        </section>
+
+        <!-- Phase 3: 오디오 HAL -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>Phase 3: 오디오 HAL 구현</h2>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-number">3</div>
+                    <div>
+                        <div class="phase-title">Audio HAL 구현</div>
+                        <div class="phase-duration">예상 소요: 2-3주</div>
+                    </div>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>3.1 Audio HAL 기본 구현</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> IDevicesFactory 구현</li>
+                        <li><input type="checkbox"> IDevice 구현</li>
+                        <li><input type="checkbox"> IStreamOut 구현</li>
+                        <li><input type="checkbox"> IStreamIn 구현</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>3.2 오디오 라우팅</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> audio_policy_configuration.xml 작성</li>
+                        <li><input type="checkbox"> 출력 장치 설정 (스피커, 헤드폰, HDMI)</li>
+                        <li><input type="checkbox"> 입력 장치 설정 (마이크)</li>
+                        <li><input type="checkbox"> 볼륨 커브 설정</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>3.3 고급 기능</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> 이펙트 HAL 구현 (선택)</li>
+                        <li><input type="checkbox"> Bluetooth 오디오 연동</li>
+                        <li><input type="checkbox"> USB 오디오 지원</li>
+                        <li><input type="checkbox"> HDMI/ARC 오디오 출력</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>audio_policy_configuration.xml 템플릿</h3>
+            <pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;audioPolicyConfiguration version="7.0"&gt;
+    &lt;modules&gt;
+        &lt;module name="primary" halVersion="3.0"&gt;
+            &lt;mixPorts&gt;
+                &lt;mixPort name="primary output"
+                         role="source"
+                         flags="AUDIO_OUTPUT_FLAG_PRIMARY"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/mixPort&gt;
+            &lt;/mixPorts&gt;
+            &lt;devicePorts&gt;
+                &lt;devicePort tagName="Speaker"
+                            type="AUDIO_DEVICE_OUT_SPEAKER"
+                            role="sink"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/devicePort&gt;
+            &lt;/devicePorts&gt;
+            &lt;routes&gt;
+                &lt;route type="mix" sink="Speaker"
+                       sources="primary output"/&gt;
+            &lt;/routes&gt;
+        &lt;/module&gt;
+    &lt;/modules&gt;
+&lt;/audioPolicyConfiguration&gt;</code></pre>
+        </section>
+
+        <!-- Phase 4: DRM 포팅 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>Phase 4: DRM 포팅</h2>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-number">4</div>
+                    <div>
+                        <div class="phase-title">DRM HAL 및 Widevine 포팅</div>
+                        <div class="phase-duration">예상 소요: 2-3주</div>
+                    </div>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>4.1 TEE 환경 구축</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> TrustZone/TEE OS 포팅</li>
+                        <li><input type="checkbox"> Secure World 통신 인터페이스 구현</li>
+                        <li><input type="checkbox"> Keymaster/Keymint HAL 구현</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>4.2 Widevine 포팅</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> OEMCrypto 라이브러리 통합</li>
+                        <li><input type="checkbox"> DRM HAL 서비스 구현</li>
+                        <li><input type="checkbox"> Secure Buffer 처리 구현</li>
+                        <li><input type="checkbox"> 키 프로비저닝 시스템 구축</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>4.3 인증</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Widevine L1 인증 신청</li>
+                        <li><input type="checkbox"> Robustness 테스트 통과</li>
+                        <li><input type="checkbox"> Production 키 발급</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>Widevine 레벨별 요구사항</strong>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>레벨</th>
+                            <th>복호화</th>
+                            <th>디코딩</th>
+                            <th>콘텐츠</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>L1</td>
+                            <td>TEE 내부</td>
+                            <td>TEE 내부</td>
+                            <td>HD/4K</td>
+                        </tr>
+                        <tr>
+                            <td>L2</td>
+                            <td>TEE 내부</td>
+                            <td>REE</td>
+                            <td>SD</td>
+                        </tr>
+                        <tr>
+                            <td>L3</td>
+                            <td>REE</td>
+                            <td>REE</td>
+                            <td>SD</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Phase 5: 통합 테스트 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>Phase 5: 통합 테스트</h2>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-number">5</div>
+                    <div>
+                        <div class="phase-title">시스템 통합 테스트</div>
+                        <div class="phase-duration">예상 소요: 1-2주</div>
+                    </div>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>5.1 기능 테스트</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> 기본 재생 테스트 (로컬 파일)</li>
+                        <li><input type="checkbox"> 스트리밍 재생 테스트 (HLS, DASH)</li>
+                        <li><input type="checkbox"> DRM 콘텐츠 재생 테스트</li>
+                        <li><input type="checkbox"> 녹화 테스트</li>
+                        <li><input type="checkbox"> 동시 재생 테스트</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>5.2 성능 테스트</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> 시작 지연 시간 측정 (&lt; 500ms)</li>
+                        <li><input type="checkbox"> 프레임 드롭률 측정 (&lt; 0.1%)</li>
+                        <li><input type="checkbox"> CPU 사용률 측정</li>
+                        <li><input type="checkbox"> 메모리 사용량 측정</li>
+                        <li><input type="checkbox"> 배터리 소모량 측정</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>5.3 안정성 테스트</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> 장시간 재생 테스트 (8시간+)</li>
+                        <li><input type="checkbox"> 반복 재생/정지 테스트</li>
+                        <li><input type="checkbox"> 메모리 누수 테스트</li>
+                        <li><input type="checkbox"> 스트레스 테스트</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>테스트 자동화 스크립트</h3>
+            <pre><code>#!/bin/bash
+# media_stress_test.sh
+
+ITERATIONS=1000
+PASS=0
+FAIL=0
+
+for i in $(seq 1 $ITERATIONS); do
+    echo "=== Iteration $i / $ITERATIONS ==="
+
+    # 재생 테스트
+    adb shell am start -a android.intent.action.VIEW \
+        -d "file:///sdcard/test_video.mp4" \
+        -t "video/*"
+    sleep 5
+
+    # 재생 상태 확인
+    STATE=$(adb shell dumpsys media.player | grep "state")
+    if [[ $STATE == *"PLAYING"* ]]; then
+        ((PASS++))
+    else
+        ((FAIL++))
+        adb shell bugreport > "bugreport_$i.zip"
+    fi
+
+    # 정리
+    adb shell am force-stop com.android.gallery3d
+    sleep 2
+done
+
+echo "=== Results ==="
+echo "Pass: $PASS / $ITERATIONS"
+echo "Fail: $FAIL / $ITERATIONS"</code></pre>
+        </section>
+
+        <!-- Phase 6: CTS/VTS 인증 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>Phase 6: CTS/VTS 인증</h2>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-number">6</div>
+                    <div>
+                        <div class="phase-title">호환성 테스트 통과</div>
+                        <div class="phase-duration">예상 소요: 2-3주</div>
+                    </div>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>6.1 VTS (Vendor Test Suite)</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> VtsHalMediaC2V1_0TargetTest</li>
+                        <li><input type="checkbox"> VtsHalAudioV7_0TargetTest</li>
+                        <li><input type="checkbox"> VtsHalDrmV1_0TargetTest</li>
+                        <li><input type="checkbox"> VtsTrebleVintfTest</li>
+                        <li><input type="checkbox"> VtsVndkDependencyTest</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>6.2 CTS (Compatibility Test Suite)</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> CtsMediaTestCases</li>
+                        <li><input type="checkbox"> CtsMediaCodecTestCases</li>
+                        <li><input type="checkbox"> CtsMediaDecoderTestCases</li>
+                        <li><input type="checkbox"> CtsMediaEncoderTestCases</li>
+                        <li><input type="checkbox"> CtsMediaDrmFrameworkTestCases</li>
+                        <li><input type="checkbox"> CtsAudioTestCases</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>6.3 GTS (Google Test Suite)</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> GtsMediaTestCases</li>
+                        <li><input type="checkbox"> GtsExoPlayerTestCases</li>
+                        <li><input type="checkbox"> GtsYouTubeTestCases</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>테스트 실행 명령어</h3>
+            <pre><code># VTS 실행
+vts-tradefed run commandAndExit vts \
+    --module VtsHalMediaC2V1_0TargetTest
+
+# CTS 미디어 모듈 실행
+cts-tradefed run commandAndExit cts \
+    --module CtsMediaTestCases \
+    --module CtsMediaCodecTestCases
+
+# 실패 테스트 재실행
+cts-tradefed run commandAndExit retry \
+    --retry &lt;session_id&gt;
+
+# 결과 확인
+cat /path/to/results/test_result.xml | grep "fail"</code></pre>
+        </section>
+
+        <!-- Phase 7: GMS 인증 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>Phase 7: GMS 인증</h2>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-number">7</div>
+                    <div>
+                        <div class="phase-title">Google Mobile Services 인증</div>
+                        <div class="phase-duration">예상 소요: 1-2주</div>
+                    </div>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>7.1 GMS 요구사항</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> CTS/VTS 100% 통과</li>
+                        <li><input type="checkbox"> GTS 통과</li>
+                        <li><input type="checkbox"> CDD 요구사항 충족</li>
+                        <li><input type="checkbox"> Security Patch Level 최신</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>7.2 제출 서류</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> CTS/VTS 리포트</li>
+                        <li><input type="checkbox"> 빌드 정보 (fingerprint)</li>
+                        <li><input type="checkbox"> 기기 사양서</li>
+                        <li><input type="checkbox"> Widevine 인증서</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>7.3 최종 검증</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Google 앱 테스트 (YouTube, Play Movies)</li>
+                        <li><input type="checkbox"> SafetyNet 통과</li>
+                        <li><input type="checkbox"> Play Protect 인증</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 전체 체크리스트 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>전체 체크리스트 요약</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Phase</th>
+                        <th>주요 항목</th>
+                        <th>예상 기간</th>
+                        <th>담당</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1. 사전 준비</td>
+                        <td>요구사항, 환경 구축</td>
+                        <td>1-2주</td>
+                        <td>PM, Architect</td>
+                    </tr>
+                    <tr>
+                        <td>2. 코덱 HAL</td>
+                        <td>Codec2 HAL 구현</td>
+                        <td>3-4주</td>
+                        <td>Media Engineer</td>
+                    </tr>
+                    <tr>
+                        <td>3. 오디오 HAL</td>
+                        <td>Audio HAL 구현</td>
+                        <td>2-3주</td>
+                        <td>Audio Engineer</td>
+                    </tr>
+                    <tr>
+                        <td>4. DRM 포팅</td>
+                        <td>Widevine, TEE</td>
+                        <td>2-3주</td>
+                        <td>Security Engineer</td>
+                    </tr>
+                    <tr>
+                        <td>5. 통합 테스트</td>
+                        <td>기능, 성능, 안정성</td>
+                        <td>1-2주</td>
+                        <td>QA Team</td>
+                    </tr>
+                    <tr>
+                        <td>6. CTS/VTS</td>
+                        <td>호환성 테스트</td>
+                        <td>2-3주</td>
+                        <td>QA Team</td>
+                    </tr>
+                    <tr>
+                        <td>7. GMS 인증</td>
+                        <td>Google 인증</td>
+                        <td>1-2주</td>
+                        <td>PM</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2"><strong>총 예상 기간</strong></td>
+                        <td colspan="2"><strong>12-19주</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </section>
+
+        <!-- 관련 문서 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">10</span>관련 문서</h2>
+            <ul>
+                <li><a href="vendor-extension.html">Vendor Extension 개발 가이드</a> - HAL 확장 상세</li>
+                <li><a href="codec2.html">Codec 2.0 & Media HAL</a> - Codec2 아키텍처</li>
+                <li><a href="widevine.html">DRM & Widevine Architecture</a> - DRM 상세</li>
+                <li><a href="cts.html">CTS / VTS / GTS</a> - 테스트 스위트 가이드</li>
+                <li><a href="cdd.html">CDD Policy</a> - 호환성 요구사항</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="scripts/mermaid-theme.js"></script>
+    <script src="scripts/copy-code.js"></script>
+    <script src="scripts/toc-generator.js"></script>
+    <script src="scripts/page-navigation.js"></script>
+    <script src="scripts/diagram-data.js"></script>
+    <script src="scripts/diagram-interactive.js"></script>
+    <script src="scripts/theme-toggle.js"></script>
+</body>
+
+</html>

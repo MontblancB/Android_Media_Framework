@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Optimization Guide - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media Framework
+        </a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Performance Optimization Guide</h1>
+            <p class="page-subtitle">미디어 재생 성능 최적화를 위한 실전 가이드</p>
+        </header>
+
+        <!-- Section 1: 개요 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>개요</h2>
+
+            <p>미디어 성능 최적화는 <strong>사용자 경험의 핵심</strong>입니다. 버퍼링 없는 재생, 낮은 지연 시간, 배터리 효율은 미디어 앱의 품질을 결정합니다. 이 가이드는 Android 미디어 파이프라인의 각 단계에서 성능을 분석하고 최적화하는 방법을 다룹니다.</p>
+
+            <h3>1.1 성능 병목 지점</h3>
+            <div class="mermaid">
+flowchart LR
+    subgraph APP["App Layer"]
+        A1[Player API]
+        A2[UI Rendering]
+    end
+
+    subgraph FW["Framework"]
+        F1[MediaCodec]
+        F2[AudioTrack]
+    end
+
+    subgraph NATIVE["Native"]
+        N1[NuPlayer]
+        N2[Codec2]
+        N3[AudioFlinger]
+    end
+
+    subgraph HAL["HAL"]
+        H1[Codec HAL]
+        H2[Audio HAL]
+    end
+
+    subgraph HW["Hardware"]
+        HW1[Video DSP]
+        HW2[Audio DSP]
+    end
+
+    A1 --> F1
+    A2 -.->|UI 병목| A1
+    F1 --> N1
+    F1 --> N2
+    F2 --> N3
+    N2 --> H1
+    N3 --> H2
+    H1 --> HW1
+    H2 --> HW2
+
+            </div>
+            <p class="diagram-caption">빨간색: 일반적인 병목 지점 (UI 렌더링, 코덱 처리, HAL 통신)</p>
+
+            <h3>1.2 주요 성능 지표 (KPI)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>지표</th>
+                        <th>목표값</th>
+                        <th>측정 방법</th>
+                        <th>영향</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>시작 지연 (Start Latency)</strong></td>
+                        <td>&lt; 500ms</td>
+                        <td>prepare() ~ 첫 프레임</td>
+                        <td>UX 체감 품질</td>
+                    </tr>
+                    <tr>
+                        <td><strong>프레임 드롭률</strong></td>
+                        <td>&lt; 0.1%</td>
+                        <td>MediaCodec.getMetrics()</td>
+                        <td>영상 부드러움</td>
+                    </tr>
+                    <tr>
+                        <td><strong>A/V 동기화 오차</strong></td>
+                        <td>±40ms</td>
+                        <td>perfetto 트레이스</td>
+                        <td>립싱크 품질</td>
+                    </tr>
+                    <tr>
+                        <td><strong>메모리 사용량</strong></td>
+                        <td>&lt; 150MB</td>
+                        <td>dumpsys meminfo</td>
+                        <td>백그라운드 생존</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CPU 사용률</strong></td>
+                        <td>&lt; 15%</td>
+                        <td>top / perfetto</td>
+                        <td>배터리 효율</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 2: 병목 식별 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>병목 지점 식별</h2>
+
+            <p>최적화 전에 <strong>정확한 병목 지점을 식별</strong>하는 것이 중요합니다. 추측 기반 최적화는 시간 낭비입니다.</p>
+
+            <h3>2.1 Perfetto 트레이스 수집</h3>
+            <pre><code># 미디어 관련 트레이스 수집 (30초)
+adb shell perfetto \
+  -c - --txt \
+  -o /data/misc/perfetto-traces/media_trace.perfetto-trace \
+&lt;&lt;EOF
+buffers: {
+    size_kb: 63488
+    fill_policy: DISCARD
+}
+data_sources: {
+    config {
+        name: "linux.ftrace"
+        ftrace_config {
+            ftrace_events: "sched/sched_switch"
+            ftrace_events: "power/suspend_resume"
+            ftrace_events: "binder/*"
+        }
+    }
+}
+data_sources: {
+    config {
+        name: "android.surfaceflinger.frametimeline"
+    }
+}
+data_sources: {
+    config {
+        name: "track_event"
+        track_event_config {
+            enabled_categories: "media"
+            enabled_categories: "audio"
+        }
+    }
+}
+duration_ms: 30000
+EOF
+
+# 트레이스 파일 가져오기
+adb pull /data/misc/perfetto-traces/media_trace.perfetto-trace</code></pre>
+
+            <h3>2.2 분석 워크플로우</h3>
+            <div class="mermaid">
+flowchart TD
+    A[성능 이슈 발생] --> B[Perfetto 트레이스 수집]
+    B --> C{어느 레이어?}
+
+    C -->|App Layer| D[Android Studio Profiler]
+    C -->|Framework| E[dumpsys media.codec]
+    C -->|Native| F[Perfetto UI 분석]
+    C -->|HAL/HW| G[Vendor 로그 확인]
+
+    D --> H[UI Thread 블로킹?]
+    E --> I[버퍼 언더런?]
+    F --> J[CPU/GPU 바운드?]
+    G --> K[HW 디코더 상태?]
+
+    H --> L[비동기 처리로 전환]
+    I --> M[버퍼 크기 조정]
+    J --> N[해상도/코덱 변경]
+    K --> O[HAL 설정 최적화]
+
+    L --> P[재측정]
+    M --> P
+    N --> P
+    O --> P
+            </div>
+
+            <h3>2.3 dumpsys 명령어</h3>
+            <pre><code># MediaCodec 상태 확인
+adb shell dumpsys media.codec
+
+# 주요 확인 항목:
+# - Input/Output buffer queue 상태
+# - 처리 중인 프레임 수
+# - 에러 카운터
+
+# AudioFlinger 상태 확인
+adb shell dumpsys media.audio_flinger
+
+# MediaSession 상태
+adb shell dumpsys media_session</code></pre>
+
+            <div class="info-box">
+                <strong>Perfetto UI 팁</strong>
+                <p><a href="https://ui.perfetto.dev" target="_blank">ui.perfetto.dev</a>에서 트레이스를 열고 <code>media</code>로 검색하면 미디어 관련 이벤트만 필터링됩니다.</p>
+            </div>
+        </section>
+
+        <!-- Section 3: 코덱 최적화 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>코덱 최적화</h2>
+
+            <h3>3.1 HW vs SW 코덱 선택</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>기준</th>
+                        <th>HW 코덱</th>
+                        <th>SW 코덱</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>CPU 사용률</strong></td>
+                        <td>낮음 (5% 미만)</td>
+                        <td>높음 (20~50%)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>전력 소모</strong></td>
+                        <td>낮음</td>
+                        <td>높음</td>
+                    </tr>
+                    <tr>
+                        <td><strong>지연 시간</strong></td>
+                        <td>다소 높음</td>
+                        <td>낮음 (즉시 처리)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>해상도 지원</strong></td>
+                        <td>제한적 (HW 의존)</td>
+                        <td>유연함</td>
+                    </tr>
+                    <tr>
+                        <td><strong>권장 사용</strong></td>
+                        <td>일반 재생, 4K/HDR</td>
+                        <td>저지연 필요, 특수 포맷</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>3.2 코덱 선택 코드</h3>
+            <pre><code>// HW 코덱 우선 선택
+fun selectCodec(mimeType: String, preferHw: Boolean = true): MediaCodecInfo? {
+    val codecList = MediaCodecList(MediaCodecList.REGULAR_CODECS)
+
+    return codecList.codecInfos
+        .filter { !it.isEncoder }
+        .filter { it.supportedTypes.contains(mimeType) }
+        .sortedByDescending { codecInfo ->
+            when {
+                preferHw && codecInfo.isHardwareAccelerated -> 2
+                !preferHw && codecInfo.isSoftwareOnly -> 2
+                else -> 1
+            }
+        }
+        .firstOrNull()
+}
+
+// 사용 예시
+val hwDecoder = selectCodec("video/avc", preferHw = true)
+val swDecoder = selectCodec("video/avc", preferHw = false)</code></pre>
+
+            <h3>3.3 해상도별 권장 설정</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>해상도</th>
+                        <th>코덱</th>
+                        <th>비트레이트</th>
+                        <th>Input Buffer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>480p</td>
+                        <td>H.264 (HW/SW)</td>
+                        <td>1~2 Mbps</td>
+                        <td>4개</td>
+                    </tr>
+                    <tr>
+                        <td>720p</td>
+                        <td>H.264/HEVC (HW)</td>
+                        <td>3~5 Mbps</td>
+                        <td>4개</td>
+                    </tr>
+                    <tr>
+                        <td>1080p</td>
+                        <td>HEVC (HW)</td>
+                        <td>5~10 Mbps</td>
+                        <td>6개</td>
+                    </tr>
+                    <tr>
+                        <td>4K</td>
+                        <td>HEVC/AV1 (HW)</td>
+                        <td>15~25 Mbps</td>
+                        <td>8개</td>
+                    </tr>
+                    <tr>
+                        <td>4K HDR</td>
+                        <td>HEVC/AV1 (HW)</td>
+                        <td>20~40 Mbps</td>
+                        <td>8개</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 4: 버퍼 관리 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>버퍼 관리 최적화</h2>
+
+            <h3>4.1 버퍼 파이프라인</h3>
+            <div class="mermaid">
+flowchart LR
+    subgraph SOURCE["Data Source"]
+        S1[Network/File]
+    end
+
+    subgraph DEMUX["Demuxer"]
+        D1[Extractor Buffer]
+    end
+
+    subgraph CODEC["Codec"]
+        C1[Input Queue]
+        C2[Decoder]
+        C3[Output Queue]
+    end
+
+    subgraph RENDER["Renderer"]
+        R1[Surface Buffer]
+        R2[Display]
+    end
+
+    S1 -->|Read| D1
+    D1 -->|ES Data| C1
+    C1 --> C2
+    C2 --> C3
+    C3 -->|Decoded Frame| R1
+    R1 --> R2
+
+            </div>
+
+            <h3>4.2 버퍼 크기 튜닝</h3>
+            <pre><code>// MediaCodec 버퍼 설정
+val format = MediaFormat.createVideoFormat("video/avc", width, height).apply {
+    // Input buffer 수 (기본값: 4)
+    setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, maxInputSize)
+
+    // Low latency 모드 (버퍼 최소화)
+    setInteger(MediaFormat.KEY_LOW_LATENCY, 1)
+
+    // Operating rate (HW 최적화 힌트)
+    setFloat(MediaFormat.KEY_OPERATING_RATE, frameRate * 1.5f)
+
+    // Priority (실시간 우선순위)
+    setInteger(MediaFormat.KEY_PRIORITY, 0) // 0 = 실시간
+}
+
+// ExoPlayer 버퍼 설정
+val loadControl = DefaultLoadControl.Builder()
+    .setBufferDurationsMs(
+        15_000,  // minBufferMs: 최소 버퍼
+        50_000,  // maxBufferMs: 최대 버퍼
+        1_500,   // bufferForPlaybackMs: 재생 시작 버퍼
+        3_000    // bufferForPlaybackAfterRebufferMs: 리버퍼 후
+    )
+    .setTargetBufferBytes(C.LENGTH_UNSET)
+    .setPrioritizeTimeOverSizeThresholds(true)
+    .build()</code></pre>
+
+            <h3>4.3 버퍼 언더런 방지</h3>
+            <div class="info-box warning">
+                <strong>버퍼 언더런 증상</strong>
+                <ul>
+                    <li>영상 끊김 (stuttering)</li>
+                    <li>오디오 팝/클릭 노이즈</li>
+                    <li>A/V 동기화 깨짐</li>
+                </ul>
+            </div>
+
+            <pre><code># 버퍼 상태 모니터링
+adb shell dumpsys media.codec | grep -A 20 "Buffer"
+
+# 출력 예시:
+# Input buffers: 4 total, 2 queued, 2 available
+# Output buffers: 8 total, 3 queued, 5 available
+# Frames decoded: 1847
+# Frames dropped: 0</code></pre>
+        </section>
+
+        <!-- Section 5: 메모리 최적화 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>메모리 최적화</h2>
+
+            <h3>5.1 메모리 할당 구조</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph APP["App Process"]
+        A1[Java Heap]
+        A2[Native Heap]
+    end
+
+    subgraph SYSTEM["System"]
+        S1[ION/DMA-BUF]
+        S2[GPU Memory]
+    end
+
+    subgraph HW["Hardware"]
+        H1[Decoder Memory]
+        H2[Display Buffer]
+    end
+
+    A1 -->|ByteBuffer| A2
+    A2 -->|mmap| S1
+    S1 -->|Zero-copy| H1
+    H1 -->|Direct Render| H2
+    S1 -->|Texture Upload| S2
+    S2 --> H2
+
+            </div>
+
+            <h3>5.2 Zero-copy 파이프라인</h3>
+            <pre><code>// Surface 기반 Zero-copy (권장)
+val surface = surfaceView.holder.surface
+mediaCodec.configure(format, surface, null, 0)
+
+// 출력 버퍼가 Surface로 직접 렌더링됨
+// CPU 메모리 복사 없음!
+
+// ByteBuffer 기반 (복사 발생 - 피해야 함)
+val outputBuffer = mediaCodec.getOutputBuffer(outputBufferId)
+// outputBuffer.get(byteArray) // 불필요한 복사!</code></pre>
+
+            <h3>5.3 메모리 누수 방지</h3>
+            <pre><code>// 올바른 리소스 해제
+class MediaPlayerManager : LifecycleObserver {
+    private var mediaCodec: MediaCodec? = null
+    private var surface: Surface? = null
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    fun release() {
+        mediaCodec?.apply {
+            stop()
+            release()
+        }
+        mediaCodec = null
+
+        surface?.release()
+        surface = null
+    }
+}
+
+// ExoPlayer 해제
+override fun onDestroy() {
+    super.onDestroy()
+    player?.release()
+    player = null
+}</code></pre>
+
+            <h3>5.4 메모리 모니터링</h3>
+            <pre><code># 프로세스 메모리 확인
+adb shell dumpsys meminfo com.example.mediaplayer
+
+# 주요 항목:
+# - Native Heap: 네이티브 코드 할당
+# - Graphics: GPU/Surface 메모리
+# - Private Dirty: 실제 물리 메모리 사용량
+
+# ION 버퍼 확인 (루트 필요)
+adb shell cat /sys/kernel/debug/ion/heaps/system</code></pre>
+        </section>
+
+        <!-- Section 6: 배터리 효율 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>배터리 효율 최적화</h2>
+
+            <h3>6.1 전력 소모 요소</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>요소</th>
+                        <th>영향도</th>
+                        <th>최적화 방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>CPU 사용률</strong></td>
+                        <td>높음</td>
+                        <td>HW 코덱 사용, 불필요한 처리 제거</td>
+                    </tr>
+                    <tr>
+                        <td><strong>화면 밝기</strong></td>
+                        <td>매우 높음</td>
+                        <td>HDR 톤매핑, 적응형 밝기</td>
+                    </tr>
+                    <tr>
+                        <td><strong>네트워크</strong></td>
+                        <td>중간</td>
+                        <td>적응형 비트레이트, 프리페칭</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Wake Lock</strong></td>
+                        <td>중간</td>
+                        <td>최소 범위, 적시 해제</td>
+                    </tr>
+                    <tr>
+                        <td><strong>백그라운드 처리</strong></td>
+                        <td>중간</td>
+                        <td>JobScheduler, WorkManager</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>6.2 Wake Lock 관리</h3>
+            <pre><code>// 올바른 Wake Lock 사용
+class MediaPlaybackService : Service() {
+    private var wakeLock: PowerManager.WakeLock? = null
+
+    private fun acquireWakeLock() {
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = pm.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "MyApp::MediaPlayback"
+        ).apply {
+            // 타임아웃 설정 (안전장치)
+            acquire(30 * 60 * 1000L) // 최대 30분
+        }
+    }
+
+    private fun releaseWakeLock() {
+        wakeLock?.let {
+            if (it.isHeld) {
+                it.release()
+            }
+        }
+        wakeLock = null
+    }
+
+    override fun onDestroy() {
+        releaseWakeLock()
+        super.onDestroy()
+    }
+}</code></pre>
+
+            <h3>6.3 백그라운드 오디오 최적화</h3>
+            <pre><code>// 비디오 트랙 비활성화 (오디오만 재생 시)
+player.trackSelectionParameters = player.trackSelectionParameters
+    .buildUpon()
+    .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true)
+    .build()
+
+// 화면 꺼짐 시 비디오 디코딩 중지
+override fun onStop() {
+    super.onStop()
+    if (!isChangingConfigurations) {
+        player.setVideoSurface(null)
+    }
+}</code></pre>
+
+            <h3>6.4 배터리 사용량 측정</h3>
+            <pre><code># Battery Historian 데이터 수집
+adb shell dumpsys batterystats --reset
+# (앱 사용)
+adb shell dumpsys batterystats > batterystats.txt
+adb bugreport > bugreport.zip
+
+# 전력 프로파일 확인
+adb shell dumpsys power | grep -A 20 "Power Profile"</code></pre>
+        </section>
+
+        <!-- Section 7: 케이스 스터디 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>실전 케이스 스터디</h2>
+
+            <h3>Case 1: 4K 재생 시 프레임 드롭</h3>
+            <div class="case-study">
+                <h4>증상</h4>
+                <p>4K 60fps 콘텐츠 재생 시 주기적으로 프레임 드롭 발생</p>
+
+                <h4>분석</h4>
+                <pre><code># perfetto 분석 결과
+# - HW 디코더 출력 → Surface 렌더링 구간에서 지연
+# - GPU 컴포지션 병목</code></pre>
+
+                <h4>해결</h4>
+                <ol>
+                    <li>SurfaceView → TextureView 변경 (레이어 분리)</li>
+                    <li>Operating Rate를 90fps로 상향 조정</li>
+                    <li>UI 오버레이 최소화</li>
+                </ol>
+
+                <h4>결과</h4>
+                <p>프레임 드롭률 2.3% → 0.05%로 개선</p>
+            </div>
+
+            <h3>Case 2: 시작 지연 1.5초 → 300ms</h3>
+            <div class="case-study">
+                <h4>증상</h4>
+                <p>재생 버튼 클릭 후 첫 프레임까지 1.5초 소요</p>
+
+                <h4>분석</h4>
+                <pre><code># 지연 분석
+# - prepare(): 800ms (네트워크 버퍼링)
+# - configure(): 200ms (코덱 초기화)
+# - 첫 프레임 디코딩: 500ms</code></pre>
+
+                <h4>해결</h4>
+                <ol>
+                    <li>prepareAsync() 사전 호출 (사용자 인텐트 예측)</li>
+                    <li>코덱 인스턴스 풀링 (재사용)</li>
+                    <li>bufferForPlaybackMs 1500ms → 500ms</li>
+                </ol>
+
+                <h4>결과</h4>
+                <p>체감 시작 시간 1.5초 → 300ms</p>
+            </div>
+
+            <h3>Case 3: 백그라운드 메모리 증가</h3>
+            <div class="case-study">
+                <h4>증상</h4>
+                <p>백그라운드 오디오 재생 중 메모리가 지속적으로 증가 (누수)</p>
+
+                <h4>분석</h4>
+                <pre><code># LeakCanary 분석 결과
+# - SurfaceTexture 미해제
+# - MediaCodec 리스너에서 Activity 참조</code></pre>
+
+                <h4>해결</h4>
+                <ol>
+                    <li>백그라운드 전환 시 Surface 명시적 해제</li>
+                    <li>콜백에서 WeakReference 사용</li>
+                    <li>onTrimMemory() 처리 추가</li>
+                </ol>
+
+                <h4>결과</h4>
+                <p>1시간 재생 후 메모리: 180MB → 85MB (안정)</p>
+            </div>
+        </section>
+
+        <!-- Section 8: 체크리스트 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>최적화 체크리스트</h2>
+
+            <h3>재생 시작 최적화</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> prepareAsync() 사전 호출</li>
+                <li><input type="checkbox"> 코덱 인스턴스 재사용</li>
+                <li><input type="checkbox"> bufferForPlaybackMs 최소화</li>
+                <li><input type="checkbox"> 네트워크 프리페칭</li>
+            </ul>
+
+            <h3>재생 품질 최적화</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> HW 코덱 우선 사용</li>
+                <li><input type="checkbox"> 적절한 해상도/비트레이트 선택</li>
+                <li><input type="checkbox"> Operating Rate 설정</li>
+                <li><input type="checkbox"> 버퍼 크기 튜닝</li>
+            </ul>
+
+            <h3>메모리 최적화</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Surface 기반 Zero-copy 사용</li>
+                <li><input type="checkbox"> 리소스 명시적 해제</li>
+                <li><input type="checkbox"> 백그라운드 시 비디오 비활성화</li>
+                <li><input type="checkbox"> 메모리 누수 테스트</li>
+            </ul>
+
+            <h3>배터리 최적화</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Wake Lock 최소 범위 사용</li>
+                <li><input type="checkbox"> 타임아웃 설정</li>
+                <li><input type="checkbox"> 백그라운드 처리 최적화</li>
+                <li><input type="checkbox"> 적응형 비트레이트 활용</li>
+            </ul>
+        </section>
+
+        <!-- 관련 문서 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>관련 문서</h2>
+            <ul>
+                <li><a href="debugging-tools.html">Debugging & Profiling Tools</a> - 디버깅 도구 상세 가이드</li>
+                <li><a href="codec2.html">Codec 2.0 & Media HAL</a> - 코덱 아키텍처</li>
+                <li><a href="media-playback.html">Media Pipeline & Data Flow</a> - 미디어 파이프라인</li>
+                <li><a href="common-media-issues.html">Common Media Issues</a> - 성능 관련 이슈 해결</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="scripts/mermaid-theme.js"></script>
+    <script src="scripts/copy-code.js"></script>
+    <script src="scripts/toc-generator.js"></script>
+    <script src="scripts/page-navigation.js"></script>
+    <script src="scripts/diagram-data.js"></script>
+    <script src="scripts/diagram-interactive.js"></script>
+    <script src="scripts/theme-toggle.js"></script>
+</body>
+
+</html>

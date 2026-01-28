@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Display Entertainment - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">← Android Media Framework</a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Multi-Display Entertainment</h1>
+            <p class="page-subtitle">AAOS 다중 디스플레이 환경의 미디어 아키텍처 및 RSE 구현</p>
+        </header>
+
+        <!-- Section 1: 개요 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>멀티 디스플레이 개요</h2>
+
+            <p>차량 내 멀티 디스플레이 환경은 <strong>운전석 클러스터</strong>, <strong>센터 IVI</strong>, <strong>후석 엔터테인먼트(RSE)</strong> 등 여러 화면에서 독립적인 미디어 경험을 제공해야 합니다. AAOS는 이를 위한 체계적인 아키텍처를 제공합니다.</p>
+
+            <h3>1.1 디스플레이 구성 예시</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph VEHICLE["Vehicle Display Layout"]
+        subgraph FRONT["Front Row"]
+            CLUSTER["Cluster Display<br/>계기판 정보"]
+            IVI["Center IVI<br/>메인 미디어/내비"]
+        end
+
+        subgraph REAR["Rear Row"]
+            RSE_L["RSE Left<br/>후석 좌측"]
+            RSE_R["RSE Right<br/>후석 우측"]
+        end
+    end
+
+    subgraph ANDROID["Android System"]
+        DM[DisplayManager]
+        WM[WindowManager]
+        AM[ActivityManager]
+    end
+
+    DM --> CLUSTER
+    DM --> IVI
+    DM --> RSE_L
+    DM --> RSE_R
+    WM --> DM
+    AM --> WM
+            </div>
+
+            <h3>1.2 디스플레이 유형</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>디스플레이</th>
+                        <th>용도</th>
+                        <th>사용자</th>
+                        <th>미디어 유형</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Cluster</strong></td>
+                        <td>계기판, 주행 정보</td>
+                        <td>운전자</td>
+                        <td>제한적 (앨범아트, 트랙 정보)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Center IVI</strong></td>
+                        <td>메인 인포테인먼트</td>
+                        <td>운전자/동승자</td>
+                        <td>전체 미디어</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RSE (Rear Seat)</strong></td>
+                        <td>후석 엔터테인먼트</td>
+                        <td>뒷좌석 승객</td>
+                        <td>비디오 스트리밍, 게임</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HUD</strong></td>
+                        <td>헤드업 디스플레이</td>
+                        <td>운전자</td>
+                        <td>최소 정보만</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 2: RSE 아키텍처 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>RSE (Rear Seat Entertainment) 아키텍처</h2>
+
+            <h3>2.1 RSE 시스템 구조</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph RSE_APP["RSE Application Layer"]
+        RA1[Video Player App]
+        RA2[Streaming App]
+        RA3[Game App]
+    end
+
+    subgraph RSE_FW["RSE Framework"]
+        MS[MediaSession per Display]
+        AR[Audio Routing]
+        DC[Display Context]
+    end
+
+    subgraph AAOS["AAOS Services"]
+        CMS[CarMediaService]
+        CAS[CarAudioService]
+        OMS[OccupantZoneManager]
+    end
+
+    subgraph HW["Hardware"]
+        RSE_DISP["RSE Display"]
+        RSE_SPK["RSE Speakers/Headphone"]
+    end
+
+    RA1 --> MS
+    RA2 --> MS
+    RA3 --> MS
+    MS --> CMS
+    AR --> CAS
+    DC --> OMS
+    CMS --> RSE_DISP
+    CAS --> RSE_SPK
+            </div>
+
+            <h3>2.2 OccupantZone 개념</h3>
+            <p>AAOS는 <code>OccupantZone</code>을 통해 차량 내 각 승객 영역을 관리합니다.</p>
+
+            <pre><code>// OccupantZone 정의 (car_config.xml)
+&lt;OccupantZone&gt;
+    &lt;Zone id="0" type="DRIVER" seat="ROW_1_LEFT"&gt;
+        &lt;Display type="MAIN" port="0"/&gt;
+        &lt;Display type="CLUSTER" port="1"/&gt;
+    &lt;/Zone&gt;
+    &lt;Zone id="1" type="FRONT_PASSENGER" seat="ROW_1_RIGHT"&gt;
+        &lt;Display type="MAIN" port="2"/&gt;
+    &lt;/Zone&gt;
+    &lt;Zone id="2" type="REAR_PASSENGER" seat="ROW_2_LEFT"&gt;
+        &lt;Display type="MAIN" port="3"/&gt;
+    &lt;/Zone&gt;
+    &lt;Zone id="3" type="REAR_PASSENGER" seat="ROW_2_RIGHT"&gt;
+        &lt;Display type="MAIN" port="4"/&gt;
+    &lt;/Zone&gt;
+&lt;/OccupantZone&gt;</code></pre>
+
+            <h3>2.3 OccupantZoneManager API</h3>
+            <pre><code>// OccupantZone 정보 조회
+val ozManager = car.getCarManager(Car.CAR_OCCUPANT_ZONE_SERVICE)
+    as CarOccupantZoneManager
+
+// 모든 Zone 조회
+val allZones = ozManager.allOccupantZones
+
+// 특정 Zone의 Display 조회
+val rearLeftZone = allZones.find {
+    it.occupantType == CarOccupantZoneManager.OCCUPANT_TYPE_REAR_PASSENGER
+}
+val rearDisplay = ozManager.getDisplayForOccupant(
+    rearLeftZone,
+    CarOccupantZoneManager.DISPLAY_TYPE_MAIN
+)
+
+// Display에서 Activity 시작
+val options = ActivityOptions.makeBasic()
+    .setLaunchDisplayId(rearDisplay.displayId)
+startActivity(intent, options.toBundle())</code></pre>
+        </section>
+
+        <!-- Section 3: 디스플레이별 미디어 라우팅 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>디스플레이별 미디어 라우팅</h2>
+
+            <h3>3.1 비디오 출력 라우팅</h3>
+            <div class="mermaid">
+sequenceDiagram
+    participant App as RSE App
+    participant WM as WindowManager
+    participant SF as SurfaceFlinger
+    participant HWC as HWComposer
+    participant Display as RSE Display
+
+    App->>WM: createSurface(displayId=3)
+    WM->>SF: createLayer(display=RSE)
+    SF->>HWC: setLayerDisplay(RSE)
+
+    loop Video Playback
+        App->>SF: queueBuffer(frame)
+        SF->>HWC: present(RSE)
+        HWC->>Display: render
+    end
+            </div>
+
+            <h3>3.2 특정 디스플레이에서 비디오 재생</h3>
+            <pre><code>class RseVideoActivity : Activity() {
+    private lateinit var player: ExoPlayer
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // 현재 Display 확인
+        val displayId = windowManager.defaultDisplay.displayId
+        Log.d(TAG, "Running on display: $displayId")
+
+        // SurfaceView를 해당 Display에 바인딩
+        val surfaceView = SurfaceView(this)
+        setContentView(surfaceView)
+
+        // ExoPlayer 설정
+        player = ExoPlayer.Builder(this).build()
+        player.setVideoSurfaceView(surfaceView)
+
+        // 미디어 소스 설정
+        val mediaItem = MediaItem.fromUri(videoUri)
+        player.setMediaItem(mediaItem)
+        player.prepare()
+        player.play()
+    }
+}</code></pre>
+
+            <h3>3.3 디스플레이-오디오 매핑</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Display</th>
+                        <th>Audio Zone</th>
+                        <th>출력 장치</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Center IVI</td>
+                        <td>Primary Zone</td>
+                        <td>Main Speakers</td>
+                    </tr>
+                    <tr>
+                        <td>RSE Left</td>
+                        <td>Rear Left Zone</td>
+                        <td>Rear Left Speaker / Headphone Jack</td>
+                    </tr>
+                    <tr>
+                        <td>RSE Right</td>
+                        <td>Rear Right Zone</td>
+                        <td>Rear Right Speaker / Headphone Jack</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 4: 독립 MediaSession -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>디스플레이별 독립 MediaSession</h2>
+
+            <h3>4.1 Multi-Session 아키텍처</h3>
+            <div class="mermaid">
+flowchart LR
+    subgraph IVI["Center IVI"]
+        MS1[MediaSession<br/>Music Playback]
+        MC1[MediaController]
+    end
+
+    subgraph RSE1["RSE Left"]
+        MS2[MediaSession<br/>Video Streaming]
+        MC2[MediaController]
+    end
+
+    subgraph RSE2["RSE Right"]
+        MS3[MediaSession<br/>Game Audio]
+        MC3[MediaController]
+    end
+
+    subgraph SYSTEM["System"]
+        MSVC[MediaSessionService]
+        CMS[CarMediaService]
+    end
+
+    MS1 --> MSVC
+    MS2 --> MSVC
+    MS3 --> MSVC
+    MSVC --> CMS
+    MC1 -.->|control| MS1
+    MC2 -.->|control| MS2
+    MC3 -.->|control| MS3
+            </div>
+
+            <h3>4.2 Display별 MediaSession 생성</h3>
+            <pre><code>class RseMediaSessionService : MediaSessionService() {
+    private lateinit var mediaSession: MediaSession
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // Display 컨텍스트 확인
+        val displayId = display?.displayId ?: Display.DEFAULT_DISPLAY
+
+        // Display별 고유 Session ID
+        val sessionId = "RSE_Session_$displayId"
+
+        mediaSession = MediaSession.Builder(this, ExoPlayer.Builder(this).build())
+            .setId(sessionId)
+            .setCallback(RseMediaSessionCallback())
+            .build()
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession {
+        return mediaSession
+    }
+
+    inner class RseMediaSessionCallback : MediaSession.Callback {
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): MediaSession.ConnectionResult {
+            // 같은 Zone의 컨트롤러만 허용
+            val controllerZone = getZoneForPackage(controller.packageName)
+            val sessionZone = getZoneForDisplay(display?.displayId)
+
+            return if (controllerZone == sessionZone) {
+                MediaSession.ConnectionResult.accept(
+                    session.connectionResult.availableSessionCommands,
+                    session.connectionResult.availablePlayerCommands
+                )
+            } else {
+                MediaSession.ConnectionResult.reject()
+            }
+        }
+    }
+}</code></pre>
+
+            <h3>4.3 Zone별 미디어 제어 분리</h3>
+            <pre><code>// CarMediaService를 통한 Zone별 미디어 관리
+val carMediaManager = car.getCarManager(Car.CAR_MEDIA_SERVICE)
+    as CarMediaManager
+
+// Primary Zone 미디어 소스 설정
+carMediaManager.setMediaSource(
+    ComponentName(packageName, "PrimaryMediaService"),
+    CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK
+)
+
+// Occupant Zone별 미디어 소스 조회
+val ozManager = car.getCarManager(Car.CAR_OCCUPANT_ZONE_SERVICE)
+    as CarOccupantZoneManager
+
+ozManager.allOccupantZones.forEach { zone ->
+    val display = ozManager.getDisplayForOccupant(
+        zone,
+        CarOccupantZoneManager.DISPLAY_TYPE_MAIN
+    )
+    Log.d(TAG, "Zone ${zone.zoneId}: Display ${display?.displayId}")
+}</code></pre>
+        </section>
+
+        <!-- Section 5: 오디오 라우팅 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>RSE 오디오 라우팅</h2>
+
+            <h3>5.1 Zone별 오디오 구성</h3>
+            <pre><code>&lt;!-- car_audio_configuration.xml --&gt;
+&lt;carAudioConfiguration version="2"&gt;
+    &lt;zones&gt;
+        &lt;!-- Primary Zone (Driver + Front Passenger) --&gt;
+        &lt;zone name="primary" isPrimary="true" occupantZoneId="0"&gt;
+            &lt;volumeGroups&gt;
+                &lt;group&gt;
+                    &lt;device address="bus0_media_out"&gt;
+                        &lt;context context="music"/&gt;
+                        &lt;context context="notification"/&gt;
+                    &lt;/device&gt;
+                &lt;/group&gt;
+            &lt;/volumeGroups&gt;
+        &lt;/zone&gt;
+
+        &lt;!-- RSE Left Zone --&gt;
+        &lt;zone name="rear_left" occupantZoneId="2"&gt;
+            &lt;volumeGroups&gt;
+                &lt;group&gt;
+                    &lt;device address="bus1_rse_left_out"&gt;
+                        &lt;context context="music"/&gt;
+                    &lt;/device&gt;
+                &lt;/group&gt;
+            &lt;/volumeGroups&gt;
+        &lt;/zone&gt;
+
+        &lt;!-- RSE Right Zone --&gt;
+        &lt;zone name="rear_right" occupantZoneId="3"&gt;
+            &lt;volumeGroups&gt;
+                &lt;group&gt;
+                    &lt;device address="bus2_rse_right_out"&gt;
+                        &lt;context context="music"/&gt;
+                    &lt;/device&gt;
+                &lt;/group&gt;
+            &lt;/volumeGroups&gt;
+        &lt;/zone&gt;
+    &lt;/zones&gt;
+&lt;/carAudioConfiguration&gt;</code></pre>
+
+            <h3>5.2 RSE 오디오 출력 설정</h3>
+            <pre><code>// RSE 앱에서 오디오 속성 설정
+val audioAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_MEDIA)
+    .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
+    .build()
+
+// ExoPlayer에 오디오 속성 적용
+val player = ExoPlayer.Builder(context)
+    .setAudioAttributes(audioAttributes, true)
+    .build()
+
+// CarAudioManager로 Zone 볼륨 제어
+val carAudioManager = car.getCarManager(Car.AUDIO_SERVICE)
+    as CarAudioManager
+
+// 현재 Zone의 볼륨 그룹 조회
+val zoneId = carAudioManager.getZoneIdForDisplay(displayId)
+val volumeGroupCount = carAudioManager.getVolumeGroupCount(zoneId)
+
+for (groupId in 0 until volumeGroupCount) {
+    val currentVolume = carAudioManager.getGroupVolume(zoneId, groupId)
+    val maxVolume = carAudioManager.getGroupMaxVolume(zoneId, groupId)
+    Log.d(TAG, "Zone $zoneId Group $groupId: $currentVolume / $maxVolume")
+}</code></pre>
+        </section>
+
+        <!-- Section 6: 구현 가이드 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>RSE 구현 가이드</h2>
+
+            <h3>6.1 단계별 구현</h3>
+            <div class="info-box">
+                <strong>RSE 시스템 구현 순서</strong>
+                <ol>
+                    <li><strong>하드웨어 설정</strong>: 디스플레이 포트 매핑, 오디오 버스 설정</li>
+                    <li><strong>OccupantZone 정의</strong>: car_config.xml에 Zone 구성</li>
+                    <li><strong>Audio Zone 설정</strong>: car_audio_configuration.xml 작성</li>
+                    <li><strong>RSE 앱 개발</strong>: Display 인식, 오디오 라우팅 적용</li>
+                    <li><strong>MediaSession 분리</strong>: Zone별 독립 세션 관리</li>
+                    <li><strong>테스트 및 검증</strong>: 동시 재생, 볼륨 분리 테스트</li>
+                </ol>
+            </div>
+
+            <h3>6.2 RSE Activity Manifest 설정</h3>
+            <pre><code>&lt;!-- AndroidManifest.xml --&gt;
+&lt;activity
+    android:name=".RseVideoActivity"
+    android:exported="true"
+    android:launchMode="singleTask"
+    android:resizeableActivity="true"&gt;
+
+    &lt;!-- RSE Display에서 실행 가능하도록 설정 --&gt;
+    &lt;meta-data
+        android:name="android.automotive.display.allow_rear_seat"
+        android:value="true" /&gt;
+
+    &lt;intent-filter&gt;
+        &lt;action android:name="android.intent.action.VIEW" /&gt;
+        &lt;category android:name="android.intent.category.DEFAULT" /&gt;
+        &lt;data android:mimeType="video/*" /&gt;
+    &lt;/intent-filter&gt;
+&lt;/activity&gt;</code></pre>
+
+            <h3>6.3 체크리스트</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> OccupantZone 설정 완료</li>
+                <li><input type="checkbox"> 오디오 Zone 매핑 완료</li>
+                <li><input type="checkbox"> RSE 앱이 올바른 Display에서 실행</li>
+                <li><input type="checkbox"> 오디오가 해당 Zone으로 라우팅</li>
+                <li><input type="checkbox"> MediaSession이 Zone별로 분리</li>
+                <li><input type="checkbox"> 동시 재생 시 간섭 없음</li>
+                <li><input type="checkbox"> 볼륨 제어가 독립적으로 동작</li>
+            </ul>
+        </section>
+
+        <!-- Section 7: 테스트 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>멀티 디스플레이 테스트</h2>
+
+            <h3>7.1 디스플레이 확인 명령어</h3>
+            <pre><code># 연결된 디스플레이 목록
+adb shell dumpsys display | grep -A 5 "Display Devices"
+
+# OccupantZone 설정 확인
+adb shell dumpsys car_service --services CarOccupantZoneService
+
+# 각 Display에서 실행 중인 Activity
+adb shell dumpsys activity activities | grep -E "displayId|ActivityRecord"</code></pre>
+
+            <h3>7.2 RSE 테스트 시나리오</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>시나리오</th>
+                        <th>예상 결과</th>
+                        <th>검증 방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>IVI + RSE 동시 재생</td>
+                        <td>각각 독립 재생</td>
+                        <td>육안 + 오디오 확인</td>
+                    </tr>
+                    <tr>
+                        <td>RSE Left/Right 동시 재생</td>
+                        <td>각각 독립 재생</td>
+                        <td>양쪽 헤드폰 확인</td>
+                    </tr>
+                    <tr>
+                        <td>RSE 볼륨 조절</td>
+                        <td>해당 Zone만 변경</td>
+                        <td>다른 Zone 영향 없음</td>
+                    </tr>
+                    <tr>
+                        <td>RSE 앱 종료</td>
+                        <td>IVI 재생 유지</td>
+                        <td>IVI 오디오 계속</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>7.3 테스트 스크립트</h3>
+            <pre><code>#!/bin/bash
+# rse_test.sh - RSE 멀티 디스플레이 테스트
+
+# 1. 디스플레이 정보 수집
+echo "=== Display Info ==="
+adb shell dumpsys display | grep "mDisplayId\|mLayerStack"
+
+# 2. OccupantZone 확인
+echo "=== OccupantZone ==="
+adb shell dumpsys car_service --services CarOccupantZoneService
+
+# 3. RSE Display에 Activity 시작
+RSE_DISPLAY_ID=3  # 실제 ID로 변경
+adb shell am start \
+    --display $RSE_DISPLAY_ID \
+    -a android.intent.action.VIEW \
+    -d "file:///sdcard/test_video.mp4" \
+    -t "video/*"
+
+# 4. 재생 확인
+sleep 3
+adb shell dumpsys media_session | grep -A 10 "RSE"</code></pre>
+        </section>
+
+        <!-- 관련 문서 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>관련 문서</h2>
+            <ul>
+                <li><a href="multi-zone-audio.html">Multi-Zone Audio 심화</a> - Zone별 오디오 설정</li>
+                <li><a href="aaos.html">Android Automotive OS</a> - AAOS 개요</li>
+                <li><a href="carmedia.html">Car Media Service</a> - CarMediaService 상세</li>
+                <li><a href="mediasession.html">MediaSession Framework</a> - MediaSession 기본</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="scripts/mermaid-theme.js"></script>
+    <script src="scripts/copy-code.js"></script>
+    <script src="scripts/toc-generator.js"></script>
+    <script src="scripts/page-navigation.js"></script>
+    <script src="scripts/diagram-data.js"></script>
+    <script src="scripts/diagram-interactive.js"></script>
+    <script src="scripts/theme-toggle.js"></script>
+</body>
+</html>

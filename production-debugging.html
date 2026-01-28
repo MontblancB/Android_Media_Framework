@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프로덕션 디버깅 심화 - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">← Android Media Framework</a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">프로덕션 디버깅 심화</h1>
+            <p class="page-subtitle">필드에서 발생하는 미디어 이슈를 분석하고 해결하는 고급 기법</p>
+        </header>
+
+        <!-- Section 1: 개요 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>프로덕션 환경의 특수성</h2>
+            <p>프로덕션 환경의 미디어 이슈는 <strong>재현이 어렵고 정보가 제한적</strong>입니다. 개발 환경과 달리 디버거 연결, 로그 실시간 확인이 불가능한 경우가 많습니다.</p>
+
+            <h3>1.1 프로덕션 vs 개발 환경</h3>
+            <table>
+                <thead>
+                    <tr><th>항목</th><th>개발 환경</th><th>프로덕션 환경</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>로그 접근</td><td>실시간 logcat</td><td>Bugreport/크래시 리포트</td></tr>
+                    <tr><td>재현성</td><td>통제된 조건</td><td>다양한 디바이스/네트워크</td></tr>
+                    <tr><td>디버거</td><td>연결 가능</td><td>불가능</td></tr>
+                    <tr><td>빌드</td><td>Debug 빌드</td><td>Release/User 빌드</td></tr>
+                </tbody>
+            </table>
+
+            <h3>1.2 디버깅 워크플로우</h3>
+            <div class="mermaid">
+flowchart TD
+    A[이슈 리포트 수신] --> B[Bugreport 분석]
+    B --> C{재현 가능?}
+    C -->|Yes| D[로컬 재현 및 디버깅]
+    C -->|No| E[로그 패턴 분석]
+    E --> F[원격 로그 수집 강화]
+    F --> G[통계적 분석]
+    D --> H[수정 및 검증]
+    G --> H
+    H --> I[핫픽스 배포]
+            </div>
+        </section>
+
+        <!-- Section 2: Bugreport 분석 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>Bugreport 심층 분석</h2>
+
+            <h3>2.1 Bugreport 구조</h3>
+            <pre><code>bugreport-device-2024-01-28.zip
+├── bugreport-device-2024-01-28.txt    # 메인 리포트
+├── dumpstate_board.txt                 # 보드별 정보
+├── FS/                                 # 파일시스템 스냅샷
+│   ├── data/misc/logd/                 # 로그 데몬
+│   └── data/tombstones/                # Native 크래시
+├── proto/                              # 프로토콜 버퍼 데이터
+└── lshal-debug/                        # HAL 상태</code></pre>
+
+            <h3>2.2 미디어 관련 섹션 추출</h3>
+            <pre><code># 미디어 관련 로그 추출
+grep -A 500 "DUMP OF SERVICE media.codec" bugreport.txt > media_codec.txt
+grep -A 500 "DUMP OF SERVICE media.player" bugreport.txt > media_player.txt
+grep -A 200 "DUMP OF SERVICE audio" bugreport.txt > audio.txt
+
+# 크래시 로그 추출
+grep -B 5 -A 50 "FATAL EXCEPTION" bugreport.txt > crashes.txt
+grep -B 5 -A 100 "backtrace:" bugreport.txt > native_crashes.txt
+
+# ANR 분석
+grep -A 100 "ANR in" bugreport.txt > anr.txt</code></pre>
+
+            <h3>2.3 핵심 분석 포인트</h3>
+            <div class="info-box">
+                <strong>Bugreport 분석 체크리스트</strong>
+                <ul>
+                    <li><strong>media.codec</strong>: 코덱 상태, 버퍼 큐, 에러 카운터</li>
+                    <li><strong>media.player</strong>: 플레이어 상태, 재생 위치</li>
+                    <li><strong>AudioFlinger</strong>: 오디오 트랙 상태, 언더런 카운터</li>
+                    <li><strong>SurfaceFlinger</strong>: 프레임 드롭, 컴포지션 상태</li>
+                    <li><strong>tombstones</strong>: Native 크래시 백트레이스</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 3: 재현 불가 버그 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>재현 불가 버그 추적</h2>
+
+            <h3>3.1 통계적 접근</h3>
+            <pre><code># Firebase Crashlytics 등에서 패턴 분석
+# 공통 조건 찾기:
+# - 디바이스 모델
+# - Android 버전
+# - 앱 버전
+# - 네트워크 상태
+# - 메모리 상태
+# - 배터리 레벨</code></pre>
+
+            <h3>3.2 원격 로그 수집 강화</h3>
+            <pre><code>// 조건부 상세 로깅
+class MediaDebugLogger {
+    companion object {
+        private var isDebugMode = false
+
+        fun enableDebugMode(userId: String) {
+            // 특정 사용자에게만 상세 로그 활성화
+            isDebugMode = RemoteConfig.isDebugUser(userId)
+        }
+
+        fun logMediaEvent(event: String, details: Map&lt;String, Any&gt;) {
+            if (isDebugMode) {
+                // 상세 로그 (서버 전송)
+                Analytics.logDetailed("media_debug", event, details)
+            } else {
+                // 기본 로그
+                Log.d("Media", event)
+            }
+        }
+    }
+}</code></pre>
+
+            <h3>3.3 Breadcrumb 패턴</h3>
+            <pre><code>// 이벤트 히스토리 기록
+object MediaBreadcrumb {
+    private val events = ArrayDeque&lt;Event&gt;(100)
+
+    fun record(action: String, state: String) {
+        events.addLast(Event(System.currentTimeMillis(), action, state))
+        if (events.size > 100) events.removeFirst()
+    }
+
+    fun getHistory(): List&lt;Event&gt; = events.toList()
+
+    // 크래시 발생 시 히스토리 첨부
+    fun attachToCrashReport() {
+        Crashlytics.setCustomKey("media_history",
+            events.takeLast(20).joinToString("\n"))
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 4: 크래시 덤프 분석 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>Native 크래시 분석</h2>
+
+            <h3>4.1 Tombstone 분석</h3>
+            <pre><code># /data/tombstones/tombstone_00 예시
+*** *** *** *** *** *** *** *** *** *** *** *** ***
+Build fingerprint: 'vendor/device/...'
+pid: 1234, tid: 1234, name: mediacodec  >>> /system/bin/mediacodec &lt;&lt;&lt;
+signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x0
+    r0 00000000  r1 00000001  r2 00000002  r3 00000000
+
+backtrace:
+    #00 pc 0001234c  /vendor/lib/libvendor_codec.so (DecodeFrame+124)
+    #01 pc 00045678  /system/lib/libstagefright.so (NuPlayer::onDecode+456)
+    #02 pc 00078abc  /system/lib/libbinder.so (BBinder::transact+123)</code></pre>
+
+            <h3>4.2 심볼 복원</h3>
+            <pre><code># addr2line으로 심볼 복원
+$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-addr2line \
+    -e out/target/product/device/symbols/vendor/lib/libvendor_codec.so \
+    0001234c
+
+# ndk-stack 사용
+adb logcat | ndk-stack -sym out/target/product/device/symbols</code></pre>
+
+            <h3>4.3 일반적인 크래시 원인</h3>
+            <table>
+                <thead>
+                    <tr><th>Signal</th><th>원인</th><th>조치</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>SIGSEGV</td><td>NULL 포인터, 잘못된 메모리 접근</td><td>포인터 검증, 버퍼 경계 확인</td></tr>
+                    <tr><td>SIGABRT</td><td>assert 실패, abort() 호출</td><td>조건문 검토, 예외 처리</td></tr>
+                    <tr><td>SIGBUS</td><td>정렬되지 않은 메모리 접근</td><td>메모리 정렬 확인</td></tr>
+                    <tr><td>SIGFPE</td><td>0으로 나누기</td><td>연산 전 검증</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 5: 유용한 스크립트 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>디버깅 스크립트 모음</h2>
+
+            <h3>5.1 Bugreport 자동 분석</h3>
+            <pre><code>#!/bin/bash
+# analyze_bugreport.sh
+
+BUGREPORT=$1
+
+echo "=== Media Codec Status ==="
+grep -A 100 "DUMP OF SERVICE media.codec" "$BUGREPORT" | head -50
+
+echo -e "\n=== Audio Underruns ==="
+grep -i "underrun" "$BUGREPORT" | head -20
+
+echo -e "\n=== Media Errors ==="
+grep -E "MediaCodec|ExoPlayer|AudioTrack" "$BUGREPORT" | grep -i "error" | head -20
+
+echo -e "\n=== ANR Events ==="
+grep -B 2 -A 10 "ANR in" "$BUGREPORT"
+
+echo -e "\n=== Native Crashes ==="
+grep -B 2 -A 20 "backtrace:" "$BUGREPORT" | head -50</code></pre>
+
+            <h3>5.2 실시간 미디어 모니터링</h3>
+            <pre><code>#!/bin/bash
+# media_monitor.sh
+
+while true; do
+    clear
+    echo "=== $(date) ==="
+
+    echo -e "\n[Codec Status]"
+    adb shell dumpsys media.codec | grep -E "state|buffer|error" | head -10
+
+    echo -e "\n[Audio Status]"
+    adb shell dumpsys media.audio_flinger | grep -E "underrun|state" | head -5
+
+    echo -e "\n[Memory]"
+    adb shell dumpsys meminfo $(adb shell pidof mediaserver) | grep -E "TOTAL|Native"
+
+    sleep 2
+done</code></pre>
+        </section>
+
+        <!-- Section 6: ANR 심층 분석 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>ANR 심층 분석</h2>
+
+            <h3>6.1 ANR 유형별 분류</h3>
+            <table>
+                <thead>
+                    <tr><th>유형</th><th>타임아웃</th><th>원인</th><th>미디어 관련 사례</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Input Dispatch</strong></td>
+                        <td>5초</td>
+                        <td>UI 스레드 블로킹</td>
+                        <td>메인 스레드에서 동기 디코딩</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Broadcast</strong></td>
+                        <td>10초 (FG), 60초 (BG)</td>
+                        <td>브로드캐스트 처리 지연</td>
+                        <td>MEDIA_MOUNTED 처리 중 스캔</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Service</strong></td>
+                        <td>20초 (FG), 200초 (BG)</td>
+                        <td>서비스 시작/바인드 지연</td>
+                        <td>MediaBrowserService 초기화</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ContentProvider</strong></td>
+                        <td>10초</td>
+                        <td>Provider 쿼리 지연</td>
+                        <td>MediaStore 대량 쿼리</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>6.2 traces.txt 분석</h3>
+            <pre><code># ANR 발생 시 생성되는 traces.txt 위치
+/data/anr/traces.txt
+/data/anr/anr_*.txt  (Android 11+)
+
+# Bugreport에서 추출
+grep -A 200 "ANR in" bugreport.txt > anr_section.txt
+
+# traces.txt 예시 분석
+----- pid 1234 at 2024-01-28 10:30:00 -----
+Cmd line: com.example.mediaplayer
+...
+"main" prio=5 tid=1 Blocked
+  | group="main" sCount=1 dsCount=0 flags=1 obj=0x... self=0x...
+  | sysTid=1234 nice=-10 cgrp=default sched=0/0 handle=0x...
+  | state=S schedstat=( 0 0 0 ) utm=100 stm=50 core=2 HZ=100
+  | stack=0x... stackSize=8192KB
+  | held mutexes=
+  at android.media.MediaCodec.native_dequeueOutputBuffer(Native method)
+  - waiting to lock &lt;0x0a1b2c3d&gt; (android.media.MediaCodec)
+  - held by thread 15
+  at android.media.MediaCodec.dequeueOutputBuffer(MediaCodec.java:...)
+  at com.example.mediaplayer.VideoDecoder.decode(VideoDecoder.kt:45)
+  at com.example.mediaplayer.MainActivity.onResume(MainActivity.kt:120)</code></pre>
+
+            <h3>6.3 ANR 분석 체크리스트</h3>
+            <div class="info-box">
+                <strong>traces.txt 핵심 확인 사항</strong>
+                <ul>
+                    <li><strong>main 스레드 상태</strong>: Blocked, Waiting, Sleeping 확인</li>
+                    <li><strong>Lock 대기</strong>: "waiting to lock" / "held by thread X" 추적</li>
+                    <li><strong>Native 호출</strong>: JNI/Native 메서드에서 블로킹 여부</li>
+                    <li><strong>Binder 트랜잭션</strong>: Binder 호출 대기 시간 확인</li>
+                    <li><strong>I/O 대기</strong>: 파일/네트워크 I/O 블로킹 여부</li>
+                </ul>
+            </div>
+
+            <h3>6.4 미디어 ANR 방지 패턴</h3>
+            <pre><code>// ❌ Bad: 메인 스레드에서 동기 작업
+class MainActivity : Activity() {
+    override fun onResume() {
+        super.onResume()
+        val metadata = mediaRetriever.extractMetadata(...)  // ANR 위험!
+    }
+}
+
+// ✅ Good: 비동기 처리
+class MainActivity : Activity() {
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+    override fun onResume() {
+        super.onResume()
+        scope.launch {
+            val metadata = withContext(Dispatchers.IO) {
+                mediaRetriever.extractMetadata(...)
+            }
+            updateUI(metadata)
+        }
+    }
+}
+
+// ✅ Good: MediaMetadataRetriever 타임아웃 설정
+mediaRetriever.setDataSource(context, uri)
+// Android 10+에서 제한 시간 설정 가능한 경우 활용</code></pre>
+        </section>
+
+        <!-- Section 7: 메모리 누수 탐지 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>메모리 누수 탐지</h2>
+
+            <h3>7.1 미디어 관련 일반적인 메모리 누수</h3>
+            <table>
+                <thead>
+                    <tr><th>누수 유형</th><th>원인</th><th>증상</th><th>해결책</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>MediaPlayer 미해제</strong></td>
+                        <td>release() 미호출</td>
+                        <td>Native 메모리 증가</td>
+                        <td>onDestroy()에서 release()</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ExoPlayer 미해제</strong></td>
+                        <td>release() 미호출</td>
+                        <td>버퍼 메모리 누적</td>
+                        <td>Lifecycle 연동</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Bitmap 미해제</strong></td>
+                        <td>앨범아트 캐싱</td>
+                        <td>Java Heap OOM</td>
+                        <td>LRU 캐시 + recycle()</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Surface 미해제</strong></td>
+                        <td>SurfaceTexture 미정리</td>
+                        <td>그래픽 메모리 누수</td>
+                        <td>release() 호출</td>
+                    </tr>
+                    <tr>
+                        <td><strong>콜백 미해제</strong></td>
+                        <td>리스너 등록 후 미해제</td>
+                        <td>Activity 누수</td>
+                        <td>removeListener()</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>7.2 LeakCanary 설정</h3>
+            <pre><code>// build.gradle (debug 빌드에만 포함)
+dependencies {
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.12'
+}
+
+// 미디어 관련 객체 감시 추가
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+
+        // 커스텀 객체 감시
+        val watcherInstaller = AppWatcher.manualInstall(this)
+
+        // MediaPlayer 등 수동 감시 대상 추가
+        // AppWatcher.objectWatcher.watch(mediaPlayer, "MediaPlayer 누수 의심")
+    }
+}</code></pre>
+
+            <h3>7.3 프로덕션 메모리 모니터링</h3>
+            <pre><code>// 프로덕션에서 메모리 상태 추적
+object MediaMemoryMonitor {
+    private const val THRESHOLD_MB = 50
+
+    fun checkMemoryStatus(): MemoryStatus {
+        val runtime = Runtime.getRuntime()
+        val usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+        val maxMemory = runtime.maxMemory() / 1024 / 1024
+
+        val nativeHeap = Debug.getNativeHeapAllocatedSize() / 1024 / 1024
+
+        return MemoryStatus(
+            javaHeapMB = usedMemory,
+            maxHeapMB = maxMemory,
+            nativeHeapMB = nativeHeap,
+            isLow = (maxMemory - usedMemory) < THRESHOLD_MB
+        )
+    }
+
+    // 주기적 로깅 (프로덕션)
+    fun logMemoryPeriodically() {
+        val status = checkMemoryStatus()
+        if (status.isLow) {
+            Analytics.log("memory_warning", mapOf(
+                "java_heap" to status.javaHeapMB,
+                "native_heap" to status.nativeHeapMB
+            ))
+        }
+    }
+}
+
+data class MemoryStatus(
+    val javaHeapMB: Long,
+    val maxHeapMB: Long,
+    val nativeHeapMB: Long,
+    val isLow: Boolean
+)</code></pre>
+
+            <h3>7.4 dumpsys meminfo 분석</h3>
+            <pre><code># 미디어 프로세스 메모리 확인
+adb shell dumpsys meminfo com.example.mediaplayer
+
+# 출력 예시 해석
+Applications Memory Usage (in Kilobytes):
+Uptime: 123456 Realtime: 123456
+
+** MEMINFO in pid 1234 [com.example.mediaplayer] **
+                   Pss  Private  Private  SwapPss  Rss
+                 Total    Dirty    Clean    Dirty  Total
+                ------   ------   ------   ------  ------
+  Native Heap    15360    15340       0       0    15360  ← HW 코덱 버퍼
+  Dalvik Heap     8192     8100       0       0     8192  ← Java 객체
+        Stack      512      512       0       0      512
+       Ashmem     4096        0    4096       0     4096  ← 공유 메모리
+    GL mtrack    20480    20480       0       0    20480  ← 그래픽 버퍼
+        TOTAL    48640    44432    4096       0    48640
+
+# 주의 지점:
+# - Native Heap 지속 증가: MediaCodec/Player 누수
+# - GL mtrack 증가: Surface/Texture 누수
+# - Ashmem 증가: 공유 버퍼 누수</code></pre>
+        </section>
+
+        <!-- Section 8: 실제 사례 연구 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>실제 사례 연구</h2>
+
+            <h3>Case 1: 간헐적 영상 정지 (특정 기기)</h3>
+            <div class="info-box">
+                <strong>증상</strong>
+                <p>Galaxy S21에서만 4K 영상 재생 중 랜덤하게 정지. 다른 기기에서는 재현 안 됨.</p>
+
+                <strong>분석 과정</strong>
+                <ol>
+                    <li>Bugreport에서 media.codec 덤프 확인 → 버퍼 큐 가득 참</li>
+                    <li>SurfaceFlinger 로그에서 프레임 드롭 패턴 발견</li>
+                    <li>dumpsys display → 120Hz 모드에서만 발생</li>
+                </ol>
+
+                <strong>원인</strong>
+                <p>120Hz 디스플레이에서 4K@60fps 영상의 타임스탬프 보간 문제. 디코더가 디스플레이 vsync와 동기화 실패.</p>
+
+                <strong>해결</strong>
+                <pre><code>// 4K 재생 시 60Hz 강제 설정
+if (videoWidth >= 3840 && videoHeight >= 2160) {
+    window.attributes = window.attributes.apply {
+        preferredDisplayModeId = get60HzModeId()
+    }
+}</code></pre>
+            </div>
+
+            <h3>Case 2: 백그라운드 재생 중 크래시</h3>
+            <div class="info-box">
+                <strong>증상</strong>
+                <p>음악 앱 백그라운드 재생 중 30분~1시간 후 크래시. 재현 어려움.</p>
+
+                <strong>분석 과정</strong>
+                <ol>
+                    <li>Crashlytics에서 패턴 분석 → 메모리 부족 상태에서 발생</li>
+                    <li>크래시 직전 Breadcrumb → onTrimMemory(CRITICAL) 호출됨</li>
+                    <li>tombstone 분석 → AudioTrack 버퍼 할당 실패</li>
+                </ol>
+
+                <strong>원인</strong>
+                <p>onTrimMemory()에서 오디오 버퍼까지 해제하여 재생 중단 시 크래시.</p>
+
+                <strong>해결</strong>
+                <pre><code>override fun onTrimMemory(level: Int) {
+    when (level) {
+        TRIM_MEMORY_RUNNING_CRITICAL,
+        TRIM_MEMORY_COMPLETE -> {
+            // 재생 중이면 핵심 버퍼 유지
+            if (!isPlaying) {
+                releaseNonEssentialBuffers()
+            }
+            // 앨범아트 캐시만 정리
+            albumArtCache.evictAll()
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3>Case 3: DRM 콘텐츠 재생 실패 (특정 네트워크)</h3>
+            <div class="info-box">
+                <strong>증상</strong>
+                <p>특정 회사 Wi-Fi에서만 Netflix/YouTube Premium DRM 콘텐츠 재생 실패.</p>
+
+                <strong>분석 과정</strong>
+                <ol>
+                    <li>일반 콘텐츠는 정상 → DRM 라이선스 문제 추정</li>
+                    <li>네트워크 로그 → 라이선스 서버 요청 타임아웃</li>
+                    <li>회사 방화벽 정책 확인 → SSL inspection 활성화</li>
+                </ol>
+
+                <strong>원인</strong>
+                <p>회사 보안 정책의 SSL inspection이 DRM 라이선스 서버 인증서 체인을 변경하여 인증 실패.</p>
+
+                <strong>해결</strong>
+                <p>앱에서 해결 불가 → 사용자에게 네트워크 환경 안내 메시지 제공</p>
+                <pre><code>// DRM 라이선스 실패 시 사용자 안내
+when (error.errorCode) {
+    MediaDrm.ErrorCodes.ERROR_PROVISIONING_DENIED,
+    MediaDrm.ErrorCodes.ERROR_LICENSE_DENIED -> {
+        showNetworkTroubleshootingDialog()
+    }
+}</code></pre>
+            </div>
+
+            <h3>Case 4: 특정 파일 재생 시 앱 크래시</h3>
+            <div class="info-box">
+                <strong>증상</strong>
+                <p>사용자 업로드 파일 중 일부에서 재생 시작 직후 크래시.</p>
+
+                <strong>분석 과정</strong>
+                <ol>
+                    <li>크래시 로그 → MediaExtractor.setDataSource()에서 발생</li>
+                    <li>문제 파일 입수 → 로컬 재현 성공</li>
+                    <li>ffprobe로 분석 → 손상된 moov atom</li>
+                </ol>
+
+                <strong>원인</strong>
+                <p>불완전한 MP4 파일(녹화 중단 등)의 moov atom 파싱 시 코덱 크래시.</p>
+
+                <strong>해결</strong>
+                <pre><code>// 안전한 파일 검증
+suspend fun validateMediaFile(uri: Uri): ValidationResult {
+    return withContext(Dispatchers.IO) {
+        try {
+            MediaMetadataRetriever().use { retriever ->
+                retriever.setDataSource(context, uri)
+                val duration = retriever.extractMetadata(
+                    MediaMetadataRetriever.METADATA_KEY_DURATION
+                )
+                if (duration == null || duration.toLong() <= 0) {
+                    ValidationResult.Invalid("Duration not found")
+                } else {
+                    ValidationResult.Valid
+                }
+            }
+        } catch (e: Exception) {
+            ValidationResult.Invalid(e.message ?: "Unknown error")
+        }
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- 관련 문서 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>관련 문서</h2>
+            <ul>
+                <li><a href="debugging-tools.html">Debugging & Profiling Tools</a> - 기본 디버깅 도구</li>
+                <li><a href="common-media-issues.html">Common Media Issues</a> - 일반적인 이슈 해결</li>
+                <li><a href="performance-optimization.html">Performance Optimization</a> - 성능 분석</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="scripts/mermaid-theme.js"></script>
+    <script src="scripts/copy-code.js"></script>
+    <script src="scripts/toc-generator.js"></script>
+    <script src="scripts/page-navigation.js"></script>
+    <script src="scripts/diagram-data.js"></script>
+    <script src="scripts/diagram-interactive.js"></script>
+    <script src="scripts/theme-toggle.js"></script>
+</body>
+</html>

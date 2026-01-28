@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Zone Audio 심화 - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">← Android Media Framework</a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Multi-Zone Audio 심화</h1>
+            <p class="page-subtitle">AAOS 차량 내 오디오 존 설계 및 구현</p>
+        </header>
+
+        <!-- Section 1: 개요 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>Audio Zone 개념</h2>
+
+            <p>차량 환경에서 <strong>Audio Zone</strong>은 독립적인 오디오 재생 영역을 정의합니다. 운전자는 내비게이션 안내를, 뒷좌석 승객은 영화를 동시에 들을 수 있습니다.</p>
+
+            <h3>1.1 Audio Zone 아키텍처</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph APPS["Applications"]
+        A1[Navigation]
+        A2[Music Player]
+        A3[RSE Video]
+        A4[Phone Call]
+    end
+
+    subgraph CAS["CarAudioService"]
+        AF[Audio Focus Manager]
+        AR[Audio Routing]
+        AZ[Audio Zone Manager]
+        VG[Volume Groups]
+    end
+
+    subgraph ZONES["Audio Zones"]
+        Z1["Primary Zone<br/>(Driver + Front)"]
+        Z2["Rear Left Zone"]
+        Z3["Rear Right Zone"]
+    end
+
+    subgraph OUTPUT["Audio Output"]
+        SP1[Front Speakers]
+        SP2[Rear Left Speaker]
+        SP3[Rear Right Speaker]
+        HP1[Headphone L]
+        HP2[Headphone R]
+    end
+
+    A1 --> AF
+    A2 --> AF
+    A3 --> AF
+    A4 --> AF
+    AF --> AZ
+    AZ --> AR
+    AR --> Z1
+    AR --> Z2
+    AR --> Z3
+    Z1 --> SP1
+    Z2 --> SP2
+    Z2 --> HP1
+    Z3 --> SP3
+    Z3 --> HP2
+            </div>
+
+            <h3>1.2 Zone vs OccupantZone</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>개념</th>
+                        <th>정의</th>
+                        <th>관리 주체</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>OccupantZone</strong></td>
+                        <td>승객의 물리적 위치 + 디스플레이</td>
+                        <td>CarOccupantZoneService</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Audio Zone</strong></td>
+                        <td>오디오 출력 영역 + 볼륨 그룹</td>
+                        <td>CarAudioService</td>
+                    </tr>
+                    <tr>
+                        <td><strong>관계</strong></td>
+                        <td>OccupantZone : Audio Zone = 1:1 또는 N:1</td>
+                        <td>car_audio_configuration.xml</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 2: CarAudioService -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>CarAudioService 구조</h2>
+
+            <h3>2.1 서비스 컴포넌트</h3>
+            <div class="mermaid">
+flowchart LR
+    subgraph CAS["CarAudioService"]
+        CAM[CarAudioManager]
+        CAZM[CarAudioZoneManager]
+        CVGM[CarVolumeGroupManager]
+        CAFM[CarAudioFocusManager]
+    end
+
+    subgraph HAL["Audio HAL"]
+        APC[AudioPolicyConfig]
+        APM[AudioPolicyManager]
+    end
+
+    subgraph HW["Hardware"]
+        MIXER[Audio Mixer/DSP]
+        AMP[Amplifier]
+    end
+
+    CAM --> CAZM
+    CAM --> CVGM
+    CAM --> CAFM
+    CAZM --> APC
+    APC --> APM
+    APM --> MIXER
+    MIXER --> AMP
+            </div>
+
+            <h3>2.2 주요 클래스</h3>
+            <pre><code>// CarAudioService 주요 구성요소
+packages/services/Car/service/src/com/android/car/audio/
+├── CarAudioService.java        // 메인 서비스
+├── CarAudioZone.java          // Zone 정의
+├── CarVolumeGroup.java        // 볼륨 그룹
+├── CarAudioContext.java       // 오디오 컨텍스트 (music, nav, call 등)
+├── CarAudioFocus.java         // Zone별 포커스 관리
+└── CarAudioDynamicRouting.java // 동적 라우팅</code></pre>
+
+            <h3>2.3 CarAudioManager API</h3>
+            <pre><code>val carAudioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+
+// Zone 정보 조회
+val zoneIds = carAudioManager.audioZoneIds
+zoneIds.forEach { zoneId ->
+    Log.d(TAG, "Zone ID: $zoneId")
+
+    // Zone별 볼륨 그룹
+    val groupCount = carAudioManager.getVolumeGroupCount(zoneId)
+    for (groupId in 0 until groupCount) {
+        val info = carAudioManager.getVolumeGroupInfo(zoneId, groupId)
+        Log.d(TAG, "  Group $groupId: ${info.name}, " +
+                   "volume=${carAudioManager.getGroupVolume(zoneId, groupId)}")
+    }
+}
+
+// 특정 Zone 볼륨 설정
+carAudioManager.setGroupVolume(
+    zoneId = PRIMARY_AUDIO_ZONE,
+    groupId = 0,
+    index = 10,
+    flags = AudioManager.FLAG_SHOW_UI
+)</code></pre>
+        </section>
+
+        <!-- Section 3: Zone 설정 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>Audio Zone 설정 (car_audio_configuration.xml)</h2>
+
+            <h3>3.1 전체 구조</h3>
+            <pre><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;carAudioConfiguration version="2"&gt;
+    &lt;zones&gt;
+        &lt;!-- Primary Audio Zone --&gt;
+        &lt;zone name="primary" isPrimary="true" occupantZoneId="0"&gt;
+            &lt;zoneConfigs&gt;
+                &lt;zoneConfig name="primary zone config" isDefault="true"&gt;
+                    &lt;volumeGroups&gt;
+                        &lt;!-- Media Volume Group --&gt;
+                        &lt;group name="media"&gt;
+                            &lt;device address="bus0_media_out"&gt;
+                                &lt;context context="music"/&gt;
+                                &lt;context context="movies"/&gt;
+                                &lt;context context="games"/&gt;
+                            &lt;/device&gt;
+                        &lt;/group&gt;
+
+                        &lt;!-- Navigation Volume Group --&gt;
+                        &lt;group name="navigation"&gt;
+                            &lt;device address="bus1_nav_out"&gt;
+                                &lt;context context="navigation"/&gt;
+                            &lt;/device&gt;
+                        &lt;/group&gt;
+
+                        &lt;!-- Voice Volume Group --&gt;
+                        &lt;group name="voice"&gt;
+                            &lt;device address="bus2_voice_out"&gt;
+                                &lt;context context="voice_command"/&gt;
+                                &lt;context context="call"/&gt;
+                            &lt;/device&gt;
+                        &lt;/group&gt;
+
+                        &lt;!-- System Sounds --&gt;
+                        &lt;group name="system"&gt;
+                            &lt;device address="bus3_system_out"&gt;
+                                &lt;context context="system_sound"/&gt;
+                                &lt;context context="alarm"/&gt;
+                                &lt;context context="notification"/&gt;
+                            &lt;/device&gt;
+                        &lt;/group&gt;
+                    &lt;/volumeGroups&gt;
+                &lt;/zoneConfig&gt;
+            &lt;/zoneConfigs&gt;
+        &lt;/zone&gt;
+
+        &lt;!-- Rear Left Audio Zone --&gt;
+        &lt;zone name="rear_left" occupantZoneId="2"&gt;
+            &lt;zoneConfigs&gt;
+                &lt;zoneConfig name="rear left config" isDefault="true"&gt;
+                    &lt;volumeGroups&gt;
+                        &lt;group name="rear_media"&gt;
+                            &lt;device address="bus4_rse_left_out"&gt;
+                                &lt;context context="music"/&gt;
+                                &lt;context context="movies"/&gt;
+                            &lt;/device&gt;
+                        &lt;/group&gt;
+                    &lt;/volumeGroups&gt;
+                &lt;/zoneConfig&gt;
+            &lt;/zoneConfigs&gt;
+        &lt;/zone&gt;
+
+        &lt;!-- Rear Right Audio Zone --&gt;
+        &lt;zone name="rear_right" occupantZoneId="3"&gt;
+            &lt;zoneConfigs&gt;
+                &lt;zoneConfig name="rear right config" isDefault="true"&gt;
+                    &lt;volumeGroups&gt;
+                        &lt;group name="rear_media"&gt;
+                            &lt;device address="bus5_rse_right_out"&gt;
+                                &lt;context context="music"/&gt;
+                                &lt;context context="movies"/&gt;
+                            &lt;/device&gt;
+                        &lt;/group&gt;
+                    &lt;/volumeGroups&gt;
+                &lt;/zoneConfig&gt;
+            &lt;/zoneConfigs&gt;
+        &lt;/zone&gt;
+    &lt;/zones&gt;
+&lt;/carAudioConfiguration&gt;</code></pre>
+
+            <h3>3.2 Audio Context 유형</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Context</th>
+                        <th>용도</th>
+                        <th>일반적인 우선순위</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>emergency</code></td>
+                        <td>긴급 경고음</td>
+                        <td>최상</td>
+                    </tr>
+                    <tr>
+                        <td><code>safety</code></td>
+                        <td>안전 경고 (주차 센서 등)</td>
+                        <td>매우 높음</td>
+                    </tr>
+                    <tr>
+                        <td><code>call</code></td>
+                        <td>전화 통화</td>
+                        <td>높음</td>
+                    </tr>
+                    <tr>
+                        <td><code>navigation</code></td>
+                        <td>내비게이션 안내</td>
+                        <td>높음</td>
+                    </tr>
+                    <tr>
+                        <td><code>voice_command</code></td>
+                        <td>음성 비서</td>
+                        <td>높음</td>
+                    </tr>
+                    <tr>
+                        <td><code>music</code></td>
+                        <td>음악 재생</td>
+                        <td>보통</td>
+                    </tr>
+                    <tr>
+                        <td><code>movies</code></td>
+                        <td>영상 오디오</td>
+                        <td>보통</td>
+                    </tr>
+                    <tr>
+                        <td><code>notification</code></td>
+                        <td>알림음</td>
+                        <td>낮음</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 4: 라우팅 정책 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>오디오 라우팅 정책</h2>
+
+            <h3>4.1 라우팅 흐름</h3>
+            <div class="mermaid">
+sequenceDiagram
+    participant App
+    participant AM as AudioManager
+    participant CAS as CarAudioService
+    participant APM as AudioPolicyManager
+    participant HAL as Audio HAL
+
+    App->>AM: requestAudioFocus(USAGE_MEDIA)
+    AM->>CAS: handleFocusRequest()
+    CAS->>CAS: getZoneForUid(callingUid)
+    CAS->>APM: setForceUse(ZONE_X, MEDIA)
+    APM->>HAL: route(bus0_media_out)
+    HAL-->>App: Audio Output
+            </div>
+
+            <h3>4.2 UID 기반 Zone 매핑</h3>
+            <pre><code>// 앱 UID를 특정 Zone에 매핑
+carAudioManager.setZoneIdForUid(
+    zoneId = REAR_LEFT_ZONE_ID,
+    uid = rseAppUid
+)
+
+// OccupantZone 기반 자동 매핑
+val ozManager = car.getCarManager(Car.CAR_OCCUPANT_ZONE_SERVICE)
+    as CarOccupantZoneManager
+
+// Display에서 실행되는 앱은 해당 Zone으로 자동 매핑
+val displayId = windowManager.defaultDisplay.displayId
+val zoneId = carAudioManager.getZoneIdForDisplay(displayId)</code></pre>
+
+            <h3>4.3 동적 라우팅 설정</h3>
+            <pre><code>&lt;!-- audio_policy_configuration.xml --&gt;
+&lt;audioPolicyConfiguration version="7.0"&gt;
+    &lt;modules&gt;
+        &lt;module name="primary" halVersion="3.0"&gt;
+            &lt;!-- Dynamic Routing을 위한 Mix Ports --&gt;
+            &lt;mixPorts&gt;
+                &lt;mixPort name="bus0_media_out" role="source"
+                         flags="AUDIO_OUTPUT_FLAG_PRIMARY"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/mixPort&gt;
+
+                &lt;mixPort name="bus4_rse_left_out" role="source"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/mixPort&gt;
+            &lt;/mixPorts&gt;
+
+            &lt;!-- Device Ports --&gt;
+            &lt;devicePorts&gt;
+                &lt;devicePort tagName="bus0_media_out"
+                            type="AUDIO_DEVICE_OUT_BUS"
+                            role="sink" address="bus0_media_out"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/devicePort&gt;
+            &lt;/devicePorts&gt;
+
+            &lt;!-- Routes --&gt;
+            &lt;routes&gt;
+                &lt;route type="mix" sink="bus0_media_out"
+                       sources="bus0_media_out"/&gt;
+            &lt;/routes&gt;
+        &lt;/module&gt;
+    &lt;/modules&gt;
+&lt;/audioPolicyConfiguration&gt;</code></pre>
+        </section>
+
+        <!-- Section 5: 볼륨 관리 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>볼륨 그룹 및 Duck 처리</h2>
+
+            <h3>5.1 Zone별 볼륨 제어</h3>
+            <pre><code>// 볼륨 그룹 정보 조회
+val zoneId = PRIMARY_AUDIO_ZONE
+val groupCount = carAudioManager.getVolumeGroupCount(zoneId)
+
+for (groupId in 0 until groupCount) {
+    val info = carAudioManager.getVolumeGroupInfo(zoneId, groupId)
+
+    println("Group: ${info.name}")
+    println("  Min: ${info.minVolumeGain}")
+    println("  Max: ${info.maxVolumeGain}")
+    println("  Current: ${carAudioManager.getGroupVolume(zoneId, groupId)}")
+    println("  Muted: ${info.isMuted}")
+}
+
+// 볼륨 변경 콜백 등록
+carAudioManager.registerCarVolumeCallback(object : CarAudioManager.CarVolumeCallback() {
+    override fun onGroupVolumeChanged(zoneId: Int, groupId: Int, flags: Int) {
+        val newVolume = carAudioManager.getGroupVolume(zoneId, groupId)
+        Log.d(TAG, "Zone $zoneId Group $groupId: $newVolume")
+    }
+
+    override fun onMasterMuteChanged(zoneId: Int, flags: Int) {
+        Log.d(TAG, "Zone $zoneId mute changed")
+    }
+})</code></pre>
+
+            <h3>5.2 Audio Focus & Ducking</h3>
+            <div class="mermaid">
+stateDiagram-v2
+    [*] --> Music_Playing: Start Music
+
+    Music_Playing --> Music_Ducked: Nav Announcement
+    Music_Ducked --> Music_Playing: Nav Complete
+
+    Music_Playing --> Music_Paused: Phone Call
+    Music_Paused --> Music_Playing: Call End
+
+    Music_Playing --> Music_Stopped: Emergency Alert
+    Music_Stopped --> [*]: Alert Dismissed
+            </div>
+
+            <h3>5.3 Duck 정책 설정</h3>
+            <pre><code>&lt;!-- car_audio_configuration.xml에 Duck 정책 추가 --&gt;
+&lt;carAudioConfiguration version="2"&gt;
+    &lt;!-- Focus 상호작용 정의 --&gt;
+    &lt;audioFocusInteractions&gt;
+        &lt;!-- Navigation이 Music을 Duck --&gt;
+        &lt;interaction
+            focusHolder="music"
+            focusRequester="navigation"
+            interaction="INTERACTION_DUCK" /&gt;
+
+        &lt;!-- Call이 Music을 Pause --&gt;
+        &lt;interaction
+            focusHolder="music"
+            focusRequester="call"
+            interaction="INTERACTION_PAUSE" /&gt;
+
+        &lt;!-- Emergency가 모두 Stop --&gt;
+        &lt;interaction
+            focusHolder="*"
+            focusRequester="emergency"
+            interaction="INTERACTION_STOP" /&gt;
+    &lt;/audioFocusInteractions&gt;
+&lt;/carAudioConfiguration&gt;</code></pre>
+        </section>
+
+        <!-- Section 6: Zone 간 공유 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>크로스 Zone 시나리오</h2>
+
+            <h3>6.1 오디오 공유 시나리오</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>시나리오</th>
+                        <th>동작</th>
+                        <th>구현 방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>전체 공유</strong></td>
+                        <td>모든 Zone에 동일 오디오</td>
+                        <td>모든 bus에 동시 출력</td>
+                    </tr>
+                    <tr>
+                        <td><strong>긴급 알림</strong></td>
+                        <td>Emergency가 모든 Zone에 재생</td>
+                        <td>Emergency context 전역 라우팅</td>
+                    </tr>
+                    <tr>
+                        <td><strong>내비 안내</strong></td>
+                        <td>Driver Zone + RSE Duck</td>
+                        <td>Navigation context + ducking</td>
+                    </tr>
+                    <tr>
+                        <td><strong>뒷좌석 공유</strong></td>
+                        <td>RSE Left/Right 동일 재생</td>
+                        <td>두 Zone 동시 라우팅</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>6.2 미러링 구현</h3>
+            <pre><code>// Zone 간 오디오 미러링 (Primary → All)
+fun mirrorToAllZones(sourceZoneId: Int) {
+    val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+    // 모든 Zone에 동일한 오디오 스트림 라우팅
+    val allZones = carAudioManager.audioZoneIds
+
+    allZones.forEach { zoneId ->
+        if (zoneId != sourceZoneId) {
+            // 하드웨어 레벨 미러링 (OEM 구현 필요)
+            carAudioManager.setAudioMirrorConfig(sourceZoneId, zoneId, true)
+        }
+    }
+}
+
+// 미러링 해제
+fun disableMirroring() {
+    carAudioManager.clearAudioMirrorConfig()
+}</code></pre>
+        </section>
+
+        <!-- Section 7: 테스트 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>테스트 및 검증</h2>
+
+            <h3>7.1 dumpsys 명령어</h3>
+            <pre><code># CarAudioService 상태 확인
+adb shell dumpsys car_service --services CarAudioService
+
+# Audio Policy 확인
+adb shell dumpsys media.audio_policy
+
+# 출력 예시:
+# Audio Zones:
+#   Zone 0 (primary):
+#     Volume Groups:
+#       Group 0 (media): volume=10, devices=[bus0_media_out]
+#       Group 1 (nav): volume=15, devices=[bus1_nav_out]
+#   Zone 2 (rear_left):
+#     Volume Groups:
+#       Group 0 (media): volume=8, devices=[bus4_rse_left_out]</code></pre>
+
+            <h3>7.2 테스트 체크리스트</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Zone별 볼륨 독립 동작</li>
+                <li><input type="checkbox"> Zone별 음소거 독립 동작</li>
+                <li><input type="checkbox"> 내비 안내 시 Music Duck</li>
+                <li><input type="checkbox"> 전화 수신 시 전체 Pause</li>
+                <li><input type="checkbox"> 긴급 알림 전체 재생</li>
+                <li><input type="checkbox"> RSE 앱 오디오가 해당 Zone으로 라우팅</li>
+                <li><input type="checkbox"> Zone 간 오디오 격리 확인</li>
+            </ul>
+
+            <h3>7.3 자동화 테스트</h3>
+            <pre><code># Zone 테스트 스크립트
+#!/bin/bash
+
+echo "=== Multi-Zone Audio Test ==="
+
+# 1. Zone 목록 확인
+echo "--- Audio Zones ---"
+adb shell dumpsys car_service --services CarAudioService | grep -A 3 "Audio Zones"
+
+# 2. Primary Zone 볼륨 변경
+echo "--- Set Primary Zone Volume ---"
+adb shell cmd car_service set-volume-group 0 0 15
+sleep 1
+
+# 3. Rear Zone 볼륨 변경
+echo "--- Set Rear Zone Volume ---"
+adb shell cmd car_service set-volume-group 2 0 8
+sleep 1
+
+# 4. 결과 확인
+echo "--- Final State ---"
+adb shell dumpsys car_service --services CarAudioService | grep "volume="</code></pre>
+        </section>
+
+        <!-- 관련 문서 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>관련 문서</h2>
+            <ul>
+                <li><a href="multi-display-entertainment.html">Multi-Display Entertainment</a> - RSE 구현</li>
+                <li><a href="audio-framework.html">Audio Framework</a> - AudioFlinger 기본</li>
+                <li><a href="carmedia.html">Car Media Service</a> - CarMediaService</li>
+                <li><a href="oem-customization.html">OEM 커스터마이징</a> - Zone 커스터마이징</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="scripts/mermaid-theme.js"></script>
+    <script src="scripts/copy-code.js"></script>
+    <script src="scripts/toc-generator.js"></script>
+    <script src="scripts/page-navigation.js"></script>
+    <script src="scripts/diagram-data.js"></script>
+    <script src="scripts/diagram-interactive.js"></script>
+    <script src="scripts/theme-toggle.js"></script>
+</body>
+</html>

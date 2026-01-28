@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OEM 커스터마이징 가이드 - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">← Android Media Framework</a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">OEM 커스터마이징 가이드</h1>
+            <p class="page-subtitle">차량 OEM을 위한 AAOS 미디어 시스템 커스터마이징</p>
+        </header>
+
+        <!-- Section 1: 개요 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>커스터마이징 영역 개요</h2>
+
+            <p>AAOS는 OEM이 차량 브랜드에 맞게 <strong>미디어 경험을 커스터마이징</strong>할 수 있는 다양한 확장 포인트를 제공합니다. GAS(Google Automotive Services) 호환성을 유지하면서 차별화된 UX를 구현할 수 있습니다.</p>
+
+            <h3>1.1 커스터마이징 가능 영역</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph UI["UI Layer"]
+        TH[Theme & Styling]
+        LY[Layout & Components]
+        AN[Animations]
+    end
+
+    subgraph APP["App Layer"]
+        MA[Media App]
+        RA[Radio App]
+        SA[System Apps]
+    end
+
+    subgraph SERVICE["Service Layer"]
+        CMS[CarMediaService]
+        CAS[CarAudioService]
+        VS[Vendor Services]
+    end
+
+    subgraph CONFIG["Configuration"]
+        RRO[Runtime Resource Overlay]
+        XML[XML Configs]
+        PROP[System Properties]
+    end
+
+    TH --> RRO
+    LY --> RRO
+    MA --> VS
+    CMS --> XML
+    CAS --> XML
+
+            </div>
+
+            <h3>1.2 커스터마이징 유형</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>유형</th>
+                        <th>방법</th>
+                        <th>범위</th>
+                        <th>GAS 호환</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>테마/UI</strong></td>
+                        <td>RRO (Runtime Resource Overlay)</td>
+                        <td>색상, 아이콘, 레이아웃</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>설정값</strong></td>
+                        <td>XML Config Override</td>
+                        <td>시스템 동작 설정</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>미디어 소스</strong></td>
+                        <td>MediaBrowserService 구현</td>
+                        <td>커스텀 미디어 소스</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>시스템 앱</strong></td>
+                        <td>Privileged App 개발</td>
+                        <td>시스템 레벨 기능</td>
+                        <td>조건부</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CarService 확장</strong></td>
+                        <td>Vendor Service 추가</td>
+                        <td>차량 연동 기능</td>
+                        <td>Yes</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 2: CarService 확장 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>CarService 확장</h2>
+
+            <h3>2.1 Vendor CarService 구조</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph AOSP["AOSP CarService"]
+        CS[CarService]
+        CMS[CarMediaService]
+        CAS[CarAudioService]
+    end
+
+    subgraph VENDOR["Vendor Extension"]
+        VCS[VendorCarService]
+        VMS[VendorMediaService]
+        VAS[VendorAudioService]
+    end
+
+    subgraph API["Public API"]
+        CAR[Car API]
+        VCAR[Vendor Car API]
+    end
+
+    CS --> CMS
+    CS --> CAS
+    VCS --> VMS
+    VCS --> VAS
+    CAR --> CS
+    VCAR --> VCS
+    CMS -.->|extend| VMS
+    CAS -.->|extend| VAS
+            </div>
+
+            <h3>2.2 Vendor Service 등록</h3>
+            <pre><code>// VendorCarService.java
+public class VendorCarService extends Service {
+    private VendorMediaService mVendorMediaService;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        // Vendor 서비스 초기화
+        mVendorMediaService = new VendorMediaService(this);
+
+        // CarService와 연동
+        Car car = Car.createCar(this);
+        CarMediaManager carMediaManager =
+            (CarMediaManager) car.getCarManager(Car.CAR_MEDIA_SERVICE);
+
+        // Vendor 기능 등록
+        mVendorMediaService.initialize(carMediaManager);
+    }
+}
+
+// AndroidManifest.xml
+&lt;service
+    android:name=".VendorCarService"
+    android:exported="true"
+    android:permission="android.car.permission.CAR_VENDOR_EXTENSION"&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="com.vendor.car.VENDOR_SERVICE" /&gt;
+    &lt;/intent-filter&gt;
+&lt;/service&gt;</code></pre>
+
+            <h3>2.3 Vendor API 정의</h3>
+            <pre><code>// IVendorMediaService.aidl
+interface IVendorMediaService {
+    // OEM 전용 미디어 소스 등록
+    void registerVendorMediaSource(in ComponentName source, int priority);
+
+    // OEM 전용 오디오 프리셋
+    void setAudioPreset(String presetName);
+
+    // 차량 상태 기반 미디어 정책
+    void setDrivingModePolicy(int policy);
+
+    // OEM 특화 기능
+    void enableVendorFeature(String featureId, boolean enable);
+}</code></pre>
+        </section>
+
+        <!-- Section 3: 커스텀 미디어 소스 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>커스텀 미디어 소스 등록</h2>
+
+            <h3>3.1 MediaBrowserService 구현</h3>
+            <pre><code>// OEM 라디오/스트리밍 서비스
+class VendorMediaBrowserService : MediaBrowserServiceCompat() {
+    private lateinit var mediaSession: MediaSessionCompat
+    private lateinit var player: ExoPlayer
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // MediaSession 생성
+        mediaSession = MediaSessionCompat(this, "VendorMedia").apply {
+            setCallback(MediaSessionCallback())
+            isActive = true
+        }
+        sessionToken = mediaSession.sessionToken
+
+        // Player 초기화
+        player = ExoPlayer.Builder(this).build()
+    }
+
+    override fun onGetRoot(
+        clientPackageName: String,
+        clientUid: Int,
+        rootHints: Bundle?
+    ): BrowserRoot {
+        // 접근 제어
+        return if (isAllowedClient(clientPackageName)) {
+            BrowserRoot("vendor_root", null)
+        } else {
+            BrowserRoot("empty_root", null)
+        }
+    }
+
+    override fun onLoadChildren(
+        parentId: String,
+        result: Result&lt;MutableList&lt;MediaBrowserCompat.MediaItem&gt;&gt;
+    ) {
+        when (parentId) {
+            "vendor_root" -> {
+                result.sendResult(mutableListOf(
+                    createMediaItem("fm_radio", "FM Radio"),
+                    createMediaItem("dab_radio", "DAB Radio"),
+                    createMediaItem("vendor_streaming", "Vendor Streaming")
+                ))
+            }
+            "fm_radio" -> {
+                result.sendResult(getFmStations())
+            }
+            else -> result.sendResult(mutableListOf())
+        }
+    }
+}</code></pre>
+
+            <h3>3.2 CarMediaService에 소스 등록</h3>
+            <pre><code>&lt;!-- car_media_config.xml --&gt;
+&lt;carMediaConfig&gt;
+    &lt;!-- OEM 미디어 소스 등록 --&gt;
+    &lt;mediaSources&gt;
+        &lt;source
+            package="com.vendor.media"
+            class="com.vendor.media.VendorMediaBrowserService"
+            name="Vendor Radio"
+            priority="100"
+            isSystemApp="true" /&gt;
+
+        &lt;source
+            package="com.vendor.streaming"
+            class="com.vendor.streaming.StreamingService"
+            name="Vendor Streaming"
+            priority="90" /&gt;
+    &lt;/mediaSources&gt;
+
+    &lt;!-- 기본 미디어 소스 --&gt;
+    &lt;defaultSource&gt;com.vendor.media/.VendorMediaBrowserService&lt;/defaultSource&gt;
+&lt;/carMediaConfig&gt;</code></pre>
+
+            <h3>3.3 Manifest 설정</h3>
+            <pre><code>&lt;!-- AndroidManifest.xml --&gt;
+&lt;service
+    android:name=".VendorMediaBrowserService"
+    android:exported="true"&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="android.media.browse.MediaBrowserService" /&gt;
+    &lt;/intent-filter&gt;
+
+    &lt;!-- Car Media 호환성 메타데이터 --&gt;
+    &lt;meta-data
+        android:name="android.media.browse.SEARCH_SUPPORTED"
+        android:value="true" /&gt;
+    &lt;meta-data
+        android:name="androidx.car.app.CAR_MEDIA_SERVICE"
+        android:value="true" /&gt;
+&lt;/service&gt;</code></pre>
+        </section>
+
+        <!-- Section 4: UI 커스터마이징 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>UI 커스터마이징 (RRO)</h2>
+
+            <h3>4.1 RRO (Runtime Resource Overlay) 개념</h3>
+            <p>RRO를 사용하면 AOSP 앱의 리소스를 <strong>소스 코드 수정 없이</strong> 오버레이할 수 있습니다.</p>
+
+            <div class="mermaid">
+flowchart LR
+    subgraph TARGET["Target Package"]
+        TR[res/values/colors.xml]
+        TL[res/layout/activity.xml]
+        TD[res/drawable/icon.png]
+    end
+
+    subgraph RRO["RRO Package"]
+        RR[res/values/colors.xml]
+        RL[res/layout/activity.xml]
+        RD[res/drawable/icon.png]
+    end
+
+    subgraph RESULT["Runtime Result"]
+        FR[Merged Resources]
+    end
+
+    TR --> FR
+    TL --> FR
+    TD --> FR
+    RR -.->|override| FR
+    RL -.->|override| FR
+    RD -.->|override| FR
+            </div>
+
+            <h3>4.2 RRO 패키지 구조</h3>
+            <pre><code>vendor/overlay/CarMediaOverlay/
+├── Android.bp
+├── AndroidManifest.xml
+└── res/
+    ├── values/
+    │   ├── colors.xml      # 색상 오버라이드
+    │   ├── dimens.xml      # 크기 오버라이드
+    │   └── strings.xml     # 문자열 오버라이드
+    ├── drawable/
+    │   └── ic_media_*.xml  # 아이콘 오버라이드
+    └── layout/
+        └── media_card.xml  # 레이아웃 오버라이드</code></pre>
+
+            <h3>4.3 RRO Manifest</h3>
+            <pre><code>&lt;!-- AndroidManifest.xml --&gt;
+&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.vendor.overlay.carmedia"&gt;
+
+    &lt;!-- 오버레이 대상 패키지 --&gt;
+    &lt;overlay
+        android:targetPackage="com.android.car.media"
+        android:targetName="CarMediaResources"
+        android:isStatic="true"
+        android:priority="10" /&gt;
+
+    &lt;application android:hasCode="false" /&gt;
+&lt;/manifest&gt;</code></pre>
+
+            <h3>4.4 색상 커스터마이징 예시</h3>
+            <pre><code>&lt;!-- res/values/colors.xml --&gt;
+&lt;resources&gt;
+    &lt;!-- 브랜드 Primary 컬러 --&gt;
+    &lt;color name="car_media_primary"&gt;#0066FF&lt;/color&gt;
+    &lt;color name="car_media_primary_dark"&gt;#0044CC&lt;/color&gt;
+
+    &lt;!-- 배경 컬러 --&gt;
+    &lt;color name="car_media_background"&gt;#1A1A2E&lt;/color&gt;
+    &lt;color name="car_media_surface"&gt;#16213E&lt;/color&gt;
+
+    &lt;!-- 재생 컨트롤 --&gt;
+    &lt;color name="car_media_play_button"&gt;#00D4FF&lt;/color&gt;
+    &lt;color name="car_media_progress"&gt;#00D4FF&lt;/color&gt;
+&lt;/resources&gt;</code></pre>
+
+            <h3>4.5 빌드 설정</h3>
+            <pre><code>// Android.bp
+runtime_resource_overlay {
+    name: "CarMediaOverlay",
+    vendor: true,
+    sdk_version: "current",
+    resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
+}</code></pre>
+        </section>
+
+        <!-- Section 5: Privileged 앱 개발 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>시스템 앱 (Privileged App) 개발</h2>
+
+            <h3>5.1 Privileged App 권한</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>권한</th>
+                        <th>용도</th>
+                        <th>위치</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>INTERACT_ACROSS_USERS</code></td>
+                        <td>멀티 유저 접근</td>
+                        <td>priv-app</td>
+                    </tr>
+                    <tr>
+                        <td><code>MEDIA_CONTENT_CONTROL</code></td>
+                        <td>미디어 제어</td>
+                        <td>priv-app</td>
+                    </tr>
+                    <tr>
+                        <td><code>CONTROL_CAR_AUDIO_VOLUME</code></td>
+                        <td>차량 오디오 볼륨</td>
+                        <td>priv-app</td>
+                    </tr>
+                    <tr>
+                        <td><code>CAR_VENDOR_EXTENSION</code></td>
+                        <td>Vendor API 접근</td>
+                        <td>priv-app</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>5.2 privapp-permissions 설정</h3>
+            <pre><code>&lt;!-- vendor/etc/permissions/privapp-permissions-vendor.xml --&gt;
+&lt;permissions&gt;
+    &lt;privapp-permissions package="com.vendor.media"&gt;
+        &lt;permission name="android.permission.MEDIA_CONTENT_CONTROL" /&gt;
+        &lt;permission name="android.permission.INTERACT_ACROSS_USERS" /&gt;
+        &lt;permission name="android.car.permission.CONTROL_CAR_AUDIO_VOLUME" /&gt;
+        &lt;permission name="android.car.permission.CAR_VENDOR_EXTENSION" /&gt;
+    &lt;/privapp-permissions&gt;
+&lt;/permissions&gt;</code></pre>
+
+            <h3>5.3 시스템 앱 설치 위치</h3>
+            <pre><code># Privileged App 위치
+/vendor/priv-app/VendorMediaApp/
+└── VendorMediaApp.apk
+
+# 일반 시스템 앱 위치
+/vendor/app/VendorMediaApp/
+└── VendorMediaApp.apk
+
+# 빌드 설정 (Android.bp)
+android_app {
+    name: "VendorMediaApp",
+    vendor: true,
+    privileged: true,  // priv-app 설치
+    certificate: "platform",
+
+    srcs: ["src/**/*.java"],
+    resource_dirs: ["res"],
+
+    static_libs: [
+        "androidx.car.app_app",
+        "car-media-common",
+    ],
+
+    required: ["privapp-permissions-vendor.xml"],
+}</code></pre>
+        </section>
+
+        <!-- Section 6: 설정 오버레이 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>설정 오버레이 (XML Config)</h2>
+
+            <h3>6.1 Car Config 오버레이</h3>
+            <pre><code>&lt;!-- vendor/etc/car/car_config.xml --&gt;
+&lt;carConfig&gt;
+    &lt;!-- 미디어 설정 --&gt;
+    &lt;media&gt;
+        &lt;!-- 기본 미디어 소스 --&gt;
+        &lt;defaultMediaSource&gt;com.vendor.media/.VendorMediaService&lt;/defaultMediaSource&gt;
+
+        &lt;!-- 마지막 미디어 소스 복원 --&gt;
+        &lt;restoreLastMediaSource&gt;true&lt;/restoreLastMediaSource&gt;
+
+        &lt;!-- 자동 재생 정책 --&gt;
+        &lt;autoPlayOnConnection&gt;true&lt;/autoPlayOnConnection&gt;
+    &lt;/media&gt;
+
+    &lt;!-- 오디오 설정 --&gt;
+    &lt;audio&gt;
+        &lt;!-- 기본 볼륨 레벨 --&gt;
+        &lt;defaultVolumeLevel&gt;10&lt;/defaultVolumeLevel&gt;
+
+        &lt;!-- 최대 볼륨 제한 (주행 중) --&gt;
+        &lt;maxVolumeWhileDriving&gt;25&lt;/maxVolumeWhileDriving&gt;
+
+        &lt;!-- 내비 안내 Duck 레벨 --&gt;
+        &lt;navigationDuckLevel&gt;0.3&lt;/navigationDuckLevel&gt;
+    &lt;/audio&gt;
+&lt;/carConfig&gt;</code></pre>
+
+            <h3>6.2 Feature Flag 설정</h3>
+            <pre><code># vendor/build.prop 또는 product.prop
+
+# OEM 미디어 기능 활성화
+persist.vendor.media.custom_eq=true
+persist.vendor.media.spatial_audio=true
+persist.vendor.media.auto_resume=true
+
+# 디버그 설정
+persist.vendor.media.debug=false
+persist.vendor.audio.log_level=warn</code></pre>
+        </section>
+
+        <!-- Section 7: 인증 고려사항 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>GAS 호환성 및 인증</h2>
+
+            <h3>7.1 GAS 호환성 체크리스트</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> MediaBrowserService 표준 인터페이스 준수</li>
+                <li><input type="checkbox"> MediaSession 표준 콜백 구현</li>
+                <li><input type="checkbox"> Car App Library 호환성</li>
+                <li><input type="checkbox"> Android Auto 앱 호환</li>
+                <li><input type="checkbox"> Google Assistant 미디어 제어 지원</li>
+            </ul>
+
+            <h3>7.2 금지 사항</h3>
+            <div class="info-box warning">
+                <strong>GAS 인증 시 금지되는 커스터마이징</strong>
+                <ul>
+                    <li>Google 앱의 기능 제한 또는 차단</li>
+                    <li>Play Store 미디어 앱 설치 방해</li>
+                    <li>MediaSession 표준 동작 변경</li>
+                    <li>Google Assistant 미디어 제어 차단</li>
+                </ul>
+            </div>
+
+            <h3>7.3 인증 테스트</h3>
+            <pre><code># GAS 호환성 사전 테스트
+# 1. CarMediaService 동작 확인
+adb shell dumpsys car_service --services CarMediaService
+
+# 2. MediaBrowserService 검증
+adb shell am start -a android.media.action.MEDIA_PLAY_FROM_SEARCH \
+    -e query "음악 재생"
+
+# 3. Assistant 미디어 제어 테스트
+adb shell am broadcast -a com.google.android.gms.car.MEDIA_COMMAND \
+    --es command "play"
+
+# 4. CTS 미디어 테스트 실행
+atest CtsCarMediaHostTestCases</code></pre>
+        </section>
+
+        <!-- Section 8: 체크리스트 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>개발 체크리스트</h2>
+
+            <h3>UI 커스터마이징</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> RRO 패키지 생성</li>
+                <li><input type="checkbox"> 브랜드 색상 적용</li>
+                <li><input type="checkbox"> 아이콘/로고 교체</li>
+                <li><input type="checkbox"> 폰트 커스터마이징</li>
+            </ul>
+
+            <h3>미디어 기능</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> 커스텀 미디어 소스 등록</li>
+                <li><input type="checkbox"> MediaBrowserService 구현</li>
+                <li><input type="checkbox"> 오디오 프리셋 추가</li>
+                <li><input type="checkbox"> EQ/DSP 설정 UI</li>
+            </ul>
+
+            <h3>시스템 통합</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Vendor Service 구현</li>
+                <li><input type="checkbox"> Privileged 권한 설정</li>
+                <li><input type="checkbox"> Config 오버레이 적용</li>
+                <li><input type="checkbox"> Feature Flag 설정</li>
+            </ul>
+
+            <h3>인증</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> GAS 호환성 테스트</li>
+                <li><input type="checkbox"> CTS 미디어 테스트</li>
+                <li><input type="checkbox"> Assistant 통합 검증</li>
+            </ul>
+        </section>
+
+        <!-- 관련 문서 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>관련 문서</h2>
+            <ul>
+                <li><a href="carmedia.html">Car Media Service</a> - CarMediaService 기본</li>
+                <li><a href="multi-zone-audio.html">Multi-Zone Audio</a> - Zone 커스터마이징</li>
+                <li><a href="gas.html">Google Automotive Services</a> - GAS 통합</li>
+                <li><a href="vehicle-hal-media.html">Vehicle HAL 미디어 연동</a> - 차량 연동</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="scripts/mermaid-theme.js"></script>
+    <script src="scripts/copy-code.js"></script>
+    <script src="scripts/toc-generator.js"></script>
+    <script src="scripts/page-navigation.js"></script>
+    <script src="scripts/diagram-data.js"></script>
+    <script src="scripts/diagram-interactive.js"></script>
+    <script src="scripts/theme-toggle.js"></script>
+</body>
+</html>

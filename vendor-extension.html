@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Extension 개발 가이드 - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media Framework
+        </a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Vendor Extension 개발 가이드</h1>
+            <p class="page-subtitle">OEM/SoC 벤더를 위한 미디어 스택 확장 방법</p>
+        </header>
+
+        <!-- Section 1: 개요 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>개요</h2>
+
+            <p>Android 미디어 프레임워크는 <strong>확장 가능한 아키텍처</strong>로 설계되어 있습니다. SoC 벤더와 OEM은 표준 인터페이스를 유지하면서 자체 코덱, 포맷, 기능을 추가할 수 있습니다.</p>
+
+            <h3>1.1 확장 가능한 영역</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph APP["App Layer"]
+        A1[Third-party Apps]
+        A2[System Apps]
+    end
+
+    subgraph FW["Framework - AOSP"]
+        F1[MediaCodec API]
+        F2[MediaExtractor API]
+        F3[AudioManager]
+    end
+
+    subgraph VENDOR["Vendor Extension"]
+        V1[Custom Codec Plugin]
+        V2[Custom Extractor]
+        V3[Vendor HAL Extension]
+    end
+
+    subgraph HAL["HAL Layer"]
+        H1[Codec2 HAL]
+        H2[Audio HAL]
+    end
+
+    subgraph HW["Hardware"]
+        HW1[HW Codec IP]
+        HW2[DSP]
+    end
+
+    A1 --> F1
+    A2 --> F1
+    F1 --> V1
+    F2 --> V2
+    V1 --> H1
+    V2 --> H1
+    V3 --> H1
+    V3 --> H2
+    H1 --> HW1
+    H2 --> HW2
+
+            </div>
+
+            <h3>1.2 확장 유형</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>확장 유형</th>
+                        <th>목적</th>
+                        <th>난이도</th>
+                        <th>VTS 필수</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Codec2 플러그인</strong></td>
+                        <td>커스텀 HW 코덱 등록</td>
+                        <td>높음</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>커스텀 Extractor</strong></td>
+                        <td>독자 컨테이너 포맷 지원</td>
+                        <td>중간</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HAL Extension</strong></td>
+                        <td>HIDL/AIDL 인터페이스 확장</td>
+                        <td>높음</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Vendor Service</strong></td>
+                        <td>독립적인 미디어 서비스</td>
+                        <td>중간</td>
+                        <td>No</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box warning">
+                <strong>주의: Treble 호환성</strong>
+                <p>모든 Vendor Extension은 <strong>Treble 아키텍처</strong>를 준수해야 합니다. Framework 파티션(system)과 Vendor 파티션의 분리를 유지하세요.</p>
+            </div>
+        </section>
+
+        <!-- Section 2: HAL 확장 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>HAL 인터페이스 확장</h2>
+
+            <h3>2.1 AIDL vs HIDL</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>특성</th>
+                        <th>HIDL (Legacy)</th>
+                        <th>AIDL (Android 12+)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>권장 버전</strong></td>
+                        <td>Android 8~11</td>
+                        <td>Android 12+</td>
+                    </tr>
+                    <tr>
+                        <td><strong>성능</strong></td>
+                        <td>좋음</td>
+                        <td>더 좋음 (최적화됨)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>구문</strong></td>
+                        <td>.hal 파일</td>
+                        <td>.aidl 파일</td>
+                    </tr>
+                    <tr>
+                        <td><strong>신규 개발</strong></td>
+                        <td>권장하지 않음</td>
+                        <td>권장</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>2.2 AIDL HAL Extension 예시</h3>
+            <pre><code>// hardware/interfaces/media/c2/aidl/vendor/
+// android/hardware/media/c2/IVendorComponent.aidl
+
+package android.hardware.media.c2;
+
+import android.hardware.media.c2.IComponent;
+
+@VintfStability
+interface IVendorComponent extends IComponent {
+    /**
+     * 벤더 전용 설정 적용
+     * @param key 설정 키
+     * @param value 설정 값
+     */
+    void setVendorParameter(in String key, in ParcelableHolder value);
+
+    /**
+     * 벤더 전용 설정 조회
+     */
+    ParcelableHolder getVendorParameter(in String key);
+
+    /**
+     * HW 가속 기능 활성화
+     */
+    void enableHardwareAcceleration(in HwAccelConfig config);
+}
+
+@VintfStability
+parcelable HwAccelConfig {
+    boolean useGpuPostProcessing;
+    boolean enableLowLatencyMode;
+    int maxConcurrentInstances;
+}</code></pre>
+
+            <h3>2.3 VINTF Manifest 등록</h3>
+            <pre><code>&lt;!-- device/vendor/manifest.xml --&gt;
+&lt;manifest version="2.0" type="device"&gt;
+    &lt;hal format="aidl"&gt;
+        &lt;name&gt;android.hardware.media.c2&lt;/name&gt;
+        &lt;version&gt;1&lt;/version&gt;
+        &lt;fqname&gt;IComponentStore/vendor&lt;/fqname&gt;
+    &lt;/hal&gt;
+
+    &lt;!-- Vendor Extension --&gt;
+    &lt;hal format="aidl"&gt;
+        &lt;name&gt;vendor.hardware.media.c2&lt;/name&gt;
+        &lt;version&gt;1&lt;/version&gt;
+        &lt;fqname&gt;IVendorComponent/default&lt;/fqname&gt;
+    &lt;/hal&gt;
+&lt;/manifest&gt;</code></pre>
+        </section>
+
+        <!-- Section 3: Codec2 플러그인 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>Codec2 플러그인 개발</h2>
+
+            <h3>3.1 플러그인 아키텍처</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph FW["Framework"]
+        MC[MediaCodec]
+    end
+
+    subgraph C2["Codec2 Framework"]
+        CS[C2ComponentStore]
+        CF[C2ComponentFactory]
+    end
+
+    subgraph PLUGIN["Vendor Plugin"]
+        VP[VendorPlugin.so]
+        VC[VendorCodecComponent]
+    end
+
+    subgraph HAL["HAL"]
+        CH[Codec2 HAL Service]
+    end
+
+    MC --> CS
+    CS -->|loadPlugin| VP
+    VP --> CF
+    CF -->|create| VC
+    VC --> CH
+            </div>
+
+            <h3>3.2 플러그인 구현</h3>
+            <pre><code>// vendor/lib/libvendor_c2_plugin.so
+
+#include &lt;C2Component.h&gt;
+#include &lt;C2ComponentFactory.h&gt;
+
+namespace vendor {
+namespace c2 {
+
+// 코덱 컴포넌트 구현
+class VendorAvcDecoder : public C2Component {
+public:
+    static std::shared_ptr&lt;C2Component&gt; Create(
+            c2_node_id_t id,
+            const std::shared_ptr&lt;C2ReflectorHelper&gt;&amp; helper) {
+        return std::make_shared&lt;VendorAvcDecoder&gt;(id, helper);
+    }
+
+    c2_status_t queue_nb(std::list&lt;std::unique_ptr&lt;C2Work&gt;&gt;* work) override {
+        // 디코딩 작업 큐잉
+        for (auto&amp; w : *work) {
+            processWork(std::move(w));
+        }
+        return C2_OK;
+    }
+
+private:
+    void processWork(std::unique_ptr&lt;C2Work&gt; work) {
+        // HW 디코더 호출
+        // ...
+    }
+};
+
+// 팩토리 구현
+class VendorCodecFactory : public C2ComponentFactory {
+public:
+    c2_status_t createComponent(
+            c2_node_id_t id,
+            std::shared_ptr&lt;C2Component&gt;* component,
+            ComponentDeleter deleter) override {
+        *component = VendorAvcDecoder::Create(id, mHelper);
+        return C2_OK;
+    }
+
+    c2_status_t createInterface(
+            c2_node_id_t id,
+            std::shared_ptr&lt;C2ComponentInterface&gt;* interface,
+            InterfaceDeleter deleter) override {
+        // 인터페이스 생성
+        return C2_OK;
+    }
+};
+
+}  // namespace c2
+}  // namespace vendor
+
+// 플러그인 진입점
+extern "C" ::C2ComponentFactory* CreateCodec2Factory() {
+    return new vendor::c2::VendorCodecFactory();
+}
+
+extern "C" void DestroyCodec2Factory(::C2ComponentFactory* factory) {
+    delete factory;
+}</code></pre>
+
+            <h3>3.3 media_codecs.xml 등록</h3>
+            <pre><code>&lt;!-- vendor/etc/media_codecs.xml --&gt;
+&lt;MediaCodecs&gt;
+    &lt;Decoders&gt;
+        &lt;!-- 벤더 HW AVC 디코더 --&gt;
+        &lt;MediaCodec name="c2.vendor.avc.decoder"
+                    type="video/avc"
+                    rank="0"&gt;  &lt;!-- rank 0 = 최우선 --&gt;
+            &lt;Limit name="size" min="16x16" max="4096x2160" /&gt;
+            &lt;Limit name="alignment" value="2x2" /&gt;
+            &lt;Limit name="block-size" value="16x16" /&gt;
+            &lt;Limit name="bitrate" range="1-120000000" /&gt;
+            &lt;Feature name="adaptive-playback" /&gt;
+            &lt;Feature name="secure-playback" required="true" /&gt;
+            &lt;Attribute name="software-codec" value="false" /&gt;
+        &lt;/MediaCodec&gt;
+
+        &lt;!-- 벤더 HW HEVC 디코더 --&gt;
+        &lt;MediaCodec name="c2.vendor.hevc.decoder"
+                    type="video/hevc"
+                    rank="0"&gt;
+            &lt;Limit name="size" min="16x16" max="8192x4320" /&gt;
+            &lt;Limit name="bitrate" range="1-160000000" /&gt;
+            &lt;Feature name="adaptive-playback" /&gt;
+        &lt;/MediaCodec&gt;
+    &lt;/Decoders&gt;
+
+    &lt;Encoders&gt;
+        &lt;MediaCodec name="c2.vendor.avc.encoder"
+                    type="video/avc"
+                    rank="0"&gt;
+            &lt;Limit name="size" min="16x16" max="4096x2160" /&gt;
+            &lt;Limit name="bitrate" range="1-80000000" /&gt;
+        &lt;/MediaCodec&gt;
+    &lt;/Encoders&gt;
+&lt;/MediaCodecs&gt;</code></pre>
+        </section>
+
+        <!-- Section 4: 커스텀 Extractor -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>커스텀 Extractor 개발</h2>
+
+            <h3>4.1 Extractor 플러그인 구조</h3>
+            <pre><code>// vendor/lib/extractors/libvendor_extractor.so
+
+#include &lt;media/MediaExtractorPluginApi.h&gt;
+#include &lt;media/MediaExtractorPluginHelper.h&gt;
+
+namespace vendor {
+
+class VendorExtractor : public MediaExtractorPluginHelper {
+public:
+    explicit VendorExtractor(DataSourceHelper* source)
+        : mDataSource(source) {
+        parseHeader();
+    }
+
+    size_t countTracks() override {
+        return mTracks.size();
+    }
+
+    MediaTrackHelper* getTrack(size_t index) override {
+        if (index >= mTracks.size()) return nullptr;
+        return new VendorMediaTrack(mTracks[index]);
+    }
+
+    media_status_t getTrackMetaData(
+            AMediaFormat* meta,
+            size_t index,
+            uint32_t flags) override {
+        if (index >= mTracks.size()) {
+            return AMEDIA_ERROR_UNKNOWN;
+        }
+        return mTracks[index].fillMetaData(meta);
+    }
+
+    media_status_t getMetaData(AMediaFormat* meta) override {
+        AMediaFormat_setString(meta, AMEDIAFORMAT_KEY_MIME,
+                              "video/x-vendor-container");
+        AMediaFormat_setInt64(meta, AMEDIAFORMAT_KEY_DURATION,
+                             mDurationUs);
+        return AMEDIA_OK;
+    }
+
+private:
+    void parseHeader() {
+        // 컨테이너 헤더 파싱
+        // 트랙 정보 추출
+    }
+
+    DataSourceHelper* mDataSource;
+    std::vector&lt;TrackInfo&gt; mTracks;
+    int64_t mDurationUs;
+};
+
+}  // namespace vendor
+
+// 플러그인 진입점
+extern "C" {
+
+__attribute__((visibility("default")))
+ExtractorDef GETEXTRACTORDEF() {
+    return {
+        .def_version = EXTRACTORDEF_VERSION,
+        .uuid = {
+            0x12, 0x34, 0x56, 0x78,
+            0x9a, 0xbc, 0xde, 0xf0,
+            0x11, 0x22, 0x33, 0x44,
+            0x55, 0x66, 0x77, 0x88
+        },
+        .version = 1,
+        .name = "Vendor Container Extractor",
+        .sniff = [](
+                DataSourceHelper* source,
+                float* confidence,
+                void**,
+                FreeMetaFunc*) -> CreatorFunc {
+            // 파일 시그니처 확인
+            uint8_t header[4];
+            if (source->readAt(0, header, 4) != 4) {
+                return nullptr;
+            }
+
+            // "VNDR" 매직 넘버 확인
+            if (memcmp(header, "VNDR", 4) == 0) {
+                *confidence = 0.9f;
+                return [](DataSourceHelper* source,
+                          void*) -> CMediaExtractor* {
+                    return wrap(new vendor::VendorExtractor(source));
+                };
+            }
+            return nullptr;
+        }
+    };
+}
+
+}  // extern "C"</code></pre>
+
+            <h3>4.2 Extractor 등록</h3>
+            <pre><code>&lt;!-- vendor/etc/media_codecs.xml 또는 별도 설정 --&gt;
+&lt;!-- Android.bp 빌드 설정 --&gt;
+
+// vendor/media/extractors/Android.bp
+cc_library_shared {
+    name: "libvendor_extractor",
+    vendor: true,
+
+    srcs: [
+        "VendorExtractor.cpp",
+        "VendorMediaTrack.cpp",
+    ],
+
+    shared_libs: [
+        "liblog",
+        "libmediandk",
+        "libstagefright_foundation",
+    ],
+
+    cflags: [
+        "-Werror",
+        "-Wall",
+    ],
+
+    // Extractor 플러그인 디렉토리에 설치
+    relative_install_path: "extractors",
+}</code></pre>
+        </section>
+
+        <!-- Section 5: Vendor Partition -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>Vendor Partition 구조</h2>
+
+            <h3>5.1 파일 배치</h3>
+            <pre><code>/vendor/
+├── bin/
+│   └── hw/
+│       └── android.hardware.media.c2@1.0-service-vendor
+├── etc/
+│   ├── media_codecs.xml
+│   ├── media_codecs_performance.xml
+│   └── vintf/
+│       └── manifest.xml
+├── lib/
+│   ├── libvendor_c2_plugin.so
+│   └── extractors/
+│       └── libvendor_extractor.so
+└── lib64/
+    ├── libvendor_c2_plugin.so
+    └── extractors/
+        └── libvendor_extractor.so</code></pre>
+
+            <h3>5.2 SELinux 정책</h3>
+            <pre><code># vendor/sepolicy/file_contexts
+/vendor/bin/hw/android\.hardware\.media\.c2@1\.0-service-vendor u:object_r:hal_codec2_default_exec:s0
+/vendor/lib(64)?/libvendor_c2_plugin\.so u:object_r:same_process_hal_file:s0
+/vendor/lib(64)?/extractors/libvendor_extractor\.so u:object_r:same_process_hal_file:s0
+
+# vendor/sepolicy/hal_codec2_default.te
+# 필요한 권한 추가
+allow hal_codec2_default vendor_media_data_file:file { read write };
+allow hal_codec2_default gpu_device:chr_file { read write ioctl };</code></pre>
+
+            <h3>5.3 Init 스크립트</h3>
+            <pre><code># vendor/etc/init/android.hardware.media.c2@1.0-service-vendor.rc
+service vendor-media-c2-hal /vendor/bin/hw/android.hardware.media.c2@1.0-service-vendor
+    class hal
+    user mediacodec
+    group camera drmrpc mediadrm
+    ioprio rt 4
+    capabilities SYS_NICE
+    writepid /dev/cpuset/foreground/tasks</code></pre>
+        </section>
+
+        <!-- Section 6: VTS 테스트 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>VTS 통과 전략</h2>
+
+            <h3>6.1 필수 VTS 테스트</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>테스트 모듈</th>
+                        <th>검증 항목</th>
+                        <th>중요도</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>VtsHalMediaC2V1_0TargetTest</code></td>
+                        <td>Codec2 HAL 인터페이스 준수</td>
+                        <td>필수</td>
+                    </tr>
+                    <tr>
+                        <td><code>VtsHalMediaOmxV1_0TargetTest</code></td>
+                        <td>OMX HAL (레거시 호환)</td>
+                        <td>선택</td>
+                    </tr>
+                    <tr>
+                        <td><code>VtsVndkDependency</code></td>
+                        <td>VNDK 의존성 검증</td>
+                        <td>필수</td>
+                    </tr>
+                    <tr>
+                        <td><code>VtsTrebleVintfTest</code></td>
+                        <td>VINTF manifest 검증</td>
+                        <td>필수</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>6.2 VTS 실행</h3>
+            <pre><code># VTS 테스트 실행
+atest VtsHalMediaC2V1_0TargetTest
+
+# 특정 테스트만 실행
+atest VtsHalMediaC2V1_0TargetTest:DecodeTest
+
+# 전체 미디어 VTS
+vts-tradefed run commandAndExit vts \
+    --module VtsHalMediaC2V1_0TargetTest \
+    --module VtsHalMediaOmxV1_0TargetTest
+
+# 로그 확인
+adb logcat -s VtsHalMediaC2</code></pre>
+
+            <h3>6.3 일반적인 VTS 실패 원인</h3>
+            <div class="info-box warning">
+                <strong>VTS 실패 체크리스트</strong>
+                <ul>
+                    <li><strong>VINTF 불일치</strong>: manifest.xml과 실제 HAL 서비스 불일치</li>
+                    <li><strong>SELinux 거부</strong>: 필요한 권한 누락</li>
+                    <li><strong>버퍼 포맷</strong>: 지원하지 않는 픽셀 포맷 반환</li>
+                    <li><strong>타임아웃</strong>: 응답 시간 초과 (기본 5초)</li>
+                    <li><strong>메모리 누수</strong>: 리소스 해제 누락</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 7: 실전 사례 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>실전 확장 사례</h2>
+
+            <h3>Case 1: 독자 HDR 포맷 지원</h3>
+            <div class="case-study">
+                <h4>요구사항</h4>
+                <p>벤더 전용 HDR 메타데이터 포맷을 기존 HEVC 디코더에서 처리</p>
+
+                <h4>구현 방법</h4>
+                <ol>
+                    <li>C2Param 확장으로 커스텀 HDR 파라미터 정의</li>
+                    <li>Codec2 컴포넌트에서 파라미터 파싱</li>
+                    <li>HAL에서 HW에 전달</li>
+                </ol>
+
+                <pre><code>// 커스텀 HDR 파라미터
+struct C2VendorHdrMetadata : public C2Param {
+    uint32_t vendorHdrType;
+    uint8_t metadata[256];
+
+    DEFINE_AND_DESCRIBE_C2PARAM(
+        C2VendorHdrMetadata,
+        0x80000001 | C2Param::PARAM_KIND_INPUT
+    );
+};</code></pre>
+            </div>
+
+            <h3>Case 2: 저지연 인코딩 모드</h3>
+            <div class="case-study">
+                <h4>요구사항</h4>
+                <p>실시간 스트리밍용 20ms 이하 인코딩 지연</p>
+
+                <h4>구현 방법</h4>
+                <ol>
+                    <li>HAL Extension으로 저지연 모드 플래그 추가</li>
+                    <li>HW 인코더 설정 최적화 (1-frame buffer)</li>
+                    <li>별도 코덱 이름으로 등록 (c2.vendor.avc.encoder.lowlatency)</li>
+                </ol>
+            </div>
+
+            <h3>Case 3: 멀티 인스턴스 최적화</h3>
+            <div class="case-study">
+                <h4>요구사항</h4>
+                <p>동시 4개 스트림 디코딩 (차량 서라운드 뷰)</p>
+
+                <h4>구현 방법</h4>
+                <ol>
+                    <li>C2ComponentStore에서 인스턴스 풀 관리</li>
+                    <li>HW 리소스 동적 할당</li>
+                    <li>우선순위 기반 스케줄링</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- Section 8: 체크리스트 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>개발 체크리스트</h2>
+
+            <h3>HAL 개발</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> AIDL/HIDL 인터페이스 정의</li>
+                <li><input type="checkbox"> VINTF manifest 등록</li>
+                <li><input type="checkbox"> SELinux 정책 추가</li>
+                <li><input type="checkbox"> Init 스크립트 작성</li>
+            </ul>
+
+            <h3>코덱 개발</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> C2Component 구현</li>
+                <li><input type="checkbox"> C2ComponentFactory 구현</li>
+                <li><input type="checkbox"> media_codecs.xml 등록</li>
+                <li><input type="checkbox"> 성능 XML 작성</li>
+            </ul>
+
+            <h3>테스트</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> VTS 테스트 통과</li>
+                <li><input type="checkbox"> CTS 미디어 테스트 통과</li>
+                <li><input type="checkbox"> 메모리 누수 테스트</li>
+                <li><input type="checkbox"> 스트레스 테스트</li>
+            </ul>
+
+            <h3>문서화</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> API 문서</li>
+                <li><input type="checkbox"> 통합 가이드</li>
+                <li><input type="checkbox"> 릴리즈 노트</li>
+            </ul>
+        </section>
+
+        <!-- 관련 문서 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>관련 문서</h2>
+            <ul>
+                <li><a href="codec2.html">Codec 2.0 & Media HAL</a> - Codec2 아키텍처 상세</li>
+                <li><a href="media-extractor.html">MediaExtractor & Container</a> - Extractor 구조</li>
+                <li><a href="media-porting-checklist.html">미디어 스택 포팅 체크리스트</a> - 전체 포팅 가이드</li>
+                <li><a href="cts.html">CTS / VTS / GTS</a> - 테스트 스위트 가이드</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="scripts/mermaid-theme.js"></script>
+    <script src="scripts/copy-code.js"></script>
+    <script src="scripts/toc-generator.js"></script>
+    <script src="scripts/page-navigation.js"></script>
+    <script src="scripts/diagram-data.js"></script>
+    <script src="scripts/diagram-interactive.js"></script>
+    <script src="scripts/theme-toggle.js"></script>
+</body>
+
+</html>

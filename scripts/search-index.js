@@ -35,7 +35,20 @@ const SEARCH_INDEX = {
         { id: 'common-issues', title: 'Common Media Issues', description: '미디어 문제 해결 가이드 (16+ 이슈)', url: 'common-media-issues.html', category: 'Reference' },
         { id: 'debugging', title: 'Debugging Tools', description: 'logcat, dumpsys, perfetto 사용법', url: 'debugging-tools.html', category: 'Reference' },
         { id: 'api-reference', title: 'API Quick Reference', description: 'MediaPlayer, ExoPlayer, Codec API 레퍼런스', url: 'api-quick-reference.html', category: 'Reference' },
-        { id: 'glossary', title: 'Glossary', description: 'Android Media 용어집 (50+ 용어)', url: 'glossary.html', category: 'Reference' }
+        { id: 'migration', title: 'Migration Guides', description: 'MediaPlayer → ExoPlayer → Media3 마이그레이션', url: 'migration-guides.html', category: 'Dev Tools' },
+        { id: 'glossary', title: 'Glossary', description: 'Android Media 용어집 (50+ 용어)', url: 'glossary.html', category: 'Reference' },
+        // C Series - Dev Tools (실전 개발 가이드)
+        { id: 'performance', title: 'Performance Optimization', description: '미디어 성능 최적화 가이드 (프로파일링, 메모리, 전력)', url: 'performance-optimization.html', category: 'Dev Tools' },
+        { id: 'vendor-extension', title: 'Vendor Extension', description: 'HAL Extension 및 Codec2 플러그인 개발 가이드', url: 'vendor-extension.html', category: 'Dev Tools' },
+        { id: 'porting-checklist', title: 'Media Porting Checklist', description: 'SoC 미디어 스택 포팅 체크리스트 (Phase별)', url: 'media-porting-checklist.html', category: 'Testing' },
+        { id: 'production-debugging', title: 'Production Debugging', description: '필드 이슈 디버깅 및 원격 진단 가이드', url: 'production-debugging.html', category: 'Dev Tools' },
+        { id: 'media-security', title: 'Media Security', description: 'Secure Buffer, TEE, DRM 보안 레벨 가이드', url: 'media-security.html', category: 'DRM' },
+        // D Series - Automotive (AAOS 심화)
+        { id: 'multi-display', title: 'Multi-Display Entertainment', description: 'AAOS 다중 디스플레이 미디어 아키텍처', url: 'multi-display-entertainment.html', category: 'Automotive' },
+        { id: 'multi-zone-audio', title: 'Multi-Zone Audio', description: '차량 오디오 존 분리 및 라우팅 심화', url: 'multi-zone-audio.html', category: 'Automotive' },
+        { id: 'oem-customization', title: 'OEM Customization', description: 'AAOS OEM 커스터마이징 가이드', url: 'oem-customization.html', category: 'Automotive' },
+        { id: 'vehicle-hal-media', title: 'Vehicle HAL Media', description: 'Vehicle HAL과 미디어 시스템 연동', url: 'vehicle-hal-media.html', category: 'Automotive' },
+        { id: 'aaos-boot', title: 'AAOS Boot Optimization', description: 'AAOS 부팅 최적화 및 미디어 초기화', url: 'aaos-boot-optimization.html', category: 'Automotive' }
     ],
 
     // 트러블슈팅 이슈

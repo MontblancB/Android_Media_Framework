@@ -499,7 +499,7 @@
             <h1 class="hero-title">Android Media</h1>
             <p class="hero-subtitle">Comprehensive technical documentation and architecture visualization for Android's media framework — from application layer to kernel.</p>
             <div class="hero-meta">
-                <div class="hero-meta-item">25 Documentation Pages</div>
+                <div class="hero-meta-item">35 Documentation Pages</div>
                 <div class="hero-meta-item">8 Categories</div>
                 <div class="hero-meta-item">Production Ready</div>
             </div>
@@ -520,6 +520,11 @@
 
         <!-- Cards Grid -->
         <div class="cards-grid" id="cardsGrid">
+
+            <!-- ============================================ -->
+            <!-- ARCHITECTURE - 기초 개념 (01-03) -->
+            <!-- ============================================ -->
+
             <!-- Card 01: Android AOSP Architecture -->
             <div class="card cat-arch" data-category="arch" onclick="location.href='aosp.html'">
                 <div class="card-header">
@@ -546,18 +551,22 @@
                 </div>
             </div>
 
-            <!-- Card 03: Android Automotive OS -->
-            <div class="card cat-car" data-category="car" onclick="location.href='aaos.html'">
+            <!-- Card 03: CarMa -->
+            <div class="card cat-arch" data-category="arch" onclick="location.href='carma.html'">
                 <div class="card-header">
                     <span class="card-number">03</span>
-                    <span class="card-badge">Automotive</span>
+                    <span class="card-badge">Architecture</span>
                 </div>
-                <h3 class="card-title">Android Automotive OS (AAOS)</h3>
-                <p class="card-description">차량용 Android 운영체제 개요 및 구조</p>
+                <h3 class="card-title">Car Ready Mobile Apps (CarMa)</h3>
+                <p class="card-description">기존 모바일 앱을 자동차로 확장하는 Google의 새로운 프로그램</p>
                 <div class="card-footer">
-                    <a href="aaos.html" class="card-link">Explore</a>
+                    <a href="carma.html" class="card-link">Explore</a>
                 </div>
             </div>
+
+            <!-- ============================================ -->
+            <!-- MEDIA - 핵심 프레임워크 (04-13) -->
+            <!-- ============================================ -->
 
             <!-- Card 04: Media Framework Core -->
             <div class="card cat-media" data-category="media" onclick="location.href='media-framework-core.html'">
@@ -572,29 +581,29 @@
                 </div>
             </div>
 
-            <!-- Card 05: Codec 2.0 & Media HAL -->
-            <div class="card cat-media" data-category="media" onclick="location.href='codec2.html'">
+            <!-- Card 05: Media App Layer -->
+            <div class="card cat-media" data-category="media" onclick="location.href='media-app-layer.html'">
                 <div class="card-header">
                     <span class="card-number">05</span>
+                    <span class="card-badge">Media</span>
+                </div>
+                <h3 class="card-title">Media App Layer & APIs</h3>
+                <p class="card-description">MediaPlayer, ExoPlayer, Media3, MediaSession API 상세 가이드</p>
+                <div class="card-footer">
+                    <a href="media-app-layer.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- Card 06: Codec 2.0 & Media HAL -->
+            <div class="card cat-media" data-category="media" onclick="location.href='codec2.html'">
+                <div class="card-header">
+                    <span class="card-number">06</span>
                     <span class="card-badge">Media</span>
                 </div>
                 <h3 class="card-title">Codec 2.0 & Media HAL</h3>
                 <p class="card-description">최신 코덱 프레임워크 아키텍처 및 HAL 통신</p>
                 <div class="card-footer">
                     <a href="codec2.html" class="card-link">Explore</a>
-                </div>
-            </div>
-
-            <!-- Card 06: Dolby Codecs -->
-            <div class="card cat-media" data-category="media" onclick="location.href='dolby-codecs.html'">
-                <div class="card-header">
-                    <span class="card-number">06</span>
-                    <span class="card-badge">Media</span>
-                </div>
-                <h3 class="card-title">Dolby Codecs & AOSP</h3>
-                <p class="card-description">Dolby Atmos, AC-4, Vision 코덱 사양 및 AOSP 통합 아키텍처</p>
-                <div class="card-footer">
-                    <a href="dolby-codecs.html" class="card-link">Explore</a>
                 </div>
             </div>
 
@@ -650,10 +659,53 @@
                 </div>
             </div>
 
-            <!-- Card 11: Audio Framework -->
-            <div class="card cat-audio" data-category="audio" onclick="location.href='audio-framework.html'">
+            <!-- Card 11: Dolby Codecs -->
+            <div class="card cat-media" data-category="media" onclick="location.href='dolby-codecs.html'">
                 <div class="card-header">
                     <span class="card-number">11</span>
+                    <span class="card-badge">Media</span>
+                </div>
+                <h3 class="card-title">Dolby Codecs & AOSP</h3>
+                <p class="card-description">Dolby Atmos, AC-4, Vision 코덱 사양 및 AOSP 통합 아키텍처</p>
+                <div class="card-footer">
+                    <a href="dolby-codecs.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- Card 12: Performance Optimization Guide -->
+            <div class="card cat-media" data-category="media" onclick="location.href='performance-optimization.html'">
+                <div class="card-header">
+                    <span class="card-number">12</span>
+                    <span class="card-badge">Media</span>
+                </div>
+                <h3 class="card-title">Performance Optimization Guide</h3>
+                <p class="card-description">미디어 재생 성능 최적화: 코덱 튜닝, 버퍼 관리, 메모리/배터리 효율화</p>
+                <div class="card-footer">
+                    <a href="performance-optimization.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- Card 13: Vendor Extension 개발 가이드 -->
+            <div class="card cat-media" data-category="media" onclick="location.href='vendor-extension.html'">
+                <div class="card-header">
+                    <span class="card-number">13</span>
+                    <span class="card-badge">Media</span>
+                </div>
+                <h3 class="card-title">Vendor Extension 개발 가이드</h3>
+                <p class="card-description">OEM/SoC 벤더를 위한 HAL 확장, Codec2 플러그인, 커스텀 Extractor 개발</p>
+                <div class="card-footer">
+                    <a href="vendor-extension.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- AUDIO (14) -->
+            <!-- ============================================ -->
+
+            <!-- Card 14: Audio Framework -->
+            <div class="card cat-audio" data-category="audio" onclick="location.href='audio-framework.html'">
+                <div class="card-header">
+                    <span class="card-number">14</span>
                     <span class="card-badge">Audio</span>
                 </div>
                 <h3 class="card-title">Audio Framework</h3>
@@ -663,62 +715,14 @@
                 </div>
             </div>
 
-            <!-- Card 12: Car Media Service -->
-            <div class="card cat-car" data-category="car" onclick="location.href='carmedia.html'">
-                <div class="card-header">
-                    <span class="card-number">12</span>
-                    <span class="card-badge">Automotive</span>
-                </div>
-                <h3 class="card-title">Car Media Service</h3>
-                <p class="card-description">차량 특화 미디어 서비스 및 오디오 라우팅</p>
-                <div class="card-footer">
-                    <a href="carmedia.html" class="card-link">Explore</a>
-                </div>
-            </div>
+            <!-- ============================================ -->
+            <!-- DRM & SECURITY (15-16) -->
+            <!-- ============================================ -->
 
-            <!-- Card 13: AAOS Key Events -->
-            <div class="card cat-car" data-category="car" onclick="location.href='aaos-key-events.html'">
-                <div class="card-header">
-                    <span class="card-number">13</span>
-                    <span class="card-badge">Automotive</span>
-                </div>
-                <h3 class="card-title">AAOS Key Event Handling</h3>
-                <p class="card-description">CarService, Input Framework, UX Restriction 및 미디어 키 처리 구조</p>
-                <div class="card-footer">
-                    <a href="aaos-key-events.html" class="card-link">Explore</a>
-                </div>
-            </div>
-
-            <!-- Card 14: AAOS Last Media -->
-            <div class="card cat-car" data-category="car" onclick="location.href='aaos-last-media.html'">
-                <div class="card-header">
-                    <span class="card-number">14</span>
-                    <span class="card-badge">Automotive</span>
-                </div>
-                <h3 class="card-title">AAOS Last Media & Autoplay</h3>
-                <p class="card-description">Last Media Source 저장 구조, 자동 재생(Autoplay) 정책 및 복원 메커니즘</p>
-                <div class="card-footer">
-                    <a href="aaos-last-media.html" class="card-link">Explore</a>
-                </div>
-            </div>
-
-            <!-- Card 15: Power Policy -->
-            <div class="card cat-car" data-category="car" onclick="location.href='power-policy-suspend.html'">
-                <div class="card-header">
-                    <span class="card-number">15</span>
-                    <span class="card-badge">Automotive</span>
-                </div>
-                <h3 class="card-title">Power Policy & Suspend</h3>
-                <p class="card-description">Deep Sleep, Suspend-to-RAM 메커니즘 및 오디오 컨텍스트 보존 로직</p>
-                <div class="card-footer">
-                    <a href="power-policy-suspend.html" class="card-link">Explore</a>
-                </div>
-            </div>
-
-            <!-- Card 16: DRM & Widevine -->
+            <!-- Card 15: DRM & Widevine -->
             <div class="card cat-drm" data-category="drm" onclick="location.href='widevine.html'">
                 <div class="card-header">
-                    <span class="card-number">16</span>
+                    <span class="card-number">15</span>
                     <span class="card-badge">DRM</span>
                 </div>
                 <h3 class="card-title">DRM & Widevine Architecture</h3>
@@ -728,10 +732,92 @@
                 </div>
             </div>
 
-            <!-- Card 17: Google Automotive Services -->
-            <div class="card cat-car" data-category="car" onclick="location.href='gas.html'">
+            <!-- Card 16: 미디어 보안 가이드 -->
+            <div class="card cat-drm" data-category="drm" onclick="location.href='media-security.html'">
+                <div class="card-header">
+                    <span class="card-number">16</span>
+                    <span class="card-badge">DRM</span>
+                </div>
+                <h3 class="card-title">미디어 보안 가이드</h3>
+                <p class="card-description">Secure Buffer, TEE 연동, 권한 모델, DRM 보안 레벨 (L1/L2/L3)</p>
+                <div class="card-footer">
+                    <a href="media-security.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- AUTOMOTIVE - 차량 특화 (17-27) -->
+            <!-- ============================================ -->
+
+            <!-- Card 17: Android Automotive OS -->
+            <div class="card cat-car" data-category="car" onclick="location.href='aaos.html'">
                 <div class="card-header">
                     <span class="card-number">17</span>
+                    <span class="card-badge">Automotive</span>
+                </div>
+                <h3 class="card-title">Android Automotive OS (AAOS)</h3>
+                <p class="card-description">차량용 Android 운영체제 개요 및 구조</p>
+                <div class="card-footer">
+                    <a href="aaos.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- Card 18: Car Media Service -->
+            <div class="card cat-car" data-category="car" onclick="location.href='carmedia.html'">
+                <div class="card-header">
+                    <span class="card-number">18</span>
+                    <span class="card-badge">Automotive</span>
+                </div>
+                <h3 class="card-title">Car Media Service</h3>
+                <p class="card-description">차량 특화 미디어 서비스 및 오디오 라우팅</p>
+                <div class="card-footer">
+                    <a href="carmedia.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- Card 19: AAOS Key Events -->
+            <div class="card cat-car" data-category="car" onclick="location.href='aaos-key-events.html'">
+                <div class="card-header">
+                    <span class="card-number">19</span>
+                    <span class="card-badge">Automotive</span>
+                </div>
+                <h3 class="card-title">AAOS Key Event Handling</h3>
+                <p class="card-description">CarService, Input Framework, UX Restriction 및 미디어 키 처리 구조</p>
+                <div class="card-footer">
+                    <a href="aaos-key-events.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- Card 20: AAOS Last Media -->
+            <div class="card cat-car" data-category="car" onclick="location.href='aaos-last-media.html'">
+                <div class="card-header">
+                    <span class="card-number">20</span>
+                    <span class="card-badge">Automotive</span>
+                </div>
+                <h3 class="card-title">AAOS Last Media & Autoplay</h3>
+                <p class="card-description">Last Media Source 저장 구조, 자동 재생(Autoplay) 정책 및 복원 메커니즘</p>
+                <div class="card-footer">
+                    <a href="aaos-last-media.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- Card 21: Power Policy -->
+            <div class="card cat-car" data-category="car" onclick="location.href='power-policy-suspend.html'">
+                <div class="card-header">
+                    <span class="card-number">21</span>
+                    <span class="card-badge">Automotive</span>
+                </div>
+                <h3 class="card-title">Power Policy & Suspend</h3>
+                <p class="card-description">Deep Sleep, Suspend-to-RAM 메커니즘 및 오디오 컨텍스트 보존 로직</p>
+                <div class="card-footer">
+                    <a href="power-policy-suspend.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- Card 22: Google Automotive Services -->
+            <div class="card cat-car" data-category="car" onclick="location.href='gas.html'">
+                <div class="card-header">
+                    <span class="card-number">22</span>
                     <span class="card-badge">Automotive</span>
                 </div>
                 <h3 class="card-title">Google Automotive Services (GAS)</h3>
@@ -741,36 +827,79 @@
                 </div>
             </div>
 
-            <!-- Card 18: CarMa -->
-            <div class="card cat-arch" data-category="arch" onclick="location.href='carma.html'">
+            <!-- Card 23: Multi-Display Entertainment -->
+            <div class="card cat-car" data-category="car" onclick="location.href='multi-display-entertainment.html'">
                 <div class="card-header">
-                    <span class="card-number">18</span>
-                    <span class="card-badge">Architecture</span>
+                    <span class="card-number">23</span>
+                    <span class="card-badge">Automotive</span>
                 </div>
-                <h3 class="card-title">Car Ready Mobile Apps (CarMa)</h3>
-                <p class="card-description">기존 모바일 앱을 자동차로 확장하는 Google의 새로운 프로그램</p>
+                <h3 class="card-title">Multi-Display Entertainment</h3>
+                <p class="card-description">RSE 후석 엔터테인먼트, OccupantZone, 디스플레이별 독립 MediaSession</p>
                 <div class="card-footer">
-                    <a href="carma.html" class="card-link">Explore</a>
+                    <a href="multi-display-entertainment.html" class="card-link">Explore</a>
                 </div>
             </div>
 
-            <!-- Card 19: Media App Layer -->
-            <div class="card cat-media" data-category="media" onclick="location.href='media-app-layer.html'">
+            <!-- Card 24: Multi-Zone Audio 심화 -->
+            <div class="card cat-car" data-category="car" onclick="location.href='multi-zone-audio.html'">
                 <div class="card-header">
-                    <span class="card-number">19</span>
-                    <span class="card-badge">Media</span>
+                    <span class="card-number">24</span>
+                    <span class="card-badge">Automotive</span>
                 </div>
-                <h3 class="card-title">Media App Layer & APIs</h3>
-                <p class="card-description">MediaPlayer, ExoPlayer, Media3, MediaSession API 상세 가이드</p>
+                <h3 class="card-title">Multi-Zone Audio 심화</h3>
+                <p class="card-description">CarAudioService, Zone 설정, 볼륨 그룹, Duck 정책, 크로스존 시나리오</p>
                 <div class="card-footer">
-                    <a href="media-app-layer.html" class="card-link">Explore</a>
+                    <a href="multi-zone-audio.html" class="card-link">Explore</a>
                 </div>
             </div>
 
-            <!-- Card 20: CTS / VTS / GTS / CDD -->
+            <!-- Card 25: OEM 커스터마이징 가이드 -->
+            <div class="card cat-car" data-category="car" onclick="location.href='oem-customization.html'">
+                <div class="card-header">
+                    <span class="card-number">25</span>
+                    <span class="card-badge">Automotive</span>
+                </div>
+                <h3 class="card-title">OEM 커스터마이징 가이드</h3>
+                <p class="card-description">RRO 테마, 커스텀 미디어 소스, Privileged 앱, GAS 호환성</p>
+                <div class="card-footer">
+                    <a href="oem-customization.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- Card 26: Vehicle HAL 미디어 연동 -->
+            <div class="card cat-car" data-category="car" onclick="location.href='vehicle-hal-media.html'">
+                <div class="card-header">
+                    <span class="card-number">26</span>
+                    <span class="card-badge">Automotive</span>
+                </div>
+                <h3 class="card-title">Vehicle HAL 미디어 연동</h3>
+                <p class="card-description">CAN Bus 이벤트, 스티어링 휠 버튼, 클러스터 연동, 주행/주차 모드</p>
+                <div class="card-footer">
+                    <a href="vehicle-hal-media.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- Card 27: AAOS 부팅 & 미디어 최적화 -->
+            <div class="card cat-car" data-category="car" onclick="location.href='aaos-boot-optimization.html'">
+                <div class="card-header">
+                    <span class="card-number">27</span>
+                    <span class="card-badge">Automotive</span>
+                </div>
+                <h3 class="card-title">AAOS 부팅 & 미디어 최적화</h3>
+                <p class="card-description">Cold Start 오디오, 부팅 시간 단축, Resume 최적화, 메모리 관리</p>
+                <div class="card-footer">
+                    <a href="aaos-boot-optimization.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- TESTING & PORTING (28-29) -->
+            <!-- ============================================ -->
+
+            <!-- Card 28: CTS / VTS / GTS / CDD -->
             <div class="card cat-test" data-category="test">
                 <div class="card-header">
-                    <span class="card-number">20</span>
+                    <span class="card-number">28</span>
                     <span class="card-badge">Testing</span>
                 </div>
                 <h3 class="card-title">CTS / VTS / GTS / CDD</h3>
@@ -783,10 +912,27 @@
                 </div>
             </div>
 
-            <!-- Card 21: Common Media Issues & Solutions -->
+            <!-- Card 29: 미디어 스택 포팅 체크리스트 -->
+            <div class="card cat-test" data-category="test" onclick="location.href='media-porting-checklist.html'">
+                <div class="card-header">
+                    <span class="card-number">29</span>
+                    <span class="card-badge">Testing</span>
+                </div>
+                <h3 class="card-title">미디어 스택 포팅 체크리스트</h3>
+                <p class="card-description">새 SoC 포팅 단계별 가이드: 코덱 HAL, DRM, CTS/VTS, GMS 인증</p>
+                <div class="card-footer">
+                    <a href="media-porting-checklist.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- REFERENCE & DEBUGGING (30-35) -->
+            <!-- ============================================ -->
+
+            <!-- Card 30: Common Media Issues & Solutions -->
             <div class="card cat-reference" data-category="reference" onclick="location.href='common-media-issues.html'">
                 <div class="card-header">
-                    <span class="card-number">21</span>
+                    <span class="card-number">30</span>
                     <span class="card-badge">Troubleshooting</span>
                 </div>
                 <h3 class="card-title">Common Media Issues & Solutions</h3>
@@ -796,10 +942,10 @@
                 </div>
             </div>
 
-            <!-- Card 22: Debugging & Profiling Tools -->
+            <!-- Card 31: Debugging & Profiling Tools -->
             <div class="card cat-dev-tools" data-category="dev-tools" onclick="location.href='debugging-tools.html'">
                 <div class="card-header">
-                    <span class="card-number">22</span>
+                    <span class="card-number">31</span>
                     <span class="card-badge">Debugging</span>
                 </div>
                 <h3 class="card-title">Debugging & Profiling Tools</h3>
@@ -809,10 +955,23 @@
                 </div>
             </div>
 
-            <!-- Card 23: API Quick Reference -->
+            <!-- Card 32: 프로덕션 디버깅 심화 -->
+            <div class="card cat-dev-tools" data-category="dev-tools" onclick="location.href='production-debugging.html'">
+                <div class="card-header">
+                    <span class="card-number">32</span>
+                    <span class="card-badge">Debugging</span>
+                </div>
+                <h3 class="card-title">프로덕션 디버깅 심화</h3>
+                <p class="card-description">필드 이슈 분석: Bugreport 심층 분석, 재현 불가 버그 추적, 크래시 덤프</p>
+                <div class="card-footer">
+                    <a href="production-debugging.html" class="card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- Card 33: API Quick Reference -->
             <div class="card cat-reference" data-category="reference" onclick="location.href='api-quick-reference.html'">
                 <div class="card-header">
-                    <span class="card-number">23</span>
+                    <span class="card-number">33</span>
                     <span class="card-badge">Reference</span>
                 </div>
                 <h3 class="card-title">API Quick Reference</h3>
@@ -822,10 +981,10 @@
                 </div>
             </div>
 
-            <!-- Card 24: Migration Guides -->
+            <!-- Card 34: Migration Guides -->
             <div class="card cat-dev-tools" data-category="dev-tools" onclick="location.href='migration-guides.html'">
                 <div class="card-header">
-                    <span class="card-number">24</span>
+                    <span class="card-number">34</span>
                     <span class="card-badge">Migration</span>
                 </div>
                 <h3 class="card-title">Migration Guides</h3>
@@ -835,10 +994,10 @@
                 </div>
             </div>
 
-            <!-- Card 25: Android Media Glossary -->
+            <!-- Card 35: Android Media Glossary -->
             <div class="card cat-reference" data-category="reference" onclick="location.href='glossary.html'">
                 <div class="card-header">
-                    <span class="card-number">25</span>
+                    <span class="card-number">35</span>
                     <span class="card-badge">Glossary</span>
                 </div>
                 <h3 class="card-title">Android Media Glossary</h3>

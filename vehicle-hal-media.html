@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle HAL 미디어 연동 - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">← Android Media Framework</a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Vehicle HAL 미디어 연동</h1>
+            <p class="page-subtitle">차량 시스템과 Android 미디어 프레임워크 통합</p>
+        </header>
+
+        <!-- Section 1: 개요 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>Vehicle HAL 개요</h2>
+
+            <p><strong>Vehicle HAL (Hardware Abstraction Layer)</strong>은 차량의 ECU/CAN 네트워크와 Android 시스템 간의 인터페이스를 제공합니다. 미디어 제어, HW 버튼 이벤트, 차량 상태에 따른 동작을 구현할 수 있습니다.</p>
+
+            <h3>1.1 Vehicle HAL 아키텍처</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph ANDROID["Android"]
+        CMS[CarMediaService]
+        CAS[CarAudioService]
+        CIS[CarInputService]
+        CVS[CarVehicleService]
+    end
+
+    subgraph VHAL["Vehicle HAL"]
+        VH[VehicleHAL Service]
+        VP[Vehicle Properties]
+    end
+
+    subgraph VEHICLE["Vehicle Network"]
+        CAN[CAN Bus]
+        ECU[Body ECU]
+        SW[Steering Wheel]
+        AMP[Amplifier]
+    end
+
+    CMS --> CVS
+    CAS --> CVS
+    CIS --> CVS
+    CVS --> VH
+    VH --> VP
+    VP <--> CAN
+    CAN <--> ECU
+    CAN <--> SW
+    CAN <--> AMP
+            </div>
+
+            <h3>1.2 미디어 관련 Vehicle Properties</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>ID</th>
+                        <th>용도</th>
+                        <th>접근</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>HW_KEY_INPUT</code></td>
+                        <td>0x0A000000</td>
+                        <td>하드웨어 키 입력</td>
+                        <td>Read</td>
+                    </tr>
+                    <tr>
+                        <td><code>AUDIO_VOLUME</code></td>
+                        <td>0x11400900</td>
+                        <td>오디오 볼륨</td>
+                        <td>Read/Write</td>
+                    </tr>
+                    <tr>
+                        <td><code>AUDIO_FOCUS</code></td>
+                        <td>0x11400901</td>
+                        <td>오디오 포커스 상태</td>
+                        <td>Read/Write</td>
+                    </tr>
+                    <tr>
+                        <td><code>CLUSTER_DISPLAY_STATE</code></td>
+                        <td>0x11410F01</td>
+                        <td>클러스터 상태</td>
+                        <td>Read</td>
+                    </tr>
+                    <tr>
+                        <td><code>DRIVING_STATUS</code></td>
+                        <td>0x11400404</td>
+                        <td>주행/주차 상태</td>
+                        <td>Read</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 2: CAN Bus 이벤트 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>CAN Bus 이벤트 처리</h2>
+
+            <h3>2.1 이벤트 흐름</h3>
+            <div class="mermaid">
+sequenceDiagram
+    participant SW as Steering Wheel
+    participant CAN as CAN Bus
+    participant VHAL as Vehicle HAL
+    participant CIS as CarInputService
+    participant CMS as CarMediaService
+    participant App as Media App
+
+    SW->>CAN: Button Press (0x1A3)
+    CAN->>VHAL: CAN Frame
+    VHAL->>VHAL: Parse to VehicleProperty
+    VHAL->>CIS: HW_KEY_INPUT event
+    CIS->>CMS: MediaKeyEvent(KEYCODE_MEDIA_NEXT)
+    CMS->>App: onMediaButtonEvent()
+    App-->>App: skipToNext()
+            </div>
+
+            <h3>2.2 Vehicle HAL 이벤트 수신</h3>
+            <pre><code>// Vehicle Property 구독
+val carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE)
+    as CarPropertyManager
+
+// HW Key Input 구독
+carPropertyManager.registerCallback(
+    object : CarPropertyManager.CarPropertyEventCallback {
+        override fun onChangeEvent(event: CarPropertyValue&lt;*&gt;) {
+            when (event.propertyId) {
+                VehiclePropertyIds.HW_KEY_INPUT -> {
+                    val keyEvent = event.value as IntArray
+                    val action = keyEvent[0]  // ACTION_DOWN/UP
+                    val keyCode = keyEvent[1]
+                    val targetDisplay = keyEvent[2]
+
+                    handleHwKeyInput(action, keyCode, targetDisplay)
+                }
+            }
+        }
+
+        override fun onErrorEvent(propId: Int, zone: Int) {
+            Log.e(TAG, "Property error: $propId, zone: $zone")
+        }
+    },
+    VehiclePropertyIds.HW_KEY_INPUT,
+    CarPropertyManager.SENSOR_RATE_ONCHANGE
+)</code></pre>
+
+            <h3>2.3 CAN 메시지 매핑 예시</h3>
+            <pre><code>// Vehicle HAL 내부 CAN 매핑 (C++)
+// hardware/interfaces/automotive/vehicle/impl/
+
+static const std::unordered_map&lt;uint32_t, int32_t&gt; kCanToKeyCodeMap = {
+    // CAN ID 0x1A3 (Steering Wheel Controls)
+    {0x01, AKEYCODE_MEDIA_PLAY_PAUSE},  // Play/Pause
+    {0x02, AKEYCODE_MEDIA_NEXT},         // Next Track
+    {0x03, AKEYCODE_MEDIA_PREVIOUS},     // Previous Track
+    {0x04, AKEYCODE_VOLUME_UP},          // Volume Up
+    {0x05, AKEYCODE_VOLUME_DOWN},        // Volume Down
+    {0x06, AKEYCODE_VOICE_ASSIST},       // Voice Button
+    {0x10, AKEYCODE_MEDIA_STOP},         // Stop
+};
+
+void VehicleHal::handleCanFrame(const CanFrame& frame) {
+    if (frame.id == 0x1A3) {  // Steering Wheel CAN ID
+        uint8_t buttonCode = frame.data[0];
+        auto it = kCanToKeyCodeMap.find(buttonCode);
+        if (it != kCanToKeyCodeMap.end()) {
+            VehiclePropValue prop = {
+                .prop = HW_KEY_INPUT,
+                .value = {
+                    .int32Values = {ACTION_DOWN, it->second, MAIN_DISPLAY}
+                }
+            };
+            mCallback->onPropertyEvent({prop});
+        }
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 3: 미디어 제어 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>차량 상태 기반 미디어 제어</h2>
+
+            <h3>3.1 주행 상태에 따른 제어</h3>
+            <pre><code>// 주행 상태 모니터링
+carPropertyManager.registerCallback(
+    object : CarPropertyManager.CarPropertyEventCallback {
+        override fun onChangeEvent(event: CarPropertyValue&lt;*&gt;) {
+            when (event.propertyId) {
+                VehiclePropertyIds.DRIVING_STATUS -> {
+                    val status = event.value as Int
+                    handleDrivingStatus(status)
+                }
+            }
+        }
+    },
+    VehiclePropertyIds.DRIVING_STATUS,
+    CarPropertyManager.SENSOR_RATE_ONCHANGE
+)
+
+fun handleDrivingStatus(status: Int) {
+    when (status) {
+        DRIVING_STATUS_NO_VIDEO -> {
+            // 주행 중: 비디오 재생 제한
+            mediaController.pause()
+            showDrivingRestrictionUI()
+        }
+        DRIVING_STATUS_UNRESTRICTED -> {
+            // 주차 중: 제한 해제
+            enableVideoPlayback()
+        }
+    }
+}</code></pre>
+
+            <h3>3.2 차량 모드에 따른 동작</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>차량 상태</th>
+                        <th>미디어 동작</th>
+                        <th>구현 방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>시동 ON</strong></td>
+                        <td>마지막 미디어 복원/자동 재생</td>
+                        <td>IGNITION_STATE 구독</td>
+                    </tr>
+                    <tr>
+                        <td><strong>주행 중</strong></td>
+                        <td>비디오 제한, UI 간소화</td>
+                        <td>DRIVING_STATUS 구독</td>
+                    </tr>
+                    <tr>
+                        <td><strong>전화 수신</strong></td>
+                        <td>미디어 Duck/Pause</td>
+                        <td>AudioFocus 연동</td>
+                    </tr>
+                    <tr>
+                        <td><strong>후진 기어</strong></td>
+                        <td>카메라 뷰 전환</td>
+                        <td>GEAR_SELECTION 구독</td>
+                    </tr>
+                    <tr>
+                        <td><strong>시동 OFF</strong></td>
+                        <td>상태 저장, 정리</td>
+                        <td>IGNITION_STATE 구독</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 4: 스티어링 휠 버튼 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>스티어링 휠 버튼 매핑</h2>
+
+            <h3>4.1 표준 미디어 키 코드</h3>
+            <pre><code>// KeyEvent.java 미디어 키 코드
+KEYCODE_MEDIA_PLAY           = 126  // 재생
+KEYCODE_MEDIA_PAUSE          = 127  // 일시정지
+KEYCODE_MEDIA_PLAY_PAUSE     = 85   // 재생/일시정지 토글
+KEYCODE_MEDIA_STOP           = 86   // 정지
+KEYCODE_MEDIA_NEXT           = 87   // 다음 트랙
+KEYCODE_MEDIA_PREVIOUS       = 88   // 이전 트랙
+KEYCODE_MEDIA_REWIND         = 89   // 되감기
+KEYCODE_MEDIA_FAST_FORWARD   = 90   // 빨리감기
+KEYCODE_VOLUME_UP            = 24   // 볼륨 업
+KEYCODE_VOLUME_DOWN          = 25   // 볼륨 다운
+KEYCODE_VOLUME_MUTE          = 164  // 음소거
+KEYCODE_VOICE_ASSIST         = 231  // 음성 비서</code></pre>
+
+            <h3>4.2 CarInputService 키 처리</h3>
+            <div class="mermaid">
+flowchart TD
+    A[HW Key Event] --> B{Key Type?}
+
+    B -->|Media Key| C[CarMediaService]
+    B -->|Volume Key| D[CarAudioService]
+    B -->|Voice Key| E[Voice Assistant]
+    B -->|Navigation| F[Navigation App]
+
+    C --> G[Active MediaSession]
+    D --> H[Zone Volume Control]
+    E --> I[Google Assistant / OEM Voice]
+    F --> J[Map Navigation]
+
+    G --> K[onMediaButtonEvent]
+    H --> L[setGroupVolume]
+            </div>
+
+            <h3>4.3 커스텀 키 매핑</h3>
+            <pre><code>&lt;!-- vendor/etc/car/steering_wheel_config.xml --&gt;
+&lt;steeringWheelConfig&gt;
+    &lt;keyMappings&gt;
+        &lt;!-- 기본 미디어 키 --&gt;
+        &lt;key hwCode="0x01" keyCode="KEYCODE_MEDIA_PLAY_PAUSE" /&gt;
+        &lt;key hwCode="0x02" keyCode="KEYCODE_MEDIA_NEXT" /&gt;
+        &lt;key hwCode="0x03" keyCode="KEYCODE_MEDIA_PREVIOUS" /&gt;
+
+        &lt;!-- 볼륨 (롱프레스 = 연속) --&gt;
+        &lt;key hwCode="0x04" keyCode="KEYCODE_VOLUME_UP" longPress="repeat" /&gt;
+        &lt;key hwCode="0x05" keyCode="KEYCODE_VOLUME_DOWN" longPress="repeat" /&gt;
+
+        &lt;!-- OEM 커스텀 키 --&gt;
+        &lt;key hwCode="0x10" keyCode="KEYCODE_CUSTOM_FAVORITE_1"
+             action="com.vendor.action.FAVORITE_1" /&gt;
+        &lt;key hwCode="0x11" keyCode="KEYCODE_CUSTOM_FAVORITE_2"
+             action="com.vendor.action.FAVORITE_2" /&gt;
+
+        &lt;!-- 음성 (숏/롱 프레스 구분) --&gt;
+        &lt;key hwCode="0x06"
+             shortPress="KEYCODE_VOICE_ASSIST"
+             longPress="KEYCODE_SEARCH" /&gt;
+    &lt;/keyMappings&gt;
+&lt;/steeringWheelConfig&gt;</code></pre>
+        </section>
+
+        <!-- Section 5: 클러스터 연동 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>클러스터(계기판) 미디어 연동</h2>
+
+            <h3>5.1 클러스터 디스플레이 구조</h3>
+            <div class="mermaid">
+flowchart LR
+    subgraph IVI["Center IVI"]
+        MA[Media App]
+        MS[MediaSession]
+    end
+
+    subgraph CLUSTER["Instrument Cluster"]
+        CI[ClusterInstrumentService]
+        CD[Cluster Display]
+    end
+
+    subgraph INFO["Media Info"]
+        TI[Track Info]
+        AA[Album Art]
+        PB[Playback State]
+    end
+
+    MS --> CI
+    CI --> TI
+    CI --> AA
+    CI --> PB
+    TI --> CD
+    AA --> CD
+    PB --> CD
+            </div>
+
+            <h3>5.2 InstrumentClusterService 연동</h3>
+            <pre><code>// 미디어 정보를 클러스터에 전달
+class MediaClusterRenderer : InstrumentClusterRenderingService() {
+
+    override fun onMediaStateChanged(bundle: Bundle) {
+        // MediaSession 상태 변경 수신
+        val title = bundle.getString(MediaMetadataCompat.METADATA_KEY_TITLE)
+        val artist = bundle.getString(MediaMetadataCompat.METADATA_KEY_ARTIST)
+        val albumArt = bundle.getParcelable&lt;Bitmap&gt;(
+            MediaMetadataCompat.METADATA_KEY_ALBUM_ART
+        )
+        val state = bundle.getInt("playback_state")
+
+        // 클러스터 UI 업데이트
+        updateClusterMediaInfo(title, artist, albumArt, state)
+    }
+
+    private fun updateClusterMediaInfo(
+        title: String?,
+        artist: String?,
+        albumArt: Bitmap?,
+        state: Int
+    ) {
+        // 클러스터 디스플레이에 렌더링
+        clusterView?.apply {
+            trackTitle.text = title
+            artistName.text = artist
+            albumImage.setImageBitmap(albumArt?.let { scaleToBitmap(it) })
+            playbackIcon.setImageResource(
+                if (state == PlaybackStateCompat.STATE_PLAYING)
+                    R.drawable.ic_pause
+                else
+                    R.drawable.ic_play
+            )
+        }
+    }
+}</code></pre>
+
+            <h3>5.3 클러스터 설정</h3>
+            <pre><code>&lt;!-- AndroidManifest.xml --&gt;
+&lt;service
+    android:name=".MediaClusterRenderer"
+    android:exported="true"
+    android:permission="android.car.permission.BIND_INSTRUMENT_CLUSTER_RENDERER"&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="android.car.cluster.INSTRUMENT_CLUSTER_RENDERER" /&gt;
+    &lt;/intent-filter&gt;
+
+    &lt;meta-data
+        android:name="android.car.cluster.NAVIGATION"
+        android:value="true" /&gt;
+    &lt;meta-data
+        android:name="android.car.cluster.MEDIA"
+        android:value="true" /&gt;
+&lt;/service&gt;</code></pre>
+        </section>
+
+        <!-- Section 6: 차량 모드 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>주행/주차 모드 처리</h2>
+
+            <h3>6.1 UX Restrictions</h3>
+            <pre><code>// CarUxRestrictionsManager 사용
+val uxManager = car.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE)
+    as CarUxRestrictionsManager
+
+uxManager.registerListener { restrictions ->
+    val isVideoAllowed = !restrictions.isRequiresDistractionOptimization
+
+    if (isVideoAllowed) {
+        // 비디오 재생 허용 (주차 상태)
+        enableVideoPlayback()
+    } else {
+        // 비디오 제한 (주행 상태)
+        when {
+            restrictions.activeRestrictions and
+                CarUxRestrictions.UX_RESTRICTIONS_NO_VIDEO != 0 -> {
+                pauseVideoShowAudioOnly()
+            }
+            restrictions.activeRestrictions and
+                CarUxRestrictions.UX_RESTRICTIONS_NO_TEXT_MESSAGE != 0 -> {
+                hideDetailedInfo()
+            }
+        }
+    }
+}
+
+// 현재 제한 상태 확인
+val currentRestrictions = uxManager.currentCarUxRestrictions
+if (currentRestrictions.isRequiresDistractionOptimization) {
+    // 주행 최적화 모드
+}</code></pre>
+
+            <h3>6.2 비디오 제한 구현</h3>
+            <pre><code>class VideoPlayerActivity : Activity() {
+    private lateinit var uxManager: CarUxRestrictionsManager
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val car = Car.createCar(this)
+        uxManager = car.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE)
+            as CarUxRestrictionsManager
+
+        // 현재 상태 확인
+        checkAndApplyRestrictions(uxManager.currentCarUxRestrictions)
+
+        // 변경 감지
+        uxManager.registerListener { restrictions ->
+            checkAndApplyRestrictions(restrictions)
+        }
+    }
+
+    private fun checkAndApplyRestrictions(restrictions: CarUxRestrictions) {
+        val noVideo = restrictions.activeRestrictions and
+            CarUxRestrictions.UX_RESTRICTIONS_NO_VIDEO != 0
+
+        if (noVideo) {
+            // 비디오 숨기고 오디오만 재생
+            videoView.visibility = View.GONE
+            audioOnlyView.visibility = View.VISIBLE
+            showToast("주행 중에는 비디오를 볼 수 없습니다")
+        } else {
+            videoView.visibility = View.VISIBLE
+            audioOnlyView.visibility = View.GONE
+        }
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 7: 구현 예시 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>통합 구현 예시</h2>
+
+            <h3>7.1 전체 연동 코드</h3>
+            <pre><code>class VehicleMediaManager(private val context: Context) {
+    private lateinit var car: Car
+    private lateinit var propertyManager: CarPropertyManager
+    private lateinit var audioManager: CarAudioManager
+    private lateinit var uxManager: CarUxRestrictionsManager
+
+    fun initialize() {
+        car = Car.createCar(context)
+        propertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+        audioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+        uxManager = car.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE)
+            as CarUxRestrictionsManager
+
+        registerVehicleCallbacks()
+    }
+
+    private fun registerVehicleCallbacks() {
+        // 1. 시동 상태
+        propertyManager.registerCallback(ignitionCallback,
+            VehiclePropertyIds.IGNITION_STATE,
+            CarPropertyManager.SENSOR_RATE_ONCHANGE)
+
+        // 2. 기어 상태
+        propertyManager.registerCallback(gearCallback,
+            VehiclePropertyIds.GEAR_SELECTION,
+            CarPropertyManager.SENSOR_RATE_ONCHANGE)
+
+        // 3. HW 키 입력
+        propertyManager.registerCallback(hwKeyCallback,
+            VehiclePropertyIds.HW_KEY_INPUT,
+            CarPropertyManager.SENSOR_RATE_ONCHANGE)
+
+        // 4. UX 제한
+        uxManager.registerListener(uxListener)
+    }
+
+    private val ignitionCallback = object : CarPropertyManager.CarPropertyEventCallback {
+        override fun onChangeEvent(event: CarPropertyValue&lt;*&gt;) {
+            when (event.value as Int) {
+                VehicleIgnitionState.ON -> onIgnitionOn()
+                VehicleIgnitionState.OFF -> onIgnitionOff()
+            }
+        }
+        override fun onErrorEvent(propId: Int, zone: Int) {}
+    }
+
+    private fun onIgnitionOn() {
+        // 마지막 미디어 소스 복원
+        val lastSource = preferences.getString("last_media_source", null)
+        lastSource?.let { restoreMediaSource(it) }
+    }
+
+    private fun onIgnitionOff() {
+        // 현재 상태 저장
+        saveCurrentMediaState()
+    }
+}</code></pre>
+
+            <h3>7.2 테스트 명령어</h3>
+            <pre><code># Vehicle Property 시뮬레이션
+# HW Key 이벤트 주입
+adb shell cmd car_service inject-vhal-event 0x0A000000 1 87 0
+# (HW_KEY_INPUT, ACTION_DOWN, KEYCODE_MEDIA_NEXT, DISPLAY_0)
+
+# 주행 상태 변경
+adb shell cmd car_service inject-vhal-event 0x11400404 1
+# DRIVING_STATUS = NO_VIDEO
+
+# 기어 변경
+adb shell cmd car_service inject-vhal-event 0x11400400 2
+# GEAR_SELECTION = REVERSE
+
+# 현재 Vehicle Property 확인
+adb shell dumpsys car_service --services CarPropertyService</code></pre>
+        </section>
+
+        <!-- Section 8: 체크리스트 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>개발 체크리스트</h2>
+
+            <ul class="checklist">
+                <li><input type="checkbox"> Vehicle HAL Property 정의 완료</li>
+                <li><input type="checkbox"> CAN 메시지 매핑 구현</li>
+                <li><input type="checkbox"> 스티어링 휠 버튼 동작</li>
+                <li><input type="checkbox"> 볼륨 컨트롤 연동</li>
+                <li><input type="checkbox"> 음성 비서 버튼 동작</li>
+                <li><input type="checkbox"> 클러스터 미디어 정보 표시</li>
+                <li><input type="checkbox"> 주행/주차 모드 전환</li>
+                <li><input type="checkbox"> 비디오 제한 동작</li>
+                <li><input type="checkbox"> 시동 ON/OFF 처리</li>
+            </ul>
+        </section>
+
+        <!-- 관련 문서 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>관련 문서</h2>
+            <ul>
+                <li><a href="aaos-key-events.html">AAOS Key Events</a> - 키 이벤트 상세</li>
+                <li><a href="carmedia.html">Car Media Service</a> - CarMediaService</li>
+                <li><a href="oem-customization.html">OEM 커스터마이징</a> - Vendor 확장</li>
+                <li><a href="aaos-boot-optimization.html">AAOS 부팅 최적화</a> - 부팅 시 미디어</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="scripts/mermaid-theme.js"></script>
+    <script src="scripts/copy-code.js"></script>
+    <script src="scripts/toc-generator.js"></script>
+    <script src="scripts/page-navigation.js"></script>
+    <script src="scripts/diagram-data.js"></script>
+    <script src="scripts/diagram-interactive.js"></script>
+    <script src="scripts/theme-toggle.js"></script>
+</body>
+</html>
