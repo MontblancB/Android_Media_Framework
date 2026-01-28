@@ -2663,6 +2663,9 @@ footer {
     color: var(--color-accent);
     cursor: pointer;
     transition: all 0.2s ease;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
 }
 
 .search-close-btn:hover {
