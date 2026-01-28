@@ -247,7 +247,7 @@
                       type === 'page' && item.category ? `<span class="search-badge">${item.category}</span>` : '';
 
         return `
-            <a href="${item.url}" class="search-result-item" data-url="${item.url}">
+            <a href="${item.url}" class="search-result-item" data-type="${type}" data-url="${item.url}">
                 <span class="search-result-icon">${icons[type]}</span>
                 <div class="search-result-content">
                     <div class="search-result-title">
