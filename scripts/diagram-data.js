@@ -8972,6 +8972,3498 @@ adb shell am bug-report
             '권한 추가',
             'API 변경'
         ]
+    },
+
+    // ========================================
+    // Batch 1: 핵심 아키텍처 노드 (AAOS, Media Framework Core, Widevine, AOSP, Codec2)
+    // ========================================
+
+    // --- AOSP 아키텍처 추가 노드 ---
+    'Codec HAL': {
+        title: 'Codec HAL',
+        layer: 'HAL',
+        description: 'Android Hardware Abstraction Layer for media codecs. Provides standard interface between codec implementations and Android framework.',
+        components: [
+            'IComponentStore - 코덱 스토어 인터페이스',
+            'IComponent - 코덱 컴포넌트 인터페이스',
+            'IConfigurable - 설정 인터페이스',
+            'HIDL/AIDL 인터페이스'
+        ],
+        path: 'hardware/interfaces/media/c2/',
+        doc: 'https://source.android.com/docs/core/media/codec2'
+    },
+
+    'Component Interface': {
+        title: 'C2 Component Interface',
+        layer: 'HAL',
+        description: 'Codec2 컴포넌트의 제어 인터페이스입니다. 파라미터 쿼리, 설정, 상태 관리를 담당합니다.',
+        components: [
+            'query() - 파라미터 조회',
+            'config() - 파라미터 설정',
+            'createTunnel() - 터널 모드',
+            'start()/stop()/reset()'
+        ],
+        path: 'frameworks/av/media/codec2/core/include/C2Component.h'
+    },
+
+    'System Services': {
+        title: 'System Services',
+        layer: 'Framework',
+        description: 'Android System Server에서 실행되는 핵심 시스템 서비스들입니다. Activity, Window, Package 등의 매니저 서비스를 포함합니다.',
+        components: [
+            'ActivityManagerService',
+            'WindowManagerService',
+            'PackageManagerService',
+            'MediaSessionService',
+            'AudioService'
+        ],
+        path: 'frameworks/base/services/',
+        doc: 'https://source.android.com/docs/core/architecture'
+    },
+
+    'Application Layer': {
+        title: 'Application Layer',
+        layer: 'Application',
+        description: 'Android 애플리케이션 계층입니다. 시스템 앱과 사용자 앱이 동작하는 레이어입니다.',
+        components: [
+            'System Apps',
+            'Third-party Apps',
+            'Media Apps',
+            'Launcher'
+        ],
+        path: 'packages/apps/',
+        doc: 'https://developer.android.com/guide/components'
+    },
+
+    'HAL Layer': {
+        title: 'HAL Layer',
+        layer: 'HAL',
+        description: 'Hardware Abstraction Layer입니다. 하드웨어 드라이버와 Android 프레임워크 사이의 표준 인터페이스를 제공합니다.',
+        components: [
+            'Audio HAL',
+            'Camera HAL',
+            'Codec HAL',
+            'Graphics HAL',
+            'Sensors HAL'
+        ],
+        path: 'hardware/interfaces/',
+        doc: 'https://source.android.com/docs/core/architecture/hal'
+    },
+
+    'Proxy': {
+        title: 'Binder Proxy',
+        layer: 'Native',
+        description: 'Binder IPC의 클라이언트 측 프록시 객체입니다. 원격 서비스 호출을 로컬 메서드 호출처럼 사용할 수 있게 합니다.',
+        components: [
+            'IBinder 인터페이스',
+            'transact() 호출',
+            'Parcel 직렬화',
+            'onTransact() 응답 처리'
+        ],
+        path: 'frameworks/native/libs/binder/'
+    },
+
+    'Stub': {
+        title: 'Binder Stub',
+        layer: 'Native',
+        description: 'Binder IPC의 서버 측 스텁 객체입니다. 클라이언트의 요청을 받아 실제 서비스 메서드를 호출합니다.',
+        components: [
+            'onTransact() 구현',
+            'Parcel 역직렬화',
+            '서비스 메서드 호출',
+            '결과 반환'
+        ],
+        path: 'frameworks/native/libs/binder/'
+    },
+
+    'ServiceManager': {
+        title: 'Service Manager',
+        layer: 'Native',
+        description: 'Android 시스템 서비스의 등록과 검색을 관리하는 중앙 서비스입니다.',
+        components: [
+            'addService() - 서비스 등록',
+            'getService() - 서비스 조회',
+            'listServices() - 서비스 목록',
+            'checkService() - 서비스 확인'
+        ],
+        path: 'frameworks/native/cmds/servicemanager/'
+    },
+
+    'HIDL': {
+        title: 'HIDL',
+        layer: 'HAL',
+        description: 'HAL Interface Definition Language. Android O에서 도입된 HAL 인터페이스 정의 언어입니다.',
+        components: [
+            '.hal 파일 정의',
+            'hwservicemanager',
+            'passthrough mode',
+            'binderized mode'
+        ],
+        path: 'system/libhidl/',
+        doc: 'https://source.android.com/docs/core/architecture/hidl'
+    },
+
+    'Camera Service': {
+        title: 'Camera Service',
+        layer: 'Native',
+        description: 'Android 카메라 서비스입니다. 카메라 하드웨어 접근을 관리하고 Camera2 API를 구현합니다.',
+        components: [
+            'CameraService.cpp',
+            'Camera3Device',
+            'CameraProviderManager',
+            'Camera HAL 연동'
+        ],
+        path: 'frameworks/av/services/camera/'
+    },
+
+    'Codec Service': {
+        title: 'Codec Service',
+        layer: 'Native',
+        description: 'Media Codec 서비스입니다. 비디오/오디오 코덱의 인코딩/디코딩을 처리합니다.',
+        components: [
+            'MediaCodecService',
+            'Codec2 Component',
+            'OMX Component (레거시)',
+            'Hardware Codec 연동'
+        ],
+        path: 'frameworks/av/services/mediacodec/'
+    },
+
+    'VNDK': {
+        title: 'Vendor NDK',
+        layer: 'Native',
+        description: 'Vendor Native Development Kit. 벤더가 사용할 수 있는 안정적인 네이티브 라이브러리 집합입니다.',
+        components: [
+            'VNDK-SP 라이브러리',
+            'VNDK 라이브러리',
+            'LL-NDK 라이브러리',
+            'APEX 모듈'
+        ],
+        path: 'system/core/vndk/',
+        doc: 'https://source.android.com/docs/core/architecture/vndk'
+    },
+
+    'System Partition': {
+        title: 'System Partition',
+        layer: 'System',
+        description: 'Android OS 핵심 파일이 저장되는 파티션입니다. 프레임워크, 시스템 앱, 라이브러리가 포함됩니다.',
+        components: [
+            '/system/framework/',
+            '/system/app/',
+            '/system/lib/',
+            '/system/bin/'
+        ],
+        path: 'system/'
+    },
+
+    'Vendor Partition': {
+        title: 'Vendor Partition',
+        layer: 'Vendor',
+        description: '벤더 특화 파일이 저장되는 파티션입니다. HAL 구현, 벤더 앱, 펌웨어가 포함됩니다.',
+        components: [
+            '/vendor/lib/',
+            '/vendor/bin/',
+            '/vendor/app/',
+            '/vendor/firmware/'
+        ],
+        path: 'vendor/'
+    },
+
+    'Daemons': {
+        title: 'Native Daemons',
+        layer: 'Native',
+        description: '백그라운드에서 실행되는 네이티브 데몬 프로세스들입니다.',
+        components: [
+            'surfaceflinger',
+            'audioserver',
+            'cameraserver',
+            'mediaserver'
+        ],
+        path: 'frameworks/av/services/'
+    },
+
+    'Media Router': {
+        title: 'Media Router',
+        layer: 'Framework',
+        description: '미디어 라우팅을 관리하는 프레임워크입니다. Chromecast, 블루투스 등 외부 장치로의 미디어 전송을 처리합니다.',
+        components: [
+            'MediaRouteProvider',
+            'MediaRouteSelector',
+            'MediaRouteDescriptor',
+            'Cast 연동'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaRouter.java'
+    },
+
+    'Media API': {
+        title: 'Media API',
+        layer: 'Framework',
+        description: 'Android 미디어 재생/녹화를 위한 Java API입니다. MediaPlayer, MediaRecorder 등을 포함합니다.',
+        components: [
+            'MediaPlayer',
+            'MediaRecorder',
+            'MediaCodec',
+            'MediaExtractor'
+        ],
+        path: 'frameworks/base/media/java/android/media/',
+        doc: 'https://developer.android.com/reference/android/media/package-summary'
+    },
+
+    'Stagefright': {
+        title: 'Stagefright',
+        layer: 'Native',
+        description: 'Android 네이티브 미디어 프레임워크입니다. 미디어 재생의 핵심 엔진으로 libstagefright에 구현되어 있습니다.',
+        components: [
+            'NuPlayer',
+            'MediaCodecSource',
+            'MediaExtractor',
+            'OMX/Codec2 연동'
+        ],
+        path: 'frameworks/av/media/libstagefright/'
+    },
+
+    'Client': {
+        title: 'Client',
+        layer: 'Application',
+        description: 'Binder IPC에서 서비스를 호출하는 클라이언트 측입니다.',
+        components: [
+            '서비스 바인딩',
+            'Proxy 사용',
+            '비동기 콜백',
+            '에러 핸들링'
+        ]
+    },
+
+    'Server': {
+        title: 'Server',
+        layer: 'Native',
+        description: 'Binder IPC에서 서비스를 제공하는 서버 측입니다.',
+        components: [
+            'Stub 구현',
+            '요청 처리',
+            '결과 반환',
+            '상태 관리'
+        ]
+    },
+
+    'HAL Interface': {
+        title: 'HAL Interface',
+        layer: 'HAL',
+        description: 'Hardware Abstraction Layer 인터페이스입니다. HIDL 또는 AIDL로 정의됩니다.',
+        components: [
+            'HIDL Interface',
+            'AIDL Interface',
+            'HAL Module',
+            'hw_module_t'
+        ],
+        path: 'hardware/interfaces/'
+    },
+
+    'App View': {
+        title: 'App View',
+        layer: 'Application',
+        description: 'Android 앱의 View 시스템입니다. UI 렌더링과 사용자 상호작용을 담당합니다.',
+        components: [
+            'View',
+            'ViewGroup',
+            'SurfaceView',
+            'TextureView'
+        ],
+        path: 'frameworks/base/core/java/android/view/'
+    },
+
+    // --- Media Framework Core 추가 노드 ---
+    'Media Apps': {
+        title: 'Media Apps',
+        layer: 'Application',
+        description: '미디어 재생/녹화 기능을 사용하는 Android 애플리케이션들입니다.',
+        components: [
+            'Music Player',
+            'Video Player',
+            'Camera App',
+            'Streaming Apps'
+        ]
+    },
+
+    'MediaExtractor': {
+        title: 'MediaExtractor',
+        layer: 'Native',
+        description: '미디어 컨테이너에서 트랙을 추출하는 컴포넌트입니다. MP4, MKV, WebM 등의 컨테이너를 파싱합니다.',
+        components: [
+            'MP4 Extractor',
+            'MKV Extractor',
+            'WebM Extractor',
+            'MPEG-TS Extractor'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://developer.android.com/reference/android/media/MediaExtractor'
+    },
+
+    'NuPlayer': {
+        title: 'NuPlayer',
+        layer: 'Native',
+        description: 'Android 네이티브 미디어 플레이어 엔진입니다. MediaPlayer의 백엔드로 사용됩니다.',
+        components: [
+            'NuPlayerDriver',
+            'NuPlayerDecoder',
+            'NuPlayerRenderer',
+            'GenericSource/RTSPSource'
+        ],
+        path: 'frameworks/av/media/libmediaplayerservice/nuplayer/'
+    },
+
+    'ACodec': {
+        title: 'ACodec',
+        layer: 'Native',
+        description: 'OMX IL 기반 코덱 래퍼입니다. 레거시 코덱 연동에 사용됩니다.',
+        components: [
+            'OMX Component 연동',
+            'Buffer 관리',
+            '상태 머신',
+            'ACodecBufferChannel'
+        ],
+        path: 'frameworks/av/media/libstagefright/'
+    },
+
+    'libmedia': {
+        title: 'libmedia',
+        layer: 'Native',
+        description: 'Android 미디어 프레임워크의 기본 라이브러리입니다. 미디어 관련 IPC와 유틸리티를 제공합니다.',
+        components: [
+            'IMediaPlayer',
+            'IMediaRecorder',
+            'MediaPlayerBase',
+            'AudioTrack/AudioRecord'
+        ],
+        path: 'frameworks/av/media/libmedia/'
+    },
+
+    'libstagefright': {
+        title: 'libstagefright',
+        layer: 'Native',
+        description: 'Stagefright 미디어 프레임워크 핵심 라이브러리입니다.',
+        components: [
+            'MediaCodec 구현',
+            'Extractor 플러그인',
+            'Buffer 관리',
+            'A/V 동기화'
+        ],
+        path: 'frameworks/av/media/libstagefright/'
+    },
+
+    'MediaCodec API': {
+        title: 'MediaCodec API',
+        layer: 'Framework',
+        description: 'Android의 저수준 코덱 API입니다. 하드웨어/소프트웨어 코덱에 직접 접근할 수 있습니다.',
+        components: [
+            'configure()',
+            'start()/stop()',
+            'queueInputBuffer()',
+            'dequeueOutputBuffer()'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaCodec.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaCodec'
+    },
+
+    'CCodec Entry': {
+        title: 'CCodec Entry',
+        layer: 'Native',
+        description: 'Codec2 프레임워크의 진입점입니다. MediaCodec에서 Codec2 컴포넌트로의 연결을 담당합니다.',
+        components: [
+            'CCodec 초기화',
+            'Component 생성',
+            'BufferChannel 설정',
+            'Client 연결'
+        ],
+        path: 'frameworks/av/media/codec2/sfplugin/'
+    },
+
+    'C2Params': {
+        title: 'C2Params',
+        layer: 'Native',
+        description: 'Codec2 파라미터 시스템입니다. 코덱 설정과 상태를 구조화된 방식으로 관리합니다.',
+        components: [
+            'C2Param 기본 클래스',
+            'C2Setting/C2Tuning/C2Info',
+            '파라미터 쿼리/설정',
+            '타입 안전 파라미터'
+        ],
+        path: 'frameworks/av/media/codec2/core/include/C2Param.h'
+    },
+
+    'Binder IPC': {
+        title: 'Binder IPC',
+        layer: 'Native',
+        description: 'Android의 프로세스 간 통신 메커니즘입니다. 서비스와 클라이언트 간의 메서드 호출을 가능하게 합니다.',
+        components: [
+            'Binder Driver',
+            'ServiceManager',
+            'Proxy/Stub',
+            'Parcel 직렬화'
+        ],
+        path: 'frameworks/native/libs/binder/',
+        doc: 'https://source.android.com/docs/core/architecture/hidl/binder-ipc'
+    },
+
+    'Media3': {
+        title: 'Media3',
+        layer: 'Application',
+        description: 'Android Jetpack Media3 라이브러리입니다. ExoPlayer의 후속으로 미디어 재생의 표준 솔루션입니다.',
+        components: [
+            'ExoPlayer',
+            'MediaSession',
+            'MediaController',
+            'UI 컴포넌트'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media/media3'
+    },
+
+    'Media3 Session': {
+        title: 'Media3 Session',
+        layer: 'Application',
+        description: 'Media3의 세션 관리 모듈입니다. 미디어 컨트롤러와의 통신을 담당합니다.',
+        components: [
+            'MediaSession',
+            'MediaSessionService',
+            'MediaNotification',
+            'MediaButton 처리'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media/media3/session'
+    },
+
+    'Media3 UI': {
+        title: 'Media3 UI',
+        layer: 'Application',
+        description: 'Media3의 UI 컴포넌트입니다. 플레이어 컨트롤, 자막 표시 등을 제공합니다.',
+        components: [
+            'PlayerView',
+            'PlayerControlView',
+            'SubtitleView',
+            'DefaultTimeBar'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media/media3/ui'
+    },
+
+    'MediaCodec 1': {
+        title: 'MediaCodec Instance 1',
+        layer: 'Native',
+        description: '첫 번째 MediaCodec 인스턴스입니다. 멀티 코덱 시나리오에서 사용됩니다.',
+        components: [
+            'Video Decoder',
+            'Audio Decoder',
+            '독립적 버퍼 관리',
+            '병렬 처리'
+        ]
+    },
+
+    'MediaCodec 2': {
+        title: 'MediaCodec Instance 2',
+        layer: 'Native',
+        description: '두 번째 MediaCodec 인스턴스입니다. PIP, 트랜스코딩 등에서 사용됩니다.',
+        components: [
+            'Secondary Decoder',
+            '인코더',
+            '독립적 버퍼 관리',
+            '병렬 처리'
+        ]
+    },
+
+    'MediaCodec 3': {
+        title: 'MediaCodec Instance 3',
+        layer: 'Native',
+        description: '세 번째 MediaCodec 인스턴스입니다. 다중 스트림 시나리오에서 사용됩니다.',
+        components: [
+            'Additional Decoder',
+            '추가 인코더',
+            '리소스 공유',
+            '스케줄링'
+        ]
+    },
+
+    'MediaDrm': {
+        title: 'MediaDrm',
+        layer: 'Framework',
+        description: 'Android DRM 프레임워크 API입니다. 보호된 콘텐츠의 라이선스 관리를 담당합니다.',
+        components: [
+            'openSession()',
+            'getKeyRequest()',
+            'provideKeyResponse()',
+            'restoreKeys()'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaDrm.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaDrm'
+    },
+
+    'MediaDrm Service': {
+        title: 'MediaDrm Service',
+        layer: 'Native',
+        description: 'MediaDrm 서비스입니다. DRM HAL과 통신하여 라이선스 처리를 수행합니다.',
+        components: [
+            'DrmManagerClient',
+            'IDrmFactory',
+            'DRM 플러그인 관리',
+            '세션 관리'
+        ],
+        path: 'frameworks/av/drm/mediadrm/'
+    },
+
+    'KeyMaster': {
+        title: 'KeyMaster',
+        layer: 'HAL',
+        description: 'Android 키 저장소 HAL입니다. 암호화 키의 안전한 생성과 저장을 담당합니다.',
+        components: [
+            'Key Generation',
+            'Key Import',
+            'Crypto Operations',
+            'TEE 연동'
+        ],
+        path: 'hardware/interfaces/keymaster/',
+        doc: 'https://source.android.com/docs/security/features/keystore'
+    },
+
+    'Widevine': {
+        title: 'Widevine',
+        layer: 'DRM',
+        description: 'Google의 DRM 솔루션입니다. 대부분의 OTT 서비스에서 사용됩니다.',
+        components: [
+            'Widevine CDM',
+            'OEMCrypto',
+            'L1/L2/L3 레벨',
+            '라이선스 서버'
+        ],
+        doc: 'https://www.widevine.com/'
+    },
+
+    'Secure Decoder': {
+        title: 'Secure Decoder',
+        layer: 'HAL',
+        description: 'TEE에서 실행되는 보안 디코더입니다. Widevine L1에서 필수입니다.',
+        components: [
+            'TEE 내부 디코딩',
+            'Secure Buffer',
+            'Protected Output',
+            'HDCP 연동'
+        ]
+    },
+
+    'MediaSession Service': {
+        title: 'MediaSession Service',
+        layer: 'Framework',
+        description: 'MediaSession을 관리하는 시스템 서비스입니다. 미디어 버튼 라우팅을 처리합니다.',
+        components: [
+            'MediaSessionRecord',
+            '우선순위 관리',
+            '미디어 버튼 디스패치',
+            '알림 연동'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/media/'
+    },
+
+    'MediaSession Framework': {
+        title: 'MediaSession Framework',
+        layer: 'Framework',
+        description: 'MediaSession 프레임워크입니다. 미디어 앱과 시스템/외부 컨트롤러 간의 통신을 담당합니다.',
+        components: [
+            'MediaSession',
+            'MediaController',
+            'PlaybackState',
+            'MediaMetadata'
+        ],
+        path: 'frameworks/base/media/java/android/media/session/'
+    },
+
+    'Components': {
+        title: 'Components',
+        layer: 'Native',
+        description: 'Codec2 컴포넌트들입니다. 개별 코덱 기능을 구현합니다.',
+        components: [
+            'Video Decoder Components',
+            'Video Encoder Components',
+            'Audio Decoder Components',
+            'Audio Encoder Components'
+        ],
+        path: 'frameworks/av/media/codec2/components/'
+    },
+
+    'Codec HAL Interface': {
+        title: 'Codec HAL Interface',
+        layer: 'HAL',
+        description: 'Codec2 HAL 인터페이스입니다. 프레임워크와 HAL 구현 사이의 계약을 정의합니다.',
+        components: [
+            'IComponentStore',
+            'IComponent',
+            'IConfigurable',
+            'IComponentInterface'
+        ],
+        path: 'hardware/interfaces/media/c2/'
+    },
+
+    'Codec2 Core': {
+        title: 'Codec2 Core',
+        layer: 'Native',
+        description: 'Codec2 핵심 라이브러리입니다. 파라미터, 버퍼, 컴포넌트 기본 클래스를 정의합니다.',
+        components: [
+            'C2Param',
+            'C2Buffer',
+            'C2Component',
+            'C2Work'
+        ],
+        path: 'frameworks/av/media/codec2/core/'
+    },
+
+    'Codec2 Component': {
+        title: 'Codec2 Component',
+        layer: 'Native',
+        description: 'Codec2 컴포넌트 구현입니다. 실제 코덱 로직이 포함됩니다.',
+        components: [
+            'SimpleC2Component',
+            'process() 구현',
+            '버퍼 처리',
+            '상태 관리'
+        ],
+        path: 'frameworks/av/media/codec2/components/'
+    },
+
+    'Codec2 Parameter': {
+        title: 'Codec2 Parameter',
+        layer: 'Native',
+        description: 'Codec2 파라미터 시스템입니다. 타입 안전한 코덱 설정을 제공합니다.',
+        components: [
+            'C2Param 타입',
+            'CoreIndex',
+            'PortIndex',
+            'StreamIndex'
+        ],
+        path: 'frameworks/av/media/codec2/core/include/C2Param.h'
+    },
+
+    'Codec2 Hardware': {
+        title: 'Codec2 Hardware',
+        layer: 'HAL',
+        description: 'Codec2 하드웨어 코덱 구현입니다. 벤더별 하드웨어 가속을 제공합니다.',
+        components: [
+            'Vendor HW Codec',
+            'VPU/DSP 연동',
+            'Secure Codec',
+            'Zero-copy 최적화'
+        ]
+    },
+
+    'Codec2 Software': {
+        title: 'Codec2 Software',
+        layer: 'Native',
+        description: 'Codec2 소프트웨어 코덱입니다. AOSP에서 제공하는 기본 코덱들입니다.',
+        components: [
+            'C2SoftAacDec',
+            'C2SoftHevcDec',
+            'C2SoftVpxDec',
+            'C2SoftOpusDec'
+        ],
+        path: 'frameworks/av/media/codec2/components/'
+    },
+
+    'Codec2 Store': {
+        title: 'Codec2 Store',
+        layer: 'Native',
+        description: 'Codec2 컴포넌트 스토어입니다. 사용 가능한 코덱을 열거하고 생성합니다.',
+        components: [
+            'C2PlatformComponentStore',
+            '코덱 열거',
+            '컴포넌트 생성',
+            '파라미터 반사'
+        ],
+        path: 'frameworks/av/media/codec2/sfplugin/'
+    },
+
+    'Codec2 Implementation': {
+        title: 'Codec2 Implementation',
+        layer: 'HAL',
+        description: 'Codec2 벤더 구현입니다. media_codecs.xml로 설정됩니다.',
+        components: [
+            'Vendor ComponentStore',
+            '코덱 등록',
+            'HAL 서비스',
+            'media_codecs.xml'
+        ]
+    },
+
+    'Codec2 API': {
+        title: 'Codec2 API',
+        layer: 'Native',
+        description: 'Codec2 API입니다. MediaCodec에서 사용하는 저수준 코덱 인터페이스입니다.',
+        components: [
+            'C2Component API',
+            'C2Buffer API',
+            'C2Param API',
+            'C2Work API'
+        ],
+        path: 'frameworks/av/media/codec2/core/include/'
+    },
+
+    'Gallery App': {
+        title: 'Gallery App',
+        layer: 'Application',
+        description: '갤러리 앱입니다. 사진과 동영상을 브라우징하고 재생합니다.',
+        components: [
+            'MediaStore 쿼리',
+            '썸네일 로딩',
+            '미디어 재생',
+            '편집 기능'
+        ]
+    },
+
+    'Music App': {
+        title: 'Music App',
+        layer: 'Application',
+        description: '음악 재생 앱입니다. 오디오 파일을 재생하고 관리합니다.',
+        components: [
+            'MediaBrowserService',
+            'MediaSession',
+            '오디오 포커스',
+            '알림 컨트롤'
+        ]
+    },
+
+    'Media Files': {
+        title: 'Media Files',
+        layer: 'Storage',
+        description: '저장된 미디어 파일들입니다. MediaProvider가 인덱싱합니다.',
+        components: [
+            '이미지 파일',
+            '비디오 파일',
+            '오디오 파일',
+            '문서 파일'
+        ]
+    },
+
+    'Media Database': {
+        title: 'Media Database',
+        layer: 'Framework',
+        description: 'MediaProvider의 SQLite 데이터베이스입니다. 미디어 메타데이터를 저장합니다.',
+        components: [
+            'external.db',
+            'internal.db',
+            '미디어 메타데이터',
+            '썸네일 캐시'
+        ],
+        path: 'packages/providers/MediaProvider/'
+    },
+
+    'Media Scanner': {
+        title: 'Media Scanner',
+        layer: 'Framework',
+        description: '미디어 스캐너입니다. 저장소를 스캔하여 미디어 파일을 인덱싱합니다.',
+        components: [
+            'MediaScannerConnection',
+            'MediaMetadataRetriever',
+            '파일 시스템 스캔',
+            '메타데이터 추출'
+        ],
+        path: 'frameworks/base/media/java/android/media/'
+    },
+
+    'Audio': {
+        title: 'Audio',
+        layer: 'Native',
+        description: '오디오 서브시스템입니다. 오디오 재생과 녹음을 담당합니다.',
+        components: [
+            'AudioFlinger',
+            'AudioPolicyService',
+            'AudioTrack',
+            'AudioRecord'
+        ],
+        path: 'frameworks/av/media/libaudioclient/'
+    },
+
+    // --- Widevine DRM 추가 노드 ---
+    'Content Decryption Module': {
+        title: 'Content Decryption Module (CDM)',
+        layer: 'DRM',
+        description: 'Widevine CDM입니다. 암호화된 미디어 콘텐츠의 복호화를 담당합니다.',
+        components: [
+            '라이선스 처리',
+            '키 관리',
+            '복호화 엔진',
+            'EME 연동'
+        ]
+    },
+
+    'MediaDRM API': {
+        title: 'MediaDRM API',
+        layer: 'Framework',
+        description: 'Android DRM API입니다. DRM 세션과 키 관리를 위한 인터페이스를 제공합니다.',
+        components: [
+            'openSession()',
+            'getKeyRequest()',
+            'provideKeyResponse()',
+            'closeSession()'
+        ],
+        doc: 'https://developer.android.com/reference/android/media/MediaDrm'
+    },
+
+    'MediaCrypto': {
+        title: 'MediaCrypto',
+        layer: 'Framework',
+        description: '암호화된 미디어 샘플의 복호화를 처리하는 클래스입니다.',
+        components: [
+            'MediaCodec 연동',
+            'Secure Buffer 관리',
+            '복호화 요청',
+            '세션 연결'
+        ],
+        doc: 'https://developer.android.com/reference/android/media/MediaCrypto'
+    },
+
+    'libmediadrm': {
+        title: 'libmediadrm',
+        layer: 'Native',
+        description: 'MediaDrm 네이티브 라이브러리입니다. DRM HAL과 통신합니다.',
+        components: [
+            'DrmHal 연동',
+            'CryptoHal 연동',
+            '세션 관리',
+            '키 처리'
+        ],
+        path: 'frameworks/av/drm/libmediadrm/'
+    },
+
+    'DRM HAL': {
+        title: 'DRM HAL',
+        layer: 'HAL',
+        description: 'DRM Hardware Abstraction Layer입니다. DRM 플러그인과 통신합니다.',
+        components: [
+            'IDrmFactory',
+            'IDrmPlugin',
+            '라이선스 처리',
+            '키 관리'
+        ],
+        path: 'hardware/interfaces/drm/'
+    },
+
+    'Crypto HAL': {
+        title: 'Crypto HAL',
+        layer: 'HAL',
+        description: 'Crypto HAL입니다. 암호화/복호화 작업을 수행합니다.',
+        components: [
+            'ICryptoFactory',
+            'ICryptoPlugin',
+            'decrypt()',
+            'Secure Buffer'
+        ],
+        path: 'hardware/interfaces/drm/'
+    },
+
+    'CDM Library': {
+        title: 'CDM Library',
+        layer: 'DRM',
+        description: 'Widevine CDM 라이브러리입니다. Widevine의 핵심 로직이 포함됩니다.',
+        components: [
+            'libwvdrmengine.so',
+            '라이선스 파싱',
+            '키 도출',
+            'OEMCrypto 연동'
+        ]
+    },
+
+    'CDM Core': {
+        title: 'CDM Core',
+        layer: 'DRM',
+        description: 'Widevine CDM 핵심 엔진입니다. 라이선스 프로토콜을 구현합니다.',
+        components: [
+            '라이선스 요청 생성',
+            '라이선스 응답 처리',
+            '키 관리',
+            '세션 상태'
+        ]
+    },
+
+    'CDM Session': {
+        title: 'CDM Session',
+        layer: 'DRM',
+        description: 'Widevine 세션입니다. 콘텐츠별 DRM 컨텍스트를 관리합니다.',
+        components: [
+            '세션 ID',
+            '키 세트',
+            '라이선스 상태',
+            '갱신 관리'
+        ]
+    },
+
+    'PSSH Parser': {
+        title: 'PSSH Parser',
+        layer: 'DRM',
+        description: 'Protection System Specific Header 파서입니다. DRM 초기화 데이터를 파싱합니다.',
+        components: [
+            'PSSH Box 파싱',
+            'System ID 확인',
+            'Init Data 추출',
+            'Content ID'
+        ]
+    },
+
+    'OEMCrypto': {
+        title: 'OEMCrypto',
+        layer: 'TEE',
+        description: 'OEM 제공 암호화 인터페이스입니다. TEE와 통신하여 보안 작업을 수행합니다.',
+        components: [
+            'OEMCrypto_Initialize()',
+            'OEMCrypto_GenerateKey()',
+            'OEMCrypto_DecryptCENC()',
+            'Secure 버퍼 관리'
+        ]
+    },
+
+    'OEMCrypto Library': {
+        title: 'OEMCrypto Library',
+        layer: 'TEE',
+        description: 'OEMCrypto 라이브러리입니다. TEE 내부의 보안 작업을 처리합니다.',
+        components: [
+            'liboemcrypto.so',
+            'TEE 통신',
+            '키 래핑',
+            '복호화 엔진'
+        ]
+    },
+
+    'Trusted Execution Environment': {
+        title: 'Trusted Execution Environment (TEE)',
+        layer: 'TEE',
+        description: 'TEE입니다. ARM TrustZone 등으로 구현된 보안 실행 환경입니다.',
+        components: [
+            'Secure World',
+            'Trustlet 실행',
+            '보안 메모리',
+            '하드웨어 격리'
+        ]
+    },
+
+    'TEE OS': {
+        title: 'TEE Operating System',
+        layer: 'TEE',
+        description: 'TEE 운영체제입니다. Trusty, QSEE, Kinibi 등이 있습니다.',
+        components: [
+            'Secure Boot',
+            'Trustlet 관리',
+            '보안 서비스',
+            'Normal World 통신'
+        ]
+    },
+
+    'Trustlet': {
+        title: 'Trustlet',
+        layer: 'TEE',
+        description: 'TEE에서 실행되는 보안 애플리케이션입니다.',
+        components: [
+            'Widevine Trustlet',
+            'KeyMaster Trustlet',
+            'Gatekeeper Trustlet',
+            '보안 작업 처리'
+        ]
+    },
+
+    'Widevine L1 TEE': {
+        title: 'Widevine L1 (TEE)',
+        layer: 'DRM',
+        description: 'Widevine Level 1입니다. 복호화와 디코딩이 TEE에서 수행됩니다.',
+        components: [
+            'TEE 복호화',
+            'TEE 디코딩',
+            'Secure Video Path',
+            'HDCP 필수'
+        ]
+    },
+
+    'L1 Encryption': {
+        title: 'L1 Encryption',
+        layer: 'DRM',
+        description: 'L1 암호화 처리입니다. 암호화된 스트림을 TEE로 전달합니다.',
+        components: [
+            'CENC 암호화',
+            'AES-CTR',
+            'Subsample 암호화',
+            'IV 관리'
+        ]
+    },
+
+    'L1 Decoding': {
+        title: 'L1 Decoding',
+        layer: 'DRM',
+        description: 'L1 디코딩입니다. TEE 내부에서 비디오 디코딩이 수행됩니다.',
+        components: [
+            'Secure Decoder',
+            'TEE 내부 처리',
+            'Protected Buffer',
+            '하드웨어 가속'
+        ]
+    },
+
+    'L1 Rendering': {
+        title: 'L1 Rendering',
+        layer: 'DRM',
+        description: 'L1 렌더링입니다. 보호된 버퍼에서 직접 디스플레이로 출력됩니다.',
+        components: [
+            'Secure Display Path',
+            'HDCP 링크',
+            'Protected Memory',
+            'Direct Rendering'
+        ]
+    },
+
+    'L1 Output': {
+        title: 'L1 Output',
+        layer: 'DRM',
+        description: 'L1 출력입니다. HDCP로 보호된 출력만 허용됩니다.',
+        components: [
+            'HDCP 2.2+',
+            'Protected Output',
+            '디스플레이 인증',
+            '콘텐츠 보호'
+        ]
+    },
+
+    'Widevine L2 TEE': {
+        title: 'Widevine L2 (TEE)',
+        layer: 'DRM',
+        description: 'Widevine Level 2입니다. 복호화만 TEE에서 수행됩니다.',
+        components: [
+            'TEE 복호화',
+            'SW 디코딩',
+            '중간 보안 수준',
+            '일부 HD 콘텐츠'
+        ]
+    },
+
+    'L2 Encryption': {
+        title: 'L2 Encryption',
+        layer: 'DRM',
+        description: 'L2 암호화 처리입니다.',
+        components: [
+            'CENC 암호화',
+            'TEE로 전달',
+            'IV 관리',
+            '키 보호'
+        ]
+    },
+
+    'L2 Decoding': {
+        title: 'L2 Decoding',
+        layer: 'DRM',
+        description: 'L2 디코딩입니다. Normal World에서 소프트웨어 디코딩됩니다.',
+        components: [
+            'SW Decoder',
+            'Normal World',
+            'Clear Buffer',
+            'GPU 가속'
+        ]
+    },
+
+    'L2 Output': {
+        title: 'L2 Output',
+        layer: 'DRM',
+        description: 'L2 출력입니다. 일반 디스플레이 경로를 사용합니다.',
+        components: [
+            '일반 출력',
+            'HDCP 선택적',
+            'SurfaceFlinger',
+            'HWC'
+        ]
+    },
+
+    'Widevine L3 Software': {
+        title: 'Widevine L3 (Software)',
+        layer: 'DRM',
+        description: 'Widevine Level 3입니다. 모든 처리가 소프트웨어에서 수행됩니다.',
+        components: [
+            'SW 복호화',
+            'SW 디코딩',
+            '낮은 보안 수준',
+            'SD 콘텐츠'
+        ]
+    },
+
+    'L3 Encryption': {
+        title: 'L3 Encryption',
+        layer: 'DRM',
+        description: 'L3 암호화 처리입니다. 소프트웨어에서 처리됩니다.',
+        components: [
+            'SW 처리',
+            'CENC',
+            '키 보호 약함',
+            '디버그 가능'
+        ]
+    },
+
+    'L3 Decoding': {
+        title: 'L3 Decoding',
+        layer: 'DRM',
+        description: 'L3 디코딩입니다. 일반 소프트웨어 코덱을 사용합니다.',
+        components: [
+            'SW Decoder',
+            'FFmpeg/VPX',
+            'Clear Buffer',
+            '일반 메모리'
+        ]
+    },
+
+    'L3 Output': {
+        title: 'L3 Output',
+        layer: 'DRM',
+        description: 'L3 출력입니다. 보호되지 않은 일반 출력입니다.',
+        components: [
+            '일반 출력',
+            '보호 없음',
+            '화면 캡처 가능',
+            'SD 해상도 제한'
+        ]
+    },
+
+    'License Server': {
+        title: 'License Server',
+        layer: 'Cloud',
+        description: 'Widevine 라이선스 서버입니다. 콘텐츠 키를 발급합니다.',
+        components: [
+            '라이선스 발급',
+            '키 생성',
+            '정책 적용',
+            '갱신 처리'
+        ]
+    },
+
+    'Authentication': {
+        title: 'Authentication',
+        layer: 'DRM',
+        description: 'DRM 인증 프로세스입니다. 디바이스와 서버 간의 신뢰를 확립합니다.',
+        components: [
+            '디바이스 인증서',
+            '서버 인증',
+            '토큰 검증',
+            '세션 키'
+        ]
+    },
+
+    'Key Generation': {
+        title: 'Key Generation',
+        layer: 'DRM',
+        description: '콘텐츠 키 생성입니다. 라이선스 서버에서 수행됩니다.',
+        components: [
+            'Content Key',
+            'Key Derivation',
+            'Key Wrapping',
+            '키 계층'
+        ]
+    },
+
+    'Key Storage': {
+        title: 'Key Storage',
+        layer: 'DRM',
+        description: '키 저장소입니다. 오프라인 라이선스 키를 저장합니다.',
+        components: [
+            '로컬 키 저장',
+            '오프라인 라이선스',
+            '갱신 관리',
+            '만료 처리'
+        ]
+    },
+
+    'Secure Key Storage': {
+        title: 'Secure Key Storage',
+        layer: 'TEE',
+        description: 'TEE 내부의 보안 키 저장소입니다.',
+        components: [
+            'TEE Storage',
+            '키 래핑',
+            '하드웨어 바인딩',
+            '탬퍼 방지'
+        ]
+    },
+
+    'Encrypted Media Extensions': {
+        title: 'Encrypted Media Extensions (EME)',
+        layer: 'Web',
+        description: 'W3C EME 표준입니다. 웹 브라우저에서 DRM을 지원합니다.',
+        components: [
+            'requestMediaKeySystem()',
+            'MediaKeySession',
+            'update()',
+            'CDM 연동'
+        ]
+    },
+
+    'Decoder': {
+        title: 'Decoder',
+        layer: 'Native',
+        description: '미디어 디코더입니다. 압축된 스트림을 원본으로 복원합니다.',
+        components: [
+            'Video Decoder',
+            'Audio Decoder',
+            'HW/SW 디코더',
+            'Codec2 컴포넌트'
+        ]
+    },
+
+    'Renderer': {
+        title: 'Renderer',
+        layer: 'Native',
+        description: '미디어 렌더러입니다. 디코딩된 프레임을 출력합니다.',
+        components: [
+            'Video Renderer',
+            'Audio Renderer',
+            'A/V 동기화',
+            '버퍼 관리'
+        ]
+    },
+
+    'Certification Step 1': {
+        title: 'Certification Step 1',
+        layer: 'DRM',
+        description: 'Widevine 인증 첫 단계입니다.',
+        components: [
+            '초기 설정',
+            'CDM 통합',
+            'OEMCrypto 구현',
+            '기본 테스트'
+        ]
+    },
+
+    // --- AAOS 추가 노드 ---
+    'CarMediaService': {
+        title: 'CarMediaService',
+        layer: 'Framework',
+        description: 'AAOS Car Media 서비스입니다. 차량 미디어 소스 관리와 미디어 컨트롤을 담당합니다.',
+        components: [
+            '미디어 소스 관리',
+            'Last Media Source',
+            'Primary/Secondary 미디어',
+            'MediaSession 연동'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/CarMediaService.java',
+        doc: 'https://source.android.com/docs/automotive/audio/audio-focus'
+    },
+
+    'CarDisplayService': {
+        title: 'CarDisplayService',
+        layer: 'Framework',
+        description: 'AAOS 디스플레이 서비스입니다. 차량의 다중 디스플레이를 관리합니다.',
+        components: [
+            '다중 디스플레이 관리',
+            '클러스터 디스플레이',
+            '후석 디스플레이',
+            '디스플레이 상태'
+        ],
+        path: 'packages/services/Car/service/'
+    },
+
+    'Car OS': {
+        title: 'Car OS',
+        layer: 'System',
+        description: 'AAOS 운영체제입니다. 차량용으로 최적화된 Android입니다.',
+        components: [
+            'Car Service',
+            'VHAL',
+            '다중 사용자',
+            '오디오 존'
+        ]
+    },
+
+    'Vehicle HAL': {
+        title: 'Vehicle HAL',
+        layer: 'HAL',
+        description: 'Vehicle Hardware Abstraction Layer입니다. 차량 하드웨어와 통신합니다.',
+        components: [
+            'VHAL 서비스',
+            '차량 속성',
+            'CAN 통신',
+            'ECU 연동'
+        ],
+        path: 'hardware/interfaces/automotive/vehicle/',
+        doc: 'https://source.android.com/docs/automotive/vhal'
+    },
+
+    'Audio Matrix': {
+        title: 'Audio Matrix',
+        layer: 'HAL',
+        description: '오디오 매트릭스입니다. 오디오 소스와 출력 간의 라우팅을 관리합니다.',
+        components: [
+            '소스-싱크 매핑',
+            '볼륨 제어',
+            '페이드/밸런스',
+            '존별 라우팅'
+        ]
+    },
+
+    'Audio Zones': {
+        title: 'Audio Zones',
+        layer: 'Framework',
+        description: '오디오 존입니다. 차량 내 영역별 오디오를 관리합니다.',
+        components: [
+            'Primary Zone (운전석)',
+            'Rear Zone (후석)',
+            '존별 볼륨',
+            '존별 포커스'
+        ],
+        doc: 'https://source.android.com/docs/automotive/audio/audio-zones'
+    },
+
+    'Audio Groups': {
+        title: 'Audio Groups',
+        layer: 'Framework',
+        description: '오디오 그룹입니다. 유사한 오디오 용도를 그룹화합니다.',
+        components: [
+            'Media Group',
+            'Navigation Group',
+            'Call Group',
+            'Alert Group'
+        ]
+    },
+
+    'Main Speaker': {
+        title: 'Main Speaker',
+        layer: 'Hardware',
+        description: '메인 스피커입니다. 전면 오디오 출력을 담당합니다.',
+        components: [
+            '전면 스피커',
+            '서브우퍼',
+            '트위터',
+            '앰프 연동'
+        ]
+    },
+
+    'Navigation Speaker': {
+        title: 'Navigation Speaker',
+        layer: 'Hardware',
+        description: '네비게이션 스피커입니다. 네비게이션 안내 음성을 출력합니다.',
+        components: [
+            '전용 스피커',
+            '덕킹 연동',
+            '방향 안내',
+            '알림 음성'
+        ]
+    },
+
+    'Rear Speaker': {
+        title: 'Rear Speaker',
+        layer: 'Hardware',
+        description: '후석 스피커입니다. 후석 승객용 오디오를 출력합니다.',
+        components: [
+            '후석 엔터테인먼트',
+            '독립 볼륨',
+            '헤드폰 잭',
+            '독립 소스'
+        ]
+    },
+
+    'Android Auto Framework': {
+        title: 'Android Auto Framework',
+        layer: 'Framework',
+        description: 'Android Auto 프레임워크입니다. 폰-차량 연동을 지원합니다.',
+        components: [
+            'Android Auto Projection',
+            'Phone Link',
+            'Media Browse',
+            'Voice Control'
+        ]
+    },
+
+    'AudioService': {
+        title: 'AudioService',
+        layer: 'Framework',
+        description: 'Android 오디오 서비스입니다. 시스템 오디오 설정과 라우팅을 관리합니다.',
+        components: [
+            '볼륨 관리',
+            '오디오 포커스',
+            '오디오 라우팅',
+            '스트림 관리'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/audio/'
+    },
+
+    'Car Media Apps': {
+        title: 'Car Media Apps',
+        layer: 'Application',
+        description: '차량용 미디어 앱들입니다. AAOS에 최적화되어 있습니다.',
+        components: [
+            'Local Media',
+            'Radio',
+            'Bluetooth Music',
+            'Streaming Apps'
+        ]
+    },
+
+    'Radio App': {
+        title: 'Radio App',
+        layer: 'Application',
+        description: '라디오 앱입니다. AM/FM/HD 라디오를 지원합니다.',
+        components: [
+            'AM/FM 튜너',
+            'HD Radio',
+            'RDS',
+            '프리셋 관리'
+        ]
+    },
+
+    'Spotify App': {
+        title: 'Spotify App',
+        layer: 'Application',
+        description: 'Spotify 앱입니다. 음악 스트리밍 서비스입니다.',
+        components: [
+            'Music Streaming',
+            'Podcast',
+            'Offline Mode',
+            'Car UI'
+        ]
+    },
+
+    'YouTube Music': {
+        title: 'YouTube Music',
+        layer: 'Application',
+        description: 'YouTube Music 앱입니다. 음악 스트리밍 서비스입니다.',
+        components: [
+            'Music Streaming',
+            'Video Play',
+            'Offline Mode',
+            'Car UI'
+        ]
+    },
+
+    'Call Audio Request': {
+        title: 'Call Audio Request',
+        layer: 'Framework',
+        description: '통화 오디오 요청입니다. 최고 우선순위를 가집니다.',
+        components: [
+            'USAGE_VOICE_COMMUNICATION',
+            '미디어 일시정지',
+            '내비 덕킹',
+            'HFP 연동'
+        ]
+    },
+
+    'Media Audio Request': {
+        title: 'Media Audio Request',
+        layer: 'Framework',
+        description: '미디어 오디오 요청입니다. 음악, 팟캐스트 등의 오디오입니다.',
+        components: [
+            'USAGE_MEDIA',
+            '오디오 포커스',
+            '일시정지/덕킹',
+            '볼륨 그룹'
+        ]
+    },
+
+    'Navigation Audio Request': {
+        title: 'Navigation Audio Request',
+        layer: 'Framework',
+        description: '네비게이션 오디오 요청입니다. 방향 안내 음성입니다.',
+        components: [
+            'USAGE_ASSISTANCE_NAVIGATION_GUIDANCE',
+            '미디어 덕킹',
+            '짧은 발화',
+            'TTS'
+        ]
+    },
+
+    'Media Player': {
+        title: 'Media Player',
+        layer: 'Application',
+        description: '미디어 플레이어 컴포넌트입니다. 오디오/비디오 재생을 담당합니다.',
+        components: [
+            'ExoPlayer',
+            'MediaPlayer',
+            '재생 컨트롤',
+            '상태 관리'
+        ]
+    },
+
+    'Notification': {
+        title: 'Notification',
+        layer: 'Framework',
+        description: '미디어 알림입니다. 잠금화면과 알림창에 재생 컨트롤을 표시합니다.',
+        components: [
+            'MediaStyle Notification',
+            '재생 컨트롤',
+            '앨범 아트',
+            '미디어 정보'
+        ]
+    },
+
+    'Android Auto': {
+        title: 'Android Auto',
+        layer: 'Application',
+        description: 'Android Auto입니다. 스마트폰을 차량 디스플레이에 연결합니다.',
+        components: [
+            'Projection Mode',
+            'Media Browse',
+            'Voice Control',
+            'Navigation'
+        ]
+    },
+
+    'Wear OS': {
+        title: 'Wear OS',
+        layer: 'Application',
+        description: 'Wear OS입니다. 스마트워치에서 미디어를 컨트롤합니다.',
+        components: [
+            'Remote Control',
+            'Watch UI',
+            'Bluetooth 연동',
+            '알림 동기화'
+        ]
+    },
+
+    'Google Assistant': {
+        title: 'Google Assistant',
+        layer: 'Application',
+        description: 'Google Assistant입니다. 음성으로 미디어를 컨트롤합니다.',
+        components: [
+            'Voice Control',
+            'Media Commands',
+            'Search',
+            'Routines'
+        ]
+    },
+
+    'Media Button': {
+        title: 'Media Button',
+        layer: 'Input',
+        description: '미디어 버튼입니다. 재생/일시정지, 다음/이전 등의 입력을 처리합니다.',
+        components: [
+            'KEYCODE_MEDIA_PLAY',
+            'KEYCODE_MEDIA_PAUSE',
+            'KEYCODE_MEDIA_NEXT',
+            'KEYCODE_MEDIA_PREVIOUS'
+        ]
+    },
+
+    'External Device': {
+        title: 'External Device',
+        layer: 'Hardware',
+        description: '외부 미디어 컨트롤 장치입니다. 블루투스 헤드셋, 스티어링 휠 버튼 등입니다.',
+        components: [
+            'Bluetooth Headset',
+            'Steering Wheel Controls',
+            'USB Remote',
+            'CarPlay/Android Auto'
+        ]
+    },
+
+    'Android Auto System': {
+        title: 'Android Auto System',
+        layer: 'System',
+        description: 'Android Auto 시스템입니다. 폰과 차량 간의 연동을 관리합니다.',
+        components: [
+            'Connection Manager',
+            'Protocol Handler',
+            'Audio Routing',
+            'Video Projection'
+        ]
+    },
+
+    'Android Auto UI': {
+        title: 'Android Auto UI',
+        layer: 'Application',
+        description: 'Android Auto UI입니다. 차량 디스플레이에 표시되는 인터페이스입니다.',
+        components: [
+            'Home Screen',
+            'Media UI',
+            'Navigation UI',
+            'Phone UI'
+        ]
+    },
+
+    'Wear OS System': {
+        title: 'Wear OS System',
+        layer: 'System',
+        description: 'Wear OS 시스템입니다. 워치와 폰 간의 연동을 관리합니다.',
+        components: [
+            'Companion App',
+            'Data Sync',
+            'Notification Relay',
+            'Bluetooth LE'
+        ]
+    },
+
+    'Wear OS UI': {
+        title: 'Wear OS UI',
+        layer: 'Application',
+        description: 'Wear OS UI입니다. 스마트워치에 표시되는 인터페이스입니다.',
+        components: [
+            'Watch Face',
+            'Tiles',
+            'Complications',
+            'App Launcher'
+        ]
+    },
+
+    'Car Service': {
+        title: 'Car Service',
+        layer: 'Framework',
+        description: 'AAOS Car Service입니다. 차량 관련 모든 서비스의 컨테이너입니다.',
+        components: [
+            'CarAudioService',
+            'CarMediaService',
+            'CarUserService',
+            'CarPropertyService'
+        ],
+        path: 'packages/services/Car/service/',
+        doc: 'https://source.android.com/docs/automotive'
+    },
+
+    'Car API': {
+        title: 'Car API',
+        layer: 'Framework',
+        description: 'AAOS Car API입니다. 차량 기능에 접근하는 Java API입니다.',
+        components: [
+            'Car.createCar()',
+            'CarAudioManager',
+            'CarMediaManager',
+            'CarPropertyManager'
+        ],
+        doc: 'https://developer.android.com/reference/android/car/package-summary'
+    },
+
+    'Electronic Control Unit': {
+        title: 'Electronic Control Unit (ECU)',
+        layer: 'Hardware',
+        description: '차량 ECU입니다. 차량의 각 시스템을 제어하는 전자 장치입니다.',
+        components: [
+            'Engine ECU',
+            'Body ECU',
+            'Infotainment ECU',
+            'ADAS ECU'
+        ]
+    },
+
+    'CAN Bus': {
+        title: 'CAN Bus',
+        layer: 'Hardware',
+        description: 'Controller Area Network입니다. 차량 내 ECU 간 통신 버스입니다.',
+        components: [
+            'CAN 프레임',
+            '메시지 ID',
+            '데이터 페이로드',
+            '에러 핸들링'
+        ]
+    },
+
+    'Car Controls': {
+        title: 'Car Controls',
+        layer: 'Framework',
+        description: '차량 컨트롤입니다. HVAC, 조명 등의 차량 기능을 제어합니다.',
+        components: [
+            'HVAC Control',
+            'Seat Control',
+            'Lighting Control',
+            'Window Control'
+        ]
+    },
+
+    'Car Display': {
+        title: 'Car Display',
+        layer: 'Hardware',
+        description: '차량 디스플레이입니다. IVI, 클러스터 등의 화면입니다.',
+        components: [
+            'Center Display',
+            'Cluster Display',
+            'HUD',
+            'Rear Display'
+        ]
+    },
+
+    'AAOS Operating System': {
+        title: 'AAOS Operating System',
+        layer: 'System',
+        description: 'Android Automotive OS입니다. 차량용으로 설계된 Android입니다.',
+        components: [
+            'Multi-user Support',
+            'Audio Zones',
+            'Garage Mode',
+            'Power Management'
+        ]
+    },
+
+    'AAOS Full Stack': {
+        title: 'AAOS Full Stack',
+        layer: 'System',
+        description: 'AAOS 전체 스택입니다. 하드웨어부터 애플리케이션까지의 계층 구조입니다.',
+        components: [
+            'Application Layer',
+            'Framework Layer',
+            'HAL Layer',
+            'Kernel Layer'
+        ]
+    },
+
+    'Android Auto App': {
+        title: 'Android Auto App',
+        layer: 'Application',
+        description: 'Android Auto 앱입니다. 폰에서 실행되어 차량과 연동됩니다.',
+        components: [
+            'Phone App',
+            'Projection Client',
+            'Media Provider',
+            'Navigation'
+        ]
+    },
+
+    'VHAL Interface': {
+        title: 'VHAL Interface',
+        layer: 'HAL',
+        description: 'Vehicle HAL 인터페이스입니다. 차량 속성에 접근하는 표준 인터페이스입니다.',
+        components: [
+            'IVehicle',
+            'get/set Property',
+            'subscribe',
+            'Property 정의'
+        ],
+        path: 'hardware/interfaces/automotive/vehicle/'
+    },
+
+    'Car Property Manager': {
+        title: 'Car Property Manager',
+        layer: 'Framework',
+        description: 'Car Property Manager입니다. 차량 속성을 읽고 쓸 수 있습니다.',
+        components: [
+            'getProperty()',
+            'setProperty()',
+            'registerCallback()',
+            '속성 캐싱'
+        ]
+    },
+
+    'Vehicle Properties': {
+        title: 'Vehicle Properties',
+        layer: 'HAL',
+        description: '차량 속성입니다. 속도, 기어, 온도 등 차량 상태를 나타냅니다.',
+        components: [
+            'VEHICLE_SPEED',
+            'GEAR_SELECTION',
+            'HVAC_TEMPERATURE',
+            'DOOR_LOCK'
+        ]
+    },
+
+    'Car App Library': {
+        title: 'Car App Library',
+        layer: 'Application',
+        description: 'Car App Library입니다. 차량 화면용 앱을 개발하는 Jetpack 라이브러리입니다.',
+        components: [
+            'CarAppService',
+            'Screen',
+            'Template',
+            'Navigation Template'
+        ],
+        doc: 'https://developer.android.com/training/cars/apps'
+    },
+
+    'Car App': {
+        title: 'Car App',
+        layer: 'Application',
+        description: '차량용 앱입니다. AAOS 또는 Android Auto에서 실행됩니다.',
+        components: [
+            'Media App',
+            'Navigation App',
+            'POI App',
+            'Parking App'
+        ]
+    },
+
+    'Car Android Auto': {
+        title: 'Car Android Auto',
+        layer: 'Application',
+        description: '차량 측 Android Auto입니다. 폰의 앱을 프로젝션합니다.',
+        components: [
+            'Projection Host',
+            'Media Host',
+            'Navigation Host',
+            'Voice Host'
+        ]
+    },
+
+    'Car Hardware': {
+        title: 'Car Hardware',
+        layer: 'Hardware',
+        description: '차량 하드웨어입니다. ECU, 센서, 액추에이터 등입니다.',
+        components: [
+            'ECU',
+            'Sensors',
+            'Actuators',
+            'CAN/LIN Bus'
+        ]
+    },
+
+    'Phone': {
+        title: 'Phone',
+        layer: 'Device',
+        description: '스마트폰입니다. Android Auto로 차량과 연동됩니다.',
+        components: [
+            'Android Auto App',
+            'Media Apps',
+            'Navigation Apps',
+            'Bluetooth/USB'
+        ]
+    },
+
+    'Phone Hardware': {
+        title: 'Phone Hardware',
+        layer: 'Hardware',
+        description: '폰 하드웨어입니다. 디스플레이, 프로세서, 센서 등입니다.',
+        components: [
+            'Display',
+            'Processor',
+            'Bluetooth/WiFi',
+            'USB'
+        ]
+    },
+
+    'Sensors': {
+        title: 'Sensors',
+        layer: 'Hardware',
+        description: '차량 센서입니다. 속도, 온도, 위치 등을 측정합니다.',
+        components: [
+            'Speed Sensor',
+            'Temperature Sensor',
+            'GPS',
+            'Parking Sensor'
+        ]
+    },
+
+    'User 1': {
+        title: 'User 1',
+        layer: 'User',
+        description: '사용자 1입니다. AAOS 다중 사용자의 첫 번째 사용자입니다.',
+        components: [
+            '프로필 설정',
+            '미디어 환경설정',
+            '시트 포지션',
+            '앱 설정'
+        ]
+    },
+
+    'User 2': {
+        title: 'User 2',
+        layer: 'User',
+        description: '사용자 2입니다. AAOS 다중 사용자의 두 번째 사용자입니다.',
+        components: [
+            '별도 프로필',
+            '독립적 설정',
+            '사용자 전환',
+            '데이터 격리'
+        ]
+    },
+
+    'ECU 1': {
+        title: 'ECU 1',
+        layer: 'Hardware',
+        description: 'ECU 1입니다. 특정 차량 기능을 담당하는 ECU입니다.',
+        components: [
+            '기능 제어',
+            'CAN 통신',
+            '펌웨어',
+            '진단'
+        ]
+    },
+
+    'ECU 2': {
+        title: 'ECU 2',
+        layer: 'Hardware',
+        description: 'ECU 2입니다. 다른 차량 기능을 담당하는 ECU입니다.',
+        components: [
+            '기능 제어',
+            'CAN 통신',
+            '펌웨어',
+            '진단'
+        ]
+    },
+
+    'Audio Zone 1': {
+        title: 'Audio Zone 1',
+        layer: 'Framework',
+        description: '오디오 존 1입니다. 일반적으로 운전석/조수석 영역입니다.',
+        components: [
+            'Primary Zone',
+            '전면 스피커',
+            '미디어 재생',
+            '내비 안내'
+        ]
+    },
+
+    'Audio Zone 2': {
+        title: 'Audio Zone 2',
+        layer: 'Framework',
+        description: '오디오 존 2입니다. 일반적으로 후석 영역입니다.',
+        components: [
+            'Rear Zone',
+            '후석 스피커',
+            '독립 미디어',
+            '헤드폰'
+        ]
+    },
+
+    'Standard HAL': {
+        title: 'Standard HAL',
+        layer: 'HAL',
+        description: '표준 HAL입니다. AOSP에서 정의한 표준 HAL 인터페이스입니다.',
+        components: [
+            'HIDL/AIDL',
+            '표준 인터페이스',
+            '호환성 보장',
+            '버전 관리'
+        ]
+    },
+
+    'Media3 Library': {
+        title: 'Media3 Library',
+        layer: 'Application',
+        description: 'Jetpack Media3 라이브러리입니다. 현대적인 미디어 재생 솔루션입니다.',
+        components: [
+            'ExoPlayer',
+            'Media Session',
+            'UI Components',
+            'Transformer'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media/media3'
+    },
+
+    'Vehicle App': {
+        title: 'Vehicle App',
+        layer: 'Application',
+        description: '차량 정보 앱입니다. 차량 상태를 표시합니다.',
+        components: [
+            '연료/배터리',
+            '타이어 압력',
+            '주행 정보',
+            '정비 알림'
+        ]
+    },
+
+    'Navigation App': {
+        title: 'Navigation App',
+        layer: 'Application',
+        description: '네비게이션 앱입니다. 길 안내를 제공합니다.',
+        components: [
+            '경로 탐색',
+            'Turn-by-turn 안내',
+            '실시간 교통',
+            'POI 검색'
+        ]
+    },
+
+    'AAOS App Types': {
+        title: 'AAOS App Types',
+        layer: 'Application',
+        description: 'AAOS 앱 유형입니다. 차량용 앱의 카테고리입니다.',
+        components: [
+            'Media Apps',
+            'Navigation Apps',
+            'Communication Apps',
+            'Vehicle Info Apps'
+        ]
+    },
+
+    'Layer 1': {
+        title: 'Layer 1',
+        layer: 'Architecture',
+        description: '아키텍처 레이어 1입니다.',
+        components: [
+            '최상위 레이어',
+            '애플리케이션',
+            '사용자 인터페이스',
+            'API'
+        ]
+    },
+
+    'Layer 2': {
+        title: 'Layer 2',
+        layer: 'Architecture',
+        description: '아키텍처 레이어 2입니다.',
+        components: [
+            '중간 레이어',
+            '서비스',
+            '비즈니스 로직',
+            '데이터 처리'
+        ]
+    },
+
+    'Layer 3': {
+        title: 'Layer 3',
+        layer: 'Architecture',
+        description: '아키텍처 레이어 3입니다.',
+        components: [
+            '하위 레이어',
+            '네이티브',
+            '시스템 서비스',
+            '드라이버 연동'
+        ]
+    },
+
+    'Layer 7': {
+        title: 'Layer 7',
+        layer: 'Architecture',
+        description: '아키텍처 레이어 7입니다. OSI 모델의 Application Layer를 참조합니다.',
+        components: [
+            'Application Layer',
+            'HTTP/HTTPS',
+            'REST API',
+            '애플리케이션 프로토콜'
+        ]
+    },
+
+    'Car Services': {
+        title: 'Car Services',
+        layer: 'Framework',
+        description: 'AAOS Car 서비스들입니다. 차량 기능을 위한 시스템 서비스입니다.',
+        components: [
+            'CarAudioService',
+            'CarMediaService',
+            'CarPropertyService',
+            'CarUserService'
+        ]
+    },
+
+    'VHAL Layer': {
+        title: 'VHAL Layer',
+        layer: 'HAL',
+        description: 'Vehicle HAL 레이어입니다. 차량 하드웨어 추상화 계층입니다.',
+        components: [
+            'VehicleHal',
+            'PropertyManager',
+            'HwBinder',
+            'HAL Implementation'
+        ]
+    },
+
+    'Vehicle': {
+        title: 'Vehicle',
+        layer: 'Hardware',
+        description: '차량입니다. AAOS가 탑재된 자동차입니다.',
+        components: [
+            'IVI System',
+            'ECU Network',
+            'Sensors',
+            'Actuators'
+        ]
+    },
+
+    'Hardware': {
+        title: 'Hardware',
+        layer: 'Hardware',
+        description: '하드웨어 계층입니다. 물리적 장치들입니다.',
+        components: [
+            'SoC',
+            'Memory',
+            'Display',
+            'Audio Hardware'
+        ]
+    },
+
+    // --- Codec2 추가 노드 ---
+    'C2Param': {
+        title: 'C2Param',
+        layer: 'Native',
+        description: 'Codec2 파라미터 기본 클래스입니다. 모든 코덱 파라미터의 베이스입니다.',
+        components: [
+            'C2Setting - 설정 파라미터',
+            'C2Tuning - 튜닝 파라미터',
+            'C2Info - 정보 파라미터',
+            'Struct 파라미터'
+        ],
+        path: 'frameworks/av/media/codec2/core/include/C2Param.h'
+    },
+
+    'Query': {
+        title: 'Query',
+        layer: 'Native',
+        description: 'Codec2 파라미터 쿼리입니다. 현재 설정 값을 조회합니다.',
+        components: [
+            'query_vb() 호출',
+            '파라미터 인덱스',
+            '결과 반환',
+            '에러 핸들링'
+        ]
+    },
+
+    'Tuning': {
+        title: 'Tuning',
+        layer: 'Native',
+        description: 'Codec2 튜닝입니다. 런타임에 코덱 설정을 변경합니다.',
+        components: [
+            'config_vb() 호출',
+            '비트레이트 변경',
+            '프레임레이트 변경',
+            '동적 설정'
+        ]
+    },
+
+    'Input Queue': {
+        title: 'Input Queue',
+        layer: 'Native',
+        description: '입력 큐입니다. 코덱에 입력할 작업을 대기시킵니다.',
+        components: [
+            'C2Work 큐잉',
+            '입력 버퍼',
+            'FIFO 처리',
+            '플로우 컨트롤'
+        ]
+    },
+
+    'Output Queue': {
+        title: 'Output Queue',
+        layer: 'Native',
+        description: '출력 큐입니다. 코덱에서 처리 완료된 작업을 저장합니다.',
+        components: [
+            '완료된 C2Work',
+            '출력 버퍼',
+            '클라이언트 전달',
+            '버퍼 재활용'
+        ]
+    },
+
+    'Work Processor': {
+        title: 'Work Processor',
+        layer: 'Native',
+        description: '작업 프로세서입니다. C2Work를 처리하는 코덱 내부 엔진입니다.',
+        components: [
+            '입력 처리',
+            '코덱 실행',
+            '출력 생성',
+            '상태 업데이트'
+        ]
+    },
+
+    'onWorkDone': {
+        title: 'onWorkDone',
+        layer: 'Native',
+        description: '작업 완료 콜백입니다. 코덱 처리가 완료되면 호출됩니다.',
+        components: [
+            'Listener 콜백',
+            '완료된 Work',
+            '출력 버퍼',
+            '상태 정보'
+        ]
+    },
+
+    'onTriggered': {
+        title: 'onTriggered',
+        layer: 'Native',
+        description: '트리거 콜백입니다. 코덱에서 이벤트가 발생하면 호출됩니다.',
+        components: [
+            'Listener 콜백',
+            '이벤트 타입',
+            '파라미터 변경',
+            '상태 변경'
+        ]
+    },
+
+    'onError': {
+        title: 'onError',
+        layer: 'Native',
+        description: '에러 콜백입니다. 코덱에서 오류가 발생하면 호출됩니다.',
+        components: [
+            'Listener 콜백',
+            '에러 코드',
+            '에러 컨텍스트',
+            '복구 정보'
+        ]
+    },
+
+    'Flow Start': {
+        title: 'Flow Start',
+        layer: 'Native',
+        description: '버퍼 플로우 시작점입니다.',
+        components: [
+            '버퍼 요청',
+            '타입 결정',
+            '할당 준비',
+            '초기화'
+        ]
+    },
+
+    'C2Buffer': {
+        title: 'C2Buffer',
+        layer: 'Native',
+        description: 'Codec2 버퍼입니다. 미디어 데이터를 담는 컨테이너입니다.',
+        components: [
+            'Linear Buffer',
+            'Graphic Buffer',
+            '메타데이터',
+            '참조 카운팅'
+        ],
+        path: 'frameworks/av/media/codec2/core/include/C2Buffer.h'
+    },
+
+    'C2Work': {
+        title: 'C2Work',
+        layer: 'Native',
+        description: 'Codec2 작업 단위입니다. 입력/출력 버퍼와 설정을 포함합니다.',
+        components: [
+            'Input Buffer',
+            'Output Buffer',
+            'Worklets',
+            'Result'
+        ],
+        path: 'frameworks/av/media/codec2/core/include/C2Work.h'
+    },
+
+    'Block Pool': {
+        title: 'Block Pool',
+        layer: 'Native',
+        description: 'Codec2 블록 풀입니다. 버퍼 할당을 관리합니다.',
+        components: [
+            'C2BlockPool',
+            'fetchLinearBlock()',
+            'fetchGraphicBlock()',
+            '메모리 관리'
+        ],
+        path: 'frameworks/av/media/codec2/core/include/C2Buffer.h'
+    },
+
+    'Buffer Type': {
+        title: 'Buffer Type',
+        layer: 'Native',
+        description: '버퍼 타입입니다. Linear 또는 Graphic 버퍼로 구분됩니다.',
+        components: [
+            'Linear (1D) - 오디오/압축 데이터',
+            'Graphic (2D) - 비디오 프레임',
+            '메타데이터',
+            '할당자 선택'
+        ]
+    },
+
+    'ION Allocation': {
+        title: 'ION Allocation',
+        layer: 'Native',
+        description: 'ION 메모리 할당입니다. DMA 버퍼를 할당합니다.',
+        components: [
+            'ION 드라이버',
+            'DMA-BUF',
+            '연속 메모리',
+            '하드웨어 접근'
+        ]
+    },
+
+    'Gralloc Allocation': {
+        title: 'Gralloc Allocation',
+        layer: 'Native',
+        description: 'Gralloc 메모리 할당입니다. 그래픽 버퍼를 할당합니다.',
+        components: [
+            'Gralloc HAL',
+            'GraphicBuffer',
+            'ANativeWindow',
+            'GPU 호환'
+        ]
+    },
+
+    'Queue to Component': {
+        title: 'Queue to Component',
+        layer: 'Native',
+        description: '컴포넌트에 큐잉입니다. 작업을 코덱에 전달합니다.',
+        components: [
+            'queue_nb()',
+            'C2Work 전달',
+            '비동기 처리',
+            '플로우 컨트롤'
+        ]
+    },
+
+    'Processing': {
+        title: 'Processing',
+        layer: 'Native',
+        description: '코덱 처리입니다. 입력 데이터를 변환합니다.',
+        components: [
+            '인코딩/디코딩',
+            '프레임 처리',
+            '버퍼 변환',
+            '하드웨어 가속'
+        ]
+    },
+
+    'Zero-Copy Check': {
+        title: 'Zero-Copy Check',
+        layer: 'Native',
+        description: 'Zero-copy 가능 여부 확인입니다. 복사 없이 버퍼를 전달할 수 있는지 검사합니다.',
+        components: [
+            '메모리 호환성',
+            'HAL 지원',
+            '직접 접근 가능',
+            '성능 최적화'
+        ]
+    },
+
+    'Direct Access': {
+        title: 'Direct Access',
+        layer: 'Native',
+        description: '직접 접근입니다. Zero-copy로 버퍼를 전달합니다.',
+        components: [
+            '복사 없음',
+            'DMA 전송',
+            '최적 성능',
+            '메모리 절약'
+        ]
+    },
+
+    'Copy Operation': {
+        title: 'Copy Operation',
+        layer: 'Native',
+        description: '복사 작업입니다. 버퍼를 복사하여 전달합니다.',
+        components: [
+            '메모리 복사',
+            '포맷 변환',
+            '오버헤드 발생',
+            '호환성 보장'
+        ]
+    },
+
+    'Output Buffer': {
+        title: 'Output Buffer',
+        layer: 'Native',
+        description: '출력 버퍼입니다. 코덱 처리 결과를 담습니다.',
+        components: [
+            '디코딩된 프레임',
+            '인코딩된 비트스트림',
+            '메타데이터',
+            '타임스탬프'
+        ]
+    },
+
+    'Return to App': {
+        title: 'Return to App',
+        layer: 'Native',
+        description: '앱으로 반환입니다. 처리 완료된 버퍼를 앱에 전달합니다.',
+        components: [
+            '콜백 호출',
+            '버퍼 전달',
+            '상태 알림',
+            '렌더링 준비'
+        ]
+    },
+
+    'Recycle Buffer': {
+        title: 'Recycle Buffer',
+        layer: 'Native',
+        description: '버퍼 재활용입니다. 사용 완료된 버퍼를 풀에 반환합니다.',
+        components: [
+            '참조 해제',
+            '풀 반환',
+            '재사용 준비',
+            '메모리 효율'
+        ]
+    },
+
+    'Flow End': {
+        title: 'Flow End',
+        layer: 'Native',
+        description: '버퍼 플로우 종료점입니다.',
+        components: [
+            '버퍼 해제',
+            '리소스 정리',
+            '상태 완료',
+            '다음 작업 준비'
+        ]
+    },
+
+    'Allocation Decision': {
+        title: 'Allocation Decision',
+        layer: 'Native',
+        description: '할당 결정입니다. ION 또는 Gralloc 할당을 선택합니다.',
+        components: [
+            '버퍼 타입 확인',
+            '용도 분석',
+            '할당자 선택',
+            '최적화 적용'
+        ]
+    },
+
+    'Android.bp': {
+        title: 'Android.bp',
+        layer: 'Build',
+        description: 'Android 빌드 설정 파일입니다. Soong 빌드 시스템에서 사용됩니다.',
+        components: [
+            '모듈 정의',
+            '의존성 선언',
+            '컴파일 옵션',
+            'HIDL/AIDL 생성'
+        ]
+    },
+
+    'media_codecs.xml': {
+        title: 'media_codecs.xml',
+        layer: 'Configuration',
+        description: '미디어 코덱 설정 파일입니다. 사용 가능한 코덱을 선언합니다.',
+        components: [
+            '코덱 목록',
+            '지원 포맷',
+            '프로파일/레벨',
+            '벤더 코덱'
+        ],
+        path: '/vendor/etc/media_codecs.xml'
+    },
+
+    'manifest.xml': {
+        title: 'manifest.xml',
+        layer: 'Configuration',
+        description: 'HAL manifest 파일입니다. HAL 서비스를 등록합니다.',
+        components: [
+            'HAL 버전',
+            '인터페이스 목록',
+            '인스턴스 이름',
+            '전송 방식'
+        ],
+        path: '/vendor/manifest.xml'
+    },
+
+    'hwservicemanager': {
+        title: 'hwservicemanager',
+        layer: 'Native',
+        description: 'Hardware Service Manager입니다. HIDL 서비스를 관리합니다.',
+        components: [
+            'HAL 서비스 등록',
+            '서비스 검색',
+            'Binder 연결',
+            '버전 관리'
+        ]
+    },
+
+    'Store Implementation': {
+        title: 'Store Implementation',
+        layer: 'HAL',
+        description: 'Codec2 스토어 구현입니다. 벤더별 코덱을 등록합니다.',
+        components: [
+            'C2ComponentStore 구현',
+            '코덱 팩토리',
+            'HAL 서비스',
+            '코덱 열거'
+        ]
+    },
+
+    // ========================================
+    // Batch 2-5: 나머지 누락 항목
+    // ========================================
+
+    // --- Audio Framework 노드 ---
+    'Audio Routing': {
+        title: 'Audio Routing',
+        layer: 'Framework',
+        description: '오디오 라우팅입니다. 오디오 스트림을 적절한 출력 장치로 연결합니다.',
+        components: [
+            'AudioPolicy 연동',
+            '장치 선택',
+            '우선순위 처리',
+            '동적 라우팅'
+        ],
+        path: 'frameworks/av/services/audiopolicy/'
+    },
+
+    'Volume Control': {
+        title: 'Volume Control',
+        layer: 'Framework',
+        description: '볼륨 컨트롤입니다. 스트림별 볼륨을 관리합니다.',
+        components: [
+            'StreamVolume',
+            '볼륨 커브',
+            '뮤트 상태',
+            '볼륨 그룹'
+        ]
+    },
+
+    'Car Audio Service': {
+        title: 'Car Audio Service',
+        layer: 'Framework',
+        description: 'AAOS 오디오 서비스입니다. 차량 오디오 기능을 관리합니다.',
+        components: [
+            '오디오 존',
+            '볼륨 그룹',
+            '오디오 포커스',
+            '덕킹'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/audio/'
+    },
+
+    'Bluetooth Audio': {
+        title: 'Bluetooth Audio',
+        layer: 'HAL',
+        description: '블루투스 오디오입니다. A2DP, HFP 프로파일을 지원합니다.',
+        components: [
+            'A2DP Sink/Source',
+            'HFP',
+            'AVRCP',
+            '코덱 협상'
+        ]
+    },
+
+    'USB DAC': {
+        title: 'USB DAC',
+        layer: 'Hardware',
+        description: 'USB DAC입니다. USB로 연결된 외부 오디오 장치입니다.',
+        components: [
+            'USB Audio Class',
+            '고해상도 오디오',
+            '샘플레이트 지원',
+            '플러그앤플레이'
+        ]
+    },
+
+    'Camera App': {
+        title: 'Camera App',
+        layer: 'Application',
+        description: '카메라 앱입니다. 사진과 동영상을 촬영합니다.',
+        components: [
+            'Camera2 API',
+            'Preview',
+            'Capture',
+            'Video Recording'
+        ]
+    },
+
+    'Container Parser': {
+        title: 'Container Parser',
+        layer: 'Native',
+        description: '컨테이너 파서입니다. MP4, MKV 등의 미디어 컨테이너를 파싱합니다.',
+        components: [
+            'Box/Atom 파싱',
+            'Track 추출',
+            '메타데이터 읽기',
+            '샘플 인덱싱'
+        ]
+    },
+
+    // --- GAS 노드 ---
+    'Google Automotive Services': {
+        title: 'Google Automotive Services',
+        layer: 'Application',
+        description: 'GAS입니다. AAOS에서 Google 서비스를 제공합니다.',
+        components: [
+            'Google Maps',
+            'Google Assistant',
+            'Play Store',
+            'Play Services'
+        ],
+        doc: 'https://source.android.com/docs/automotive'
+    },
+
+    'Android Auto (Gearhead)': {
+        title: 'Android Auto (Gearhead)',
+        layer: 'Application',
+        description: 'Android Auto 앱입니다. 차량에서 폰 앱을 프로젝션합니다.',
+        components: [
+            'Phone Projection',
+            'Media Apps',
+            'Navigation',
+            'Communication'
+        ]
+    },
+
+    // --- Media App Layer 노드 ---
+    'App UI': {
+        title: 'App UI',
+        layer: 'Application',
+        description: '앱 사용자 인터페이스입니다. 미디어 컨트롤 UI를 제공합니다.',
+        components: [
+            'PlayerView',
+            'Controls',
+            'Progress Bar',
+            'Playlist UI'
+        ]
+    },
+
+    'LoadControl': {
+        title: 'LoadControl',
+        layer: 'Application',
+        description: 'ExoPlayer LoadControl입니다. 버퍼링 전략을 제어합니다.',
+        components: [
+            'Buffer Size',
+            'shouldStartPlayback()',
+            'shouldContinueLoading()',
+            'Target Buffer'
+        ]
+    },
+
+    'MediaService': {
+        title: 'MediaService',
+        layer: 'Application',
+        description: '미디어 서비스입니다. 백그라운드 재생을 지원합니다.',
+        components: [
+            'MediaBrowserService',
+            'MediaSession',
+            'Foreground Service',
+            'Notification'
+        ]
+    },
+
+    'Track': {
+        title: 'Track',
+        layer: 'Native',
+        description: '미디어 트랙입니다. 오디오, 비디오, 자막 트랙을 나타냅니다.',
+        components: [
+            'Audio Track',
+            'Video Track',
+            'Text Track',
+            'Metadata Track'
+        ]
+    },
+
+    'User Interface': {
+        title: 'User Interface',
+        layer: 'Application',
+        description: '사용자 인터페이스입니다. 앱의 시각적 요소입니다.',
+        components: [
+            'View Hierarchy',
+            'Layout',
+            'Theme',
+            'Interaction'
+        ]
+    },
+
+    // --- Power Policy 노드 ---
+    'Power Policy': {
+        title: 'Power Policy',
+        layer: 'Framework',
+        description: '전원 정책입니다. 차량 전원 상태에 따른 동작을 정의합니다.',
+        components: [
+            'ON Policy',
+            'OFF Policy',
+            'Component State',
+            'Garage Mode'
+        ],
+        path: 'packages/services/Car/service/',
+        doc: 'https://source.android.com/docs/automotive/power'
+    },
+
+    'Suspend Manager': {
+        title: 'Suspend Manager',
+        layer: 'Native',
+        description: '서스펜드 관리자입니다. 시스템 절전 상태를 관리합니다.',
+        components: [
+            'Suspend-to-RAM',
+            'Wake Lock',
+            'Wake Source',
+            'Resume'
+        ]
+    },
+
+    'Driver': {
+        title: 'Driver',
+        layer: 'Kernel',
+        description: '커널 드라이버입니다. 하드웨어 제어를 담당합니다.',
+        components: [
+            'Character Device',
+            'Block Device',
+            'Platform Driver',
+            'sysfs 인터페이스'
+        ]
+    },
+
+    // --- AAOS Key Events 노드 ---
+    'Vehicle Hardware': {
+        title: 'Vehicle Hardware',
+        layer: 'Hardware',
+        description: '차량 하드웨어입니다. 스티어링 휠 버튼, 터치스크린 등입니다.',
+        components: [
+            'Steering Wheel',
+            'Touch Display',
+            'Rotary Controller',
+            'Physical Buttons'
+        ]
+    },
+
+    'MediaSessionService': {
+        title: 'MediaSessionService',
+        layer: 'Framework',
+        description: 'MediaSession 시스템 서비스입니다. 미디어 세션을 관리합니다.',
+        components: [
+            'Session Management',
+            'Media Button Routing',
+            'Priority Queue',
+            'Callback Dispatch'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/media/'
+    },
+
+    'Gear/Speed Sensor': {
+        title: 'Gear/Speed Sensor',
+        layer: 'Hardware',
+        description: '기어/속도 센서입니다. 차량 상태를 감지합니다.',
+        components: [
+            'Gear Position',
+            'Vehicle Speed',
+            'Parking Brake',
+            'VHAL 연동'
+        ]
+    },
+
+    'CarInfoManager': {
+        title: 'CarInfoManager',
+        layer: 'Framework',
+        description: 'Car Info Manager입니다. 차량 정보를 제공합니다.',
+        components: [
+            'Vehicle Model',
+            'Manufacturer',
+            'VIN',
+            'Year'
+        ]
+    },
+
+    'State Check': {
+        title: 'State Check',
+        layer: 'Framework',
+        description: '상태 확인입니다. 운전 상태에 따른 제한을 검사합니다.',
+        components: [
+            'Driving State',
+            'Speed Check',
+            'UX Restrictions',
+            'Safety Check'
+        ]
+    },
+
+    'Block Input': {
+        title: 'Block Input',
+        layer: 'Framework',
+        description: '입력 차단입니다. 운전 중 위험한 입력을 차단합니다.',
+        components: [
+            'Touch Block',
+            'Keyboard Block',
+            'Complex Task Block',
+            'Safety Override'
+        ]
+    },
+
+    'Allow Interaction': {
+        title: 'Allow Interaction',
+        layer: 'Framework',
+        description: '상호작용 허용입니다. 안전한 상호작용을 허용합니다.',
+        components: [
+            'Simple Touch',
+            'Voice Control',
+            'Steering Controls',
+            'Quick Actions'
+        ]
+    },
+
+    'Volume Group': {
+        title: 'Volume Group',
+        layer: 'Framework',
+        description: '볼륨 그룹입니다. 유사한 오디오 용도를 그룹화합니다.',
+        components: [
+            'Media Volume',
+            'Navigation Volume',
+            'Call Volume',
+            'System Volume'
+        ]
+    },
+
+    'Current Context': {
+        title: 'Current Context',
+        layer: 'Framework',
+        description: '현재 컨텍스트입니다. 포커스된 오디오 컨텍스트입니다.',
+        components: [
+            'Active Session',
+            'Audio Focus',
+            'Priority',
+            '상태 정보'
+        ]
+    },
+
+    'Priority Check': {
+        title: 'Priority Check',
+        layer: 'Framework',
+        description: '우선순위 확인입니다. 오디오 요청의 우선순위를 판단합니다.',
+        components: [
+            'Usage 비교',
+            'Context 비교',
+            '덕킹 결정',
+            '포커스 결정'
+        ]
+    },
+
+    'Hardware Amplifier': {
+        title: 'Hardware Amplifier',
+        layer: 'Hardware',
+        description: '하드웨어 앰프입니다. 오디오 신호를 증폭합니다.',
+        components: [
+            'Power Amplifier',
+            '채널별 제어',
+            '볼륨 조절',
+            '페이드/밸런스'
+        ]
+    },
+
+    'Nudge Mode': {
+        title: 'Nudge Mode',
+        layer: 'Framework',
+        description: '넛지 모드입니다. 로터리 컨트롤러의 상하좌우 이동입니다.',
+        components: [
+            'Directional Navigation',
+            'Focus Movement',
+            'Boundary Handling',
+            'Target Resolution'
+        ]
+    },
+
+    'Focusable View 1': {
+        title: 'Focusable View 1',
+        layer: 'Application',
+        description: '포커스 가능한 뷰 1입니다. 로터리 포커스를 받을 수 있습니다.',
+        components: [
+            'focusable=true',
+            'Focus Highlight',
+            'Click Handler',
+            'Accessibility'
+        ]
+    },
+
+    'Focusable View 2': {
+        title: 'Focusable View 2',
+        layer: 'Application',
+        description: '포커스 가능한 뷰 2입니다.',
+        components: [
+            'focusable=true',
+            'Focus Highlight',
+            'Click Handler',
+            'Accessibility'
+        ]
+    },
+
+    'RecyclerView': {
+        title: 'RecyclerView',
+        layer: 'Application',
+        description: 'RecyclerView입니다. 리스트/그리드 UI를 제공합니다.',
+        components: [
+            'ViewHolder Pattern',
+            'LayoutManager',
+            'Adapter',
+            'Item Animator'
+        ]
+    },
+
+    'InputManager': {
+        title: 'InputManager',
+        layer: 'Framework',
+        description: 'Input Manager입니다. 입력 이벤트를 관리합니다.',
+        components: [
+            'Input Device',
+            'Event Dispatch',
+            'Key Mapping',
+            'Touch Event'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/input/'
+    },
+
+    'Application': {
+        title: 'Application',
+        layer: 'Application',
+        description: 'Android 애플리케이션입니다. 사용자와 상호작용합니다.',
+        components: [
+            'Activity',
+            'Service',
+            'BroadcastReceiver',
+            'ContentProvider'
+        ]
+    },
+
+    'Display Type': {
+        title: 'Display Type',
+        layer: 'Hardware',
+        description: '디스플레이 타입입니다. 차량의 다양한 디스플레이입니다.',
+        components: [
+            'Main Display',
+            'Cluster Display',
+            'HUD',
+            'Rear Display'
+        ]
+    },
+
+    'Main Display': {
+        title: 'Main Display',
+        layer: 'Hardware',
+        description: '메인 디스플레이입니다. 센터 인포테인먼트 화면입니다.',
+        components: [
+            'IVI Screen',
+            'Touch Input',
+            'Main UI',
+            'Apps Display'
+        ]
+    },
+
+    'Cluster Display': {
+        title: 'Cluster Display',
+        layer: 'Hardware',
+        description: '클러스터 디스플레이입니다. 계기판 화면입니다.',
+        components: [
+            'Instrument Cluster',
+            'Speed/RPM',
+            'Navigation Info',
+            'Warning Indicators'
+        ]
+    },
+
+    'Cluster UI': {
+        title: 'Cluster UI',
+        layer: 'Application',
+        description: '클러스터 UI입니다. 계기판에 표시되는 인터페이스입니다.',
+        components: [
+            'Speed Display',
+            'Navigation Card',
+            'Media Info',
+            'Alerts'
+        ]
+    },
+
+    'User': {
+        title: 'User',
+        layer: 'User',
+        description: '사용자입니다. 시스템을 사용하는 사람입니다.',
+        components: [
+            '사용자 프로필',
+            '설정',
+            '권한',
+            '개인화'
+        ]
+    },
+
+    // --- CarMa 노드 ---
+    'Mobile App': {
+        title: 'Mobile App',
+        layer: 'Application',
+        description: '모바일 앱입니다. 차량에서 실행되는 폰 앱입니다.',
+        components: [
+            'Car Compatibility',
+            'Distraction Optimized',
+            'Media Browser',
+            'Voice Control'
+        ]
+    },
+
+    'UI Layout': {
+        title: 'UI Layout',
+        layer: 'Application',
+        description: 'UI 레이아웃입니다. 화면 구성을 정의합니다.',
+        components: [
+            'XML Layout',
+            'ConstraintLayout',
+            'Car UI Library',
+            'Responsive Design'
+        ]
+    },
+
+    'App Logic': {
+        title: 'App Logic',
+        layer: 'Application',
+        description: '앱 로직입니다. 애플리케이션 비즈니스 로직입니다.',
+        components: [
+            'ViewModel',
+            'Repository',
+            'Use Cases',
+            'Data Processing'
+        ]
+    },
+
+    'Window Manager': {
+        title: 'Window Manager',
+        layer: 'Framework',
+        description: 'Window Manager입니다. 창 관리를 담당합니다.',
+        components: [
+            'Window Layout',
+            'Z-ordering',
+            'Animation',
+            'Multi-window'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/wm/'
+    },
+
+    'Input Manager': {
+        title: 'Input Manager',
+        layer: 'Framework',
+        description: 'Input Manager입니다. 입력 이벤트를 처리합니다.',
+        components: [
+            'Touch Events',
+            'Key Events',
+            'Rotary Events',
+            'Injection'
+        ]
+    },
+
+    'Safety Layer': {
+        title: 'Safety Layer',
+        layer: 'Framework',
+        description: '안전 레이어입니다. 운전 중 안전을 위한 제한을 적용합니다.',
+        components: [
+            'UX Restrictions',
+            'Driving State',
+            'Distraction Optimized',
+            'Block Lists'
+        ]
+    },
+
+    // --- MediaSession API 노드 ---
+    'Android System': {
+        title: 'Android System',
+        layer: 'System',
+        description: 'Android 시스템입니다. OS 핵심 기능을 제공합니다.',
+        components: [
+            'System Server',
+            'Framework',
+            'Runtime',
+            'HAL'
+        ]
+    },
+
+    'Other App': {
+        title: 'Other App',
+        layer: 'Application',
+        description: '다른 앱입니다. 미디어 컨트롤을 요청하는 외부 앱입니다.',
+        components: [
+            'MediaController',
+            'Remote Control',
+            'Voice App',
+            'Companion App'
+        ]
+    },
+
+    'BT Headset': {
+        title: 'BT Headset',
+        layer: 'Hardware',
+        description: '블루투스 헤드셋입니다. 무선 오디오 출력 장치입니다.',
+        components: [
+            'A2DP',
+            'HFP',
+            'AVRCP',
+            '미디어 컨트롤'
+        ]
+    },
+
+    // --- CDD 노드 ---
+    'Introduction': {
+        title: 'Introduction',
+        layer: 'Document',
+        description: 'CDD 소개입니다. 문서 개요와 목적을 설명합니다.',
+        components: [
+            '문서 범위',
+            '용어 정의',
+            '요구사항 레벨',
+            '버전 정보'
+        ]
+    },
+
+    'Software': {
+        title: 'Software',
+        layer: 'Document',
+        description: 'CDD 소프트웨어 요구사항입니다.',
+        components: [
+            'API 호환성',
+            '권한 모델',
+            '런타임 환경',
+            '앱 호환성'
+        ]
+    },
+
+    'App Packaging': {
+        title: 'App Packaging',
+        layer: 'Document',
+        description: 'CDD 앱 패키징 요구사항입니다.',
+        components: [
+            'APK Format',
+            'App Bundle',
+            'Signing',
+            'Manifest'
+        ]
+    },
+
+    'Dev Tools': {
+        title: 'Dev Tools',
+        layer: 'Document',
+        description: 'CDD 개발 도구 요구사항입니다.',
+        components: [
+            'ADB',
+            'DDMS',
+            'Device Monitor',
+            '디버깅 지원'
+        ]
+    },
+
+    'Performance': {
+        title: 'Performance',
+        layer: 'Document',
+        description: 'CDD 성능 요구사항입니다.',
+        components: [
+            '앱 시작 시간',
+            'Frame Rate',
+            '메모리 사용',
+            'I/O 성능'
+        ]
+    },
+
+    'Security': {
+        title: 'Security',
+        layer: 'Document',
+        description: 'CDD 보안 요구사항입니다.',
+        components: [
+            'SELinux',
+            'Verified Boot',
+            '암호화',
+            '권한 모델'
+        ]
+    },
+
+    'Testing': {
+        title: 'Testing',
+        layer: 'Document',
+        description: 'CDD 테스팅 요구사항입니다.',
+        components: [
+            'CTS',
+            'VTS',
+            'GTS',
+            '테스트 커버리지'
+        ]
+    },
+
+    'Handheld': {
+        title: 'Handheld',
+        layer: 'Device',
+        description: '핸드헬드 디바이스입니다. 스마트폰, 태블릿 등입니다.',
+        components: [
+            'Phone',
+            'Tablet',
+            '터치스크린',
+            '휴대 가능'
+        ]
+    },
+
+    'Television': {
+        title: 'Television',
+        layer: 'Device',
+        description: 'TV 디바이스입니다. Android TV입니다.',
+        components: [
+            'Android TV',
+            'Leanback UI',
+            'D-pad Navigation',
+            '10ft UI'
+        ]
+    },
+
+    'Automotive': {
+        title: 'Automotive',
+        layer: 'Device',
+        description: '자동차 디바이스입니다. AAOS 탑재 차량입니다.',
+        components: [
+            'AAOS',
+            'Vehicle Integration',
+            'Multi-display',
+            'Audio Zones'
+        ]
+    },
+
+    'Watch': {
+        title: 'Watch',
+        layer: 'Device',
+        description: '워치 디바이스입니다. Wear OS입니다.',
+        components: [
+            'Wear OS',
+            '라운드 디스플레이',
+            '저전력',
+            '웨어러블'
+        ]
+    },
+
+    'Media Codecs': {
+        title: 'Media Codecs',
+        layer: 'Document',
+        description: 'CDD 미디어 코덱 요구사항입니다.',
+        components: [
+            '필수 코덱',
+            '권장 코덱',
+            '프로파일/레벨',
+            '인코딩/디코딩'
+        ]
+    },
+
+    'Video Encoding': {
+        title: 'Video Encoding',
+        layer: 'Document',
+        description: 'CDD 비디오 인코딩 요구사항입니다.',
+        components: [
+            'H.264 인코더',
+            'HEVC 인코더',
+            '비트레이트',
+            '해상도'
+        ]
+    },
+
+    'Audio Recording': {
+        title: 'Audio Recording',
+        layer: 'Document',
+        description: 'CDD 오디오 녹음 요구사항입니다.',
+        components: [
+            'AAC 인코딩',
+            '마이크 지원',
+            '샘플레이트',
+            '채널 수'
+        ]
+    },
+
+    'Camera': {
+        title: 'Camera',
+        layer: 'Document',
+        description: 'CDD 카메라 요구사항입니다.',
+        components: [
+            'Camera2 API',
+            '해상도',
+            'Auto Focus',
+            'Flash'
+        ]
+    },
+
+    'H.264/AVC': {
+        title: 'H.264/AVC',
+        layer: 'Codec',
+        description: 'H.264/AVC 코덱입니다. 가장 널리 사용되는 비디오 코덱입니다.',
+        components: [
+            'Baseline Profile',
+            'Main Profile',
+            'High Profile',
+            'Level 지원'
+        ]
+    },
+
+    'HEVC': {
+        title: 'HEVC',
+        layer: 'Codec',
+        description: 'HEVC/H.265 코덱입니다. 고효율 비디오 압축입니다.',
+        components: [
+            'Main Profile',
+            'Main 10 Profile',
+            '4K 지원',
+            'HDR 지원'
+        ]
+    },
+
+    'VP9/AV1': {
+        title: 'VP9/AV1',
+        layer: 'Codec',
+        description: 'VP9/AV1 코덱입니다. 로열티 프리 비디오 코덱입니다.',
+        components: [
+            'VP9 Profile 0/2',
+            'AV1 Main Profile',
+            'YouTube 스트리밍',
+            'WebRTC'
+        ]
+    },
+
+    'AAC/Opus': {
+        title: 'AAC/Opus',
+        layer: 'Codec',
+        description: 'AAC/Opus 오디오 코덱입니다.',
+        components: [
+            'AAC-LC',
+            'HE-AAC',
+            'Opus',
+            '다양한 비트레이트'
+        ]
+    },
+
+    'Resolution': {
+        title: 'Resolution',
+        layer: 'Document',
+        description: 'CDD 해상도 요구사항입니다.',
+        components: [
+            'SD (480p)',
+            'HD (720p)',
+            'FHD (1080p)',
+            '4K (2160p)'
+        ]
+    },
+
+    'Frame Rate': {
+        title: 'Frame Rate',
+        layer: 'Document',
+        description: 'CDD 프레임레이트 요구사항입니다.',
+        components: [
+            '24fps',
+            '30fps',
+            '60fps',
+            '120fps'
+        ]
+    },
+
+    'Bitrate': {
+        title: 'Bitrate',
+        layer: 'Document',
+        description: 'CDD 비트레이트 요구사항입니다.',
+        components: [
+            '최소 비트레이트',
+            '최대 비트레이트',
+            'VBR/CBR',
+            '코덱별 제한'
+        ]
+    },
+
+    'Raw Audio': {
+        title: 'Raw Audio',
+        layer: 'Document',
+        description: 'CDD Raw 오디오 요구사항입니다.',
+        components: [
+            'PCM 16-bit',
+            'PCM 24-bit',
+            '샘플레이트',
+            '채널 수'
+        ]
+    },
+
+    'Latency': {
+        title: 'Latency',
+        layer: 'Document',
+        description: 'CDD 오디오 지연 요구사항입니다.',
+        components: [
+            '출력 지연',
+            '입력 지연',
+            'Round-trip 지연',
+            'AAudio 지연'
+        ]
+    },
+
+    'Microphone': {
+        title: 'Microphone',
+        layer: 'Hardware',
+        description: '마이크입니다. 오디오 입력 장치입니다.',
+        components: [
+            '내장 마이크',
+            '방향성',
+            '노이즈 캔슬링',
+            '샘플레이트'
+        ]
+    },
+
+    'Media Performance': {
+        title: 'Media Performance',
+        layer: 'Document',
+        description: 'CDD 미디어 성능 요구사항입니다.',
+        components: [
+            '디코딩 성능',
+            '인코딩 성능',
+            '동시 인스턴스',
+            '전환 시간'
+        ]
+    },
+
+    'Camera Requirements': {
+        title: 'Camera Requirements',
+        layer: 'Document',
+        description: 'CDD 카메라 요구사항입니다.',
+        components: [
+            '해상도',
+            'Frame Rate',
+            'Auto Focus',
+            'HDR'
+        ]
+    },
+
+    'Memory/Storage': {
+        title: 'Memory/Storage',
+        layer: 'Document',
+        description: 'CDD 메모리/저장소 요구사항입니다.',
+        components: [
+            'RAM 요구사항',
+            '저장소 요구사항',
+            'Adoptable Storage',
+            '파티션'
+        ]
+    },
+
+    'Google': {
+        title: 'Google',
+        layer: 'Entity',
+        description: 'Google입니다. Android 플랫폼 개발자입니다.',
+        components: [
+            'AOSP',
+            'GMS',
+            'CDD/CTS',
+            'Android Updates'
+        ]
+    },
+
+    'OEM/Manufacturer': {
+        title: 'OEM/Manufacturer',
+        layer: 'Entity',
+        description: 'OEM/제조사입니다. 디바이스를 제조합니다.',
+        components: [
+            '하드웨어 설계',
+            'BSP 개발',
+            '인증',
+            '제품 출시'
+        ]
+    },
+
+    // --- Dolby 노드 ---
+    'Audio Framework': {
+        title: 'Audio Framework',
+        layer: 'Native',
+        description: '오디오 프레임워크입니다. Android 오디오 시스템입니다.',
+        components: [
+            'AudioFlinger',
+            'AudioPolicyService',
+            'Audio HAL',
+            'ALSA'
+        ],
+        path: 'frameworks/av/media/libaudioclient/'
+    },
+
+    'Codec2 Framework': {
+        title: 'Codec2 Framework',
+        layer: 'Native',
+        description: 'Codec2 프레임워크입니다. Android 미디어 코덱 시스템입니다.',
+        components: [
+            'CCodec',
+            'C2Component',
+            'C2Buffer',
+            'Codec HAL'
+        ],
+        path: 'frameworks/av/media/codec2/'
+    },
+
+    // --- CTS/VTS/GTS 노드 ---
+    'CTS Description': {
+        title: 'CTS Description',
+        layer: 'Testing',
+        description: 'CTS 설명입니다. Compatibility Test Suite입니다.',
+        components: [
+            'API 테스트',
+            '동작 테스트',
+            '호환성 검증',
+            '자동화 테스트'
+        ]
+    },
+
+    'VTS Description': {
+        title: 'VTS Description',
+        layer: 'Testing',
+        description: 'VTS 설명입니다. Vendor Test Suite입니다.',
+        components: [
+            'HAL 테스트',
+            'Kernel 테스트',
+            'Treble 검증',
+            '벤더 호환성'
+        ]
+    },
+
+    'GTS Description': {
+        title: 'GTS Description',
+        layer: 'Testing',
+        description: 'GTS 설명입니다. GMS Test Suite입니다.',
+        components: [
+            'GMS 테스트',
+            'Play Store',
+            'Google 앱',
+            'Play Services'
+        ]
+    },
+
+    'Test Device': {
+        title: 'Test Device',
+        layer: 'Testing',
+        description: '테스트 디바이스입니다. 테스트를 실행할 디바이스입니다.',
+        components: [
+            'Device Under Test',
+            'USB 연결',
+            'ADB',
+            '테스트 환경'
+        ]
     }
 };
 
