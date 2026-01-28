@@ -385,6 +385,21 @@ function showNodeModal(nodeData) {
                     </div>
                 ` : ''}
 
+                ${nodeData.relatedIssues && nodeData.relatedIssues.length > 0 ? `
+                    <div class="diagram-modal-section">
+                        <h3>관련 트러블슈팅</h3>
+                        <ul class="diagram-related-issues">
+                            ${nodeData.relatedIssues.map(issue => `
+                                <li>
+                                    <a href="common-media-issues.html#${issue.id}" target="_blank" rel="noopener noreferrer">
+                                        ${issue.title}
+                                    </a>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+
                 ${nodeData.path ? `
                     <div class="diagram-modal-section">
                         <h3>AOSP 경로</h3>

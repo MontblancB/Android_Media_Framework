@@ -893,7 +893,13 @@ val mediaPlayer = MediaPlayer().apply {
     prepare()
     start()
 }
-        `.trim()
+        `.trim(),
+        relatedIssues: [
+            { id: 'issue-buffering', title: '비디오가 계속 버퍼링됨' },
+            { id: 'issue-av-sync', title: '오디오-비디오 싱크 어긋남' },
+            { id: 'issue-seek-slow', title: 'Seek 동작이 느림' },
+            { id: 'issue-cold-start', title: '재생 시작이 느림' }
+        ]
     },
 
     'ExoPlayer': {
@@ -914,7 +920,13 @@ val mediaItem = MediaItem.fromUri(videoUri)
 player.setMediaItem(mediaItem)
 player.prepare()
 player.play()
-        `.trim()
+        `.trim(),
+        relatedIssues: [
+            { id: 'issue-buffering', title: '비디오가 계속 버퍼링됨' },
+            { id: 'issue-av-sync', title: '오디오-비디오 싱크 어긋남' },
+            { id: 'issue-seek-slow', title: 'Seek 동작이 느림' },
+            { id: 'issue-frame-drop', title: '프레임 드롭 발생' }
+        ]
     },
 
     'MediaCodec': {
@@ -933,7 +945,12 @@ player.play()
 val codec = MediaCodec.createDecoderByType("video/avc")
 codec.configure(format, surface, null, 0)
 codec.start()
-        `.trim()
+        `.trim(),
+        relatedIssues: [
+            { id: 'issue-codec-configure', title: 'MediaCodec.configure() 실패' },
+            { id: 'issue-dequeue-timeout', title: 'dequeueOutputBuffer() 타임아웃' },
+            { id: 'issue-resolution-unsupported', title: '해상도/프레임레이트 미지원' }
+        ]
     },
 
     'MediaCodecService': {
@@ -4113,7 +4130,11 @@ val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
     }
     .build()
 audioManager.requestAudioFocus(focusRequest)
-        `.trim()
+        `.trim(),
+        relatedIssues: [
+            { id: 'issue-audio-focus', title: 'Audio Focus를 얻지 못함' },
+            { id: 'issue-audio-latency', title: '오디오 레이턴시가 너무 높음' }
+        ]
     },
 
     'AudioPolicyService': {
@@ -5014,7 +5035,11 @@ carMediaManager.addMediaSourceListener { source ->
 
 // 미디어 소스 설정
 carMediaManager.setMediaSource(componentName, CarMediaManager.MEDIA_SOURCE_MODE_BROWSE)
-        `.trim()
+        `.trim(),
+        relatedIssues: [
+            { id: 'issue-car-media', title: '차량 미디어 컨트롤에서 앱이 안보임' },
+            { id: 'issue-ux-restrictions', title: 'UX Restrictions 위반' }
+        ]
     },
 
     'CarAudioService': {
@@ -5035,7 +5060,11 @@ carMediaManager.setMediaSource(componentName, CarMediaManager.MEDIA_SOURCE_MODE_
 val carAudioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
 val primaryZoneId = carAudioManager.primaryAudioZone
 val volumeGroupCount = carAudioManager.getVolumeGroupCount(primaryZoneId)
-        `.trim()
+        `.trim(),
+        relatedIssues: [
+            { id: 'issue-audio-routing', title: '차량에서 오디오가 잘못된 스피커로 출력됨' },
+            { id: 'issue-audio-focus', title: 'Audio Focus를 얻지 못함' }
+        ]
     },
 
     'Audio Matrix': {
@@ -8131,7 +8160,11 @@ val keyRequest = mediaDrm.getKeyRequest(
 
 // 라이선스 서버에서 응답 받은 후
 mediaDrm.provideKeyResponse(sessionId, licenseResponse)
-        `.trim()
+        `.trim(),
+        relatedIssues: [
+            { id: 'issue-drm-license', title: 'Widevine 라이선스 획득 실패' },
+            { id: 'issue-hdcp', title: 'HDCP 연결 실패' }
+        ]
     },
 
     'MediaDrm Service': {

@@ -41,7 +41,7 @@
             </p>
 
             <!-- Issue 1.1: 비디오 버퍼링 -->
-            <div class="issue-card severity-high">
+            <div id="issue-buffering" class="issue-card severity-high">
                 <h3 class="issue-title">🔴 Issue 1.1: 비디오가 계속 버퍼링됨</h3>
 
                 <div class="issue-section">
@@ -114,7 +114,7 @@ adb shell dumpsys media.player | grep -i "frames dropped"</code></pre>
             </div>
 
             <!-- Issue 1.2: A/V Sync 문제 -->
-            <div class="issue-card severity-critical">
+            <div id="issue-av-sync" class="issue-card severity-critical">
                 <h3 class="issue-title">🔴 Issue 1.2: 오디오-비디오 싱크 어긋남 (Lip Sync)</h3>
 
                 <div class="issue-section">
@@ -194,7 +194,7 @@ adb shell dumpsys media.audio_flinger | grep -i latency
             </div>
 
             <!-- Issue 1.3: Seek 느림 -->
-            <div class="issue-card severity-medium">
+            <div id="issue-seek-slow" class="issue-card severity-medium">
                 <h3 class="issue-title">🟡 Issue 1.3: Seek 동작이 느림</h3>
 
                 <div class="issue-section">
@@ -261,7 +261,7 @@ adb logcat | grep -E "seekTo|onSeekComplete"</code></pre>
             </div>
 
             <!-- Issue 1.4: 재생 시작 느림 -->
-            <div class="issue-card severity-medium">
+            <div id="issue-cold-start" class="issue-card severity-medium">
                 <h3 class="issue-title">🟡 Issue 1.4: 재생 시작이 느림 (Cold Start)</h3>
 
                 <div class="issue-section">
@@ -347,7 +347,7 @@ adb logcat | grep -E "playWhenReady|onRenderedFirstFrame"
             </p>
 
             <!-- Issue 2.1: 코덱 초기화 실패 -->
-            <div class="issue-card severity-critical">
+            <div id="issue-codec-configure" class="issue-card severity-critical">
                 <h3 class="issue-title">🔴 Issue 2.1: MediaCodec.configure() 실패</h3>
 
                 <div class="issue-section">
@@ -441,7 +441,7 @@ adb shell "dumpsys media.codec | grep -E 'size|resolution'"</code></pre>
             </div>
 
             <!-- Issue 2.2: dequeueOutputBuffer 타임아웃 -->
-            <div class="issue-card severity-high">
+            <div id="issue-dequeue-timeout" class="issue-card severity-high">
                 <h3 class="issue-title">🔴 Issue 2.2: dequeueOutputBuffer() 계속 타임아웃</h3>
 
                 <div class="issue-section">
@@ -542,7 +542,7 @@ adb shell dumpsys media.player | grep -i "buffer"</code></pre>
             </div>
 
             <!-- Issue 2.3: 해상도/프레임레이트 미지원 -->
-            <div class="issue-card severity-medium">
+            <div id="issue-resolution-unsupported" class="issue-card severity-medium">
                 <h3 class="issue-title">🟡 Issue 2.3: 특정 해상도/프레임레이트가 재생 안됨</h3>
 
                 <div class="issue-section">
@@ -636,7 +636,7 @@ adb logcat | grep -E "VideoSize|resolution"</code></pre>
             </p>
 
             <!-- Issue 3.1: 라이선스 획득 실패 -->
-            <div class="issue-card severity-critical">
+            <div id="issue-drm-license" class="issue-card severity-critical">
                 <h3 class="issue-title">🔴 Issue 3.1: Widevine 라이선스 획득 실패</h3>
 
                 <div class="issue-section">
@@ -758,7 +758,7 @@ adb shell pm list packages | grep drm</code></pre>
             </div>
 
             <!-- Issue 3.2: HDCP 문제 -->
-            <div class="issue-card severity-high">
+            <div id="issue-hdcp" class="issue-card severity-high">
                 <h3 class="issue-title">🔴 Issue 3.2: HDCP 연결 실패 (외부 디스플레이)</h3>
 
                 <div class="issue-section">
@@ -836,7 +836,7 @@ adb shell getprop | grep drm</code></pre>
             </p>
 
             <!-- Issue 4.1: Audio Focus 문제 -->
-            <div class="issue-card severity-high">
+            <div id="issue-audio-focus" class="issue-card severity-high">
                 <h3 class="issue-title">🔴 Issue 4.1: Audio Focus를 얻지 못함</h3>
 
                 <div class="issue-section">
@@ -938,7 +938,7 @@ adb shell dumpsys media.audio_flinger | grep -i focus</code></pre>
             </div>
 
             <!-- Issue 4.2: 오디오 라우팅 문제 (차량용) -->
-            <div class="issue-card severity-critical">
+            <div id="issue-audio-routing" class="issue-card severity-critical">
                 <h3 class="issue-title">🔴 Issue 4.2: 차량에서 오디오가 잘못된 스피커로 출력됨</h3>
 
                 <div class="issue-section">
@@ -1008,7 +1008,7 @@ adb shell cat /vendor/etc/audio_policy_configuration.xml</code></pre>
             </div>
 
             <!-- Issue 4.3: 오디오 레이턴시 높음 -->
-            <div class="issue-card severity-medium">
+            <div id="issue-audio-latency" class="issue-card severity-medium">
                 <h3 class="issue-title">🟡 Issue 4.3: 오디오 레이턴시가 너무 높음 (>100ms)</h3>
 
                 <div class="issue-section">
@@ -1099,7 +1099,7 @@ adb logcat | grep -E "AudioTrack|buffer"</code></pre>
             </p>
 
             <!-- Issue 5.1: UX Restrictions 위반 -->
-            <div class="issue-card severity-critical">
+            <div id="issue-ux-restrictions" class="issue-card severity-critical">
                 <h3 class="issue-title">🔴 Issue 5.1: 주행 중 비디오 재생됨 (UX Restrictions 위반)</h3>
 
                 <div class="issue-section">
@@ -1198,7 +1198,7 @@ adb shell cmd car_service inject-vhal-event 0x11600207 1 -i 30 # 30 km/h</code><
             </div>
 
             <!-- Issue 5.2: CarMediaService 연동 안됨 -->
-            <div class="issue-card severity-high">
+            <div id="issue-car-media" class="issue-card severity-high">
                 <h3 class="issue-title">🔴 Issue 5.2: 차량 미디어 컨트롤에서 앱이 안보임</h3>
 
                 <div class="issue-section">
@@ -1348,7 +1348,7 @@ adb shell dumpsys media_session</code></pre>
             </p>
 
             <!-- Issue 6.1: 프레임 드롭 -->
-            <div class="issue-card severity-high">
+            <div id="issue-frame-drop" class="issue-card severity-high">
                 <h3 class="issue-title">🔴 Issue 6.1: 비디오 프레임 드롭 발생</h3>
 
                 <div class="issue-section">
@@ -1444,7 +1444,7 @@ adb shell setprop debug.hwui.profile visual_bars</code></pre>
             </div>
 
             <!-- Issue 6.2: 메모리 부족 -->
-            <div class="issue-card severity-critical">
+            <div id="issue-oom" class="issue-card severity-critical">
                 <h3 class="issue-title">🔴 Issue 6.2: OutOfMemoryError 발생</h3>
 
                 <div class="issue-section">
