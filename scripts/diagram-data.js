@@ -498,6 +498,161 @@ const NODE_ID_MAPPING = {
     'VMCU': 'Vehicle MCU',
     'POWER_POLICY': 'Power Policy',
     'SUSPEND': 'Suspend Manager',
+    'CPMS': 'CarPowerManagementService',
+    'Policy': 'CarPowerPolicy',
+    'Components': 'Power Components',
+    'Driver': 'Driver',
+    'Audio': 'CarAudioService',
+    'Media': 'CarMediaService',
+
+    // AAOS Key Events (aaos-key-events.html)
+    'HW': 'Vehicle Hardware',
+    'CarService': 'Car Service',
+    'InputMgr': 'InputManagerService',
+    'CIS': 'CarInputService',
+    'IMS': 'InputManagerService',
+    'MSS': 'MediaSessionService',
+    'Sensor': 'Gear/Speed Sensor',
+    'CarInfo': 'CarInfoManager',
+    'UXR': 'CarUxRestrictionsManager',
+    'State': 'State Check',
+    'Block': 'Block Input',
+    'Allow': 'Allow Interaction',
+    'Group': 'Volume Group',
+    'Current': 'Current Context',
+    'Priority': 'Priority Check',
+    'Amp': 'Hardware Amplifier',
+    'RS': 'RotaryService',
+    'NM': 'Nudge Mode',
+    'FC': 'FocusController',
+    'SC': 'ScrollController',
+    'VIEW1': 'Focusable View 1',
+    'VIEW2': 'Focusable View 2',
+    'RV': 'RecyclerView',
+    'IM': 'InputManager',
+    'ID': 'InputDispatcher',
+    'APP': 'Application',
+    'DT': 'Display Type',
+    'MAIN_DISP': 'Main Display',
+    'CLUSTER_DISP': 'Cluster Display',
+    'MEDIA_APP': 'Media App',
+    'CLUSTER_UI': 'Cluster UI',
+
+    // AAOS Last Media (aaos-last-media.html)
+    'User': 'User',
+    'MCS': 'MediaConnectorService',
+    'Prefs': 'SharedPreferences',
+    'MBS': 'MediaBrowserService',
+    'Session': 'MediaSession',
+    'User1': 'User 1',
+
+    // CarMa (carma.html)
+    'Mobile_App': 'Mobile App',
+    'UI': 'UI Layout',
+    'Logic': 'App Logic',
+    'Compat': 'Compatibility Mode',
+    'Window': 'Window Manager',
+    'Input': 'Input Manager',
+    'Driving': 'Driving State Monitor',
+    'Safety': 'Safety Layer',
+
+    // Media App Layer (media-app-layer.html)
+    'MEDIA3': 'Media3 Library',
+    'CAMERA': 'Camera2',
+    'PLAYER': 'Media Player',
+    'APP_UI': 'App UI',
+    'LOCKSCREEN': 'Lock Screen',
+    'AUTO': 'Android Auto',
+    'WEAR': 'Wear OS',
+    'ASSISTANT': 'Google Assistant',
+    'NONE': 'STATE_NONE',
+    'BUFFERING': 'STATE_BUFFERING',
+    'PLAYING': 'STATE_PLAYING',
+    'PAUSED': 'STATE_PAUSED',
+    'STOPPED': 'STATE_STOPPED',
+
+    // MediaSession API (mediasession-api.html)
+    'AudioMgr': 'AudioManager',
+    'System': 'Android System',
+    'OtherApp': 'Other App',
+    'Controller': 'MediaController',
+    'Provider': 'VolumeProvider',
+    'Device': 'BT Headset',
+    'Callback': 'Session Callback',
+    'Queue': 'Queue Manager',
+
+    // CDD (cdd.html)
+    'INTRO': 'Introduction',
+    'TYPES': 'Device Types',
+    'SW': 'Software',
+    'PKG': 'App Packaging',
+    'TOOLS': 'Dev Tools',
+    'PERF': 'Performance',
+    'SEC': 'Security',
+    'TEST': 'Testing',
+    'T1': 'Handheld',
+    'T2': 'Television',
+    'T3': 'Automotive',
+    'T4': 'Watch',
+    'M1': 'Media Codecs',
+    'M2': 'Video Encoding',
+    'M3': 'Audio Recording',
+    'H1': 'Display',
+    'H2': 'Camera',
+    'H3': 'Sensors',
+    'CODECS': 'Media Codecs',
+    'PERF_CLASS': 'Performance Class',
+    'C1': 'H.264/AVC',
+    'C2': 'HEVC',
+    'C3': 'VP9/AV1',
+    'C4': 'AAC/Opus',
+    'V1': 'Resolution',
+    'V2': 'Frame Rate',
+    'V3': 'Bitrate',
+    'A1': 'Raw Audio',
+    'A2': 'Latency',
+    'A3': 'Microphone',
+    'P1': 'Media Performance',
+    'P2': 'Camera Requirements',
+    'P3': 'Memory/Storage',
+    'GOOGLE': 'Google',
+    'OEM': 'OEM/Manufacturer',
+
+    // Dolby DDP Porting (dolby-ddp-porting.html)
+    'App': 'Media App',
+    'Framework': 'Audio Framework',
+    'StreamIn': 'Stream Input',
+    'DolbyEngine': 'Dolby Engine',
+    'PostProc': 'Post Processing',
+    'ALSA': 'ALSA Driver',
+
+    // Dolby Vision Porting (dolby-vision-porting.html)
+    'MC': 'MediaCodec API',
+    'C2': 'Codec2 Framework',
+    'C2Comp': 'C2 Component',
+    'Buffer': 'Graphic Buffer',
+    'DisplayHAL': 'Display HAL',
+    'Panel': 'HDR Display Panel',
+
+    // Debugging Tools (debugging-tools.html)
+    'LOGCAT': 'Logcat',
+    'DUMPSYS': 'Dumpsys',
+    'PERFETTO': 'Perfetto',
+    'SYSTRACE': 'Systrace',
+    'BUGREPORT': 'Bugreport',
+
+    // API Quick Reference (api-quick-reference.html)
+    'Idle': 'Idle State',
+    'Initialized': 'Initialized State',
+    'Preparing': 'Preparing State',
+    'Prepared': 'Prepared State',
+    'Started': 'Started State',
+    'PlaybackCompleted': 'Playback Completed',
+
+    // Common Media Issues (common-media-issues.html)
+    'ISSUE': 'Media Issue',
+    'SYMPTOM': 'Symptom',
+    'SOLUTION': 'Solution',
 
     // CTS/CDD (cts.html, cdd.html)
     'CTS': 'Compatibility Test Suite',
@@ -8060,6 +8215,763 @@ player.play()
             'Thumbnail Generation'
         ],
         path: 'packages/providers/MediaProvider/src/com/android/providers/media/scan/'
+    },
+
+    // ========================================
+    // Power Policy & Suspend 노드 (power-policy-suspend.html) - Card 15
+    // ========================================
+
+    'Vehicle MCU': {
+        title: 'Vehicle MCU (VMCU)',
+        layer: 'Hardware',
+        description: '차량의 마이크로컨트롤러 유닛입니다. IGN/ACC 신호를 Android 시스템에 전달합니다.',
+        components: [
+            'Ignition Signal Processing',
+            'Power State Management',
+            'Wake-up Signal Generation',
+            'Sleep Trigger'
+        ],
+        doc: 'https://source.android.com/docs/automotive/power'
+    },
+
+    'CarPowerManagementService': {
+        title: 'CarPowerManagementService (CPMS)',
+        layer: 'Car Service',
+        description: 'Android 전원 상태 머신(State Machine)을 담당합니다. VHAL 이벤트를 받아 각 서비스에 Sleep/Shutdown 알림을 보냅니다.',
+        components: [
+            'Power State Machine',
+            'Sleep Entry/Exit Handler',
+            'Policy Listener Management',
+            'Component Notification'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/power/',
+        doc: 'https://source.android.com/docs/automotive/power/car-power-management'
+    },
+
+    'CarPowerPolicy': {
+        title: 'CarPowerPolicy',
+        layer: 'Car Service',
+        description: '"어떤 컴포넌트를 켤지/끌지"를 정의한 정책입니다. ShutdownPrepare 상태에서는 AUDIO, MEDIA, DISPLAY가 OFF됩니다.',
+        components: [
+            'Component Enable/Disable',
+            'Policy Definition',
+            'State-based Rules',
+            'XML Configuration'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/power/',
+        doc: 'https://source.android.com/docs/automotive/power/power-policy'
+    },
+
+    'Power Components': {
+        title: 'Power Components',
+        layer: 'System',
+        description: '전원 정책에 의해 제어되는 시스템 컴포넌트들입니다.',
+        components: [
+            'AUDIO - 오디오 서브시스템',
+            'MEDIA - 미디어 서브시스템',
+            'DISPLAY - 디스플레이',
+            'BLUETOOTH - 블루투스',
+            'WIFI - WiFi',
+            'CELLULAR - 셀룰러 네트워크'
+        ],
+        doc: 'https://source.android.com/docs/automotive/power/power-components'
+    },
+
+    // ========================================
+    // AAOS Key Events 노드 (aaos-key-events.html) - Card 13
+    // ========================================
+
+    'CarInputService': {
+        title: 'CarInputService',
+        layer: 'Car Service',
+        description: 'AAOS에서 입력 이벤트를 중앙에서 관리하는 핵심 컴포넌트입니다. VHAL로부터 받은 이벤트를 분석하여 적절한 타겟으로 라우팅합니다.',
+        components: [
+            'Key Event Processing',
+            'Rotary Event Handling',
+            'Input Filtering',
+            'Display Target Routing'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/CarInputService.java',
+        doc: 'https://source.android.com/docs/automotive/input/car-input'
+    },
+
+    'InputManagerService': {
+        title: 'InputManagerService',
+        layer: 'System Service',
+        description: 'Android의 입력 이벤트 관리 서비스입니다. 키보드, 터치, 하드웨어 버튼 이벤트를 처리합니다.',
+        components: [
+            'Input Event Dispatch',
+            'Input Device Management',
+            'Key Event Injection',
+            'Focus Management'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/input/',
+        doc: 'https://source.android.com/docs/core/input/input-overview'
+    },
+
+    'CarUxRestrictionsManager': {
+        title: 'CarUxRestrictionsManager',
+        layer: 'Car API',
+        description: '주행 중 UX 제한을 관리합니다. 앱은 이를 통해 주행 상태를 감지하고 UI를 조정합니다.',
+        components: [
+            'Driving State Detection',
+            'UX Restriction Callbacks',
+            'Restriction Types (NO_VIDEO, NO_KEYBOARD)',
+            'Distraction Optimized Check'
+        ],
+        path: 'packages/services/Car/car-lib/src/android/car/drivingstate/',
+        doc: 'https://source.android.com/docs/automotive/driver_distraction/guidelines'
+    },
+
+    'RotaryService': {
+        title: 'RotaryService',
+        layer: 'Car Service',
+        description: '로터리 노브(Rotary Knob) 입력을 포커스 이동(Navigation) 이벤트로 변환하여 터치 스크린이 아닌 조작계에서도 앱을 제어할 수 있게 합니다.',
+        components: [
+            'Rotary Event Detection',
+            'Focus Navigation',
+            'Scroll Control',
+            'Nudge Mode'
+        ],
+        path: 'packages/apps/Car/RotaryController/',
+        doc: 'https://source.android.com/docs/automotive/input/rotary'
+    },
+
+    'FocusController': {
+        title: 'FocusController',
+        layer: 'UI Controller',
+        description: '로터리 컨트롤러의 포커스 이동을 관리합니다.',
+        components: [
+            'requestFocus()',
+            'Focus Direction',
+            'Focus Search Algorithm',
+            'Focus Indicators'
+        ]
+    },
+
+    'ScrollController': {
+        title: 'ScrollController',
+        layer: 'UI Controller',
+        description: '로터리 컨트롤러의 스크롤 동작을 관리합니다.',
+        components: [
+            'smoothScrollBy()',
+            'Scroll Velocity',
+            'RecyclerView Integration',
+            'Scroll Indicators'
+        ]
+    },
+
+    'InputDispatcher': {
+        title: 'InputDispatcher',
+        layer: 'Native',
+        description: 'Native 레벨에서 입력 이벤트를 타겟 윈도우에 전달하는 컴포넌트입니다.',
+        components: [
+            'Event Queue',
+            'Target Window Selection',
+            'Event Injection',
+            'ANR Detection'
+        ],
+        path: 'frameworks/native/services/inputflinger/dispatcher/'
+    },
+
+    // ========================================
+    // AAOS Last Media 노드 (aaos-last-media.html) - Card 14
+    // ========================================
+
+    'MediaConnectorService': {
+        title: 'MediaConnectorService',
+        layer: 'Car Service',
+        description: 'OEM/AAOS 시스템 서비스로, CarMediaService의 지시를 받아 해당 Media Source에 바인드(Bind)하고, 필요 시 EXTRA_AUTOPLAY로 자동재생을 시도합니다.',
+        components: [
+            'MediaBrowser Connection',
+            'EXTRA_AUTOPLAY Handling',
+            'Session Token Management',
+            'TransportControls'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/media/'
+    },
+
+    'MediaBrowserService': {
+        title: 'MediaBrowserService',
+        layer: 'App Component',
+        description: '미디어 앱이 구현하는 서비스로, 미디어 브라우징과 재생 제어를 제공합니다.',
+        components: [
+            'onGetRoot()',
+            'onLoadChildren()',
+            'MediaSession Token',
+            'Content Hierarchy'
+        ],
+        path: 'frameworks/base/media/java/android/media/browse/',
+        doc: 'https://developer.android.com/guide/topics/media-apps/audio-app/building-a-mediabrowserservice'
+    },
+
+    'SharedPreferences': {
+        title: 'SharedPreferences',
+        layer: 'Storage',
+        description: 'Last Media Source 정보를 저장하는 키-값 저장소입니다. 사용자별로 분리되어 저장됩니다.',
+        components: [
+            'Last Media Source',
+            'User ID Prefixing',
+            'Media Mode (Playback/Browse)',
+            'Position & Playlist'
+        ]
+    },
+
+    // ========================================
+    // CarMa (carma.html) 노드 - Card 18
+    // ========================================
+
+    'Compatibility Mode': {
+        title: 'Compatibility Mode Container',
+        layer: 'System',
+        description: '앱이 차량 디스플레이에 맞게 렌더링되도록 돕는 시스템 컨테이너입니다.',
+        components: [
+            '화면 비율 조정 (Letterbox/Pillarbox)',
+            '입력 변환 (로터리 → 터치)',
+            '시스템 바 처리',
+            'DPI 스케일링'
+        ],
+        doc: 'https://source.android.com/docs/automotive/compatibility'
+    },
+
+    'Driving State Monitor': {
+        title: 'Driving State Monitor',
+        layer: 'Safety',
+        description: '차량의 주행 상태를 모니터링하여 UX 제한을 적용합니다.',
+        components: [
+            'Gear Position Detection',
+            'Speed Threshold',
+            'Park/Drive State',
+            'UX Restriction Trigger'
+        ]
+    },
+
+    'UX Restriction Engine': {
+        title: 'UX Restriction Engine',
+        layer: 'Safety',
+        description: '주행 중 안전을 위해 특정 기능을 제한하는 엔진입니다.',
+        components: [
+            'NO_VIDEO - 비디오 재생 차단',
+            'NO_KEYBOARD - 키보드 입력 차단',
+            'LIMIT_STRING_LENGTH - 텍스트 길이 제한',
+            'LIMIT_CONTENT - 콘텐츠 목록 제한'
+        ],
+        doc: 'https://source.android.com/docs/automotive/driver_distraction/guidelines'
+    },
+
+    // ========================================
+    // Media App Layer 노드 (media-app-layer.html) - Card 19
+    // ========================================
+
+    'Media3 Library': {
+        title: 'Media3 Library',
+        layer: 'Jetpack Library',
+        description: 'Jetpack Media3는 Android 미디어 지원 라이브러리의 새로운 통합 버전입니다. ExoPlayer를 포함한 모든 미디어 API를 통합하고 단순화합니다.',
+        components: [
+            'media3-exoplayer',
+            'media3-session',
+            'media3-ui',
+            'media3-cast',
+            'media3-transformer'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media/media3'
+    },
+
+    'Camera2': {
+        title: 'Camera2 API',
+        layer: 'Framework API',
+        description: 'Android의 고급 카메라 API입니다. RAW 캡처, 수동 제어, 멀티 카메라 지원 등을 제공합니다.',
+        components: [
+            'CameraManager',
+            'CameraDevice',
+            'CameraCaptureSession',
+            'CaptureRequest',
+            'ImageReader'
+        ],
+        path: 'frameworks/base/core/java/android/hardware/camera2/',
+        doc: 'https://developer.android.com/reference/android/hardware/camera2/package-summary'
+    },
+
+    'Lock Screen': {
+        title: 'Lock Screen Media Controls',
+        layer: 'System UI',
+        description: '잠금 화면에서 미디어를 제어할 수 있는 컨트롤입니다. MediaSession과 연동됩니다.',
+        components: [
+            'Album Art Display',
+            'Playback Controls',
+            'Track Info',
+            'Seek Bar'
+        ]
+    },
+
+    'Android Auto': {
+        title: 'Android Auto',
+        layer: 'Platform',
+        description: '스마트폰을 차량 인포테인먼트 시스템에 연결하여 사용하는 플랫폼입니다.',
+        components: [
+            'Projection Mode',
+            'Voice Control',
+            'Media Browser',
+            'Messaging'
+        ],
+        doc: 'https://developer.android.com/training/auto'
+    },
+
+    'Wear OS': {
+        title: 'Wear OS',
+        layer: 'Platform',
+        description: 'Google의 스마트워치 플랫폼입니다. MediaController를 통해 스마트폰의 미디어를 제어할 수 있습니다.',
+        components: [
+            'Remote Media Control',
+            'Now Playing',
+            'Offline Playback',
+            'Health & Fitness'
+        ],
+        doc: 'https://developer.android.com/training/wearables'
+    },
+
+    'Google Assistant': {
+        title: 'Google Assistant',
+        layer: 'Platform',
+        description: 'Google의 음성 비서입니다. MediaSession을 통해 음성으로 미디어를 제어할 수 있습니다.',
+        components: [
+            'Voice Commands',
+            'Media Actions',
+            'Conversational Actions',
+            'Smart Home Control'
+        ]
+    },
+
+    // ========================================
+    // MediaSession API 노드 (mediasession-api.html) - Card 9 구버전
+    // ========================================
+
+    'MediaController': {
+        title: 'MediaController',
+        layer: 'Framework API',
+        description: '다른 앱이나 시스템이 MediaSession을 원격으로 제어할 수 있게 해주는 API입니다.',
+        components: [
+            'TransportControls - 재생 제어',
+            'getPlaybackState() - 상태 조회',
+            'getMetadata() - 메타데이터 조회',
+            'setVolumeTo() - 볼륨 설정'
+        ],
+        path: 'frameworks/base/media/java/android/media/session/MediaController.java',
+        doc: 'https://developer.android.com/reference/android/media/session/MediaController'
+    },
+
+    'VolumeProvider': {
+        title: 'VolumeProvider',
+        layer: 'Framework API',
+        description: '원격 볼륨 제어를 제공하는 클래스입니다. MediaSession에 연결하여 사용합니다.',
+        components: [
+            'VOLUME_CONTROL_FIXED - 변경 불가',
+            'VOLUME_CONTROL_RELATIVE - 상대 조정',
+            'VOLUME_CONTROL_ABSOLUTE - 절대값 설정',
+            'onAdjustVolume() - 볼륨 조정 콜백'
+        ],
+        path: 'frameworks/base/media/java/android/media/VolumeProvider.java',
+        doc: 'https://developer.android.com/reference/android/media/VolumeProvider'
+    },
+
+    'Session Callback': {
+        title: 'MediaSession.Callback',
+        layer: 'Framework API',
+        description: 'MediaSession의 콜백 인터페이스입니다. 재생 제어 명령을 수신합니다.',
+        components: [
+            'onPlay() - 재생 시작',
+            'onPause() - 일시정지',
+            'onSkipToNext() - 다음 트랙',
+            'onSeekTo() - 탐색',
+            'onMediaButtonEvent() - 미디어 버튼'
+        ],
+        path: 'frameworks/base/media/java/android/media/session/MediaSession.java',
+        doc: 'https://developer.android.com/reference/android/media/session/MediaSession.Callback'
+    },
+
+    'Queue Manager': {
+        title: 'Queue Manager',
+        layer: 'App Component',
+        description: '재생 대기열을 관리하는 컴포넌트입니다.',
+        components: [
+            'Queue Items',
+            'Shuffle Mode',
+            'Repeat Mode',
+            'Skip Logic'
+        ]
+    },
+
+    'STATE_NONE': {
+        title: 'PlaybackState.STATE_NONE',
+        layer: 'State',
+        description: '초기 상태입니다. 아직 어떤 미디어도 로드되지 않았습니다.',
+        components: []
+    },
+
+    'STATE_BUFFERING': {
+        title: 'PlaybackState.STATE_BUFFERING',
+        layer: 'State',
+        description: '버퍼링 중 상태입니다. 네트워크 스트리밍 시 데이터를 로드하는 중입니다.',
+        components: []
+    },
+
+    'STATE_PLAYING': {
+        title: 'PlaybackState.STATE_PLAYING',
+        layer: 'State',
+        description: '재생 중 상태입니다. 미디어가 활발히 재생되고 있습니다.',
+        components: []
+    },
+
+    'STATE_PAUSED': {
+        title: 'PlaybackState.STATE_PAUSED',
+        layer: 'State',
+        description: '일시정지 상태입니다. 재생이 중단되었지만 언제든 재개할 수 있습니다.',
+        components: []
+    },
+
+    'STATE_STOPPED': {
+        title: 'PlaybackState.STATE_STOPPED',
+        layer: 'State',
+        description: '정지 상태입니다. 재생이 완전히 멈추고 리소스가 해제됩니다.',
+        components: []
+    },
+
+    // ========================================
+    // CDD 노드 (cdd.html) - Card 20
+    // ========================================
+
+    'Compatibility Definition Document': {
+        title: 'CDD (Compatibility Definition Document)',
+        layer: 'Document',
+        description: 'Android 호환성 정의 문서입니다. OEM이 준수해야 할 요구사항을 정의합니다.',
+        components: [
+            '10개 섹션',
+            'Device Type별 요구사항',
+            'Multimedia 요구사항',
+            'Performance Class'
+        ],
+        doc: 'https://source.android.com/docs/compatibility/cdd'
+    },
+
+    'CDD Media Requirements': {
+        title: 'CDD Media Requirements',
+        layer: 'Requirements',
+        description: 'CDD의 미디어 관련 요구사항입니다. 코덱, 해상도, 프레임레이트 등을 정의합니다.',
+        components: [
+            'Section 5: Multimedia',
+            'Media Codecs (H.264, HEVC, VP9, AV1)',
+            'Video Encoding Requirements',
+            'Audio Recording Requirements'
+        ],
+        doc: 'https://source.android.com/docs/compatibility/cdd#5_multimedia'
+    },
+
+    'Device Types': {
+        title: 'CDD Device Types',
+        layer: 'Classification',
+        description: 'CDD에서 정의하는 디바이스 유형입니다.',
+        components: [
+            'Handheld (스마트폰)',
+            'Television',
+            'Automotive',
+            'Watch',
+            'Tablet'
+        ]
+    },
+
+    'Performance Class': {
+        title: 'Media Performance Class',
+        layer: 'Requirements',
+        description: '고성능 미디어 기능을 보장하는 등급입니다. 프리미엄 디바이스 인증에 사용됩니다.',
+        components: [
+            'Camera Requirements',
+            'Video Codec Performance',
+            'Memory/Storage',
+            'Display Quality'
+        ],
+        doc: 'https://source.android.com/docs/compatibility/cdd#2_2_7_performance_class'
+    },
+
+    // ========================================
+    // Dolby DDP Porting 노드 (dolby-ddp-porting.html)
+    // ========================================
+
+    'Dolby Engine': {
+        title: 'Dolby Engine (MS12/DAP)',
+        layer: 'Vendor',
+        description: 'Dolby 오디오 디코딩 및 후처리를 담당하는 엔진입니다. MS12와 DAP(Digital Audio Processing)를 포함합니다.',
+        components: [
+            'MS12 Decoder',
+            'DAP (후처리)',
+            'Atmos Renderer',
+            'Metadata Parsing'
+        ]
+    },
+
+    'Stream Input': {
+        title: 'Stream Input',
+        layer: 'HAL',
+        description: 'Audio HAL로 들어오는 오디오 스트림입니다.',
+        components: [
+            'PCM Input',
+            'Compressed Audio (AC-3, E-AC-3)',
+            'Dolby Atmos JOC',
+            'Metadata'
+        ]
+    },
+
+    // ========================================
+    // Dolby Vision Porting 노드 (dolby-vision-porting.html)
+    // ========================================
+
+    'C2 Component': {
+        title: 'C2 Component (Dolby Vision)',
+        layer: 'Codec2',
+        description: 'Dolby Vision 디코딩을 위한 Codec2 컴포넌트입니다.',
+        components: [
+            'c2.vendor.dv.decoder',
+            'Profile 4/5/7/8 Support',
+            'RPU Metadata Parsing',
+            'Secure Playback'
+        ]
+    },
+
+    'Graphic Buffer': {
+        title: 'Graphic Buffer',
+        layer: 'Graphics',
+        description: 'YUV P010 포맷과 RPU 데이터를 포함하는 그래픽 버퍼입니다.',
+        components: [
+            'YUV P010 (10-bit)',
+            'RPU Metadata',
+            'HDR Metadata',
+            'Gralloc'
+        ]
+    },
+
+    'Display HAL': {
+        title: 'Display HAL / HWC',
+        layer: 'HAL',
+        description: 'Dolby Vision 톤 매핑을 수행하는 디스플레이 HAL입니다.',
+        components: [
+            'Tone Mapping',
+            'HDR Processing',
+            'Color Management',
+            'Panel Calibration'
+        ],
+        path: 'hardware/interfaces/graphics/composer/'
+    },
+
+    'HDR Display Panel': {
+        title: 'HDR Display Panel',
+        layer: 'Hardware',
+        description: 'HDR 콘텐츠를 표시할 수 있는 디스플레이 패널입니다.',
+        components: [
+            'HDR10',
+            'Dolby Vision',
+            'HLG',
+            'Peak Brightness'
+        ]
+    },
+
+    // ========================================
+    // Debugging Tools 노드 (debugging-tools.html) - Card 22
+    // ========================================
+
+    'Logcat': {
+        title: 'Logcat',
+        layer: 'Debug Tool',
+        description: 'Android의 로깅 시스템입니다. 앱 및 시스템 로그를 실시간으로 확인할 수 있습니다.',
+        components: [
+            'Log Levels (V/D/I/W/E)',
+            'Tag Filtering',
+            'Buffer Selection',
+            'Timestamp'
+        ],
+        codeExample: `
+# 미디어 관련 로그 필터링
+adb logcat -s MediaPlayer ExoPlayer AudioTrack MediaCodec
+
+# NuPlayer 디버깅
+adb logcat -s NuPlayer NuPlayerDriver MediaCodec
+
+# Audio 디버깅
+adb logcat -s AudioFlinger AudioPolicyService AudioTrack
+        `.trim()
+    },
+
+    'Dumpsys': {
+        title: 'Dumpsys',
+        layer: 'Debug Tool',
+        description: '시스템 서비스의 상태를 덤프하는 도구입니다. 미디어, 오디오, 세션 정보를 확인할 수 있습니다.',
+        components: [
+            'dumpsys media.player',
+            'dumpsys audio',
+            'dumpsys media_session',
+            'dumpsys SurfaceFlinger'
+        ],
+        codeExample: `
+# MediaPlayer 서비스 상태
+adb shell dumpsys media.player
+
+# Audio 서비스 상태
+adb shell dumpsys audio
+
+# MediaSession 정보
+adb shell dumpsys media_session
+        `.trim()
+    },
+
+    'Perfetto': {
+        title: 'Perfetto',
+        layer: 'Debug Tool',
+        description: 'Android의 고급 트레이싱 도구입니다. CPU, 메모리, GPU 사용량을 시각화합니다.',
+        components: [
+            'System Tracing',
+            'App Tracing',
+            'Custom Events',
+            'Web Viewer'
+        ],
+        doc: 'https://perfetto.dev/docs/quickstart/android-tracing'
+    },
+
+    'Systrace': {
+        title: 'Systrace',
+        layer: 'Debug Tool',
+        description: '시스템 전체의 트레이스를 수집하는 도구입니다. (Perfetto로 대체 권장)',
+        components: [
+            'CPU Scheduling',
+            'Disk Activity',
+            'App Threads',
+            'HTML Report'
+        ]
+    },
+
+    'Bugreport': {
+        title: 'Bugreport',
+        layer: 'Debug Tool',
+        description: '시스템 전체 상태를 수집하는 종합 리포트입니다.',
+        components: [
+            'System Logs',
+            'Service Dumps',
+            'Stack Traces',
+            'Device Info'
+        ],
+        codeExample: `
+# Bugreport 생성
+adb bugreport ~/bugreport.zip
+
+# 인터랙티브 버전
+adb shell am bug-report
+        `.trim()
+    },
+
+    // ========================================
+    // API Quick Reference 노드 (api-quick-reference.html) - Card 23
+    // ========================================
+
+    'Idle State': {
+        title: 'MediaPlayer Idle State',
+        layer: 'State',
+        description: 'MediaPlayer의 초기 상태입니다. new MediaPlayer() 후 또는 reset() 후 상태입니다.',
+        components: [
+            'setDataSource() 가능',
+            'prepare() 불가',
+            'start() 불가'
+        ]
+    },
+
+    'Initialized State': {
+        title: 'MediaPlayer Initialized State',
+        layer: 'State',
+        description: 'setDataSource() 호출 후 상태입니다.',
+        components: [
+            'prepare() 또는 prepareAsync() 가능',
+            'start() 불가'
+        ]
+    },
+
+    'Preparing State': {
+        title: 'MediaPlayer Preparing State',
+        layer: 'State',
+        description: 'prepareAsync() 호출 후 상태입니다. 비동기로 준비 중입니다.',
+        components: [
+            'onPrepared() 콜백 대기',
+            '다른 메서드 호출 불가'
+        ]
+    },
+
+    'Prepared State': {
+        title: 'MediaPlayer Prepared State',
+        layer: 'State',
+        description: 'prepare() 완료 또는 onPrepared() 콜백 후 상태입니다.',
+        components: [
+            'start() 가능',
+            'seekTo() 가능',
+            'getDuration() 가능'
+        ]
+    },
+
+    'Started State': {
+        title: 'MediaPlayer Started State',
+        layer: 'State',
+        description: 'start() 호출 후 재생 중 상태입니다.',
+        components: [
+            'pause() 가능',
+            'stop() 가능',
+            'seekTo() 가능',
+            'isPlaying() = true'
+        ]
+    },
+
+    'Playback Completed': {
+        title: 'MediaPlayer PlaybackCompleted State',
+        layer: 'State',
+        description: '재생이 완료된 상태입니다. onCompletion() 콜백이 호출됩니다.',
+        components: [
+            'start() - 처음부터 재생',
+            'seekTo() 가능',
+            'stop() 가능'
+        ]
+    },
+
+    // ========================================
+    // Common Media Issues 노드 (common-media-issues.html) - Card 21
+    // ========================================
+
+    'Media Issue': {
+        title: 'Media Issue',
+        layer: 'Problem',
+        description: '미디어 재생 관련 일반적인 문제입니다.',
+        components: [
+            'Audio 이슈',
+            'Video 이슈',
+            'DRM 이슈',
+            'Codec 이슈'
+        ]
+    },
+
+    'Symptom': {
+        title: 'Symptom',
+        layer: 'Diagnosis',
+        description: '문제의 증상입니다. 로그나 동작으로 확인할 수 있습니다.',
+        components: [
+            '로그 메시지',
+            '동작 이상',
+            '에러 코드',
+            '시각적 증상'
+        ]
+    },
+
+    'Solution': {
+        title: 'Solution',
+        layer: 'Fix',
+        description: '문제 해결 방법입니다.',
+        components: [
+            '코드 수정',
+            '설정 변경',
+            '권한 추가',
+            'API 변경'
+        ]
     }
 };
 
