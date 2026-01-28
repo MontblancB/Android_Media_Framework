@@ -998,7 +998,23 @@ audioTrack.play()
         ],
         path: 'hardware/interfaces/audio/',
         doc: 'https://source.android.com/docs/core/audio/implement',
-        relatedSections: ['section-4']
+        relatedSections: ['section-4'],
+        codeExample: `
+// Audio HAL AIDL 구현 예시 (C++)
+class StreamOut : public BnStreamOut {
+public:
+    Status getBufferSizeFrames(int32_t* _aidl_return) override {
+        *_aidl_return = mFrameCount;
+        return Status::ok();
+    }
+
+    Status write(const std::vector<int8_t>& data,
+                 WriteStatus* _aidl_return) override {
+        // PCM 데이터를 하드웨어에 쓰기
+        return Status::ok();
+    }
+};
+        `.trim()
     },
 
     'Linux Kernel': {
@@ -1185,7 +1201,25 @@ adb shell service list
             'Metadata - 미디어 정보'
         ],
         path: 'frameworks/base/media/java/android/media/session/',
-        doc: 'https://developer.android.com/guide/topics/media-apps/working-with-a-media-session'
+        doc: 'https://developer.android.com/guide/topics/media-apps/working-with-a-media-session',
+        codeExample: `
+// MediaSession 생성
+val session = MediaSession(context, "MusicService").apply {
+    setCallback(object : MediaSession.Callback() {
+        override fun onPlay() { /* 재생 시작 */ }
+        override fun onPause() { /* 일시정지 */ }
+        override fun onSkipToNext() { /* 다음 곡 */ }
+    })
+    setFlags(MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS)
+    isActive = true
+}
+
+// 상태 업데이트
+session.setPlaybackState(PlaybackState.Builder()
+    .setState(PlaybackState.STATE_PLAYING, position, 1f)
+    .setActions(PlaybackState.ACTION_PAUSE or PlaybackState.ACTION_SKIP_TO_NEXT)
+    .build())
+        `.trim()
     },
 
     'MediaRouter': {
@@ -1199,7 +1233,23 @@ adb shell service list
             'Bluetooth Audio'
         ],
         path: 'frameworks/base/media/java/android/media/',
-        doc: 'https://developer.android.com/guide/topics/media/mediarouteProvider'
+        doc: 'https://developer.android.com/guide/topics/media/mediarouteProvider',
+        codeExample: `
+// MediaRouter2 사용 (Android 11+)
+val mediaRouter = MediaRouter2.getInstance(context)
+
+// 라우트 탐색
+val routingController = mediaRouter.systemController
+val routes = routingController.selectableRoutes
+
+// 라우트 선택
+mediaRouter.transferTo(selectedRoute)
+
+// 라우트 변경 콜백
+mediaRouter.registerControllerCallback(executor, object : MediaRouter2.ControllerCallback() {
+    override fun onControllerUpdated(controller: RoutingController) { }
+})
+        `.trim()
     },
 
     'Media Framework': {
@@ -1245,7 +1295,26 @@ adb shell service list
             'Fence Synchronization'
         ],
         path: 'frameworks/native/libs/gui/',
-        doc: 'https://source.android.com/docs/core/graphics/arch-sv'
+        doc: 'https://source.android.com/docs/core/graphics/arch-sv',
+        codeExample: `
+// SurfaceView에서 Surface 사용
+class VideoSurfaceView(context: Context) : SurfaceView(context),
+    SurfaceHolder.Callback {
+
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        // MediaCodec 출력 Surface 설정
+        codec.configure(format, holder.surface, null, 0)
+        codec.start()
+    }
+
+    override fun surfaceChanged(holder: SurfaceHolder, format: Int,
+        width: Int, height: Int) { }
+
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
+        codec.stop()
+    }
+}
+        `.trim()
     },
 
     'Hardware Composer': {
@@ -1538,7 +1607,17 @@ adb shell service list | grep android.hardware
             'Error Handling'
         ],
         path: 'frameworks/av/media/codec2/sfplugin/',
-        doc: 'https://source.android.com/docs/core/media/codec'
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+// Codec 2.0 컴포넌트 목록 확인 (C++)
+std::shared_ptr<C2ComponentStore> store = GetCodec2PlatformStore();
+std::vector<std::shared_ptr<const C2Component::Traits>> traits;
+store->listComponents(&traits);
+
+for (const auto& trait : traits) {
+    ALOGD("Component: %s, Domain: %d", trait->name.c_str(), trait->domain);
+}
+        `.trim()
     },
 
     'CCodecBufferChannel': {
@@ -3983,7 +4062,24 @@ audioTrack.play()
             'Sample Rate Control'
         ],
         path: 'frameworks/base/media/java/android/media/AudioRecord.java',
-        doc: 'https://developer.android.com/reference/android/media/AudioRecord'
+        doc: 'https://developer.android.com/reference/android/media/AudioRecord',
+        codeExample: `
+val bufferSize = AudioRecord.getMinBufferSize(
+    44100,
+    AudioFormat.CHANNEL_IN_MONO,
+    AudioFormat.ENCODING_PCM_16BIT
+)
+val audioRecord = AudioRecord(
+    MediaRecorder.AudioSource.MIC,
+    44100,
+    AudioFormat.CHANNEL_IN_MONO,
+    AudioFormat.ENCODING_PCM_16BIT,
+    bufferSize
+)
+audioRecord.startRecording()
+val buffer = ByteArray(bufferSize)
+audioRecord.read(buffer, 0, bufferSize)
+        `.trim()
     },
 
     'AudioManager': {
@@ -3998,7 +4094,26 @@ audioTrack.play()
             'Device Management'
         ],
         path: 'frameworks/base/media/java/android/media/AudioManager.java',
-        doc: 'https://developer.android.com/reference/android/media/AudioManager'
+        doc: 'https://developer.android.com/reference/android/media/AudioManager',
+        codeExample: `
+val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+// 오디오 포커스 요청
+val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+    .setAudioAttributes(AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_MEDIA)
+        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+        .build())
+    .setOnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS -> stopPlayback()
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> pausePlayback()
+            AudioManager.AUDIOFOCUS_GAIN -> resumePlayback()
+        }
+    }
+    .build()
+audioManager.requestAudioFocus(focusRequest)
+        `.trim()
     },
 
     'AudioPolicyService': {
@@ -4884,7 +4999,22 @@ keyStore.load(null)
             'Last Media Persistence'
         ],
         path: 'packages/services/Car/service/src/com/android/car/media/',
-        doc: 'https://source.android.com/docs/automotive/start/car-service'
+        doc: 'https://source.android.com/docs/automotive/start/car-service',
+        codeExample: `
+// CarMediaManager 사용
+val carMediaManager = car.getCarManager(Car.CAR_MEDIA_SERVICE) as CarMediaManager
+
+// 현재 미디어 소스 가져오기
+val currentSource = carMediaManager.mediaSource
+
+// 미디어 소스 변경 리스너
+carMediaManager.addMediaSourceListener { source ->
+    Log.d(TAG, "Media source changed: \${source?.packageName}")
+}
+
+// 미디어 소스 설정
+carMediaManager.setMediaSource(componentName, CarMediaManager.MEDIA_SOURCE_MODE_BROWSE)
+        `.trim()
     },
 
     'CarAudioService': {
@@ -5722,7 +5852,26 @@ val cursor = contentResolver.query(
             'registerContentObserver() - 변경 감지'
         ],
         path: 'frameworks/base/core/java/android/content/ContentResolver.java',
-        doc: 'https://developer.android.com/reference/android/content/ContentResolver'
+        doc: 'https://developer.android.com/reference/android/content/ContentResolver',
+        codeExample: `
+// 오디오 파일 조회
+val projection = arrayOf(
+    MediaStore.Audio.Media._ID,
+    MediaStore.Audio.Media.TITLE,
+    MediaStore.Audio.Media.ARTIST
+)
+val cursor = contentResolver.query(
+    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+    projection,
+    null, null,
+    "\${MediaStore.Audio.Media.TITLE} ASC"
+)
+cursor?.use {
+    while (it.moveToNext()) {
+        val title = it.getString(1)
+    }
+}
+        `.trim()
     },
 
     'External Storage': {
@@ -7964,7 +8113,25 @@ player.play()
             'Widevine/PlayReady Support'
         ],
         path: 'frameworks/base/media/java/android/media/MediaDrm.java',
-        doc: 'https://developer.android.com/reference/android/media/MediaDrm'
+        doc: 'https://developer.android.com/reference/android/media/MediaDrm',
+        codeExample: `
+// Widevine UUID
+val WIDEVINE_UUID = UUID(-0x121074568629b532L, -0x5c37d8232ae2de13L)
+val mediaDrm = MediaDrm(WIDEVINE_UUID)
+
+// 라이선스 요청
+val sessionId = mediaDrm.openSession()
+val keyRequest = mediaDrm.getKeyRequest(
+    sessionId,
+    initData,
+    "cenc",
+    MediaDrm.KEY_TYPE_STREAMING,
+    null
+)
+
+// 라이선스 서버에서 응답 받은 후
+mediaDrm.provideKeyResponse(sessionId, licenseResponse)
+        `.trim()
     },
 
     'MediaDrm Service': {
@@ -8004,7 +8171,20 @@ player.play()
             'Widevine L3 (Software)',
             'License Server'
         ],
-        doc: 'https://www.widevine.com/'
+        doc: 'https://www.widevine.com/',
+        codeExample: `
+// Widevine 지원 확인
+val WIDEVINE_UUID = UUID(-0x121074568629b532L, -0x5c37d8232ae2de13L)
+val isSupported = MediaDrm.isCryptoSchemeSupported(WIDEVINE_UUID)
+
+// Security Level 확인
+val mediaDrm = MediaDrm(WIDEVINE_UUID)
+val securityLevel = mediaDrm.getPropertyString("securityLevel")
+// "L1" (TEE), "L2" (TEE), "L3" (Software)
+
+// Device 정보
+val deviceId = mediaDrm.getPropertyByteArray("deviceId")
+        `.trim()
     },
 
     'Secure Decoder': {
@@ -8016,7 +8196,18 @@ player.play()
             'TEE Decryption',
             'Secure Pipeline',
             'Protected Output'
-        ]
+        ],
+        codeExample: `
+// Secure Decoder 사용 (DRM 콘텐츠)
+val format = MediaFormat.createVideoFormat("video/avc", width, height)
+format.setInteger(MediaFormat.KEY_SECURE_PLAYBACK, 1) // Secure decoder 요청
+
+val decoderName = MediaCodecList(MediaCodecList.ALL_CODECS)
+    .findDecoderForFormat(format)
+
+val codec = MediaCodec.createByCodecName(decoderName)
+codec.configure(format, secureSurface, mediaCrypto, 0)
+        `.trim()
     },
 
     'MediaSession Service': {
@@ -8402,7 +8593,24 @@ player.play()
             'Content Hierarchy'
         ],
         path: 'frameworks/base/media/java/android/media/browse/',
-        doc: 'https://developer.android.com/guide/topics/media-apps/audio-app/building-a-mediabrowserservice'
+        doc: 'https://developer.android.com/guide/topics/media-apps/audio-app/building-a-mediabrowserservice',
+        codeExample: `
+class MusicService : MediaBrowserServiceCompat() {
+    private lateinit var mediaSession: MediaSessionCompat
+
+    override fun onGetRoot(clientPackageName: String, clientUid: Int,
+        rootHints: Bundle?): BrowserRoot {
+        return BrowserRoot("root", null)
+    }
+
+    override fun onLoadChildren(parentId: String,
+        result: Result<MutableList<MediaBrowserCompat.MediaItem>>) {
+        val items = mutableListOf<MediaBrowserCompat.MediaItem>()
+        // 미디어 아이템 로드
+        result.sendResult(items)
+    }
+}
+        `.trim()
     },
 
     'SharedPreferences': {
@@ -8557,7 +8765,26 @@ player.play()
             'setVolumeTo() - 볼륨 설정'
         ],
         path: 'frameworks/base/media/java/android/media/session/MediaController.java',
-        doc: 'https://developer.android.com/reference/android/media/session/MediaController'
+        doc: 'https://developer.android.com/reference/android/media/session/MediaController',
+        codeExample: `
+// MediaSessionManager에서 활성 세션 가져오기
+val sessionManager = getSystemService(MediaSessionManager::class.java)
+val controllers = sessionManager.getActiveSessions(componentName)
+
+// MediaController로 제어
+val controller = controllers.firstOrNull()
+controller?.transportControls?.apply {
+    play()      // 재생
+    pause()     // 일시정지
+    skipToNext() // 다음 곡
+    seekTo(30000) // 30초로 이동
+}
+
+// 상태 콜백 등록
+controller?.registerCallback(object : MediaController.Callback() {
+    override fun onPlaybackStateChanged(state: PlaybackState?) { }
+})
+        `.trim()
     },
 
     'VolumeProvider': {
