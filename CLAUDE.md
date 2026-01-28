@@ -80,7 +80,8 @@ Android_Media_Framework/
 │   └── design-system.css           # 공통 디자인 시스템 (CSS 변수, 컴포넌트)
 │
 ├── scripts/
-│   └── theme-toggle.js             # 라이트/다크 모드 토글
+│   ├── theme-toggle.js             # 라이트/다크 모드 토글
+│   └── diagram-data.js             # 인터랙티브 다이어그램 노드 데이터 (740+ 항목)
 │
 └── [레거시 파일]
     ├── old_main_page.html          # 이전 메인 페이지 백업
@@ -453,6 +454,58 @@ python3 skills/ui-ux-pro-max/scripts/search.py "키워드" --domain ux
 
 ## 📜 최근 작업 히스토리
 
+### 2025-01-28: 인터랙티브 다이어그램 데이터 완성
+
+**DIAGRAM_NODE_DATA 전체 보완 (커버리지 10% → 100%)**
+
+| 항목 | 이전 | 이후 |
+|------|------|------|
+| 데이터 키 수 | 58개 | 740개 |
+| 누락 항목 | 466개 | 0개 |
+| 커버리지 | 10% | 100% |
+| 파일 라인 수 | 8,993줄 | 12,485줄 |
+
+**추가된 노드 카테고리**:
+1. **AOSP 아키텍처**: Codec HAL, System Services, HAL Layer, Proxy/Stub, ServiceManager 등
+2. **Media Framework Core**: NuPlayer, CCodec Entry, Codec2 Core, MediaSession Service 등
+3. **Widevine DRM**: CDM, OEMCrypto, TEE, L1/L2/L3 레벨, License Server 등
+4. **AAOS**: CarMediaService, Vehicle HAL, Audio Zones, Car Services 등
+5. **Codec2**: C2Param, C2Buffer, C2Work, Block Pool, Buffer Flow 관련 등
+6. **Audio Framework**: Audio Routing, Volume Control, Bluetooth Audio 등
+7. **CDD/CTS**: Device Types, Media Codecs, Performance Class 등
+
+**파일 구조** (`scripts/diagram-data.js`):
+```javascript
+// Mermaid 노드 ID → 사람이 읽을 수 있는 이름 매핑
+const NODE_ID_MAPPING = {
+    'APP': 'System Apps',
+    'FW': 'Framework',
+    // ... 523개 매핑
+};
+
+// 노드별 상세 정보
+const DIAGRAM_NODE_DATA = {
+    'System Apps': {
+        title: '표시 제목',
+        layer: '계층 (Application/Framework/HAL/Kernel 등)',
+        description: '상세 설명 (2-3문장)',
+        components: ['컴포넌트1', '컴포넌트2', ...],
+        path: 'AOSP 소스 경로 (선택)',
+        doc: '공식 문서 URL (선택)'
+    },
+    // ... 740개 항목
+};
+```
+
+**기능 설명**:
+- 다이어그램 노드 클릭 시 상세 정보 패널 표시
+- 각 노드의 역할, 구성요소, 소스 경로, 문서 링크 제공
+- 이전의 "자동 생성 메시지" 대신 실제 상세 정보 표시
+
+**커밋**: `5d8934b` - "feat: DIAGRAM_NODE_DATA 누락 항목 전체 보완 (커버리지 10% → 100%)"
+
+---
+
 ### 2025-01-25: Card 21-25 추가 및 UI/UX 개선
 
 **추가된 페이지 (5개)**:
@@ -486,6 +539,62 @@ python3 skills/ui-ux-pro-max/scripts/search.py "키워드" --domain ux
 
 **커밋**: `9f6ac9d` - "style: Card 21-25 HTML 페이지에 design-system.css 적용 및 커스텀 스타일 추가"
 
+## 🖱️ 인터랙티브 다이어그램 시스템
+
+### 개요
+Mermaid.js 다이어그램의 노드를 클릭하면 해당 컴포넌트의 상세 정보가 표시되는 인터랙티브 기능입니다.
+
+### 파일 구조
+```
+scripts/
+└── diagram-data.js          # 노드 데이터 정의 (12,485줄)
+    ├── NODE_ID_MAPPING      # Mermaid ID → 표시 이름 (523개)
+    ├── DIAGRAM_NODE_DATA    # 노드별 상세 정보 (740개)
+    └── DIAGRAM_NODE_RELATIONSHIPS  # 노드 간 관계 (Phase 4)
+```
+
+### DIAGRAM_NODE_DATA 항목 구조
+```javascript
+'노드명': {
+    title: '표시 제목',                    // 필수
+    layer: 'Application/Framework/HAL/Kernel',  // 필수
+    description: '상세 설명 (2-3문장)',    // 필수
+    components: ['컴포넌트1', '컴포넌트2'], // 필수
+    path: 'frameworks/av/media/',          // 선택 (AOSP 경로)
+    doc: 'https://source.android.com/...'  // 선택 (공식 문서)
+}
+```
+
+### 계층(layer) 분류
+| Layer | 설명 | 예시 |
+|-------|------|------|
+| Application | 앱 레이어 | Media Apps, Gallery, Music |
+| Framework | Java/Kotlin 프레임워크 | MediaSession, AudioManager |
+| Native | C/C++ 네이티브 | NuPlayer, AudioFlinger |
+| HAL | 하드웨어 추상화 | Codec HAL, Audio HAL |
+| Kernel | 리눅스 커널 | Driver, Binder |
+| DRM | DRM 관련 | Widevine, OEMCrypto |
+| TEE | 보안 실행 환경 | Trustlet, Secure Decoder |
+
+### 새 노드 추가 방법
+1. `NODE_ID_MAPPING`에 Mermaid ID와 표시 이름 추가
+2. `DIAGRAM_NODE_DATA`에 상세 정보 추가
+3. 구문 검증: `node --check scripts/diagram-data.js`
+
+### 커버리지 확인 스크립트
+```bash
+node -e "
+const fs = require('fs');
+const content = fs.readFileSync('scripts/diagram-data.js', 'utf8');
+const mappingLines = content.split('\\n').filter(l => l.match(/^\\s+'[^']+': '[^']+'/));
+const mappingValues = [...new Set(mappingLines.map(l => l.match(/: '([^']+)'/)[1]))];
+const dataLines = content.split('\\n').filter(l => l.match(/^    '[^']+': \\{/));
+const dataKeys = dataLines.map(l => l.match(/'([^']+)'/)[1]);
+const missing = mappingValues.filter(v => !dataKeys.includes(v));
+console.log('매핑:', mappingValues.length, '데이터:', dataKeys.length, '누락:', missing.length);
+"
+```
+
 ## 💡 향후 개선 사항 (선택사항)
 
 - **Card 1-20 마이그레이션**: 인라인 스타일 → design-system.css로 통합
@@ -494,6 +603,7 @@ python3 skills/ui-ux-pro-max/scripts/search.py "키워드" --domain ux
 - SEO 및 Open Graph 메타 태그 최적화
 - 코드 하이라이팅 개선 (Prism.js)
 - 반응형 네비게이션 메뉴 추가
+- ~~인터랙티브 다이어그램 노드 데이터 완성~~ ✅ (2025-01-28 완료)
 
 ## 🛠️ 트러블슈팅
 
