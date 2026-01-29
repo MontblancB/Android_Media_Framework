@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 Android_Media_Framework/
 │
-├── index.html                      # 메인 랜딩 페이지 (25개 토픽 네비게이션)
+├── index.html                      # 메인 랜딩 페이지 (35개 토픽 네비게이션)
 ├── README.md                       # 사용자용 프로젝트 설명서
 ├── CLAUDE.md                       # 개발자용 프로젝트 상세 문서 (이 파일)
 ├── vercel.json                     # Vercel 배포 설정
@@ -59,29 +59,59 @@ Android_Media_Framework/
 │   ├── dolby-ddp-porting.html      # Dolby Digital Plus 포팅
 │   └── dolby-vision-porting.html   # Dolby Vision 포팅
 │
-├── [06. DRM & 코덱]
-│   ├── widevine.html               # Widevine DRM (L1/L2/L3)
-│   ├── dolby-codecs.html           # Dolby Atmos/AC-4/Vision 사양
-│   ├── dolby-ddp-porting.html      # Dolby Digital Plus 포팅
-│   └── dolby-vision-porting.html   # Dolby Vision 포팅
+├── [06. 차량용 시스템 심화 (AAOS Advanced)]
+│   ├── multi-display-entertainment.html # 멀티 디스플레이 엔터테인먼트
+│   ├── multi-zone-audio.html       # 멀티존 오디오 심화
+│   ├── oem-customization.html      # OEM 커스터마이징 가이드
+│   ├── vehicle-hal-media.html      # Vehicle HAL 미디어 연동
+│   └── aaos-boot-optimization.html # AAOS 부팅 & 미디어 최적화
 │
 ├── [07. 테스팅 & 호환성]
 │   ├── cts.html                    # CTS/VTS/GTS 테스트
-│   └── cdd.html                    # CDD 정책 문서
+│   ├── cdd.html                    # CDD 정책 문서
+│   └── media-porting-checklist.html # 미디어 스택 포팅 체크리스트
 │
 ├── [08. 레퍼런스 & 가이드]
 │   ├── common-media-issues.html    # 미디어 문제 해결 가이드 (16+ 이슈)
 │   ├── debugging-tools.html        # 디버깅 도구 (logcat, dumpsys, perfetto)
+│   ├── production-debugging.html   # 프로덕션 디버깅 심화
 │   ├── api-quick-reference.html    # API 레퍼런스 (MediaPlayer, ExoPlayer, Codec)
 │   ├── migration-guides.html       # 마이그레이션 가이드 (MP→ExoPlayer, ExoPlayer→Media3)
 │   └── glossary.html               # Android Media 용어집 (50+ 용어, A-Z)
+│
+├── [09. 성능 & 보안]
+│   ├── performance-optimization.html # 성능 최적화 가이드
+│   ├── media-security.html         # 미디어 보안 가이드
+│   └── vendor-extension.html       # Vendor Extension 개발 가이드
 │
 ├── styles/
 │   └── design-system.css           # 공통 디자인 시스템 (CSS 변수, 컴포넌트)
 │
 ├── scripts/
 │   ├── theme-toggle.js             # 라이트/다크 모드 토글
-│   └── diagram-data.js             # 인터랙티브 다이어그램 노드 데이터 (740+ 항목)
+│   ├── diagram-data.js             # 인터랙티브 다이어그램 노드 데이터 (740+ 항목)
+│   ├── diagram-data-en-partial.js  # 영문 다이어그램 데이터 (부분 번역)
+│   ├── diagram-interactive.js      # 인터랙티브 다이어그램 핸들러
+│   ├── lang-switch.js              # 다국어 전환 핸들러
+│   ├── search-index.js             # 검색 인덱스 생성 및 관리
+│   ├── search-ui.js                # 검색 UI 컴포넌트
+│   ├── copy-code.js                # 코드 블록 복사 기능
+│   ├── toc-generator.js            # 목차(TOC) 자동 생성
+│   ├── page-navigation.js          # 페이지 네비게이션 (이전/다음)
+│   ├── mermaid-theme.js            # Mermaid 테마 커스터마이징
+│   ├── translate_diagram_data.py   # 다이어그램 데이터 번역 스크립트
+│   ├── translate_ko_to_en.py       # 한→영 번역 스크립트
+│   └── generate_english_translation.py # 영문 페이지 생성 스크립트
+│
+├── en/                             # 영문 번역 페이지 (다국어 지원)
+│   ├── index.html                  # 영문 메인 페이지
+│   ├── aosp.html                   # AOSP Architecture (EN)
+│   ├── codec2.html                 # Codec 2.0 (EN)
+│   └── ... (40개 영문 HTML 페이지)
+│
+├── docs/
+│   └── plans/                      # 개발 계획 및 설계 문서
+│       └── 2025-01-28-new-topics-design.md # 신규 토픽 설계
 │
 └── [레거시 파일]
     ├── old_main_page.html          # 이전 메인 페이지 백업
@@ -141,10 +171,10 @@ Android_Media_Framework/
 ## 📊 주요 페이지 분석
 
 ### index.html (메인 랜딩 페이지)
-- **라인 수**: ~650줄
+- **라인 수**: ~1064줄
 - **구조**:
   - Header: 그라디언트 배경 + 애니메이션 (`pulse` 키프레임)
-  - Grid: 25개 카드 (CSS Grid, `minmax(320px, 1fr)`)
+  - Grid: 35개 카드 (CSS Grid, `minmax(320px, 1fr)`)
   - 카테고리 컬러 코딩: 상단 4px 보더
 - **인터랙션**: 카드 전체 클릭 가능 (`onclick="location.href='...'`)
 - **상태 표시**:
@@ -181,35 +211,45 @@ Android_Media_Framework/
 5. **Code Examples**: 관련 API 사용법 (해당 시)
 6. **References**: AOSP 소스코드 링크 등
 
-## 🎯 25개 토픽 목록
+## 🎯 35개 토픽 목록
 
 | # | 카테고리 | 페이지 | 설명 |
 |---|----------|--------|------|
 | 01 | 아키텍처 | aosp.html | AOSP 전체 시스템 아키텍처 |
 | 02 | 아키텍처 | android-version-history.html | Android 버전별 진화 |
-| 03 | 차량 | aaos.html | Android Automotive OS |
+| 03 | 아키텍처 | carma.html | Car Ready Mobile Apps |
 | 04 | 미디어 | media-framework-core.html | 프레임워크 코어 |
-| 05 | 미디어 | codec2.html | Codec 2.0 & HAL |
-| 06 | 미디어 | dolby-codecs.html | Dolby 코덱 사양 |
+| 05 | 미디어 | media-app-layer.html | MediaPlayer/ExoPlayer/Media3 API |
+| 06 | 미디어 | codec2.html | Codec 2.0 & HAL |
 | 07 | 미디어 | media-playback.html | 미디어 파이프라인 |
 | 08 | 미디어 | media-extractor.html | 컨테이너 파싱 |
 | 09 | 미디어 | mediasession.html | MediaSession 프레임워크 |
 | 10 | 미디어 | mediaprovider.html | 스토리지 접근 |
-| 11 | 오디오 | audio-framework.html | Audio 프레임워크 |
-| 12 | 차량 | carmedia.html | Car Media Service |
-| 13 | 차량 | aaos-key-events.html | 키 이벤트 처리 |
-| 14 | 차량 | aaos-last-media.html | Last Media & Autoplay |
-| 15 | 차량 | power-policy-suspend.html | Power Policy |
-| 16 | DRM | widevine.html | Widevine DRM |
-| 17 | 차량 | gas.html | Google Automotive Services |
-| 18 | 아키텍처 | carma.html | Car Ready Mobile Apps |
-| 19 | 미디어 | media-app-layer.html | 앱 레이어 API |
-| 20 | 테스트 | cts.html / cdd.html | CTS/VTS/GTS, CDD |
-| 21 | 레퍼런스 | common-media-issues.html | 미디어 문제 해결 가이드 (16+ 이슈) |
-| 22 | 레퍼런스 | debugging-tools.html | 디버깅 도구 (logcat, dumpsys, perfetto) |
-| 23 | 레퍼런스 | api-quick-reference.html | API 치트시트 (MediaPlayer, ExoPlayer, Codec) |
-| 24 | 레퍼런스 | migration-guides.html | 마이그레이션 가이드 (MP→ExoPlayer→Media3) |
-| 25 | 레퍼런스 | glossary.html | Android Media 용어집 (50+ 용어, A-Z) |
+| 11 | 미디어 | dolby-codecs.html | Dolby 코덱 사양 |
+| 12 | 성능 | performance-optimization.html | 성능 최적화 가이드 |
+| 13 | 성능 | vendor-extension.html | Vendor Extension 개발 가이드 |
+| 14 | 오디오 | audio-framework.html | Audio 프레임워크 |
+| 15 | DRM | widevine.html | Widevine DRM |
+| 16 | 보안 | media-security.html | 미디어 보안 가이드 |
+| 17 | 차량 | aaos.html | Android Automotive OS |
+| 18 | 차량 | carmedia.html | Car Media Service |
+| 19 | 차량 | aaos-key-events.html | 키 이벤트 처리 |
+| 20 | 차량 | aaos-last-media.html | Last Media & Autoplay |
+| 21 | 차량 | power-policy-suspend.html | Power Policy |
+| 22 | 차량 | gas.html | Google Automotive Services |
+| 23 | 차량 | multi-display-entertainment.html | 멀티 디스플레이 엔터테인먼트 |
+| 24 | 차량 | multi-zone-audio.html | 멀티존 오디오 심화 |
+| 25 | 차량 | oem-customization.html | OEM 커스터마이징 가이드 |
+| 26 | 차량 | vehicle-hal-media.html | Vehicle HAL 미디어 연동 |
+| 27 | 차량 | aaos-boot-optimization.html | AAOS 부팅 & 미디어 최적화 |
+| 28 | 테스트 | cts.html / cdd.html | CTS/VTS/GTS, CDD |
+| 29 | 테스트 | media-porting-checklist.html | 미디어 스택 포팅 체크리스트 |
+| 30 | 레퍼런스 | common-media-issues.html | 미디어 문제 해결 가이드 (16+ 이슈) |
+| 31 | 레퍼런스 | debugging-tools.html | 디버깅 도구 (logcat, dumpsys, perfetto) |
+| 32 | 레퍼런스 | production-debugging.html | 프로덕션 디버깅 심화 |
+| 33 | 레퍼런스 | api-quick-reference.html | API 치트시트 (MediaPlayer, ExoPlayer, Codec) |
+| 34 | 레퍼런스 | migration-guides.html | 마이그레이션 가이드 (MP→ExoPlayer→Media3) |
+| 35 | 레퍼런스 | glossary.html | Android Media 용어집 (50+ 용어, A-Z) |
 
 ## 🚀 개발 명령어
 
@@ -367,17 +407,19 @@ git push origin main
 
 ### index.html 특이사항
 
-- **Grid 레이아웃**: 25개 카드 (`minmax(320px, 1fr)`)
+- **Grid 레이아웃**: 35개 카드 (`minmax(320px, 1fr)`)
 - **카테고리 컬러 코딩**: 상단 4px 보더로 구분
-  - `cat-architecture`: `#3b82f6` (파란색)
-  - `cat-media`: `#8b5cf6` (보라색)
-  - `cat-automotive`: `#06b6d4` (청록색)
-  - `cat-audio`: `#f97316` (주황색)
-  - `cat-drm`: `#ec4899` (핑크색)
-  - `cat-testing`: `#10b981` (초록색)
-  - `cat-reference`: `#eab308` (노란색)
-- **상태 표시**: `.status-ready` (녹색), `.status-preparation` (빨간색)
+  - `cat-arch`: 아키텍처 (파란색)
+  - `cat-media`: 미디어 (보라색)
+  - `cat-automotive`: 차량 (청록색)
+  - `cat-audio`: 오디오 (주황색)
+  - `cat-drm`: DRM/코덱 (핑크색)
+  - `cat-testing`: 테스팅 (초록색)
+  - `cat-reference`: 레퍼런스 (노란색)
+- **상태 표시**: 카드 번호 옆에 작은 점으로 표시 (모든 카드 Ready 상태)
 - **클릭 이벤트**: `onclick="location.href='...'"` 인라인 핸들러 (카드 전체 클릭 가능)
+- **다국어 지원**: 네비게이션에 EN/KO 토글 버튼 포함
+- **검색 기능**: 헤더에 검색바 포함 (search-ui.js 연동)
 
 ## 📝 새 페이지 추가 방법
 
@@ -453,6 +495,41 @@ python3 skills/ui-ux-pro-max/scripts/search.py "키워드" --domain ux
 > 단독 작업 환경의 정적 웹사이트 프로젝트이므로 단순한 워크플로우를 채택했습니다.
 
 ## 📜 최근 작업 히스토리
+
+### 2025-01-30: 프로젝트 문서화 대폭 개선
+
+**CLAUDE.md 보완 (25개 → 35개 토픽)**
+
+| 항목 | 이전 | 이후 |
+|------|------|------|
+| 토픽 수 | 25개 | 35개 |
+| index.html 라인 수 | ~650줄 | ~1064줄 |
+| scripts/ 파일 수 | 2개 | 15개 |
+| 다국어 지원 | 미문서화 | 완전 문서화 |
+
+**추가된 섹션**:
+1. **🌐 다국어 지원 (i18n)**: en/ 디렉토리, 번역 워크플로우, 언어 전환
+2. **🔍 검색 기능**: search-index.js, search-ui.js, 검색 알고리즘
+3. **🛠️ 추가 인터랙티브 기능**: 코드 복사, 목차 생성, 페이지 네비게이션, Mermaid 테마 등
+
+**추가된 10개 토픽 문서화**:
+- Performance Optimization Guide
+- Vendor Extension 개발 가이드
+- 미디어 보안 가이드
+- Multi-Display Entertainment
+- Multi-Zone Audio 심화
+- OEM 커스터마이징 가이드
+- Vehicle HAL 미디어 연동
+- AAOS 부팅 & 미디어 최적화
+- 미디어 스택 포팅 체크리스트
+- 프로덕션 디버깅 심화
+
+**프로젝트 구조 업데이트**:
+- en/ 디렉토리 및 40개 영문 페이지 추가
+- docs/plans/ 디렉토리 추가
+- scripts/ 디렉토리 13개 파일 추가
+
+---
 
 ### 2025-01-28: 인터랙티브 다이어그램 데이터 완성
 
@@ -595,15 +672,128 @@ console.log('매핑:', mappingValues.length, '데이터:', dataKeys.length, '누
 "
 ```
 
+## 🌐 다국어 지원 (i18n)
+
+### 개요
+프로젝트는 한국어(기본)와 영어를 지원하는 다국어 정적 웹사이트입니다.
+
+### 디렉토리 구조
+```
+/                    # 한국어 페이지 (루트)
+├── index.html
+├── aosp.html
+└── ...
+
+/en/                 # 영문 페이지 (서브디렉토리)
+├── index.html
+├── aosp.html
+└── ...
+```
+
+### 언어 전환
+- **lang-switch.js**: 페이지 URL을 `/` ↔ `/en/` 간 변환
+- **네비게이션 토글**: 모든 페이지 헤더에 EN/KO 토글 버튼 포함
+- **현재 언어 표시**: URL 기반 자동 감지 (`window.location.pathname`)
+
+### 번역 워크플로우
+```bash
+# 1. 한국어 페이지 작성 (루트)
+vi aosp.html
+
+# 2. 영문 페이지 생성
+python3 scripts/translate_ko_to_en.py aosp.html
+
+# 3. 다이어그램 데이터 번역 (수동)
+# scripts/diagram-data-en-partial.js 편집
+
+# 4. 검증
+open en/aosp.html
+```
+
+### 번역 스크립트
+- **translate_ko_to_en.py**: HTML 페이지 한→영 번역 (AI 기반)
+- **translate_diagram_data.py**: diagram-data.js 번역
+- **generate_english_translation.py**: 일괄 영문 페이지 생성
+
+### 번역 상태
+- **한국어**: 100% 완료 (40개 페이지)
+- **영어**: ~90% 완료 (다이어그램 데이터 부분 번역)
+
+## 🔍 검색 기능
+
+### 개요
+전체 페이지 컨텐츠를 대상으로 하는 클라이언트 사이드 검색 기능입니다.
+
+### 구성 요소
+1. **search-index.js**: 페이지 메타데이터 및 키워드 인덱스
+2. **search-ui.js**: 검색 UI 컴포넌트 및 인터랙션
+3. **index.html**: 헤더 검색바 임베드
+
+### 검색 인덱스 구조
+```javascript
+const SEARCH_INDEX = [
+    {
+        id: 'aosp',
+        title: 'Android AOSP Architecture',
+        description: 'Android 전체 시스템 아키텍처...',
+        category: 'Architecture',
+        keywords: ['AOSP', 'HAL', 'Framework', ...],
+        url: 'aosp.html'
+    },
+    // ... 35개 페이지
+];
+```
+
+### 검색 알고리즘
+- **제목 매칭**: 가중치 3.0
+- **설명 매칭**: 가중치 2.0
+- **키워드 매칭**: 가중치 1.5
+- **카테고리 매칭**: 가중치 1.0
+- **한영 대소문자 무시**: `toLowerCase()` 정규화
+
+### 사용법
+1. 헤더 검색바에 키워드 입력 (예: "codec", "drm")
+2. 실시간 필터링 (debounce 300ms)
+3. 결과 클릭 시 해당 페이지로 이동
+
+## 🛠️ 추가 인터랙티브 기능
+
+### 1. 코드 블록 복사 (copy-code.js)
+- **기능**: 코드 블록 우측 상단에 "Copy" 버튼 표시
+- **트리거**: `<pre><code>` 요소 자동 감지
+- **피드백**: 클릭 시 "Copied!" 툴팁 (2초)
+
+### 2. 목차 자동 생성 (toc-generator.js)
+- **기능**: 페이지 헤딩(`<h2>`, `<h3>`)을 파싱하여 목차 생성
+- **위치**: 사이드바 또는 페이지 상단
+- **스크롤 스파이**: 현재 섹션 하이라이트
+
+### 3. 페이지 네비게이션 (page-navigation.js)
+- **기능**: 이전/다음 페이지 버튼 (35개 카드 순서 기반)
+- **위치**: 페이지 하단
+- **키보드 단축키**: `←` (이전), `→` (다음)
+
+### 4. Mermaid 테마 커스터마이징 (mermaid-theme.js)
+- **기능**: 다크/라이트 모드에 따른 Mermaid 테마 동적 변경
+- **연동**: theme-toggle.js와 연동
+- **커스텀 변수**: 프로젝트 컬러 팔레트 적용
+
+### 5. 인터랙티브 다이어그램 핸들러 (diagram-interactive.js)
+- **기능**: Mermaid 노드 클릭 시 상세 정보 패널 표시
+- **데이터 소스**: diagram-data.js (740+ 노드)
+- **UI**: 오버레이 모달 + 닫기 버튼
+
 ## 💡 향후 개선 사항 (선택사항)
 
 - **Card 1-20 마이그레이션**: 인라인 스타일 → design-system.css로 통합
-- 검색 기능 추가 (Fuse.js)
+- ~~검색 기능 추가~~ ✅ (완료)
 - 다크/라이트 모드 토글 확장 (Card 1-20에도 적용)
 - SEO 및 Open Graph 메타 태그 최적화
 - 코드 하이라이팅 개선 (Prism.js)
 - 반응형 네비게이션 메뉴 추가
 - ~~인터랙티브 다이어그램 노드 데이터 완성~~ ✅ (2025-01-28 완료)
+- **영문 번역 완성**: diagram-data-en-partial.js → diagram-data-en.js (100%)
+- **PDF 내보내기**: 개별 페이지 PDF 생성 기능
 
 ## 🛠️ 트러블슈팅
 
