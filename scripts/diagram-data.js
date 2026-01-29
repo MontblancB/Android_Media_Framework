@@ -707,7 +707,7 @@ const NODE_ID_MAPPING = {
     'CODEC_HAL': 'Codec HAL'
 };
 
-const DIAGRAM_NODE_DATA = {
+const DIAGRAM_NODE_DATA_KO = {
     // ========================================
     // AOSP 레이어별 노드
     // ========================================
@@ -12727,7 +12727,33 @@ adb shell am bug-report
     }
 };
 
+// ========================================
+// 영문 다이어그램 데이터 (English)
+// ========================================
+// TODO: Phase 2에서 번역 데이터 추가
+const DIAGRAM_NODE_DATA_EN = {
+    // 현재 비어있음 - 한글 데이터만 사용 중
+    // Phase 2에서 AI 번역 또는 수동 번역으로 채워질 예정
+};
+
+// ========================================
+// 언어별 데이터 선택
+// ========================================
+/**
+ * 현재 언어에 맞는 다이어그램 데이터 선택
+ */
+function getCurrentLanguage() {
+    const path = window.location.pathname;
+    return path.startsWith('/en/') || path === '/en' ? 'en' : 'ko';
+}
+
+const DIAGRAM_NODE_DATA = getCurrentLanguage() === 'en'
+    ? DIAGRAM_NODE_DATA_EN
+    : DIAGRAM_NODE_DATA_KO;
+
+// ========================================
 // 노드 간 관계 정의 (Phase 4에서 사용)
+// ========================================
 const DIAGRAM_NODE_RELATIONSHIPS = {
     'MediaPlayer': {
         downstream: ['MediaCodec', 'MediaCodecService', 'AudioFlinger'],
