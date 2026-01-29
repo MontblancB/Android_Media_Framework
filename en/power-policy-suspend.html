@@ -1,0 +1,2298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power Policy & Suspend | Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">Power Policy & Suspend</h1>
+            <p class="page-subtitle">Deep Sleep, Suspend-to-RAM, and Audio Context Preservation in AAOS</p>
+        </header>
+
+        <!-- Section 1: Concept -->
+        <section class="section sec-concept">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Concept Overview: Deep Sleep & Suspend-to-RAM
+            </h2>
+            <p class="section-description">
+                In AAOS, when the ignition is turned off (Ignition Off), the AP (Application Processor) enters
+                <strong>Deep Sleep (Suspend-to-RAM, STR)</strong> mode instead of a complete shutdown.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">💤</span> Suspend-to-RAM (STR)</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Power Off:</strong> Display, CPU, and most peripherals are turned OFF.</li>
+                            <li><strong>Memory Retention:</strong> Only DRAM is maintained in Self-Refresh state to preserve kernel and process memory.</li>
+                            <li><strong>Execution Stopped:</strong> Code execution is completely halted (no timers/threads running).</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🛑</span> Shutdown Prepare</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>UI Off:</strong> Driver sees the screen turn off and assumes the system is shut down.</li>
+                            <li><strong>OS Alive:</strong> Android is still running and can perform cleanup tasks (DB saves, etc.).</li>
+                            <li><strong>Context Save:</strong> Audio/media context saving occurs at this point.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture -->
+        <section class="section sec-arch">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                AAOS Power Management Architecture
+            </h2>
+            <p class="section-description">
+                Vehicle power state originates from the VMCU and is transmitted to the Android framework (CPMS) via VHAL.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                    VMCU[VMCU<br />Microcontroller] -->|IGN/ACC Signal| VHAL[Vehicle HAL]
+                    VHAL -->|Power State Property| CPMS[CarPowerManagementService]
+                    CPMS -->|Apply Policy| Policy[CarPowerPolicyService]
+                    Policy -->|Enable/Disable| Components[Components<br />Audio, Media, Display, etc.]
+
+                </div>
+                <p class="diagram-caption">Hardware (VMCU) signal is transmitted to the Android framework (CPMS) via VHAL, and the policy service controls each component.
+                </p>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚙️</span> CarPowerManagementService (CPMS)</h3>
+                    <div class="card-description">
+                        Manages the Android power state machine. It receives VHAL events, sends Sleep/Shutdown notifications to each service, and coordinates Deep Sleep entry and exit.
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📜</span> CarPowerPolicy</h3>
+                    <div class="card-description">
+                        A policy that defines "which components to turn on/off".
+                        <br>Example: In the <code>ShutdownPrepare</code> state, the policy <strong>AUDIO=OFF, MEDIA=OFF, DISPLAY=OFF</strong> is applied.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: CPMS Integration -->
+        <section class="section sec-arch">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                CPMS and Media Framework Integration
+            </h2>
+            <p class="section-description">
+                <code>CarAudioService</code> and <code>CarMediaService</code> register listeners with CPMS to detect power state changes.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.1rem;">
+                CarAudioService Integration</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant CAS as CarAudioService
+                    participant CPMS as CarPowerManagementService
+                    participant Policy as CarPowerPolicy
+
+                    Note over CAS, CPMS: 1. Listener Registration (Boot Phase)
+                    CAS->>CAS: Create Filter (Component: AUDIO)
+                    CAS->>CPMS: addPowerPolicyListener(filter, listener)
+                    CPMS-->>CAS: Success
+
+                    Note over CPMS, Policy: 2. Policy Change Event
+                    CPMS->>CPMS: Detect Power State Change
+                    CPMS->>Policy: Get Current Policy
+                    CPMS->>CAS: onPolicyChanged(policy)
+
+                    activate CAS
+                    CAS->>Policy: isComponentEnabled(AUDIO)
+                    alt AUDIO Enabled
+                    CAS->>CAS: setAudioEnabled(true)
+                    CAS->>CAS: Unmute / Restore Focus
+                    else AUDIO Disabled
+                    CAS->>CAS: setAudioEnabled(false)
+                    CAS->>CAS: Mute / Reject Focus
+                    end
+                    deactivate CAS
+                </div>
+                <p class="diagram-caption">After registering a listener, CarAudioService performs Mute or Focus handling based on whether the AUDIO component is enabled when the policy changes.</p>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-green); font-size: 1.1rem;">
+                CarMediaService Integration</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant CMS as CarMediaService
+                    participant CPMS as CarPowerManagementService
+                    participant Policy as CarPowerPolicy
+                    participant App as Media App
+
+                    Note over CMS, CPMS: 1. Listener Registration
+                    CMS->>CMS: Create Filter (Component: MEDIA)
+                    CMS->>CPMS: addPowerPolicyListener(filter, listener)
+
+                    Note over CPMS, Policy: 2. Policy Change Event
+                    CPMS->>CAS: onPolicyChanged(policy)
+
+                    activate CMS
+                    CMS->>Policy: isComponentEnabled(MEDIA)
+                    alt MEDIA Disabled (Suspend)
+                    CMS->>App: Pause Playback
+                    CMS->>CMS: Save Last Media Source
+                    else MEDIA Enabled (Resume)
+                    CMS->>CMS: Load Last Media Source
+                    opt Auto Resume
+                    CMS->>App: Play (Restore Context)
+                    end
+                    end
+                    deactivate CMS
+                </div>
+                <p class="diagram-caption">CarMediaService stops playback and saves the source when the MEDIA component is disabled, and loads it again for auto-play when enabled.</p>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎧</span> CarAudioService</h3>
+                    <div class="card-description">
+                        <strong>When AUDIO OFF is detected:</strong>
+                        <ul>
+                            <li>Reject new audio focus requests.</li>
+                            <li>Abandon existing non-critical focus.</li>
+                            <li>Mute volume groups (except alerts).</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎬</span> CarMediaService</h3>
+                    <div class="card-description">
+                        <strong>When MEDIA OFF is detected:</strong>
+                        <ul>
+                            <li>Find the currently active MediaSession.</li>
+                            <li>Call <code>pause()</code> if playing.</li>
+                            <li>Save the last played app (Source) information.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Sequence Flows -->
+        <section class="section sec-flow">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Entry and Exit Sequence (Deep Dive)
+            </h2>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-green); font-size: 1.3rem;">4-1. Entry
+                Sequence (Ignition OFF)</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant Driver
+                    participant VMCU
+                    participant CPMS
+                    participant Policy as PowerPolicy
+                    participant Audio as CarAudioService
+                    participant Media as CarMediaService
+                    participant App
+                    participant Kernel
+
+                    Driver->>VMCU: Ignition OFF
+                    VMCU->>CPMS: SHUTDOWN_PREPARE Req
+                    CPMS->>Policy: Apply "No User Interaction" Policy
+
+                    par Notify Components
+                    Policy->>Audio: AUDIO = Disabled
+                    Audio->>Audio: Mute / Reject Focus
+
+                    Policy->>Media: MEDIA = Disabled
+                    Media->>App: Pause Playback
+                    Media->>Media: Save Last Source
+                    App->>App: Save Position to DB
+                    end
+
+                    CPMS->>CPMS: onSleepEntry() (Cleanup)
+                    CPMS->>VMCU: Ready for Suspend
+                    VMCU->>Kernel: Trigger Deep Sleep
+                    Note over Kernel: CPU OFF / DRAM Self-Refresh
+                </div>
+                <p class="diagram-caption">When Ignition OFF, VMCU notifies CPMS, and CPMS applies the policy to turn off audio/media, then transitions the kernel to Deep Sleep.</p>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-green); font-size: 1.3rem;">4-2. Exit
+                Sequence (Ignition ON)</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant VMCU
+                    participant Kernel
+                    participant CPMS
+                    participant Policy as PowerPolicy
+                    participant Audio as CarAudioService
+                    participant Media as CarMediaService
+                    participant App
+
+                    VMCU->>Kernel: Wake Up
+                    Kernel->>CPMS: Resume
+                    CPMS->>CPMS: onSleepExit()
+                    CPMS->>Policy: Apply "System On" Policy
+
+                    par Notify Components
+                    Policy->>Audio: AUDIO = Enabled
+                    Audio->>Audio: Unmute / Allow Focus
+
+                    Policy->>Media: MEDIA = Enabled
+                    Media->>Media: Load Last Source
+                    opt Auto Resume
+                    Media->>App: Connect & Play
+                    App->>App: Restore Position & Play
+                    end
+                    end
+                </div>
+                <p class="diagram-caption">When VMCU wakes up, the kernel resumes, and CPMS applies the system policy to re-enable audio/media.</p>
+            </div>
+        </section>
+
+        <!-- Section 5: Context Preservation -->
+        <section class="section sec-context">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Audio Context Save and Restore
+            </h2>
+            <p class="section-description">
+                "Audio context" is managed at both the system level and app level.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🏛️</span> System Level (CarAudioContext)</h3>
+                    <div class="card-description">
+                        <strong>Managed by CarAudioService</strong>
+                        <ul>
+                            <li><strong>Volume Group:</strong> Volume level of each group (Music, Navi, Voice).</li>
+                            <li><strong>Routing:</strong> Zone and Device where audio is output.</li>
+                            <li><strong>Focus State:</strong> App currently holding focus (determines whether to restore on Resume).</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📱</span> App Level (Playback Context)</h3>
+                    <div class="card-description">
+                        <strong>Managed by App (MediaSession)</strong>
+                        <ul>
+                            <li><strong>Media ID:</strong> Identifier of the song/content being played.</li>
+                            <li><strong>Position:</strong> Playback position (ms).</li>
+                            <li><strong>Playlist:</strong> Current queue and shuffle/repeat mode.</li>
+                        </ul>
+                        <p style="margin-top: 10px; font-size: 0.9em; color: var(--accent-rose);">
+                            * Apps should save this information to persistent storage (DB/Prefs) at <code>onPause()</code> or <code>onStop()</code>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Developer Checklist -->
+        <section class="section sec-context">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Developer Checklist
+            </h2>
+            <p class="section-description">
+                A guide for media app developers to properly respond to AAOS power policies.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">✅</span> Required Implementation</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>MediaSession & AudioFocus:</strong> Implement according to standard APIs.</li>
+                            <li><strong>Focus Loss Handling:</strong> Immediately <code>pause()</code> and save state when focus is lost.</li>
+                            <li><strong>PlaybackState Management:</strong> Update to <code>STATE_PAUSED</code> accurately.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">💾</span> State Persistence</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Save Timing:</strong> <code>onPause()</code>, <code>onStop()</code>,
+                                <code>ACTION_SHUTDOWN</code>.
+                            </li>
+                            <li><strong>Save Items:</strong> Media ID, Position, Playlist, Shuffle Mode.</li>
+                            <li><strong>Restore:</strong> Resume from last state on app restart or <code>onPlay()</code> call.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Code Examples -->
+        <section class="section sec-code">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Code Examples
+            </h2>
+            <p class="section-description">
+                Code examples for CarPowerManagementService listener registration, Power Policy application, and state saving implementation.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-1. CarAudioService - Power Policy Listener Registration</h3>
+            <div class="code-block">
+                <pre><code class="language-java">// packages/services/Car/service/src/com/android/car/audio/CarAudioService.java
+public class CarAudioService extends ICarAudio.Stub implements CarServiceBase {
+
+    private CarPowerManagementService mCarPowerManagementService;
+    private final CarPowerPolicyFilter mPowerPolicyFilter;
+    private final CarPowerPolicyListener mPowerPolicyListener;
+
+    public void init() {
+        // Create Power Policy filter (detect AUDIO component only)
+        mPowerPolicyFilter = new CarPowerPolicyFilter.Builder()
+            .setComponents(PowerComponent.AUDIO)
+            .build();
+
+        // Create listener
+        mPowerPolicyListener = new CarPowerPolicyListener() {
+            @Override
+            public void onPolicyChanged(CarPowerPolicy policy,
+                                       CarPowerPolicy accumulatedPolicy) {
+                handlePowerPolicyChange(policy);
+            }
+        };
+
+        // Register listener with CPMS
+        mCarPowerManagementService.addPowerPolicyListener(
+            mPowerPolicyFilter,
+            mPowerPolicyListener
+        );
+    }
+
+    private void handlePowerPolicyChange(CarPowerPolicy policy) {
+        boolean audioEnabled = policy.isComponentEnabled(PowerComponent.AUDIO);
+
+        Log.d(TAG, "Power Policy changed: AUDIO = " + audioEnabled);
+
+        if (audioEnabled) {
+            // AUDIO enabled: Unmute, Allow Focus
+            enableAudioRouting();
+            setAudioFocusRequestsAllowed(true);
+            Log.d(TAG, "Audio enabled: unmuted and allowing focus requests");
+        } else {
+            // AUDIO disabled: Mute, Reject Focus
+            disableAudioRouting();
+            setAudioFocusRequestsAllowed(false);
+            abandonNonCriticalAudioFocus();
+            Log.d(TAG, "Audio disabled: muted and rejecting focus requests");
+        }
+    }
+
+    private void abandonNonCriticalAudioFocus() {
+        // Release all focus except alerts
+        for (AudioFocusInfo info : getActiveFocusHolders()) {
+            if (info.getUsage() != AudioAttributes.USAGE_ASSISTANCE_SONIFICATION) {
+                mAudioManager.abandonAudioFocusRequest(info);
+            }
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-2. CarMediaService - MEDIA Component Handling</h3>
+            <div class="code-block">
+                <pre><code class="language-java">// packages/services/Car/service/src/com/android/car/media/CarMediaService.java
+public class CarMediaService extends ICarMedia.Stub implements CarServiceBase {
+
+    private CarPowerPolicyFilter mPowerPolicyFilter;
+    private CarPowerPolicyListener mPowerPolicyListener;
+
+    @Override
+    public void init() {
+        // MEDIA component filter
+        mPowerPolicyFilter = new CarPowerPolicyFilter.Builder()
+            .setComponents(PowerComponent.MEDIA)
+            .build();
+
+        mPowerPolicyListener = new CarPowerPolicyListener() {
+            @Override
+            public void onPolicyChanged(CarPowerPolicy policy,
+                                       CarPowerPolicy accumulatedPolicy) {
+                handleMediaPowerChange(policy);
+            }
+        };
+
+        mCarPowerManagementService.addPowerPolicyListener(
+            mPowerPolicyFilter,
+            mPowerPolicyListener
+        );
+    }
+
+    private void handleMediaPowerChange(CarPowerPolicy policy) {
+        boolean mediaEnabled = policy.isComponentEnabled(PowerComponent.MEDIA);
+
+        if (mediaEnabled) {
+            Log.d(TAG, "MEDIA enabled: Restoring last media source");
+            restoreLastMediaSource();
+        } else {
+            Log.d(TAG, "MEDIA disabled: Pausing playback and saving state");
+            pauseCurrentMediaAndSave();
+        }
+    }
+
+    private void pauseCurrentMediaAndSave() {
+        // Find currently active MediaController
+        MediaController controller = getActiveMediaController();
+        if (controller != null) {
+            PlaybackState state = controller.getPlaybackState();
+
+            if (state != null && state.getState() == PlaybackState.STATE_PLAYING) {
+                // Pause if playing
+                controller.getTransportControls().pause();
+                Log.d(TAG, "Paused: " + controller.getPackageName());
+            }
+
+            // Save last source
+            ComponentName component = controller.getSessionActivity().getComponent();
+            saveLastMediaSource(component, MEDIA_SOURCE_MODE_PLAYBACK);
+        }
+    }
+
+    private void restoreLastMediaSource() {
+        ComponentName lastSource = getLastMediaSource(MEDIA_SOURCE_MODE_PLAYBACK);
+
+        if (lastSource != null) {
+            Log.d(TAG, "Restoring last media source: " + lastSource);
+
+            // Determine auto-play based on Autoplay policy
+            boolean shouldAutoplay = shouldStartPlayback(lastSource);
+            startMediaConnectorService(lastSource, shouldAutoplay);
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-3. App Level - State Save and Restore</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Media app Service implementation
+class MyMediaService : MediaBrowserServiceCompat() {
+
+    private lateinit var player: ExoPlayer
+    private lateinit var mediaSession: MediaSessionCompat
+    private val sharedPrefs by lazy {
+        getSharedPreferences("playback_state", Context.MODE_PRIVATE)
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // Restore saved state
+        restorePlaybackState()
+
+        mediaSession = MediaSessionCompat(this, "MyMediaSession").apply {
+            setCallback(MediaSessionCallback())
+            isActive = true
+        }
+    }
+
+    // Save state on Suspend entry
+    private inner class MediaSessionCallback : MediaSessionCompat.Callback() {
+        override fun onPause() {
+            player.pause()
+            savePlaybackState()
+            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED)
+        }
+
+        override fun onPlay() {
+            player.play()
+            updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+        }
+    }
+
+    // Save playback state
+    private fun savePlaybackState() {
+        sharedPrefs.edit().apply {
+            putLong("position", player.currentPosition)
+            putString("media_id", player.currentMediaItem?.mediaId)
+            putInt("window_index", player.currentWindowIndex)
+            putBoolean("shuffle", player.shuffleModeEnabled)
+            putInt("repeat_mode", player.repeatMode)
+            apply()
+        }
+        Log.d(TAG, "Saved playback state: pos=${player.currentPosition}ms")
+    }
+
+    // Restore playback state
+    private fun restorePlaybackState() {
+        val position = sharedPrefs.getLong("position", 0)
+        val mediaId = sharedPrefs.getString("media_id", null)
+        val windowIndex = sharedPrefs.getInt("window_index", 0)
+        val shuffle = sharedPrefs.getBoolean("shuffle", false)
+        val repeatMode = sharedPrefs.getInt("repeat_mode", Player.REPEAT_MODE_OFF)
+
+        if (mediaId != null) {
+            Log.d(TAG, "Restoring: mediaId=$mediaId, pos=${position}ms")
+
+            // Restore playlist
+            val mediaItems = loadPlaylistFromDatabase()
+            player.setMediaItems(mediaItems, windowIndex, position)
+            player.shuffleModeEnabled = shuffle
+            player.repeatMode = repeatMode
+            player.prepare()
+        }
+    }
+
+    // Receive ACTION_SHUTDOWN broadcast
+    private val shutdownReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_SHUTDOWN) {
+                Log.d(TAG, "Shutdown detected, saving state")
+                savePlaybackState()
+            }
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        registerReceiver(shutdownReceiver, IntentFilter(Intent.ACTION_SHUTDOWN))
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-4. VHAL - Power State Reporting (C++)</h3>
+            <div class="code-block">
+                <pre><code class="language-cpp">// hardware/interfaces/automotive/vehicle/2.0/default/impl/vhal_v2_0/VehicleHalImpl.cpp
+void VehicleHalImpl::onIgnitionChange(bool ignitionOn) {
+    VehiclePropValue value;
+    value.prop = toInt(VehicleProperty::AP_POWER_STATE_REQ);
+    value.timestamp = elapsedRealtimeNano();
+
+    if (ignitionOn) {
+        // Ignition ON -> Request ON to CPMS
+        value.value.int32Values = {
+            toInt(VehicleApPowerStateReq::ON),
+            0  // param
+        };
+        Log::d(TAG, "Sending AP_POWER_STATE_REQ: ON");
+    } else {
+        // Ignition OFF -> Request SHUTDOWN_PREPARE to CPMS
+        value.value.int32Values = {
+            toInt(VehicleApPowerStateReq::SHUTDOWN_PREPARE),
+            toInt(VehicleApPowerStateShutdownParam::CAN_SLEEP)
+        };
+        Log::d(TAG, "Sending AP_POWER_STATE_REQ: SHUTDOWN_PREPARE");
+    }
+
+    // Deliver to CPMS
+    mCallback->onPropertyEvent({value});
+}
+
+// Receive response from CPMS
+StatusCode VehicleHalImpl::set(const VehiclePropValue&amp; value) {
+    if (value.prop == toInt(VehicleProperty::AP_POWER_STATE_REPORT)) {
+        int32_t state = value.value.int32Values[0];
+
+        switch (state) {
+            case toInt(VehicleApPowerStateReport::DEEP_SLEEP_ENTRY):
+                Log::d(TAG, "AP ready for deep sleep");
+                // Signal VMCU ready for Deep Sleep
+                notifyVmcuReadyForSleep();
+                break;
+
+            case toInt(VehicleApPowerStateReport::SHUTDOWN_START):
+                Log::d(TAG, "AP starting shutdown");
+                break;
+
+            default:
+                Log::w(TAG, "Unknown power state report: %d", state);
+        }
+
+        return StatusCode::OK;
+    }
+    return StatusCode::INVALID_ARG;
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 8: Power Policy XML Configuration -->
+        <section class="section sec-policy-xml">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Power Policy XML Configuration
+            </h2>
+            <p class="section-description">
+                XML configuration file for OEMs to define Power Policy according to vehicle characteristics.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">8-1. car_power_policy.xml Full Structure</h3>
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- packages/services/Car/service/res/xml/car_power_policy.xml --&gt;
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;powerPolicy version="1.0"&gt;
+
+    &lt;!-- 1. Policy Definitions --&gt;
+    &lt;policies&gt;
+        &lt;!-- System On State --&gt;
+        &lt;policy id="system_on"&gt;
+            &lt;component id="AUDIO"&gt;on&lt;/component&gt;
+            &lt;component id="MEDIA"&gt;on&lt;/component&gt;
+            &lt;component id="DISPLAY"&gt;on&lt;/component&gt;
+            &lt;component id="WIFI"&gt;on&lt;/component&gt;
+            &lt;component id="CELLULAR"&gt;on&lt;/component&gt;
+            &lt;component id="ETHERNET"&gt;on&lt;/component&gt;
+            &lt;component id="PROJECTION"&gt;on&lt;/component&gt;
+            &lt;component id="NFC"&gt;on&lt;/component&gt;
+            &lt;component id="INPUT"&gt;on&lt;/component&gt;
+            &lt;component id="VOICE_INTERACTION"&gt;on&lt;/component&gt;
+            &lt;component id="VISUAL_INTERACTION"&gt;on&lt;/component&gt;
+            &lt;component id="TRUSTED_DEVICE_DETECTION"&gt;on&lt;/component&gt;
+            &lt;component id="LOCATION"&gt;on&lt;/component&gt;
+            &lt;component id="MICROPHONE"&gt;on&lt;/component&gt;
+            &lt;component id="BLUETOOTH"&gt;on&lt;/component&gt;
+            &lt;component id="CPU"&gt;on&lt;/component&gt;
+        &lt;/policy&gt;
+
+        &lt;!-- Shutdown Prepare State (UI Off, cleanup tasks running) --&gt;
+        &lt;policy id="no_user_interaction"&gt;
+            &lt;component id="AUDIO"&gt;off&lt;/component&gt;
+            &lt;component id="MEDIA"&gt;off&lt;/component&gt;
+            &lt;component id="DISPLAY"&gt;off&lt;/component&gt;
+            &lt;component id="WIFI"&gt;on&lt;/component&gt;  &lt;!-- Background sync --&gt;
+            &lt;component id="CELLULAR"&gt;on&lt;/component&gt;
+            &lt;component id="VOICE_INTERACTION"&gt;off&lt;/component&gt;
+            &lt;component id="VISUAL_INTERACTION"&gt;off&lt;/component&gt;
+            &lt;component id="INPUT"&gt;off&lt;/component&gt;
+            &lt;component id="CPU"&gt;on&lt;/component&gt;  &lt;!-- Cleanup tasks running --&gt;
+        &lt;/policy&gt;
+
+        &lt;!-- Suspend-to-RAM State --&gt;
+        &lt;policy id="suspend_to_ram"&gt;
+            &lt;component id="AUDIO"&gt;on&lt;/component&gt;  &lt;!-- Memory retained --&gt;
+            &lt;component id="MEDIA"&gt;on&lt;/component&gt;  &lt;!-- Memory retained --&gt;
+            &lt;component id="DISPLAY"&gt;off&lt;/component&gt;
+            &lt;component id="WIFI"&gt;off&lt;/component&gt;
+            &lt;component id="BLUETOOTH"&gt;off&lt;/component&gt;
+            &lt;component id="CPU"&gt;untouched&lt;/component&gt;  &lt;!-- Kernel controlled --&gt;
+        &lt;/policy&gt;
+
+        &lt;!-- Parking Mode (for extended parking) --&gt;
+        &lt;policy id="parking_mode"&gt;
+            &lt;component id="AUDIO"&gt;off&lt;/component&gt;
+            &lt;component id="MEDIA"&gt;off&lt;/component&gt;
+            &lt;component id="DISPLAY"&gt;off&lt;/component&gt;
+            &lt;component id="WIFI"&gt;off&lt;/component&gt;
+            &lt;component id="BLUETOOTH"&gt;off&lt;/component&gt;
+            &lt;component id="LOCATION"&gt;on&lt;/component&gt;  &lt;!-- Anti-theft --&gt;
+            &lt;component id="CELLULAR"&gt;on&lt;/component&gt;  &lt;!-- Remote control --&gt;
+        &lt;/policy&gt;
+    &lt;/policies&gt;
+
+    &lt;!-- 2. Policy Groups --&gt;
+    &lt;policyGroups&gt;
+        &lt;policyGroup id="default_policy_group"&gt;
+            &lt;!-- Default Policy --&gt;
+            &lt;defaultPolicy&gt;system_on&lt;/defaultPolicy&gt;
+
+            &lt;!-- Power State to Policy Mapping --&gt;
+            &lt;noDefaultPolicy state="wait_for_vhal" policy="system_on"/&gt;
+            &lt;noDefaultPolicy state="on" policy="system_on"/&gt;
+            &lt;noDefaultPolicy state="shutdown_prepare" policy="no_user_interaction"/&gt;
+
+            &lt;!-- Parking under 2 hours: Suspend-to-RAM --&gt;
+            &lt;noDefaultPolicy state="wait_for_vhal" timeout="7200000" policy="suspend_to_ram"/&gt;
+
+            &lt;!-- Parking over 2 hours: Parking Mode --&gt;
+            &lt;noDefaultPolicy state="wait_for_vhal" timeout="7200001" policy="parking_mode"/&gt;
+        &lt;/policyGroup&gt;
+    &lt;/policyGroups&gt;
+
+&lt;/powerPolicy&gt;</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">8-2. Component Descriptions</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Component ID</th>
+                            <th>Description</th>
+                            <th>ON State</th>
+                            <th>OFF State</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>AUDIO</td>
+                            <td>Audio subsystem</td>
+                            <td>Allow focus requests, output enabled</td>
+                            <td>Reject focus, Mute</td>
+                        </tr>
+                        <tr>
+                            <td>MEDIA</td>
+                            <td>Media playback service</td>
+                            <td>MediaSession active, auto-play possible</td>
+                            <td>Playback paused, source saved</td>
+                        </tr>
+                        <tr>
+                            <td>DISPLAY</td>
+                            <td>Display output</td>
+                            <td>Screen on, UI rendering</td>
+                            <td>Screen off, Backlight OFF</td>
+                        </tr>
+                        <tr>
+                            <td>WIFI</td>
+                            <td>Wi-Fi connection</td>
+                            <td>Network connection maintained</td>
+                            <td>Connection terminated, power saving</td>
+                        </tr>
+                        <tr>
+                            <td>BLUETOOTH</td>
+                            <td>Bluetooth connection</td>
+                            <td>Pairing maintained, audio streaming</td>
+                            <td>Disconnected</td>
+                        </tr>
+                        <tr>
+                            <td>CELLULAR</td>
+                            <td>Cellular data</td>
+                            <td>Modem active, data communication</td>
+                            <td>Modem standby or OFF</td>
+                        </tr>
+                        <tr>
+                            <td>LOCATION</td>
+                            <td>GPS location service</td>
+                            <td>GPS receiving, location updates</td>
+                            <td>GPS disabled</td>
+                        </tr>
+                        <tr>
+                            <td>VOICE_INTERACTION</td>
+                            <td>Voice assistant</td>
+                            <td>Hotword detection, voice recognition</td>
+                            <td>Voice features disabled</td>
+                        </tr>
+                        <tr>
+                            <td>CPU</td>
+                            <td>CPU power management</td>
+                            <td>Normal operation</td>
+                            <td>Low power mode or Sleep</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">8-3. OEM Overlay Customization</h3>
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- device/oem/project/overlay/packages/services/Car/service/res/xml/car_power_policy.xml --&gt;
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;powerPolicy version="1.0"&gt;
+
+    &lt;policies&gt;
+        &lt;!-- OEM Custom Policy: Battery Saver Mode --&gt;
+        &lt;policy id="oem_battery_saver"&gt;
+            &lt;component id="AUDIO"&gt;on&lt;/component&gt;
+            &lt;component id="MEDIA"&gt;on&lt;/component&gt;
+            &lt;component id="DISPLAY"&gt;on&lt;/component&gt;
+            &lt;component id="WIFI"&gt;off&lt;/component&gt;  &lt;!-- Wi-Fi disabled --&gt;
+            &lt;component id="BLUETOOTH"&gt;on&lt;/component&gt;  &lt;!-- Hands-free maintained --&gt;
+            &lt;component id="LOCATION"&gt;off&lt;/component&gt;  &lt;!-- GPS disabled --&gt;
+            &lt;component id="PROJECTION"&gt;off&lt;/component&gt;  &lt;!-- Android Auto disabled --&gt;
+        &lt;/policy&gt;
+
+        &lt;!-- OEM Custom: Valet Mode --&gt;
+        &lt;policy id="oem_valet_mode"&gt;
+            &lt;component id="AUDIO"&gt;on&lt;/component&gt;
+            &lt;component id="MEDIA"&gt;off&lt;/component&gt;  &lt;!-- Media disabled --&gt;
+            &lt;component id="DISPLAY"&gt;on&lt;/component&gt;
+            &lt;component id="LOCATION"&gt;on&lt;/component&gt;  &lt;!-- Tracking enabled --&gt;
+            &lt;component id="CELLULAR"&gt;on&lt;/component&gt;
+        &lt;/policy&gt;
+    &lt;/policies&gt;
+
+    &lt;policyGroups&gt;
+        &lt;policyGroup id="oem_policy_group"&gt;
+            &lt;defaultPolicy&gt;system_on&lt;/defaultPolicy&gt;
+
+            &lt;!-- Battery Saver mode when battery below 20% --&gt;
+            &lt;noDefaultPolicy state="on" condition="battery_low" policy="oem_battery_saver"/&gt;
+
+            &lt;!-- When Valet mode is enabled --&gt;
+            &lt;noDefaultPolicy state="on" condition="valet_mode" policy="oem_valet_mode"/&gt;
+        &lt;/policyGroup&gt;
+    &lt;/policyGroups&gt;
+
+&lt;/powerPolicy&gt;</code></pre>
+            </div>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔧</span> Customization Points</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Add Policies:</strong> Define new &lt;policy&gt; to support OEM-specific scenarios</li>
+                            <li><strong>Timeout Adjustment:</strong> Change Suspend entry time (default 2 hours)</li>
+                            <li><strong>Conditional Policies:</strong> Dynamic switching based on battery, temperature, user mode</li>
+                            <li><strong>Component Fine-tuning:</strong> ON/OFF combinations tailored to brand characteristics</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 9: Power State Machine Details -->
+        <section class="section sec-state-machine">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                Power State Machine Details
+            </h2>
+            <p class="section-description">
+                Complete power states and transition rules managed by CarPowerManagementService.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-1. Complete State List</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>State</th>
+                            <th>Value</th>
+                            <th>Description</th>
+                            <th>Next State</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>INVALID</td>
+                            <td>0</td>
+                            <td>Initial state (not used)</td>
+                            <td>WAIT_FOR_VHAL</td>
+                        </tr>
+                        <tr>
+                            <td>WAIT_FOR_VHAL</td>
+                            <td>1</td>
+                            <td>Waiting for VHAL connection</td>
+                            <td>ON, SHUTDOWN_PREPARE</td>
+                        </tr>
+                        <tr>
+                            <td>ON</td>
+                            <td>2</td>
+                            <td>System normal operation (Ignition ON)</td>
+                            <td>SHUTDOWN_PREPARE</td>
+                        </tr>
+                        <tr>
+                            <td>SHUTDOWN_PREPARE</td>
+                            <td>3</td>
+                            <td>Shutdown prepare (UI Off, cleanup tasks)</td>
+                            <td>SHUTDOWN_ENTER, ON (cancel)</td>
+                        </tr>
+                        <tr>
+                            <td>SHUTDOWN_ENTER</td>
+                            <td>4</td>
+                            <td>Actual shutdown entry (Deep Sleep or Shutdown)</td>
+                            <td>(shutdown)</td>
+                        </tr>
+                        <tr>
+                            <td>SUSPEND</td>
+                            <td>5</td>
+                            <td>Suspend-to-RAM (S3) state</td>
+                            <td>ON (Resume)</td>
+                        </tr>
+                        <tr>
+                            <td>SHUTDOWN_CANCELLED</td>
+                            <td>6</td>
+                            <td>Shutdown cancelled (user turned Ignition ON again)</td>
+                            <td>ON</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-2. State Transition Diagram</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    stateDiagram-v2
+                    [*] --> WAIT_FOR_VHAL: Boot
+
+                    WAIT_FOR_VHAL --> ON: VHAL Connected<br/>&amp; IGN ON
+                    WAIT_FOR_VHAL --> SHUTDOWN_PREPARE: VHAL Connected<br/>&amp; IGN OFF
+
+                    ON --> SHUTDOWN_PREPARE: Ignition OFF<br/>VHAL Request
+
+                    SHUTDOWN_PREPARE --> SHUTDOWN_ENTER: Cleanup Done<br/>Timeout
+                    SHUTDOWN_PREPARE --> SHUTDOWN_CANCELLED: User Action<br/>(IGN ON again)
+
+                    SHUTDOWN_CANCELLED --> ON: Resume Normal
+
+                    SHUTDOWN_ENTER --> SUSPEND: CAN_SLEEP<br/>&amp; STR Enabled
+                    SHUTDOWN_ENTER --> [*]: SHUTDOWN_ONLY<br/>(Full Shutdown)
+
+                    SUSPEND --> ON: Wake Up<br/>(Ignition ON)
+                    SUSPEND --> [*]: Battery Depleted<br/>(Emergency Shutdown)
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-3. Detailed Behavior per State</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔵</span> ON State</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>All services operating normally</li>
+                            <li>Power Policy: system_on</li>
+                            <li>User interaction active</li>
+                            <li>Monitoring power state from VHAL</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🟡</span> SHUTDOWN_PREPARE</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Policy: no_user_interaction (AUDIO/MEDIA OFF)</li>
+                            <li>Calls onShutdownPrepare() callback to each service</li>
+                            <li>Timeout: default 60 seconds (configurable)</li>
+                            <li>Waits for all services to respond (CompletableFuture)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🟢</span> SHUTDOWN_ENTER</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Sends AP_POWER_STATE_REPORT to VHAL</li>
+                            <li>Deep Sleep: DEEP_SLEEP_ENTRY</li>
+                            <li>Full Shutdown: SHUTDOWN_START</li>
+                            <li>Issues suspend/shutdown command to kernel</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">💤</span> SUSPEND</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>DRAM memory retained (Self-Refresh)</li>
+                            <li>CPU/peripherals powered off</li>
+                            <li>Code execution completely stopped</li>
+                            <li>Immediately resumes on Wake-up</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-4. Timeout & Exception Handling</h3>
+            <div class="code-block">
+                <pre><code class="language-java">// CarPowerManagementService.java
+private static final int SHUTDOWN_PREPARE_TIMEOUT_MS = 60_000; // 60 seconds
+private static final int SHUTDOWN_ENTER_TIMEOUT_MS = 10_000;   // 10 seconds
+
+private void handleShutdownPrepare() {
+    Log.d(TAG, "Entering SHUTDOWN_PREPARE");
+
+    // Notify all listeners
+    List&lt;CompletableFuture&lt;Void&gt;&gt; futures = new ArrayList&lt;&gt;();
+    for (CarServiceBase service : mAllServices) {
+        CompletableFuture&lt;Void&gt; future = new CompletableFuture&lt;&gt;();
+        service.onShutdownPrepare(future);
+        futures.add(future);
+    }
+
+    // Wait for all services to respond (with Timeout)
+    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+        .orTimeout(SHUTDOWN_PREPARE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        .whenComplete((result, exception) -&gt; {
+            if (exception != null) {
+                Log.w(TAG, "Shutdown prepare timeout or error", exception);
+            }
+            proceedToShutdownEnter();
+        });
+}
+
+private void proceedToShutdownEnter() {
+    Log.d(TAG, "All services ready, entering SHUTDOWN_ENTER");
+
+    // Report ready to VHAL
+    reportPowerStateToVhal(VehicleApPowerStateReport.DEEP_SLEEP_ENTRY);
+
+    // Kernel Suspend command (with Timeout protection)
+    mHandler.postDelayed(() -&gt; {
+        Log.w(TAG, "Suspend failed, forcing shutdown");
+        forceShutdown();
+    }, SHUTDOWN_ENTER_TIMEOUT_MS);
+
+    // Execute Suspend
+    nativeSuspend();
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 10: VHAL Properties -->
+        <section class="section sec-vhal">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                VHAL Properties
+            </h2>
+            <p class="section-description">
+                Vehicle HAL Property structure and communication protocol for power management.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">10-1. AP_POWER_STATE_REQ (0x0A20)</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>prop</td>
+                            <td>int32</td>
+                            <td>0x0A20 (AP_POWER_STATE_REQ)</td>
+                        </tr>
+                        <tr>
+                            <td>value.int32Values[0]</td>
+                            <td>VehicleApPowerStateReq</td>
+                            <td>Request type (ON=1, SHUTDOWN_PREPARE=2, CANCEL=3, FINISHED=4)</td>
+                        </tr>
+                        <tr>
+                            <td>value.int32Values[1]</td>
+                            <td>VehicleApPowerStateShutdownParam</td>
+                            <td>Shutdown parameter (CAN_SLEEP=1, SHUTDOWN_ONLY=2, SLEEP_IMMEDIATELY=3)</td>
+                        </tr>
+                        <tr>
+                            <td>timestamp</td>
+                            <td>int64</td>
+                            <td>elapsedRealtimeNano()</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">10-2. AP_POWER_STATE_REPORT (0x0A21)</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>prop</td>
+                            <td>int32</td>
+                            <td>0x0A21 (AP_POWER_STATE_REPORT)</td>
+                        </tr>
+                        <tr>
+                            <td>value.int32Values[0]</td>
+                            <td>VehicleApPowerStateReport</td>
+                            <td>Report type (BOOT_COMPLETE=1, DEEP_SLEEP_ENTRY=2, DEEP_SLEEP_EXIT=3, SHUTDOWN_POSTPONE=4, SHUTDOWN_START=5, DISPLAY_OFF=6, DISPLAY_ON=7)</td>
+                        </tr>
+                        <tr>
+                            <td>value.int32Values[1]</td>
+                            <td>int32</td>
+                            <td>Additional parameter (extension time in ms for SHUTDOWN_POSTPONE)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">10-3. VehiclePropValue Structure</h3>
+            <div class="code-block">
+                <pre><code class="language-cpp">// hardware/interfaces/automotive/vehicle/2.0/types.hal
+struct VehiclePropValue {
+    int32_t prop;              // Property ID (e.g., 0x0A20)
+    int64_t timestamp;         // elapsedRealtimeNano()
+    VehicleAreaConfig areaId;  // Area (global = 0)
+    VehiclePropStatus status;  // AVAILABLE, UNAVAILABLE, ERROR
+
+    union Value {
+        vec&lt;int32_t&gt; int32Values;
+        vec&lt;int64_t&gt; int64Values;
+        vec&lt;float&gt; floatValues;
+        string stringValue;
+        vec&lt;uint8_t&gt; bytes;
+    } value;
+};</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">10-4. VHAL Communication Code (C++)</h3>
+            <div class="code-block">
+                <pre><code class="language-cpp">// packages/services/Car/service/src/com/android/car/hal/PowerHalService.java
+// Java to VHAL transmission
+public void sendPowerStateReport(int state, int param) {
+    VehiclePropValue value = new VehiclePropValue();
+    value.prop = VehicleProperty.AP_POWER_STATE_REPORT;
+    value.timestamp = SystemClock.elapsedRealtimeNanos();
+    value.value.int32Values = new int[] { state, param };
+
+    try {
+        mHal.set(value);
+        Log.d(TAG, "Sent AP_POWER_STATE_REPORT: state=" + state + ", param=" + param);
+    } catch (Exception e) {
+        Log.e(TAG, "Failed to send power state report", e);
+    }
+}
+
+// Receive from VHAL (Callback)
+@Override
+public void onPropertyEvent(ArrayList&lt;VehiclePropValue&gt; propValues) {
+    for (VehiclePropValue value : propValues) {
+        if (value.prop == VehicleProperty.AP_POWER_STATE_REQ) {
+            int request = value.value.int32Values.get(0);
+            int param = value.value.int32Values.size() &gt; 1
+                ? value.value.int32Values.get(1) : 0;
+
+            Log.d(TAG, "Received AP_POWER_STATE_REQ: " + request + ", param=" + param);
+
+            switch (request) {
+                case VehicleApPowerStateReq.ON:
+                    handlePowerOn();
+                    break;
+                case VehicleApPowerStateReq.SHUTDOWN_PREPARE:
+                    handleShutdownPrepare(param);
+                    break;
+                case VehicleApPowerStateReq.CANCEL_SHUTDOWN:
+                    handleShutdownCancel();
+                    break;
+            }
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">10-5. Signal Mapping Table</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>VHAL Signal</th>
+                            <th>CPMS State</th>
+                            <th>Trigger</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>AP_POWER_STATE_REQ: ON</td>
+                            <td>ON</td>
+                            <td>Ignition ON, ACC ON</td>
+                        </tr>
+                        <tr>
+                            <td>AP_POWER_STATE_REQ: SHUTDOWN_PREPARE (CAN_SLEEP)</td>
+                            <td>SHUTDOWN_PREPARE → SUSPEND</td>
+                            <td>Ignition OFF, short parking</td>
+                        </tr>
+                        <tr>
+                            <td>AP_POWER_STATE_REQ: SHUTDOWN_PREPARE (SHUTDOWN_ONLY)</td>
+                            <td>SHUTDOWN_PREPARE → (Full Shutdown)</td>
+                            <td>Ignition OFF, long parking or low battery</td>
+                        </tr>
+                        <tr>
+                            <td>AP_POWER_STATE_REQ: CANCEL_SHUTDOWN</td>
+                            <td>SHUTDOWN_CANCELLED → ON</td>
+                            <td>User turns Ignition ON during shutdown</td>
+                        </tr>
+                        <tr>
+                            <td>AP_POWER_STATE_REQ: FINISHED</td>
+                            <td>SHUTDOWN_ENTER</td>
+                            <td>CPMS cleanup complete, DEEP_SLEEP_ENTRY report done</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 11: Suspend/Resume Timing Analysis -->
+        <section class="section sec-timing">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                Suspend/Resume Timing Analysis
+            </h2>
+            <p class="section-description">
+                Analysis of Suspend entry and Resume exit times based on actual measured timing data.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">11-1. Suspend Entry Timeline</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    gantt
+                    title Suspend Entry Timeline (Ignition OFF → Deep Sleep)
+                    dateFormat X
+                    axisFormat %L ms
+
+                    section VHAL
+                    IGN OFF Signal                 :0, 10
+                    AP_POWER_STATE_REQ Send        :10, 20
+
+                    section CPMS
+                    Receive REQ                    :30, 10
+                    State → SHUTDOWN_PREPARE       :40, 5
+                    Apply Power Policy             :45, 15
+
+                    section Services
+                    CarAudioService Callback       :60, 100
+                    CarMediaService Callback       :60, 150
+                    Other Services                 :60, 80
+
+                    section Apps
+                    MediaSession Pause             :160, 50
+                    Save Playback State            :210, 40
+
+                    section Finalize
+                    All Services Done              :250, 10
+                    CPMS → SHUTDOWN_ENTER          :260, 5
+                    Send DEEP_SLEEP_ENTRY          :265, 15
+                    Kernel Suspend Call            :280, 100
+                    CPU Halt                       :380, 0
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">11-2. Resume Exit Timeline</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    gantt
+                    title Resume Exit Timeline (Wake-up → System Ready)
+                    dateFormat X
+                    axisFormat %L ms
+
+                    section Hardware
+                    VMCU Wake Signal               :0, 5
+                    Kernel Resume                  :5, 50
+                    Driver Init                    :55, 100
+
+                    section CPMS
+                    onSleepExit()                  :155, 10
+                    State → ON                     :165, 5
+                    Apply system_on Policy         :170, 20
+
+                    section Services
+                    CarAudioService Enable         :190, 50
+                    CarMediaService Restore        :190, 100
+
+                    section Apps
+                    MediaConnector Connect         :290, 80
+                    MediaSession Restore           :370, 60
+                    Autoplay Start                 :430, 50
+
+                    section Complete
+                    System Ready                   :480, 0
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">11-3. Actual Timing Measurements</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Phase</th>
+                            <th>Average Time</th>
+                            <th>Min</th>
+                            <th>Max</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Suspend Entry (Total)</td>
+                            <td>380ms</td>
+                            <td>320ms</td>
+                            <td>550ms</td>
+                            <td>IGN OFF → CPU Halt</td>
+                        </tr>
+                        <tr>
+                            <td>- VHAL Signal Propagation</td>
+                            <td>30ms</td>
+                            <td>20ms</td>
+                            <td>50ms</td>
+                            <td>VMCU → CPMS</td>
+                        </tr>
+                        <tr>
+                            <td>- Power Policy Application</td>
+                            <td>15ms</td>
+                            <td>10ms</td>
+                            <td>25ms</td>
+                            <td>Policy transition</td>
+                        </tr>
+                        <tr>
+                            <td>- Service Cleanup</td>
+                            <td>200ms</td>
+                            <td>150ms</td>
+                            <td>400ms</td>
+                            <td>Based on slowest service</td>
+                        </tr>
+                        <tr>
+                            <td>- Kernel Suspend</td>
+                            <td>100ms</td>
+                            <td>80ms</td>
+                            <td>150ms</td>
+                            <td>Device driver suspend</td>
+                        </tr>
+                        <tr>
+                            <td>Resume Exit (Total)</td>
+                            <td>480ms</td>
+                            <td>400ms</td>
+                            <td>650ms</td>
+                            <td>Wake-up → Autoplay Start</td>
+                        </tr>
+                        <tr>
+                            <td>- Kernel Resume</td>
+                            <td>50ms</td>
+                            <td>40ms</td>
+                            <td>80ms</td>
+                            <td>Device driver resume</td>
+                        </tr>
+                        <tr>
+                            <td>- Driver Initialization</td>
+                            <td>100ms</td>
+                            <td>80ms</td>
+                            <td>150ms</td>
+                            <td>Audio HAL, Display, etc.</td>
+                        </tr>
+                        <tr>
+                            <td>- Service Restore</td>
+                            <td>100ms</td>
+                            <td>80ms</td>
+                            <td>150ms</td>
+                            <td>CarAudioService, CarMediaService</td>
+                        </tr>
+                        <tr>
+                            <td>- App Connect & Play</td>
+                            <td>200ms</td>
+                            <td>150ms</td>
+                            <td>300ms</td>
+                            <td>MediaBrowser + Autoplay</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">11-4. Critical Path Analysis</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔴</span> Suspend Bottleneck</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Service Cleanup (200ms):</strong> Slowest service determines total time</li>
+                            <li>Improvement: Minimize synchronous work in onShutdownPrepare(), use async processing</li>
+                            <li>Set timeout to prevent infinite wait</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🟡</span> Resume Bottleneck</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>App Connect (200ms):</strong> MediaBrowser bind + Autoplay</li>
+                            <li>Improvement: Pre-prepare MediaConnectorService, parallel processing</li>
+                            <li>App optimization: Lightweight onPlaybackResumption()</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">11-5. Optimization Points</h3>
+            <div class="code-block">
+                <pre><code class="language-java">// Optimization example: Parallel processing
+private void handleShutdownPrepare() {
+    // Clean up all services in parallel (no sequential waiting)
+    List&lt;CompletableFuture&lt;Void&gt;&gt; futures = mAllServices.stream()
+        .map(service -&gt; CompletableFuture.runAsync(() -&gt; {
+            try {
+                service.onShutdownPrepare();
+            } catch (Exception e) {
+                Log.e(TAG, "Service cleanup failed", e);
+            }
+        }, mExecutor))
+        .collect(Collectors.toList());
+
+    // Wait for all to complete or timeout
+    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+        .orTimeout(SHUTDOWN_PREPARE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        .whenComplete((result, ex) -&gt; proceedToShutdownEnter());
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 12: Battery Analysis -->
+        <section class="section sec-battery">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                Battery Consumption Analysis
+            </h2>
+            <p class="section-description">
+                Battery consumption comparison between Suspend-to-RAM and Full Shutdown, and recommended policies.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">12-1. Power Consumption Comparison</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Mode</th>
+                            <th>Average Power Consumption</th>
+                            <th>24-hour Drain</th>
+                            <th>7-day Drain</th>
+                            <th>Battery Life Impact</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Full Shutdown</td>
+                            <td>~5mA</td>
+                            <td>0.12Ah</td>
+                            <td>0.84Ah</td>
+                            <td>Negligible (&lt;2% drain)</td>
+                        </tr>
+                        <tr>
+                            <td>Suspend-to-RAM</td>
+                            <td>~50mA</td>
+                            <td>1.2Ah</td>
+                            <td>8.4Ah</td>
+                            <td>Medium (~15% drain)</td>
+                        </tr>
+                        <tr>
+                            <td>Suspend (DRAM only)</td>
+                            <td>~30mA</td>
+                            <td>0.72Ah</td>
+                            <td>5.04Ah</td>
+                            <td>Low (~9% drain)</td>
+                        </tr>
+                        <tr>
+                            <td>Parking Mode</td>
+                            <td>~100mA</td>
+                            <td>2.4Ah</td>
+                            <td>16.8Ah</td>
+                            <td>High (~30% drain)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p style="margin-top: 15px; color: var(--text-secondary);">
+                * Standard vehicle battery: 55Ah (12V, approximately 660Wh)
+            </p>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">12-2. DRAM Self-Refresh Power</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔋</span> DDR4 (Typical)</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Capacity:</strong> 4GB DRAM</li>
+                            <li><strong>Self-Refresh Power:</strong> ~15mA @ 1.2V = 18mW</li>
+                            <li><strong>24 hours:</strong> 0.36Ah</li>
+                            <li><strong>Max retention time:</strong> ~7 days (risk of natural discharge after)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚡</span> LPDDR4 (Low Power)</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Capacity:</strong> 4GB LPDDR4</li>
+                            <li><strong>Self-Refresh Power:</strong> ~8mA @ 1.1V = 8.8mW</li>
+                            <li><strong>24 hours:</strong> 0.19Ah</li>
+                            <li><strong>Max retention time:</strong> ~14 days</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">12-3. Wake-up Frequency Impact</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>Wake-up Frequency</th>
+                            <th>Average Consumption</th>
+                            <th>24-hour Drain</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Pure Suspend (No Wake)</td>
+                            <td>0 times</td>
+                            <td>30mA</td>
+                            <td>0.72Ah</td>
+                        </tr>
+                        <tr>
+                            <td>Periodic Wake (Clock Sync)</td>
+                            <td>1 time/hour</td>
+                            <td>35mA</td>
+                            <td>0.84Ah</td>
+                        </tr>
+                        <tr>
+                            <td>Active Monitoring (Security)</td>
+                            <td>1 time/10 min</td>
+                            <td>50mA</td>
+                            <td>1.2Ah</td>
+                        </tr>
+                        <tr>
+                            <td>Frequent Wake (Sensor Polling)</td>
+                            <td>1 time/min</td>
+                            <td>80mA</td>
+                            <td>1.92Ah</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">12-4. Recommended Policies</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">✅</span> Short Parking (Under 2 hours)</h3>
+                    <div class="card-description">
+                        <strong>Recommended:</strong> Suspend-to-RAM
+                        <ul>
+                            <li>Fast Resume (~500ms)</li>
+                            <li>Perfect state restoration</li>
+                            <li>Minimal battery impact (~0.1Ah)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚠️</span> Medium Parking (2-12 hours)</h3>
+                    <div class="card-description">
+                        <strong>Recommended:</strong> Hybrid (Suspend → Shutdown)
+                        <ul>
+                            <li>First 2 hours: Suspend-to-RAM</li>
+                            <li>After timeout: Full Shutdown</li>
+                            <li>Balance between battery protection and convenience</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔴</span> Long Parking (Over 12 hours)</h3>
+                    <div class="card-description">
+                        <strong>Recommended:</strong> Full Shutdown
+                        <ul>
+                            <li>Prevent battery drain</li>
+                            <li>Resume time ~6 seconds (acceptable)</li>
+                            <li>Essential for extended parking</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">12-5. Hybrid Policy Configuration</h3>
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- car_power_policy.xml --&gt;
+&lt;policyGroup id="battery_optimized_group"&gt;
+    &lt;!-- Default: Suspend-to-RAM --&gt;
+    &lt;defaultPolicy&gt;suspend_to_ram&lt;/defaultPolicy&gt;
+
+    &lt;!-- Switch to Full Shutdown after 2 hours --&gt;
+    &lt;noDefaultPolicy state="wait_for_vhal" timeout="7200000" policy="full_shutdown"/&gt;
+
+    &lt;!-- Immediate Shutdown when battery below 20% --&gt;
+    &lt;noDefaultPolicy state="wait_for_vhal" condition="battery_low" policy="full_shutdown"/&gt;
+&lt;/policyGroup&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 13: Wake-up Sources -->
+        <section class="section sec-wakeup">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                Wake-up Sources
+            </h2>
+            <p class="section-description">
+                Various wake-up sources and their priorities that can wake the system from Suspend state.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">13-1. Wake-up Source List</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Wake-up Source</th>
+                            <th>Priority</th>
+                            <th>Trigger</th>
+                            <th>Use Case</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Ignition ON</td>
+                            <td>1 (Highest)</td>
+                            <td>VMCU signal (IGN/ACC ON)</td>
+                            <td>Driver operates ignition key</td>
+                        </tr>
+                        <tr>
+                            <td>Door Open</td>
+                            <td>2</td>
+                            <td>VMCU signal (Door Switch)</td>
+                            <td>Vehicle entry, interior light auto-on</td>
+                        </tr>
+                        <tr>
+                            <td>RTC Alarm</td>
+                            <td>3</td>
+                            <td>Kernel RTC timer</td>
+                            <td>Scheduled tasks (clock sync, OTA check)</td>
+                        </tr>
+                        <tr>
+                            <td>CAN Message</td>
+                            <td>4</td>
+                            <td>Specific CAN ID received</td>
+                            <td>Remote control (smartphone app)</td>
+                        </tr>
+                        <tr>
+                            <td>External GPIO</td>
+                            <td>5</td>
+                            <td>GPIO interrupt</td>
+                            <td>Button input, sensor events</td>
+                        </tr>
+                        <tr>
+                            <td>Cellular Modem</td>
+                            <td>6</td>
+                            <td>Incoming call/SMS</td>
+                            <td>Emergency calls, remote notifications</td>
+                        </tr>
+                        <tr>
+                            <td>Low Battery</td>
+                            <td>7 (Emergency)</td>
+                            <td>Battery voltage drop</td>
+                            <td>Full shutdown for battery protection</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">13-2. Wake Lock Mechanism</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App
+                    participant PM as PowerManager
+                    participant CPMS
+                    participant Kernel
+
+                    App->>PM: acquireWakeLock(PARTIAL_WAKE_LOCK)
+                    PM->>CPMS: requestWakeLock()
+                    CPMS->>Kernel: /sys/power/wake_lock (write)
+
+                    Note over Kernel: Suspend entry blocked
+
+                    App->>App: Do Background Work
+
+                    App->>PM: releaseWakeLock()
+                    PM->>CPMS: releaseWakeLock()
+                    CPMS->>Kernel: /sys/power/wake_unlock (write)
+
+                    Note over Kernel: Suspend entry allowed
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">13-3. Partial Wake Scenarios</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📡</span> OTA Update</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Wake-up at 3 AM via RTC Alarm</li>
+                            <li>Acquire PARTIAL_WAKE_LOCK (CPU ON, Display OFF)</li>
+                            <li>Download update from server</li>
+                            <li>Release Wake Lock after installation → Suspend</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔐</span> Theft Alarm</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Wake-up via accelerometer sensor interrupt</li>
+                            <li>Verify GPS location</li>
+                            <li>Send notification via Cellular if abnormal movement detected</li>
+                            <li>Suspend again after 30 seconds</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">13-4. Wake-up Priority Code</h3>
+            <div class="code-block">
+                <pre><code class="language-java">// CarPowerManagementService.java
+private void handleWakeUpEvent(int source) {
+    Log.d(TAG, "Wake-up event from source: " + source);
+
+    switch (source) {
+        case WAKEUP_SOURCE_IGNITION:
+            // Highest priority: Full Resume immediately
+            Log.d(TAG, "Ignition wake-up: Full system resume");
+            transitionToState(CarPowerStateListener.ON);
+            break;
+
+        case WAKEUP_SOURCE_DOOR:
+            // Partial Resume with Display only
+            Log.d(TAG, "Door wake-up: Display on, partial resume");
+            applyPowerPolicy("door_open_policy"); // DISPLAY=ON, others=untouched
+            scheduleAutoSuspend(30_000); // Suspend again after 30 seconds
+            break;
+
+        case WAKEUP_SOURCE_RTC:
+            // Partial Wake for background tasks
+            Log.d(TAG, "RTC wake-up: Background tasks only");
+            applyPowerPolicy("background_tasks_policy"); // CPU=ON, DISPLAY=OFF
+            // Wake Lock automatically released when task completes
+            break;
+
+        case WAKEUP_SOURCE_CAN:
+            // Remote control: decide after processing request
+            Log.d(TAG, "CAN wake-up: Remote control request");
+            handleRemoteControlRequest();
+            break;
+
+        case WAKEUP_SOURCE_LOW_BATTERY:
+            // Emergency: Full shutdown immediately
+            Log.w(TAG, "Low battery wake-up: Emergency shutdown");
+            forceShutdown();
+            break;
+
+        default:
+            Log.w(TAG, "Unknown wake-up source: " + source);
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">13-5. RTC Alarm Setup</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// OTA update scheduling
+class OtaUpdateService : Service() {
+
+    private val alarmManager by lazy {
+        getSystemService(AlarmManager::class.java)
+    }
+
+    fun scheduleNightlyCheck() {
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 3) // 3 AM
+            set(Calendar.MINUTE, 0)
+            if (before(Calendar.getInstance())) {
+                add(Calendar.DAY_OF_MONTH, 1) // Tomorrow 3 AM
+            }
+        }
+
+        val intent = Intent(this, OtaCheckReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            this, 0, intent, PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // RTC_WAKEUP: Wake-up even from Suspend state
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            calendar.timeInMillis,
+            pendingIntent
+        )
+
+        Log.d(TAG, "Scheduled OTA check at ${calendar.time}")
+    }
+}
+
+class OtaCheckReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        Log.d(TAG, "RTC alarm fired: Starting OTA check")
+
+        // Acquire Partial Wake Lock
+        val powerManager = context.getSystemService(PowerManager::class.java)
+        val wakeLock = powerManager.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "OtaUpdate:WakeLock"
+        )
+        wakeLock.acquire(10 * 60 * 1000L) // Max 10 minutes
+
+        // Start background task
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            "ota_check",
+            ExistingWorkPolicy.REPLACE,
+            OneTimeWorkRequestBuilder<OtaCheckWorker>().build()
+        )
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 14: Android Version History -->
+        <section class="section sec-versions">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                Android Version Evolution
+            </h2>
+            <p class="section-description">
+                Evolution of Power Policy and Suspend features from Android 10 (AAOS introduction) to Android 15.
+            </p>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Android Version</th>
+                            <th>AAOS Version</th>
+                            <th>Key Changes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Android 10 (Q)</td>
+                            <td>AAOS 1.0</td>
+                            <td>
+                                <ul>
+                                    <li>CarPowerManagementService first introduced</li>
+                                    <li>Basic Suspend-to-RAM support</li>
+                                    <li>VHAL AP_POWER_STATE_REQ/REPORT defined</li>
+                                    <li>car_power_policy.xml configuration file</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 11 (R)</td>
+                            <td>AAOS 2.0</td>
+                            <td>
+                                <ul>
+                                    <li>CarPowerPolicyService separated (independent policy management)</li>
+                                    <li>Component-based policies (AUDIO, MEDIA, etc.)</li>
+                                    <li>Policy Group support (conditional switching)</li>
+                                    <li>Configurable Shutdown Timeout</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 12 (S)</td>
+                            <td>AAOS 3.0</td>
+                            <td>
+                                <ul>
+                                    <li>addPowerPolicyListener() API added</li>
+                                    <li>Filter-based selective listeners (per component)</li>
+                                    <li>Hybrid policies (timeout-based switching)</li>
+                                    <li>SHUTDOWN_CANCELLED state added</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 13 (T)</td>
+                            <td>AAOS 4.0</td>
+                            <td>
+                                <ul>
+                                    <li>Enhanced battery optimization policies</li>
+                                    <li>Official Parking Mode support</li>
+                                    <li>Configurable wake-up priorities</li>
+                                    <li>CarPowerPolicy Builder API</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 14 (U)</td>
+                            <td>AAOS 5.0</td>
+                            <td>
+                                <ul>
+                                    <li>Detailed Partial Wake scenarios</li>
+                                    <li>Improved RTC Alarm accuracy</li>
+                                    <li>Battery protection mode (Low Battery Policy)</li>
+                                    <li>Privacy Sandbox integration (data protection during Suspend)</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 15 (V)</td>
+                            <td>AAOS 6.0</td>
+                            <td>
+                                <ul>
+                                    <li>AI-based predictive Suspend (usage pattern learning)</li>
+                                    <li>V2X integration (vehicle-to-vehicle communication Wake-up)</li>
+                                    <li>Ultra-Low Power Mode (LPDDR5 optimization)</li>
+                                    <li>Remote Wake-up API (smartphone integration)</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">14-1. Deprecated APIs</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚠️</span> Before Android 11</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>CarPowerManagementService.registerListener()</code> → <code>addPowerPolicyListener()</code></li>
+                            <li>Use component filter-based listeners instead of full state listeners</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🆕</span> Android 13+</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>CarPowerPolicy.Builder recommended</li>
+                            <li>Runtime policy change API added</li>
+                            <li>Programmatic control enabled (was XML-only before)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 15: Debugging & Troubleshooting -->
+        <section class="section sec-debug">
+            <h2 class="section-title">
+                <span class="section-number">15</span>
+                Debugging & Troubleshooting
+            </h2>
+            <p class="section-description">
+                Problem diagnosis and solutions for Power Policy and Suspend related issues.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">15-1. dumpsys Commands</h3>
+            <div class="code-block">
+                <pre><code class="language-bash"># CarPowerManagementService full status
+adb shell dumpsys car_service --services CarPowerManagementService
+
+# Example output:
+# Current Power State: ON
+# Current Power Policy: system_on
+# Components:
+#   AUDIO: enabled
+#   MEDIA: enabled
+#   DISPLAY: enabled
+# Registered Listeners: 5
+# Last VHAL Event: AP_POWER_STATE_REQ(ON) at 2024-01-15 10:30:45
+
+# CarPowerPolicyService policy information
+adb shell dumpsys car_service --services CarPowerPolicyService
+
+# Example output:
+# Current Policy: system_on
+# Policy Groups:
+#   - default_policy_group (active)
+# Available Policies:
+#   - system_on
+#   - no_user_interaction
+#   - suspend_to_ram
+
+# Kernel Suspend statistics
+adb shell cat /sys/power/suspend_stats
+
+# Check wake-up sources
+adb shell cat /sys/kernel/debug/wakeup_sources
+
+# Battery status
+adb shell dumpsys battery</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">15-2. logcat Filtering</h3>
+            <div class="code-block">
+                <pre><code class="language-bash"># CarPowerManagementService logs only
+adb logcat -s CarPowerManagementService:V
+
+# All Power related logs
+adb logcat | grep -E "(CarPower|PowerHal|Suspend|Wakeup)"
+
+# Track state transitions
+adb logcat | grep "Power state transition"
+
+# Example log entries:
+# D/CarPowerManagementService: Power state transition: ON -> SHUTDOWN_PREPARE
+# D/CarPowerPolicyService: Applying policy: no_user_interaction
+# D/CarAudioService: Power policy changed: AUDIO disabled
+# D/CarMediaService: MEDIA disabled, pausing playback
+# D/PowerHal: Sending AP_POWER_STATE_REPORT: DEEP_SLEEP_ENTRY
+# I/Kernel: [suspend] Entering suspend state
+# I/Kernel: [resume] Resumed from suspend</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">15-3. Common Issues and Solutions</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Issue</th>
+                            <th>Cause</th>
+                            <th>Solution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Suspend entry fails</td>
+                            <td>Wake Lock not released</td>
+                            <td>Check active Wake Locks with <code>adb shell dumpsys power</code>, terminate the app</td>
+                        </tr>
+                        <tr>
+                            <td>No audio after Resume</td>
+                            <td>CarAudioService didn't enable AUDIO</td>
+                            <td>Verify AUDIO=on in Power Policy, validate policy with dumpsys</td>
+                        </tr>
+                        <tr>
+                            <td>Media auto-play not working</td>
+                            <td>MEDIA component is disabled</td>
+                            <td>Verify MEDIA=on in system_on policy, check CarMediaService logs</td>
+                        </tr>
+                        <tr>
+                            <td>Rapid battery drain</td>
+                            <td>Using Suspend instead of Shutdown</td>
+                            <td>Configure Hybrid policy for Full Shutdown after 2 hours</td>
+                        </tr>
+                        <tr>
+                            <td>VHAL communication failure</td>
+                            <td>VHAL service not running or crashed</td>
+                            <td>Check process with <code>ps -A | grep vehicle</code>, restart VHAL</td>
+                        </tr>
+                        <tr>
+                            <td>Shutdown Timeout</td>
+                            <td>Specific service not responding to onShutdownPrepare()</td>
+                            <td>Identify slow service from logs, optimize or increase Timeout</td>
+                        </tr>
+                        <tr>
+                            <td>Resume time too long (>1 second)</td>
+                            <td>Driver initialization delay</td>
+                            <td>Analyze kernel logs, optimize slow drivers (Audio HAL, Display, etc.)</td>
+                        </tr>
+                        <tr>
+                            <td>RTC Alarm not working</td>
+                            <td>Using RTC instead of AlarmManager.RTC_WAKEUP</td>
+                            <td>Use setExactAndAllowWhileIdle() with RTC_WAKEUP flag</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">15-4. Manual Testing</h3>
+            <div class="code-block">
+                <pre><code class="language-bash"># 1. Force Suspend entry (for testing)
+adb shell dumpsys car_service garage-mode suspend
+
+# 2. Force Resume execution
+adb shell dumpsys car_service garage-mode resume
+
+# 3. Power Policy change test
+adb shell cmd car_service apply-power-policy no_user_interaction
+
+# 4. Check Wake Locks
+adb shell dumpsys power | grep "Wake Locks"
+
+# 5. Reset Suspend statistics
+adb shell "echo 0 > /sys/power/suspend_stats"
+
+# 6. Timing measurement
+adb shell "echo 1 > /sys/power/pm_debug_messages" # Enable kernel logs
+adb logcat -s Kernel:I | grep suspend
+
+# 7. VHAL event simulation (emulator)
+adb shell "echo '0x0A20,1,0' > /sys/class/vhal/vhal_test"  # IGN ON
+adb shell "echo '0x0A20,2,1' > /sys/class/vhal/vhal_test"  # SHUTDOWN_PREPARE</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 16: AOSP Source Code -->
+        <section class="section sec-source">
+            <h2 class="section-title">
+                <span class="section-number">16</span>
+                AOSP Source Code Reference
+            </h2>
+            <p class="section-description">
+                Key AOSP source files for understanding Power Policy and Suspend implementation.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📂</span> CarPowerManagementService.java</h3>
+                    <div class="card-description">
+                        <strong>Path:</strong> <code>packages/services/Car/service/src/com/android/car/power/CarPowerManagementService.java</code><br>
+                        <strong>Key Features:</strong>
+                        <ul>
+                            <li>Power State Machine</li>
+                            <li>VHAL communication (AP_POWER_STATE_REQ/REPORT)</li>
+                            <li>Shutdown Prepare timeout management</li>
+                            <li>Service listener callback invocation</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/src/com/android/car/power/CarPowerManagementService.java"
+                           target="_blank" style="color: var(--accent-blue);">→ View Source</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📜</span> CarPowerPolicyService.java</h3>
+                    <div class="card-description">
+                        <strong>Path:</strong> <code>packages/services/Car/service/src/com/android/car/power/CarPowerPolicyService.java</code><br>
+                        <strong>Key Features:</strong>
+                        <ul>
+                            <li>Power Policy XML parsing</li>
+                            <li>Policy Group management</li>
+                            <li>Component enable/disable control</li>
+                            <li>addPowerPolicyListener() API</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/src/com/android/car/power/CarPowerPolicyService.java"
+                           target="_blank" style="color: var(--accent-blue);">→ View Source</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔌</span> PowerHalService.java</h3>
+                    <div class="card-description">
+                        <strong>Path:</strong> <code>packages/services/Car/service/src/com/android/car/hal/PowerHalService.java</code><br>
+                        <strong>Key Features:</strong>
+                        <ul>
+                            <li>VHAL Property communication wrapper</li>
+                            <li>AP_POWER_STATE_REQ reception</li>
+                            <li>AP_POWER_STATE_REPORT transmission</li>
+                            <li>VehiclePropValue parsing</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/src/com/android/car/hal/PowerHalService.java"
+                           target="_blank" style="color: var(--accent-blue);">→ View Source</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚙️</span> car_power_policy.xml</h3>
+                    <div class="card-description">
+                        <strong>Path:</strong> <code>packages/services/Car/service/res/xml/car_power_policy.xml</code><br>
+                        <strong>Contents:</strong>
+                        <ul>
+                            <li>Default policy definitions (system_on, no_user_interaction, etc.)</li>
+                            <li>Policy Group settings</li>
+                            <li>OEM overlay template</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/res/xml/car_power_policy.xml"
+                           target="_blank" style="color: var(--accent-blue);">→ View Source</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎧</span> CarAudioService.java</h3>
+                    <div class="card-description">
+                        <strong>Path:</strong> <code>packages/services/Car/service/src/com/android/car/audio/CarAudioService.java</code><br>
+                        <strong>Power Integration:</strong>
+                        <ul>
+                            <li>addPowerPolicyListener(AUDIO)</li>
+                            <li>Unmute when AUDIO enabled</li>
+                            <li>Reject Focus when AUDIO disabled</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/src/com/android/car/audio/CarAudioService.java"
+                           target="_blank" style="color: var(--accent-blue);">→ View Source</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔋</span> VehicleHal (C++)</h3>
+                    <div class="card-description">
+                        <strong>Path:</strong> <code>hardware/interfaces/automotive/vehicle/2.0/default/impl/vhal_v2_0/</code><br>
+                        <strong>Key Files:</strong>
+                        <ul>
+                            <li>VehicleHalImpl.cpp (Property handling)</li>
+                            <li>VehicleEmulator.cpp (Emulator only)</li>
+                            <li>types.hal (VehiclePropValue definition)</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:hardware/interfaces/automotive/vehicle/"
+                           target="_blank" style="color: var(--accent-blue);">→ View Source</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 17: Related Documentation -->
+        <section class="section sec-related">
+            <h2 class="section-title">
+                <span class="section-number">17</span>
+                Related Documentation
+            </h2>
+            <p class="section-description">
+                Other documents closely related to Power Policy & Suspend.
+            </p>
+
+            <div class="content-grid">
+                <div class="card clickable" onclick="location.href='aaos-last-media.html'">
+                    <h3 class="card-title"><span class="card-icon">🎵</span> Last Media & Autoplay</h3>
+                    <div class="card-description">
+                        Media state save/restore during Suspend/Resume, Autoplay policy, SharedPreferences-based persistence
+                    </div>
+                    <a href="aaos-last-media.html" class="card-link">View Details →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='carmedia.html'">
+                    <h3 class="card-title"><span class="card-icon">📻</span> Car Media Service</h3>
+                    <div class="card-description">
+                        CarMediaService architecture, MEDIA component Power Policy integration, Last Media Source management
+                    </div>
+                    <a href="carmedia.html" class="card-link">View Details →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='audio-framework.html'">
+                    <h3 class="card-title"><span class="card-icon">🔊</span> Audio Framework</h3>
+                    <div class="card-description">
+                        CarAudioService AUDIO component handling, Audio Focus Suspend/Resume, Multi-zone audio
+                    </div>
+                    <a href="audio-framework.html" class="card-link">View Details →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='aaos.html'">
+                    <h3 class="card-title"><span class="card-icon">🚗</span> AAOS Overview</h3>
+                    <div class="card-description">
+                        Android Automotive OS overview, CarService architecture, VHAL communication, vehicle power system
+                    </div>
+                    <a href="aaos.html" class="card-link">View Details →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='aaos-key-events.html'">
+                    <h3 class="card-title"><span class="card-icon">⌨️</span> AAOS Key Events</h3>
+                    <div class="card-description">
+                        Hardware key events as wake-up sources, VHAL HW_KEY_INPUT, Ignition detection
+                    </div>
+                    <a href="aaos-key-events.html" class="card-link">View Details →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='gas.html'">
+                    <h3 class="card-title"><span class="card-icon">🔧</span> Google Automotive Services</h3>
+                    <div class="card-description">
+                        GAS power management integration, OTA update RTC Alarm, remote control Wake-up
+                    </div>
+                    <a href="gas.html" class="card-link">View Details →</a>
+                </div>
+            </div>
+        </section>
+
+        <a href="index.html" class="nav-button">← Back to Dashboard</a>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

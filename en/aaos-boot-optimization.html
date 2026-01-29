@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAOS Boot & Media Optimization - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">← Android Media Framework</a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">AAOS Boot & Media Optimization</h1>
+            <p class="page-subtitle">Boot time reduction and media performance optimization for automotive environments</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>Vehicle Boot Requirements</h2>
+
+            <p>Automotive IVI systems require <strong>fast boot</strong> and <strong>instant audio playback</strong>. Users expect radio or music to start playing as soon as they turn on the ignition.</p>
+
+            <h3>1.1 Boot Time Targets</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Phase</th>
+                        <th>Target Time</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Cold Boot → Audio</strong></td>
+                        <td>&lt; 3s</td>
+                        <td>Power ON → First sound output</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cold Boot → UI</strong></td>
+                        <td>&lt; 5s</td>
+                        <td>Power ON → Display visible</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Resume (Suspend)</strong></td>
+                        <td>&lt; 1s</td>
+                        <td>Sleep mode → Full operation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Resume → Audio</strong></td>
+                        <td>&lt; 500ms</td>
+                        <td>Resume from sleep → Audio playback</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>1.2 Boot Sequence</h3>
+            <div class="mermaid">
+flowchart LR
+    subgraph BL["Bootloader<br/>(0.5s)"]
+        A[U-Boot/ABL]
+    end
+
+    subgraph KN["Kernel<br/>(1.0s)"]
+        B[Linux Kernel]
+        C[Early Audio]
+    end
+
+    subgraph AN["Android<br/>(2.3s)"]
+        D[Init/Zygote]
+        E[System Server]
+        F[CarService]
+    end
+
+    subgraph MD["Media<br/>(0.8s)"]
+        G[AudioFlinger]
+        H[MediaService]
+        I((First Audio))
+        J((App Ready))
+    end
+
+    A --> B
+    A -.-> C
+    B --> D
+    C -.->|Handoff| G
+    D --> E
+    D --> G
+    E --> F
+    E --> H
+    G --> I
+    F --> J
+            </div>
+            <p class="diagram-caption">Total target time: under 5 seconds (First Audio: ~2s, App Ready: ~4s)</p>
+        </section>
+
+        <!-- Section 2: Cold Start Audio -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>Cold Start Audio Optimization</h2>
+
+            <h3>2.1 Early Audio Architecture</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph BOOT["Early Boot"]
+        BL[Bootloader]
+        KN[Kernel]
+        EA[Early Audio Driver]
+    end
+
+    subgraph ANDROID["Android Boot"]
+        AF[AudioFlinger]
+        AP[AudioPolicyService]
+        CAS[CarAudioService]
+    end
+
+    subgraph APP["Application"]
+        MA[Media App]
+        RA[Radio App]
+    end
+
+    BL --> KN
+    KN --> EA
+    EA -->|Handoff| AF
+    AF --> AP
+    AP --> CAS
+    CAS --> MA
+    CAS --> RA
+
+            </div>
+
+            <h3>2.2 Early Audio Implementation</h3>
+            <pre><code>// Kernel Level Early Audio (drivers/audio/early_audio.c)
+
+static int early_audio_init(void) {
+    // Use audio config passed from bootloader
+    struct early_audio_config *config = get_bootloader_audio_config();
+
+    // Enable minimal audio path
+    enable_audio_path(config->default_output);
+
+    // Play boot sound or last radio frequency
+    if (config->play_boot_sound) {
+        play_cached_audio(BOOT_SOUND_PATH);
+    } else if (config->last_radio_freq > 0) {
+        tune_radio(config->last_radio_freq);
+        unmute_radio();
+    }
+
+    return 0;
+}
+
+// Handoff to AudioFlinger after boot
+static void handoff_to_audioflinger(void) {
+    // Wait for AudioFlinger ready
+    wait_for_audioflinger();
+
+    // Transfer control
+    transfer_audio_control();
+
+    // Cleanup Early Audio driver
+    early_audio_cleanup();
+}</code></pre>
+
+            <h3>2.3 Boot Sound Playback (Android Level)</h3>
+            <pre><code>// BootCompletedReceiver.java
+public class BootCompletedReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
+            // Restore last media state
+            restoreLastMediaState(context);
+        }
+    }
+
+    private void restoreLastMediaState(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(
+            "media_state", Context.MODE_PRIVATE);
+
+        String lastSource = prefs.getString("last_source", null);
+        boolean wasPlaying = prefs.getBoolean("was_playing", false);
+
+        if (lastSource != null) {
+            // Restore last source via CarMediaService
+            Car car = Car.createCar(context);
+            CarMediaManager mediaManager = (CarMediaManager)
+                car.getCarManager(Car.CAR_MEDIA_SERVICE);
+
+            ComponentName source = ComponentName.unflattenFromString(lastSource);
+            mediaManager.setMediaSource(source,
+                CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK);
+
+            if (wasPlaying) {
+                // Auto-play
+                mediaManager.getMediaController().getTransportControls().play();
+            }
+        }
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 3: Boot Time Reduction -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>Boot Time Reduction Techniques</h2>
+
+            <h3>3.1 Media Service Optimization</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Optimization Technique</th>
+                        <th>Effect</th>
+                        <th>Target</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Lazy Loading</strong></td>
+                        <td>-0.5s</td>
+                        <td>Defer loading of unnecessary services</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Preload Cache</strong></td>
+                        <td>-0.3s</td>
+                        <td>Media metadata caching</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AOT Compilation</strong></td>
+                        <td>-0.2s</td>
+                        <td>Pre-compile media apps</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Parallel Init</strong></td>
+                        <td>-0.4s</td>
+                        <td>Parallel service initialization</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ReadAhead</strong></td>
+                        <td>-0.2s</td>
+                        <td>Filesystem prefetching</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>3.2 CarService Boot Order Optimization</h3>
+            <pre><code>&lt;!-- packages/services/Car/service/res/values/config.xml --&gt;
+&lt;resources&gt;
+    &lt;!-- Services to initialize first at boot --&gt;
+    &lt;string-array name="config_earlyStartupServices"&gt;
+        &lt;item&gt;com.android.car.audio.CarAudioService&lt;/item&gt;
+        &lt;item&gt;com.android.car.media.CarMediaService&lt;/item&gt;
+        &lt;item&gt;com.android.car.input.CarInputService&lt;/item&gt;
+    &lt;/string-array&gt;
+
+    &lt;!-- Services that can be deferred --&gt;
+    &lt;string-array name="config_deferredServices"&gt;
+        &lt;item&gt;com.android.car.telemetry.CarTelemetryService&lt;/item&gt;
+        &lt;item&gt;com.android.car.watchdog.CarWatchdogService&lt;/item&gt;
+    &lt;/string-array&gt;
+&lt;/resources&gt;</code></pre>
+
+            <h3>3.3 Media App Optimization</h3>
+            <pre><code>// Media App Application class
+class MediaApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+
+        // Perform heavy initialization in background
+        Executors.newSingleThreadExecutor().execute {
+            // Preload codecs
+            preloadCodecs()
+
+            // Cache media library
+            cacheMediaLibrary()
+
+            // Preload album arts
+            preloadAlbumArts()
+        }
+    }
+
+    private fun preloadCodecs() {
+        // Pre-instantiate frequently used codecs
+        val codecList = MediaCodecList(MediaCodecList.REGULAR_CODECS)
+        codecList.codecInfos
+            .filter { it.supportedTypes.contains("audio/mp4a-latm") }
+            .take(2)
+            .forEach { info ->
+                try {
+                    MediaCodec.createByCodecName(info.name).release()
+                } catch (e: Exception) { }
+            }
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 4: Resume Optimization -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>Suspend/Resume Optimization</h2>
+
+            <h3>4.1 Suspend-to-RAM Flow</h3>
+            <div class="mermaid">
+sequenceDiagram
+    participant Driver as Driver
+    participant VHAL as Vehicle HAL
+    participant CPS as CarPowerService
+    participant CAS as CarAudioService
+    participant AF as AudioFlinger
+
+    Driver->>VHAL: Ignition OFF
+    VHAL->>CPS: SHUTDOWN_PREPARE
+    CPS->>CAS: prepareForSuspend()
+    CAS->>CAS: saveAudioState()
+    CAS->>AF: suspendOutput()
+
+    Note over CPS: Suspend-to-RAM
+
+    Driver->>VHAL: Ignition ON
+    VHAL->>CPS: RESUME
+    CPS->>CAS: resumeFromSuspend()
+    CAS->>AF: resumeOutput()
+    CAS->>CAS: restoreAudioState()
+    AF-->>Driver: Audio Playing
+            </div>
+
+            <h3>4.2 Media State Save/Restore</h3>
+            <pre><code>// Suspend handling in CarAudioService
+class CarAudioService {
+    private var savedState: MediaState? = null
+
+    fun prepareForSuspend() {
+        // Save current state
+        savedState = MediaState(
+            activeSource = currentMediaSource,
+            playbackState = currentPlaybackState,
+            position = currentPosition,
+            volume = currentVolume,
+            audioFocus = currentFocusHolder
+        )
+
+        // Stop audio output gracefully
+        audioManager.abandonAudioFocus(currentFocusHolder)
+
+        // Notify HAL that suspend preparation is complete
+        notifyReadyForSuspend()
+    }
+
+    fun resumeFromSuspend() {
+        savedState?.let { state ->
+            // Restore volume
+            setVolume(state.volume)
+
+            // Restore media source
+            setMediaSource(state.activeSource)
+
+            // Restore playback position
+            if (state.playbackState == PlaybackState.PLAYING) {
+                seekTo(state.position)
+                play()
+            }
+        }
+    }
+}</code></pre>
+
+            <h3>4.3 Fast Resume Configuration</h3>
+            <pre><code># System property settings
+# Keep Audio HAL state active during suspend
+persist.audio.keep_hal_active_on_suspend=true
+
+# Prioritize audio path restore on resume
+persist.car.audio.priority_restore=true
+
+# Enable media state caching
+persist.car.media.state_cache=true
+
+# Minimize wake-up delay
+persist.car.power.resume_delay_ms=100</code></pre>
+        </section>
+
+        <!-- Section 5: Memory Management -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>Memory Management in Constrained Environments</h2>
+
+            <h3>5.1 Automotive Memory Constraints</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Smartphone</th>
+                        <th>Vehicle IVI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Total RAM</strong></td>
+                        <td>8-12GB</td>
+                        <td>2-4GB</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Media App Allocation</strong></td>
+                        <td>~512MB</td>
+                        <td>~128MB</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Codec Buffers</strong></td>
+                        <td>Flexible</td>
+                        <td>Limited</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cache Policy</strong></td>
+                        <td>Aggressive</td>
+                        <td>Conservative</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>5.2 Memory Optimization Strategy</h3>
+            <pre><code>// Media App Memory Management
+class MediaService : Service() {
+    private var thumbnailCache: LruCache&lt;String, Bitmap&gt;? = null
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // Determine cache size based on memory situation
+        val maxMemory = (Runtime.getRuntime().maxMemory() / 1024).toInt()
+        val cacheSize = maxMemory / 8  // 1/8 of max memory
+
+        thumbnailCache = object : LruCache&lt;String, Bitmap&gt;(cacheSize) {
+            override fun sizeOf(key: String, bitmap: Bitmap): Int {
+                return bitmap.byteCount / 1024
+            }
+        }
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+
+        when (level) {
+            TRIM_MEMORY_RUNNING_LOW -> {
+                // Release 50% of cache
+                thumbnailCache?.trimToSize(thumbnailCache!!.size() / 2)
+            }
+            TRIM_MEMORY_RUNNING_CRITICAL -> {
+                // Release entire cache
+                thumbnailCache?.evictAll()
+                releaseUnusedCodecs()
+            }
+        }
+    }
+
+    private fun releaseUnusedCodecs() {
+        // Release unused codec instances
+        codecPool.values
+            .filter { !it.isActive }
+            .forEach { it.release() }
+    }
+}</code></pre>
+
+            <h3>5.3 Low Memory Killer Configuration</h3>
+            <pre><code>&lt;!-- frameworks/base/core/res/res/values/config.xml --&gt;
+&lt;!-- Automotive LMK settings --&gt;
+&lt;integer-array name="config_lowMemoryKillerOomAdj"&gt;
+    &lt;item&gt;0&lt;/item&gt;    &lt;!-- FOREGROUND_APP --&gt;
+    &lt;item&gt;100&lt;/item&gt;  &lt;!-- VISIBLE_APP --&gt;
+    &lt;item&gt;200&lt;/item&gt;  &lt;!-- PERCEPTIBLE_APP --&gt;
+    &lt;item&gt;250&lt;/item&gt;  &lt;!-- BACKUP_APP --&gt;
+    &lt;item&gt;900&lt;/item&gt;  &lt;!-- CACHED_APP --&gt;
+    &lt;item&gt;906&lt;/item&gt;  &lt;!-- EMPTY_APP --&gt;
+&lt;/integer-array&gt;
+
+&lt;!-- Protect media app priority --&gt;
+&lt;string-array name="config_protectedPackages"&gt;
+    &lt;item&gt;com.android.car.media&lt;/item&gt;
+    &lt;item&gt;com.android.car.radio&lt;/item&gt;
+&lt;/string-array&gt;</code></pre>
+        </section>
+
+        <!-- Section 6: Profiling -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>Boot Performance Measurement</h2>
+
+            <h3>6.1 Bootchart Collection</h3>
+            <pre><code># Enable Bootchart
+adb shell 'echo 120 > /proc/sys/kernel/bootchart/enable'
+
+# Collect after reboot
+adb reboot
+
+# Extract Bootchart data
+adb shell 'tar -czf /data/local/tmp/bootchart.tgz /proc/bootchart'
+adb pull /data/local/tmp/bootchart.tgz
+
+# Visualize with analysis tool
+bootchart bootchart.tgz</code></pre>
+
+            <h3>6.2 Boot Time Measurement Script</h3>
+            <pre><code>#!/bin/bash
+# boot_time_measure.sh
+
+echo "=== Boot Time Measurement ==="
+
+# Reboot
+adb reboot
+sleep 2
+
+# Wait for boot completion and measure time
+START=$(date +%s%3N)
+
+while true; do
+    BOOT_COMPLETED=$(adb shell getprop sys.boot_completed 2>/dev/null)
+    if [ "$BOOT_COMPLETED" = "1" ]; then
+        END=$(date +%s%3N)
+        BOOT_TIME=$((END - START))
+        echo "Boot completed in: ${BOOT_TIME}ms"
+        break
+    fi
+    sleep 0.1
+done
+
+# Media service start time
+MEDIA_TIME=$(adb shell dmesg | grep "CarMediaService" | head -1 | awk '{print $2}')
+echo "CarMediaService started at: $MEDIA_TIME"
+
+# First audio output time
+AUDIO_TIME=$(adb shell dmesg | grep "first audio" | head -1 | awk '{print $2}')
+echo "First audio at: $AUDIO_TIME"</code></pre>
+
+            <h3>6.3 Perfetto Boot Trace</h3>
+            <pre><code># Collect Perfetto trace during boot
+adb shell setprop persist.debug.perfetto.boottrace 1
+adb reboot
+
+# Extract trace
+adb pull /data/misc/perfetto-traces/boottrace.perfetto-trace
+
+# Analyze at ui.perfetto.dev</code></pre>
+        </section>
+
+        <!-- Section 7: Checklist -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>Optimization Checklist</h2>
+
+            <h3>Boot Time</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Cold Boot → Audio &lt; 3s</li>
+                <li><input type="checkbox"> Cold Boot → UI &lt; 5s</li>
+                <li><input type="checkbox"> Early Audio working</li>
+                <li><input type="checkbox"> Unnecessary services deferred</li>
+            </ul>
+
+            <h3>Resume Performance</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Resume → Operation &lt; 1s</li>
+                <li><input type="checkbox"> Resume → Audio &lt; 500ms</li>
+                <li><input type="checkbox"> Media state restored correctly</li>
+                <li><input type="checkbox"> Volume/position restored</li>
+            </ul>
+
+            <h3>Memory</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Media app memory &lt; 128MB</li>
+                <li><input type="checkbox"> onTrimMemory handling implemented</li>
+                <li><input type="checkbox"> Cache policy optimized</li>
+                <li><input type="checkbox"> Memory leak testing done</li>
+            </ul>
+
+            <h3>Measurement</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Bootchart analysis complete</li>
+                <li><input type="checkbox"> Perfetto boot trace verified</li>
+                <li><input type="checkbox"> Automated testing set up</li>
+            </ul>
+        </section>
+
+        <!-- Related Documents -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>Related Documents</h2>
+            <ul>
+                <li><a href="power-policy-suspend.html">Power Policy & Suspend</a> - Suspend/Resume details</li>
+                <li><a href="performance-optimization.html">Performance Optimization</a> - General performance optimization</li>
+                <li><a href="aaos-last-media.html">Last Media & Autoplay</a> - Media state restoration</li>
+                <li><a href="vehicle-hal-media.html">Vehicle HAL Media Integration</a> - Vehicle integration</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+</html>

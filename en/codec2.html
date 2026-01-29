@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Codec 2.0 Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">⚙️ Codec 2.0</h1>
+            <p class="page-subtitle">Next-Generation Android Media Codec Architecture</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overview: What is Codec 2.0?
+            </h2>
+            <p class="section-description">
+                Codec 2.0 is a next-generation multimedia framework introduced in Android Q(10), replacing the legacy ACodec/OpenMAX.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Key Objectives
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Performance and Security Improvements</strong></p>
+                        <ul>
+                            <li>Performance improvement through Zero-Copy buffer management</li>
+                            <li>Enhanced security via HAL-based architecture</li>
+                            <li>Independent updates as Mainline module</li>
+                            <li>Hardware acceleration optimization</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Replacing Legacy System
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Replacing ACodec + OpenMAX IL</strong></p>
+                        <ul>
+                            <li>Simpler and more flexible API</li>
+                            <li>Component chaining support</li>
+                            <li>Filter plugin support</li>
+                            <li>Enhanced configuration query capabilities</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Zero-Copy Buffer
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Core Performance Optimization</strong></p>
+                        <ul>
+                            <li>Eliminates data copy overhead</li>
+                            <li>Efficient transfer via C2Buffer</li>
+                            <li>Memory management with C2Allocator</li>
+                            <li>Utilizes ION/Gralloc</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        HAL Interface
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>android.hardware.media.c2</strong></p>
+                        <ul>
+                            <li>HIDL/AIDL based HAL</li>
+                            <li>Vendor implementation separation</li>
+                            <li>Optimized inter-process communication</li>
+                            <li>Independent update capability</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Overall Architecture
+            </h2>
+            <p class="section-description">
+                Visualizes the complete structure of Codec 2.0 from MediaCodec API to hardware codecs.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP ["Application Layer"]
+                    MEDIA_APP[Media App]
+                    end
+
+                    subgraph FRAMEWORK ["Android Framework"]
+                    MEDIACODEC[MediaCodec API]
+                    CCODEC[CCodec<br />Entry Point]
+                    BUFFER_CH[CCodecBufferChannel<br />Buffer Delivery]
+                    end
+
+                    subgraph CODEC2_CLIENT ["Codec2 Client"]
+                    C2_CLIENT[Codec2Client]
+                    LISTENER[mClientListener<br />Callbacks]
+                    end
+
+                    subgraph HAL ["HAL Interface - android.hardware.media.c2"]
+                    HIDL_AIDL[HIDL/AIDL<br />IPC Layer]
+                    end
+
+                    subgraph VENDOR ["Vendor Implementation"]
+                    COMP_STORE[C2ComponentStore<br />Library Entry Point]
+                    C2_COMP[C2Component<br />Encoder/Decoder]
+                    C2_INTF[C2Component Interface<br />Configuration]
+                    C2_ALLOC[C2Allocator<br />Memory Management]
+                    C2_POOL[C2BlockPool<br />Buffer Pool]
+                    end
+
+                    subgraph HW ["Hardware"]
+                    HW_CODEC[Hardware Codec<br />DSP/GPU]
+                    ION[ION Allocator]
+                    GRALLOC[Gralloc<br />Graphics Buffer]
+                    end
+
+                    MEDIA_APP --> MEDIACODEC
+                    MEDIACODEC --> CCODEC
+                    CCODEC --> BUFFER_CH
+                    CCODEC --> C2_CLIENT
+                    C2_CLIENT --> LISTENER
+                    C2_CLIENT --> HIDL_AIDL
+
+                    HIDL_AIDL --> COMP_STORE
+                    COMP_STORE --> C2_COMP
+                    C2_COMP --> C2_INTF
+                    C2_COMP --> C2_ALLOC
+                    C2_ALLOC --> C2_POOL
+
+                    C2_COMP --> HW_CODEC
+                    C2_ALLOC --> ION
+                    C2_ALLOC --> GRALLOC
+
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>Key Components:</strong>
+                <ul>
+                    <li><strong>CCodec</strong>: Interface between Stagefright and Codec 2.0 framework</li>
+                    <li><strong>Codec2Client</strong>: Client through which CCodec interacts with Codec 2.0 components</li>
+                    <li><strong>C2ComponentStore</strong>: Entry point for vendor-specific codec libraries</li>
+                    <li><strong>C2Component</strong>: Actual encoder/decoder implementation</li>
+                    <li><strong>C2Allocator</strong>: Memory allocation and management for Zero-Copy</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 3: Component Lifecycle -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Component Lifecycle
+            </h2>
+            <p class="section-description">
+                Explains the complete lifecycle of C2Component from creation to destruction.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App
+                    participant MC as MediaCodec
+                    participant CC as CCodec
+                    participant C2C as Codec2Client
+                    participant HAL as HIDL/AIDL
+                    participant CS as C2ComponentStore
+                    participant COMP as C2Component
+
+                    App->>MC: createByCodecName()
+                    MC->>CC: Create CCodec
+                    CC->>C2C: Codec2Client::CreateFromService()
+                    C2C->>HAL: Connect to HAL Service
+                    HAL->>CS: getComponentStore()
+                    CS-->>HAL: Return ComponentStore
+                    HAL-->>C2C: Return Store
+
+                    App->>MC: configure()
+                    MC->>CC: configure()
+                    CC->>C2C: createComponent()
+                    C2C->>HAL: createComponent(name)
+                    HAL->>CS: createComponent()
+                    CS->>COMP: Create C2Component instance
+                    COMP-->>CS: Return Component
+                    CS-->>HAL: Return Component
+                    HAL-->>C2C: Return Component
+                    C2C-->>CC: Return Component
+
+                    CC->>C2C: query() - Query parameters
+                    C2C->>COMP: Access Component Interface
+                    COMP-->>C2C: Return settings
+
+                    App->>MC: start()
+                    MC->>CC: start()
+                    CC->>C2C: start()
+                    C2C->>HAL: start()
+                    HAL->>COMP: start()
+
+                    loop Data Processing
+                    App->>MC: queueInputBuffer()
+                    MC->>CC: Create C2Work
+                    CC->>C2C: queue(C2Work)
+                    C2C->>HAL: queue(work)
+                    HAL->>COMP: process(work)
+                    COMP->>COMP: Encoding/Decoding
+                    COMP-->>HAL: onWorkDone()
+                    HAL-->>C2C: onWorkDone()
+                    C2C-->>CC: Listener callback
+                    CC-->>MC: Deliver output buffer
+                    MC-->>App: dequeueOutputBuffer()
+                    end
+
+                    App->>MC: stop()
+                    MC->>CC: stop()
+                    CC->>C2C: stop()
+                    C2C->>HAL: stop()
+                    HAL->>COMP: stop()
+
+                    App->>MC: release()
+                    MC->>CC: release()
+                    CC->>C2C: release()
+                    C2C->>HAL: release()
+                    HAL->>COMP: release()
+                    COMP->>COMP: Cleanup resources
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Buffer Management -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Zero-Copy Buffer Management
+            </h2>
+            <p class="section-description">
+                Detailed explanation of the Zero-Copy buffer mechanism, a core feature of Codec 2.0.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TB
+                    START[Encoding/Decoding request from app] --> ALLOC{Buffer allocation needed?}
+
+                    ALLOC -->|Yes| C2ALLOC[Call C2Allocator]
+                    C2ALLOC --> POOL[Acquire memory block<br />from C2BlockPool]
+
+                    POOL --> TYPE{Buffer type}
+                    TYPE -->|Linear| ION_ALLOC[ION Allocator<br />Contiguous memory]
+                    TYPE -->|Graphic| GRALLOC_ALLOC[Gralloc<br />Graphics buffer]
+
+                    ION_ALLOC --> C2BUFFER[Create C2Buffer]
+                    GRALLOC_ALLOC --> C2BUFFER
+
+                    ALLOC -->|No| C2BUFFER
+
+                    C2BUFFER --> C2WORK[Attach C2Buffer to C2Work]
+                    C2WORK --> QUEUE[Queue to Component]
+
+                    QUEUE --> PROCESS[Process in Component]
+                    PROCESS --> ZEROCOPY{Zero-Copy possible?}
+
+                    ZEROCOPY -->|Yes| DIRECT[Direct memory access<br />No copy]
+                    ZEROCOPY -->|No| COPY[Copy if necessary]
+
+                    DIRECT --> OUTPUT[Create output C2Buffer]
+                    COPY --> OUTPUT
+
+                    OUTPUT --> RETURN[Return to app]
+                    RETURN --> RECYCLE[Recycle to C2BlockPool]
+                    RECYCLE --> END[Complete]
+
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 Buffer Management Components
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        C2Buffer
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Media Data Container</strong></p>
+                        <ul>
+                            <li>Contains audio/video frames</li>
+                            <li>Includes metadata</li>
+                            <li>Zero-Copy support</li>
+                            <li>Inter-process transfer capable</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎛️</span>
+                        C2Allocator
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Memory Allocation Manager</strong></p>
+                        <ul>
+                            <li>Buffer memory allocation</li>
+                            <li>Recycling and state tracking</li>
+                            <li>Utilizes ION/Gralloc</li>
+                            <li>Memory efficiency optimization</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏊</span>
+                        C2BlockPool
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Buffer Pool Management</strong></p>
+                        <ul>
+                            <li>Memory block pooling</li>
+                            <li>Fast allocation/deallocation</li>
+                            <li>Memory reuse</li>
+                            <li>Performance improvement</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Zero-Copy Benefits
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Performance Optimization</strong></p>
+                        <ul>
+                            <li>Reduced CPU usage</li>
+                            <li>Memory bandwidth savings</li>
+                            <li>Reduced latency</li>
+                            <li>Lower power consumption</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: C2Component Structure -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                C2Component Structure
+            </h2>
+            <p class="section-description">
+                Explains the internal structure of C2Component that implements actual encoders/decoders.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph COMPONENT ["C2Component"]
+                    COMP_INTF[C2Component Interface<br />Parameter Settings]
+                    COMP_IMPL[Component Implementation<br />Actual Codec Logic]
+
+                    subgraph CONFIG ["Configuration"]
+                    PARAMS[C2Param<br />Configuration Parameters]
+                    QUERY[Query<br />Capability Query]
+                    TUNING[Tuning<br />Dynamic Adjustment]
+                    end
+
+                    subgraph PROCESSING ["Processing"]
+                    INPUT_Q[Input Queue<br />Input Queue]
+                    WORK_PROC[Work Processor<br />Work Processing]
+                    OUTPUT_Q[Output Queue<br />Output Queue]
+                    end
+
+                    subgraph CALLBACKS ["Callbacks"]
+                    WORK_DONE[onWorkDone<br />Work Complete]
+                    TRIGGERED[onTriggered<br />Event Triggered]
+                    ERROR[onError<br />Error Handling]
+                    end
+                    end
+
+                    COMP_INTF --> CONFIG
+                    COMP_IMPL --> PROCESSING
+                    COMP_IMPL --> CALLBACKS
+
+                    INPUT_Q --> WORK_PROC
+                    WORK_PROC --> OUTPUT_Q
+
+                    WORK_PROC --> WORK_DONE
+                    WORK_PROC --> TRIGGERED
+                    WORK_PROC --> ERROR
+
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔍 Key Interfaces
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        C2Component Interface
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Configuration and Query</strong></p>
+                        <ul>
+                            <li><code>query()</code>: Query parameters</li>
+                            <li><code>config()</code>: Set parameters</li>
+                            <li><code>querySupportedParams()</code>: Check supported parameters</li>
+                            <li><code>querySupportedValues()</code>: Supported value ranges</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Work Processing
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Data Processing</strong></p>
+                        <ul>
+                            <li><code>queue()</code>: Submit C2Work</li>
+                            <li><code>flush()</code>: Clear queue</li>
+                            <li><code>drain()</code>: Wait for output completion</li>
+                            <li><code>start()</code> / <code>stop()</code>: State control</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        C2Param
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Parameter Types</strong></p>
+                        <ul>
+                            <li>Bitrate, frame rate</li>
+                            <li>Resolution, color format</li>
+                            <li>Profile, level</li>
+                            <li>Buffer size, latency</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Listener Callbacks
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Event Notifications</strong></p>
+                        <ul>
+                            <li><code>onWorkDone()</code>: Work complete</li>
+                            <li><code>onTriggered()</code>: Trigger event</li>
+                            <li><code>onError()</code>: Error occurred</li>
+                            <li><code>onFramesRendered()</code>: Frame rendering</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: HAL Communication -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                HAL Communication Mechanism
+            </h2>
+            <p class="section-description">
+                Explains the communication method between framework and vendor implementation through HIDL/AIDL.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant FC as Framework<br />Codec2Client
+                    participant HIDL as HIDL/AIDL<br />Binder IPC
+                    participant VS as Vendor Service<br />C2ComponentStore
+                    participant VC as Vendor<br />C2Component
+
+                    Note over FC,VC: Component Creation
+                    FC->>HIDL: createComponent(name)
+                    HIDL->>VS: createComponent()
+                    VS->>VC: new C2Component()
+                    VC-->>VS: Component instance
+                    VS-->>HIDL: Return IComponent
+                    HIDL-->>FC: Component Proxy
+
+                    Note over FC,VC: Parameter Configuration
+                    FC->>HIDL: config(params)
+                    HIDL->>HIDL: Data serialization
+                    HIDL->>VC: config()
+                    VC->>VC: Apply parameters
+                    VC-->>HIDL: Result
+                    HIDL->>HIDL: Data deserialization
+                    HIDL-->>FC: Configuration complete
+
+                    Note over FC,VC: Work Processing
+                    FC->>HIDL: queue(workBundle)
+                    HIDL->>HIDL: C2Work serialization<br />C2Buffer FD transfer
+                    HIDL->>VC: queue()
+                    VC->>VC: Encoding/Decoding
+                    VC->>HIDL: onWorkDone()
+                    HIDL->>HIDL: Result serialization
+                    HIDL->>FC: Listener callback
+                    FC->>FC: Process output
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔌 HAL Interface Layers
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📡</span>
+                        HIDL (Legacy)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Hardware Interface Definition Language</strong></p>
+                        <ul>
+                            <li>Used in Android 10~12</li>
+                            <li>Binderized HAL</li>
+                            <li>Inter-process communication</li>
+                            <li>Stable ABI</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🆕</span>
+                        AIDL (Current)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Android Interface Definition Language</strong></p>
+                        <ul>
+                            <li>Recommended for Android 13+</li>
+                            <li>Enhanced stability</li>
+                            <li>Better flexibility</li>
+                            <li>Simplified syntax</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Data Serialization
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Inter-process Data Transfer</strong></p>
+                        <ul>
+                            <li>C2Param serialization</li>
+                            <li>C2Buffer FD sharing</li>
+                            <li>Zero-Copy preservation</li>
+                            <li>Efficient IPC</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        Security and Isolation
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Process Separation</strong></p>
+                        <ul>
+                            <li>Vendor process isolation</li>
+                            <li>Minimized crash impact</li>
+                            <li>Permission separation</li>
+                            <li>SELinux policy enforcement</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Codec 2.0 vs OMX -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Codec 2.0 vs OpenMAX Comparison
+            </h2>
+            <p class="section-description">
+                Compares the key differences between legacy OpenMAX IL and Codec 2.0.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔴</span>
+                        OpenMAX IL (Legacy)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Buffer Management</strong>: Copy-based, performance overhead</li>
+                            <li><strong>API</strong>: Complex and rigid structure</li>
+                            <li><strong>Updates</strong>: Requires OS update</li>
+                            <li><strong>Extensibility</strong>: Limited</li>
+                            <li><strong>HAL</strong>: Direct integration, security vulnerability</li>
+                            <li><strong>Filters</strong>: Limited support</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🟢</span>
+                        Codec 2.0 (Modern)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Buffer Management</strong>: Zero-Copy, high performance</li>
+                            <li><strong>API</strong>: Simple and flexible structure</li>
+                            <li><strong>Updates</strong>: Mainline module, independent updates</li>
+                            <li><strong>Extensibility</strong>: Component chaining, plugins</li>
+                            <li><strong>HAL</strong>: HIDL/AIDL based, enhanced security</li>
+                            <li><strong>Filters</strong>: Filter plugin support (HDR→SDR, etc.)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ Migration Considerations:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Codec 2.0 is the default in Android 10+</li>
+                    <li>Existing OMX codecs continue to work through compatibility layer</li>
+                    <li>New hardware codecs recommended to implement with Codec 2.0</li>
+                    <li>Vendors expose codecs through C2ComponentStore</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 8: MediaCodec API Usage Examples -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                MediaCodec API Usage Examples
+            </h2>
+            <p class="section-description">
+                Actual code examples showing how app developers use Codec 2.0 through MediaCodec API.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Video Decoder Initialization
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Kotlin Code Example</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Create H.264 video decoder
+val decoder = MediaCodec.createDecoderByType("video/avc")
+
+// Configure MediaFormat
+val format = MediaFormat().apply {
+    setString(MediaFormat.KEY_MIME, "video/avc")
+    setInteger(MediaFormat.KEY_WIDTH, 1920)
+    setInteger(MediaFormat.KEY_HEIGHT, 1080)
+    setInteger(MediaFormat.KEY_FRAME_RATE, 30)
+}
+
+// Configure Surface output (screen rendering)
+decoder.configure(format, surface, null, 0)
+decoder.start()
+
+// Or ByteBuffer output (for post-processing)
+// decoder.configure(format, null, null, 0)</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📥</span>
+                        Input Buffer Processing
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Compressed Video Frame Input</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Get input buffer index (timeout 10ms)
+val inputIndex = decoder.dequeueInputBuffer(10000)
+
+if (inputIndex >= 0) {
+    val inputBuffer = decoder.getInputBuffer(inputIndex)
+    inputBuffer?.clear()
+
+    // Copy compressed H.264 NAL unit
+    val sampleSize = extractor.readSampleData(inputBuffer, 0)
+    val presentationTimeUs = extractor.sampleTime
+
+    decoder.queueInputBuffer(
+        inputIndex,
+        0,
+        sampleSize,
+        presentationTimeUs,
+        0  // flags
+    )
+
+    extractor.advance()
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📤</span>
+                        Output Buffer Processing
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Receiving Decoded Frames</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>val bufferInfo = MediaCodec.BufferInfo()
+val outputIndex = decoder.dequeueOutputBuffer(bufferInfo, 10000)
+
+when (outputIndex) {
+    MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+        val newFormat = decoder.outputFormat
+        Log.d(TAG, "Output format: $newFormat")
+    }
+    MediaCodec.INFO_TRY_AGAIN_LATER -> {
+        // No output buffer, wait
+    }
+    else -> {
+        if (outputIndex >= 0) {
+            // Surface rendering
+            decoder.releaseOutputBuffer(outputIndex, true)
+
+            // Or ByteBuffer access
+            // val outputBuffer = decoder.getOutputBuffer(outputIndex)
+            // decoder.releaseOutputBuffer(outputIndex, false)
+        }
+    }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        Video Encoder Example
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>H.264 Encoding Configuration</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>val encoder = MediaCodec.createEncoderByType("video/avc")
+
+val format = MediaFormat.createVideoFormat(
+    "video/avc", 1920, 1080
+).apply {
+    setInteger(MediaFormat.KEY_COLOR_FORMAT,
+        MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
+    setInteger(MediaFormat.KEY_BIT_RATE, 6000000)  // 6Mbps
+    setInteger(MediaFormat.KEY_FRAME_RATE, 30)
+    setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)  // 1 second
+    setInteger(MediaFormat.KEY_PROFILE,
+        MediaCodecInfo.CodecProfileLevel.AVCProfileHigh)
+}
+
+val inputSurface = MediaCodec.createPersistentInputSurface()
+encoder.configure(format, null, null,
+    MediaCodec.CONFIGURE_FLAG_ENCODE)
+encoder.setInputSurface(inputSurface)
+encoder.start()</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Codec 2.0 Automatic Selection</strong><br/>
+                When using <code>MediaCodec.createDecoderByType()</code>, the system automatically selects the optimal codec:
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Android 10+</strong>: Codec 2.0 implementation prioritized</li>
+                    <li><strong>Hardware codec</strong>: Automatically used when available</li>
+                    <li><strong>Software fallback</strong>: Falls back to SW codec on HW failure</li>
+                    <li><strong>Explicit selection</strong>: <code>MediaCodec.createByCodecName("c2.android.avc.decoder")</code></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: Vendor Implementation Guide -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                Vendor Implementation Guide
+            </h2>
+            <p class="section-description">
+                How hardware manufacturers implement and register custom Codec 2.0 components.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Implementation["Vendor Implementation"]
+                        COMP_IMPL["C2Component Implementation<br/>(H.264/VP9/AV1, etc.)"]
+                        STORE_IMPL["C2ComponentStore Implementation<br/>(Factory)"]
+                        SERVICE["Codec2 HAL Service<br/>(HIDL/AIDL)"]
+                    end
+
+                    subgraph Build["Build Configuration"]
+                        BP["Android.bp<br/>(cc_library_shared)"]
+                        XML["media_codecs.xml<br/>(Codec Declaration)"]
+                        MANIFEST["manifest.xml<br/>(HAL Service)"]
+                    end
+
+                    subgraph Registration["Registration and Discovery"]
+                        HWSERVICE["hwservicemanager<br/>(Service Registry)"]
+                        FRAMEWORK["Framework<br/>(Codec2Client)"]
+                    end
+
+                    COMP_IMPL --> STORE_IMPL
+                    STORE_IMPL --> SERVICE
+
+                    BP --> COMP_IMPL
+                    XML --> STORE_IMPL
+                    MANIFEST --> SERVICE
+
+                    SERVICE --> HWSERVICE
+                    HWSERVICE --> FRAMEWORK
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📝 Implementation Steps
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        C2Component Implementation
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Write Custom Codec Class</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// vendor/mycompany/codec2/MyAvcDecoder.h
+class MyAvcDecoder : public SimpleC2Component {
+public:
+    MyAvcDecoder(const char* name,
+                 c2_node_id_t id,
+                 const std::shared_ptr&lt;IntfImpl&gt;& intfImpl);
+
+    // Required method implementations
+    c2_status_t onInit() override;
+    c2_status_t onStop() override;
+    void onReset() override;
+    void onRelease() override;
+    c2_status_t onFlush_sm() override;
+    void process(
+        const std::unique_ptr&lt;C2Work&gt;& work,
+        const std::shared_ptr&lt;C2BlockPool&gt;& pool
+    ) override;
+
+private:
+    // Hardware decoder handle
+    void* mHwHandle;
+};</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        C2ComponentStore Implementation
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Component Factory</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// MyComponentStore.cpp
+class MyComponentStore : public C2ComponentStore {
+public:
+    MyComponentStore()
+        : mReflector(std::make_shared&lt;C2ReflectorHelper&gt;()) {}
+
+    c2_status_t createComponent(
+        c2_node_id_t id,
+        std::shared_ptr&lt;C2Component&gt;* component) override {
+
+        if (name == "c2.vendor.avc.decoder") {
+            *component = std::make_shared&lt;MyAvcDecoder&gt;(
+                name, id, intfImpl);
+            return C2_OK;
+        }
+        return C2_NOT_FOUND;
+    }
+
+    std::vector&lt;std::shared_ptr&lt;C2Component::Traits&gt;&gt;
+    listComponents() override;
+};</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">3️⃣</span>
+                        Android.bp Build Configuration
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Soong Build File</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Android.bp
+cc_library_shared {
+    name: "libcodec2_vendor_mycompany",
+    vendor: true,
+
+    srcs: [
+        "MyAvcDecoder.cpp",
+        "MyComponentStore.cpp",
+    ],
+
+    shared_libs: [
+        "libcodec2",
+        "libcodec2_vndk",
+        "libcodec2_soft_common",
+        "liblog",
+        "libutils",
+    ],
+
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">4️⃣</span>
+                        media_codecs.xml Declaration
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Codec Capability Definition</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>&lt;!-- device/mycompany/mydevice/media_codecs.xml --&gt;
+&lt;MediaCodecs&gt;
+    &lt;Decoders&gt;
+        &lt;MediaCodec name="c2.vendor.avc.decoder"
+                    type="video/avc"&gt;
+            &lt;Limit name="size" min="64x64" max="3840x2160"/&gt;
+            &lt;Limit name="alignment" value="2x2"/&gt;
+            &lt;Limit name="block-size" value="16x16"/&gt;
+            &lt;Limit name="frame-rate" range="1-60"/&gt;
+            &lt;Limit name="bitrate" range="1-120000000"/&gt;
+            &lt;Feature name="adaptive-playback"/&gt;
+            &lt;Feature name="secure-playback"/&gt;
+        &lt;/MediaCodec&gt;
+    &lt;/Decoders&gt;
+&lt;/MediaCodecs&gt;</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ Vendor Implementation Notes:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Naming Convention</strong>: <code>c2.vendor.&lt;company&gt;.&lt;codec&gt;.&lt;type&gt;</code> (e.g., c2.vendor.qcom.avc.decoder)</li>
+                    <li><strong>Secure Codec</strong>: Add <code>.secure</code> suffix for DRM playback</li>
+                    <li><strong>SELinux</strong>: Proper policy configuration required for HAL service</li>
+                    <li><strong>CDD Compliance</strong>: Must meet CDD (Compatibility Definition Document) requirements</li>
+                    <li><strong>CTS Testing</strong>: Must pass CTS MediaCodec tests</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 10: Debugging and Troubleshooting -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                Debugging and Troubleshooting
+            </h2>
+            <p class="section-description">
+                Common issues and solutions that occur during Codec 2.0 development and integration.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                🔍 Debugging Tools
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        adb logcat Filtering
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Extracting Codec 2.0 Related Logs</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># All Codec2 logs
+adb logcat -s Codec2Client Codec2 CCodec
+
+# Specific component only
+adb logcat -s c2.android.avc.decoder
+
+# HAL communication logs
+adb logcat -s android.hardware.media.c2
+
+# Buffer related debug
+adb logcat | grep -i "c2buffer\|c2work"
+
+# Errors only
+adb logcat *:E | grep -i codec</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        dumpsys Commands
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>System State Query</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># List available Codec2 components
+adb shell dumpsys media.codec2
+
+# MediaCodec instance status
+adb shell dumpsys media.player
+
+# Currently active codec sessions
+adb shell dumpsys media.codec
+
+# Hardware codec usage
+adb shell dumpsys media.resource_manager</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        System Properties
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Runtime Configuration Changes</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Force enable Codec2
+adb shell setprop debug.stagefright.ccodec 1
+
+# Force use OpenMAX (for testing)
+adb shell setprop debug.stagefright.ccodec 0
+
+# Enable verbose logging
+adb shell setprop debug.codec2.platform.loglevel 3
+
+# Apply after reboot
+adb reboot</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧪</span>
+                        CTS Test Execution
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Compatibility Tests</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># MediaCodec CTS test
+adb shell am instrument -w -e class \
+  android.media.cts.MediaCodecTest \
+  android.media.cts/.MediaCodecTestRunner
+
+# Codec2 specific tests
+adb shell /data/nativetest64/C2ComponentTest/C2ComponentTest
+
+# Performance benchmark
+adb shell am start -n \
+  com.android.cts.media/.MediaCodecBenchmark</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ⚠️ Common Issues and Solutions
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Cause</th>
+                        <th>Solution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Codec not found</strong></td>
+                        <td>HAL service not registered or media_codecs.xml configuration error</td>
+                        <td>Verify registration with <code>dumpsys media.codec2</code>, check manifest.xml and SELinux policies</td>
+                    </tr>
+                    <tr>
+                        <td><strong>configure() fails</strong></td>
+                        <td>Unsupported resolution/profile/level</td>
+                        <td>Check supported range with MediaCodecInfo.getCapabilitiesForType()</td>
+                    </tr>
+                    <tr>
+                        <td><strong>No output buffer</strong></td>
+                        <td>Input data format error (missing SPS/PPS, etc.)</td>
+                        <td>Use MediaExtractor or verify correct NAL unit structure</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Corrupted decoded video</strong></td>
+                        <td>Incorrect timestamps, sync failure</td>
+                        <td>Set presentationTimeUs correctly, use releaseOutputBuffer(index, true)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HW codec crash</strong></td>
+                        <td>Vendor HAL implementation bug, out of memory</td>
+                        <td>Fallback to SW codec, check memory usage with dumpsys</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Zero-Copy not working</strong></td>
+                        <td>ION/Gralloc allocation failure</td>
+                        <td>Check C2Allocator logs, adjust buffer size</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DRM playback failure</strong></td>
+                        <td>Secure codec not supported or HDCP authentication failure</td>
+                        <td>Verify c2.*.decoder.secure codec exists, check Widevine level</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Performance degradation</strong></td>
+                        <td>SW codec in use, unnecessary copies</td>
+                        <td>Prioritize HW codec selection, use direct Surface rendering</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Debugging Tips</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Log level adjustment</strong>: <code>adb shell setprop log.tag.Codec2 VERBOSE</code></li>
+                    <li><strong>Frame dump</strong>: Save decoded YUV with MediaMuxer for analysis</li>
+                    <li><strong>Timing analysis</strong>: Profile queue/dequeue timing with Systrace</li>
+                    <li><strong>Vendor logs</strong>: Check vendor-specific custom log tags (e.g., qcom.*, exynos.*)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 11: AOSP Source Code Reference -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                AOSP Source Code Reference
+            </h2>
+            <p class="section-description">
+                Key AOSP source code locations and their roles for understanding the actual Codec 2.0 implementation.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                📂 Main Directory Structure
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Framework Layer
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>frameworks/av/</strong></p>
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>media/codec2/sfplugin/</code><br/>
+                            → CCodec, CCodecBufferChannel implementation</li>
+                            <li><code>media/codec2/vndk/</code><br/>
+                            → Codec2Client, C2Component interfaces</li>
+                            <li><code>media/libstagefright/</code><br/>
+                            → MediaCodec.cpp (app API entry point)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        HAL Interface
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>hardware/interfaces/</strong></p>
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>media/c2/1.0/</code><br/>
+                            → HIDL interface definition (Android 10-12)</li>
+                            <li><code>media/c2/aidl/</code><br/>
+                            → AIDL interface definition (Android 13+)</li>
+                            <li><code>media/c2/1.0/default/</code><br/>
+                            → Default HAL implementation reference</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💾</span>
+                        Software Codecs
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>frameworks/av/media/codec2/components/</strong></p>
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>base/</code><br/>
+                            → SimpleC2Component (base class)</li>
+                            <li><code>avc/C2SoftAvcDec.cpp</code><br/>
+                            → H.264 SW decoder sample</li>
+                            <li><code>vpx/C2SoftVpxDec.cpp</code><br/>
+                            → VP8/VP9 SW decoder</li>
+                            <li><code>aom/C2SoftAomDec.cpp</code><br/>
+                            → AV1 SW decoder</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Core Library
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>frameworks/av/media/codec2/core/</strong></p>
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>include/C2Component.h</code><br/>
+                            → C2Component interface</li>
+                            <li><code>include/C2Buffer.h</code><br/>
+                            → C2Buffer, C2Block definitions</li>
+                            <li><code>include/C2Param.h</code><br/>
+                            → C2Param parameter types</li>
+                            <li><code>C2AllocatorGralloc.cpp</code><br/>
+                            → Gralloc-based allocator</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔬 Sample Implementations to Reference
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📝</span>
+                        H.264 Decoder Implementation
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>C2SoftAvcDec.cpp</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/av/media/codec2/components/avc/C2SoftAvcDec.cpp
+
+class C2SoftAvcDec : public SimpleC2Component {
+    void process(
+        const std::unique_ptr&lt;C2Work&gt;& work,
+        const std::shared_ptr&lt;C2BlockPool&gt;& pool) override {
+
+        // Extract H.264 NAL from input buffer
+        C2ReadView rView = work->input.buffers[0]->data().linearBlocks().front().map().get();
+
+        // Call libavcdec (H.264 SW decoder)
+        mDecHandle->decode(rView.data(), rView.capacity());
+
+        // Allocate output buffer and copy YUV
+        std::shared_ptr&lt;C2GraphicBlock&gt; block;
+        C2MemoryUsage usage = { C2MemoryUsage::CPU_READ, C2MemoryUsage::CPU_WRITE };
+        c2_status_t err = pool->fetchGraphicBlock(mWidth, mHeight, HAL_PIXEL_FORMAT_YV12, usage, &block);
+
+        // Attach decoded frame to output Work
+        auto fillWork = [buffer = createGraphicBuffer(block)](const std::unique_ptr&lt;C2Work&gt;& work) {
+            work->worklets.front()->output.buffers.push_back(buffer);
+        };
+        fillWork(work);
+    }
+};</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏭</span>
+                        ComponentStore Implementation
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>C2SoftCodecComponentStore.cpp</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/av/media/codec2/components/base/SimpleC2Component.cpp
+
+std::shared_ptr&lt;C2ComponentStore&gt; GetCodec2PlatformComponentStore() {
+    static std::mutex mutex;
+    static std::weak_ptr&lt;C2ComponentStore&gt; platformStore;
+    std::lock_guard&lt;std::mutex&gt; lock(mutex);
+    std::shared_ptr&lt;C2ComponentStore&gt; store = platformStore.lock();
+
+    if (store == nullptr) {
+        store = std::make_shared&lt;C2PlatformComponentStore&gt;();
+        platformStore = store;
+    }
+    return store;
+}
+
+// Component registration macros
+REGISTER_C2COMPONENT(C2SoftAvcDec, "c2.android.avc.decoder");
+REGISTER_C2COMPONENT(C2SoftVpxDec, "c2.android.vp8.decoder");
+REGISTER_C2COMPONENT(C2SoftAomDec, "c2.android.av1.decoder");</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔗 Useful Links</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>AOSP Source Browser</strong>: <a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/av/media/codec2/" target="_blank" style="color: var(--accent-primary);">cs.android.com (Codec2)</a></li>
+                    <li><strong>Codec2 Official Documentation</strong>: <a href="https://source.android.com/docs/core/media/codec2" target="_blank" style="color: var(--accent-primary);">source.android.com</a></li>
+                    <li><strong>CTS Test Code</strong>: <code>cts/tests/tests/media/codec/</code></li>
+                    <li><strong>VTS Test Code</strong>: <code>test/vts-testcase/hal/media/c2/</code></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 12: Related Pages -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                Related Documentation
+            </h2>
+            <p class="section-description">
+                Explore other topics related to Codec 2.0 in the media framework.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        <p>Overall media framework architecture</p>
+                        <ul>
+                            <li>AOSP 5-Layer structure</li>
+                            <li>Application → HAL data flow</li>
+                            <li>MediaCodec API position</li>
+                            <li>Role of Codec2 in the overall structure</li>
+                        </ul>
+                        <a href="media-framework-core.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Media Playback Pipeline
+                    </h3>
+                    <div class="card-description">
+                        <p>Media playback pipeline details</p>
+                        <ul>
+                            <li>NuPlayer's Codec2 integration</li>
+                            <li>End-to-End data flow</li>
+                            <li>Buffer management and A/V sync</li>
+                            <li>Performance optimization techniques</li>
+                        </ul>
+                        <a href="media-playback.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        MediaExtractor
+                    </h3>
+                    <div class="card-description">
+                        <p>Container parsing and demuxing</p>
+                        <ul>
+                            <li>MP4/MKV/WebM parsing</li>
+                            <li>Track separation and metadata extraction</li>
+                            <li>Compressed data delivered to Codec2</li>
+                            <li>Extractor plugin structure</li>
+                        </ul>
+                        <a href="media-extractor.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>Audio processing pipeline</p>
+                        <ul>
+                            <li>Audio codecs (AAC, MP3, Opus)</li>
+                            <li>AudioFlinger mixing engine</li>
+                            <li>Audio HAL interface</li>
+                            <li>Codec2 audio components</li>
+                        </ul>
+                        <a href="audio-framework.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Dolby Codecs
+                    </h3>
+                    <div class="card-description">
+                        <p>Premium audio/video codecs</p>
+                        <ul>
+                            <li>Dolby Atmos (AC-4, E-AC-3)</li>
+                            <li>Dolby Vision (HDR)</li>
+                            <li>Codec2-based Dolby integration</li>
+                            <li>Vendor implementation guide</li>
+                        </ul>
+                        <a href="dolby-codecs.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Widevine DRM
+                    </h3>
+                    <div class="card-description">
+                        <p>DRM protected content playback</p>
+                        <ul>
+                            <li>Widevine L1/L2/L3</li>
+                            <li>Secure Codec2 components</li>
+                            <li>TEE-based secure pipeline</li>
+                            <li>MediaDrm + MediaCodec integration</li>
+                        </ul>
+                        <a href="widevine.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Android Codec 2.0 Architecture</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                Next-Generation Media Codec Framework
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-primary); text-decoration: none;">
+                    ← Back to AOSP Media Framework
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script>
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OEM Customization Guide - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">← Android Media Framework</a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">OEM Customization Guide</h1>
+            <p class="page-subtitle">AAOS Media System Customization for Vehicle OEMs</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>Customization Overview</h2>
+
+            <p>AAOS provides various extension points that allow OEMs to <strong>customize the media experience</strong> to match their vehicle brand. Differentiated UX can be implemented while maintaining GAS (Google Automotive Services) compatibility.</p>
+
+            <h3>1.1 Customizable Areas</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph UI["UI Layer"]
+        TH[Theme & Styling]
+        LY[Layout & Components]
+        AN[Animations]
+    end
+
+    subgraph APP["App Layer"]
+        MA[Media App]
+        RA[Radio App]
+        SA[System Apps]
+    end
+
+    subgraph SERVICE["Service Layer"]
+        CMS[CarMediaService]
+        CAS[CarAudioService]
+        VS[Vendor Services]
+    end
+
+    subgraph CONFIG["Configuration"]
+        RRO[Runtime Resource Overlay]
+        XML[XML Configs]
+        PROP[System Properties]
+    end
+
+    TH --> RRO
+    LY --> RRO
+    MA --> VS
+    CMS --> XML
+    CAS --> XML
+
+            </div>
+
+            <h3>1.2 Customization Types</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Method</th>
+                        <th>Scope</th>
+                        <th>GAS Compatible</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Theme/UI</strong></td>
+                        <td>RRO (Runtime Resource Overlay)</td>
+                        <td>Colors, icons, layouts</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Settings</strong></td>
+                        <td>XML Config Override</td>
+                        <td>System behavior settings</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Media Sources</strong></td>
+                        <td>MediaBrowserService implementation</td>
+                        <td>Custom media sources</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>System Apps</strong></td>
+                        <td>Privileged App development</td>
+                        <td>System-level features</td>
+                        <td>Conditional</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CarService Extension</strong></td>
+                        <td>Vendor Service addition</td>
+                        <td>Vehicle integration features</td>
+                        <td>Yes</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 2: CarService Extension -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>CarService Extension</h2>
+
+            <h3>2.1 Vendor CarService Structure</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph AOSP["AOSP CarService"]
+        CS[CarService]
+        CMS[CarMediaService]
+        CAS[CarAudioService]
+    end
+
+    subgraph VENDOR["Vendor Extension"]
+        VCS[VendorCarService]
+        VMS[VendorMediaService]
+        VAS[VendorAudioService]
+    end
+
+    subgraph API["Public API"]
+        CAR[Car API]
+        VCAR[Vendor Car API]
+    end
+
+    CS --> CMS
+    CS --> CAS
+    VCS --> VMS
+    VCS --> VAS
+    CAR --> CS
+    VCAR --> VCS
+    CMS -.->|extend| VMS
+    CAS -.->|extend| VAS
+            </div>
+
+            <h3>2.2 Vendor Service Registration</h3>
+            <pre><code>// VendorCarService.java
+public class VendorCarService extends Service {
+    private VendorMediaService mVendorMediaService;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        // Initialize vendor service
+        mVendorMediaService = new VendorMediaService(this);
+
+        // Connect with CarService
+        Car car = Car.createCar(this);
+        CarMediaManager carMediaManager =
+            (CarMediaManager) car.getCarManager(Car.CAR_MEDIA_SERVICE);
+
+        // Register vendor features
+        mVendorMediaService.initialize(carMediaManager);
+    }
+}
+
+// AndroidManifest.xml
+&lt;service
+    android:name=".VendorCarService"
+    android:exported="true"
+    android:permission="android.car.permission.CAR_VENDOR_EXTENSION"&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="com.vendor.car.VENDOR_SERVICE" /&gt;
+    &lt;/intent-filter&gt;
+&lt;/service&gt;</code></pre>
+
+            <h3>2.3 Vendor API Definition</h3>
+            <pre><code>// IVendorMediaService.aidl
+interface IVendorMediaService {
+    // Register OEM-specific media source
+    void registerVendorMediaSource(in ComponentName source, int priority);
+
+    // OEM-specific audio presets
+    void setAudioPreset(String presetName);
+
+    // Vehicle state-based media policy
+    void setDrivingModePolicy(int policy);
+
+    // OEM-specific features
+    void enableVendorFeature(String featureId, boolean enable);
+}</code></pre>
+        </section>
+
+        <!-- Section 3: Custom Media Sources -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>Custom Media Source Registration</h2>
+
+            <h3>3.1 MediaBrowserService Implementation</h3>
+            <pre><code>// OEM radio/streaming service
+class VendorMediaBrowserService : MediaBrowserServiceCompat() {
+    private lateinit var mediaSession: MediaSessionCompat
+    private lateinit var player: ExoPlayer
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // Create MediaSession
+        mediaSession = MediaSessionCompat(this, "VendorMedia").apply {
+            setCallback(MediaSessionCallback())
+            isActive = true
+        }
+        sessionToken = mediaSession.sessionToken
+
+        // Initialize player
+        player = ExoPlayer.Builder(this).build()
+    }
+
+    override fun onGetRoot(
+        clientPackageName: String,
+        clientUid: Int,
+        rootHints: Bundle?
+    ): BrowserRoot {
+        // Access control
+        return if (isAllowedClient(clientPackageName)) {
+            BrowserRoot("vendor_root", null)
+        } else {
+            BrowserRoot("empty_root", null)
+        }
+    }
+
+    override fun onLoadChildren(
+        parentId: String,
+        result: Result&lt;MutableList&lt;MediaBrowserCompat.MediaItem&gt;&gt;
+    ) {
+        when (parentId) {
+            "vendor_root" -> {
+                result.sendResult(mutableListOf(
+                    createMediaItem("fm_radio", "FM Radio"),
+                    createMediaItem("dab_radio", "DAB Radio"),
+                    createMediaItem("vendor_streaming", "Vendor Streaming")
+                ))
+            }
+            "fm_radio" -> {
+                result.sendResult(getFmStations())
+            }
+            else -> result.sendResult(mutableListOf())
+        }
+    }
+}</code></pre>
+
+            <h3>3.2 Register Source with CarMediaService</h3>
+            <pre><code>&lt;!-- car_media_config.xml --&gt;
+&lt;carMediaConfig&gt;
+    &lt;!-- OEM media source registration --&gt;
+    &lt;mediaSources&gt;
+        &lt;source
+            package="com.vendor.media"
+            class="com.vendor.media.VendorMediaBrowserService"
+            name="Vendor Radio"
+            priority="100"
+            isSystemApp="true" /&gt;
+
+        &lt;source
+            package="com.vendor.streaming"
+            class="com.vendor.streaming.StreamingService"
+            name="Vendor Streaming"
+            priority="90" /&gt;
+    &lt;/mediaSources&gt;
+
+    &lt;!-- Default media source --&gt;
+    &lt;defaultSource&gt;com.vendor.media/.VendorMediaBrowserService&lt;/defaultSource&gt;
+&lt;/carMediaConfig&gt;</code></pre>
+
+            <h3>3.3 Manifest Configuration</h3>
+            <pre><code>&lt;!-- AndroidManifest.xml --&gt;
+&lt;service
+    android:name=".VendorMediaBrowserService"
+    android:exported="true"&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="android.media.browse.MediaBrowserService" /&gt;
+    &lt;/intent-filter&gt;
+
+    &lt;!-- Car Media compatibility metadata --&gt;
+    &lt;meta-data
+        android:name="android.media.browse.SEARCH_SUPPORTED"
+        android:value="true" /&gt;
+    &lt;meta-data
+        android:name="androidx.car.app.CAR_MEDIA_SERVICE"
+        android:value="true" /&gt;
+&lt;/service&gt;</code></pre>
+        </section>
+
+        <!-- Section 4: UI Customization -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>UI Customization (RRO)</h2>
+
+            <h3>4.1 RRO (Runtime Resource Overlay) Concept</h3>
+            <p>RRO allows overlaying AOSP app resources <strong>without modifying source code</strong>.</p>
+
+            <div class="mermaid">
+flowchart LR
+    subgraph TARGET["Target Package"]
+        TR[res/values/colors.xml]
+        TL[res/layout/activity.xml]
+        TD[res/drawable/icon.png]
+    end
+
+    subgraph RRO["RRO Package"]
+        RR[res/values/colors.xml]
+        RL[res/layout/activity.xml]
+        RD[res/drawable/icon.png]
+    end
+
+    subgraph RESULT["Runtime Result"]
+        FR[Merged Resources]
+    end
+
+    TR --> FR
+    TL --> FR
+    TD --> FR
+    RR -.->|override| FR
+    RL -.->|override| FR
+    RD -.->|override| FR
+            </div>
+
+            <h3>4.2 RRO Package Structure</h3>
+            <pre><code>vendor/overlay/CarMediaOverlay/
+├── Android.bp
+├── AndroidManifest.xml
+└── res/
+    ├── values/
+    │   ├── colors.xml      # Color overrides
+    │   ├── dimens.xml      # Dimension overrides
+    │   └── strings.xml     # String overrides
+    ├── drawable/
+    │   └── ic_media_*.xml  # Icon overrides
+    └── layout/
+        └── media_card.xml  # Layout overrides</code></pre>
+
+            <h3>4.3 RRO Manifest</h3>
+            <pre><code>&lt;!-- AndroidManifest.xml --&gt;
+&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.vendor.overlay.carmedia"&gt;
+
+    &lt;!-- Target package to overlay --&gt;
+    &lt;overlay
+        android:targetPackage="com.android.car.media"
+        android:targetName="CarMediaResources"
+        android:isStatic="true"
+        android:priority="10" /&gt;
+
+    &lt;application android:hasCode="false" /&gt;
+&lt;/manifest&gt;</code></pre>
+
+            <h3>4.4 Color Customization Example</h3>
+            <pre><code>&lt;!-- res/values/colors.xml --&gt;
+&lt;resources&gt;
+    &lt;!-- Brand primary color --&gt;
+    &lt;color name="car_media_primary"&gt;#0066FF&lt;/color&gt;
+    &lt;color name="car_media_primary_dark"&gt;#0044CC&lt;/color&gt;
+
+    &lt;!-- Background color --&gt;
+    &lt;color name="car_media_background"&gt;#1A1A2E&lt;/color&gt;
+    &lt;color name="car_media_surface"&gt;#16213E&lt;/color&gt;
+
+    &lt;!-- Playback controls --&gt;
+    &lt;color name="car_media_play_button"&gt;#00D4FF&lt;/color&gt;
+    &lt;color name="car_media_progress"&gt;#00D4FF&lt;/color&gt;
+&lt;/resources&gt;</code></pre>
+
+            <h3>4.5 Build Configuration</h3>
+            <pre><code>// Android.bp
+runtime_resource_overlay {
+    name: "CarMediaOverlay",
+    vendor: true,
+    sdk_version: "current",
+    resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
+}</code></pre>
+        </section>
+
+        <!-- Section 5: Privileged App Development -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>System App (Privileged App) Development</h2>
+
+            <h3>5.1 Privileged App Permissions</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Permission</th>
+                        <th>Purpose</th>
+                        <th>Location</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>INTERACT_ACROSS_USERS</code></td>
+                        <td>Multi-user access</td>
+                        <td>priv-app</td>
+                    </tr>
+                    <tr>
+                        <td><code>MEDIA_CONTENT_CONTROL</code></td>
+                        <td>Media control</td>
+                        <td>priv-app</td>
+                    </tr>
+                    <tr>
+                        <td><code>CONTROL_CAR_AUDIO_VOLUME</code></td>
+                        <td>Vehicle audio volume</td>
+                        <td>priv-app</td>
+                    </tr>
+                    <tr>
+                        <td><code>CAR_VENDOR_EXTENSION</code></td>
+                        <td>Vendor API access</td>
+                        <td>priv-app</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>5.2 privapp-permissions Configuration</h3>
+            <pre><code>&lt;!-- vendor/etc/permissions/privapp-permissions-vendor.xml --&gt;
+&lt;permissions&gt;
+    &lt;privapp-permissions package="com.vendor.media"&gt;
+        &lt;permission name="android.permission.MEDIA_CONTENT_CONTROL" /&gt;
+        &lt;permission name="android.permission.INTERACT_ACROSS_USERS" /&gt;
+        &lt;permission name="android.car.permission.CONTROL_CAR_AUDIO_VOLUME" /&gt;
+        &lt;permission name="android.car.permission.CAR_VENDOR_EXTENSION" /&gt;
+    &lt;/privapp-permissions&gt;
+&lt;/permissions&gt;</code></pre>
+
+            <h3>5.3 System App Installation Location</h3>
+            <pre><code># Privileged app location
+/vendor/priv-app/VendorMediaApp/
+└── VendorMediaApp.apk
+
+# Regular system app location
+/vendor/app/VendorMediaApp/
+└── VendorMediaApp.apk
+
+# Build configuration (Android.bp)
+android_app {
+    name: "VendorMediaApp",
+    vendor: true,
+    privileged: true,  // Install to priv-app
+    certificate: "platform",
+
+    srcs: ["src/**/*.java"],
+    resource_dirs: ["res"],
+
+    static_libs: [
+        "androidx.car.app_app",
+        "car-media-common",
+    ],
+
+    required: ["privapp-permissions-vendor.xml"],
+}</code></pre>
+        </section>
+
+        <!-- Section 6: Configuration Overlay -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>Configuration Overlay (XML Config)</h2>
+
+            <h3>6.1 Car Config Overlay</h3>
+            <pre><code>&lt;!-- vendor/etc/car/car_config.xml --&gt;
+&lt;carConfig&gt;
+    &lt;!-- Media settings --&gt;
+    &lt;media&gt;
+        &lt;!-- Default media source --&gt;
+        &lt;defaultMediaSource&gt;com.vendor.media/.VendorMediaService&lt;/defaultMediaSource&gt;
+
+        &lt;!-- Restore last media source --&gt;
+        &lt;restoreLastMediaSource&gt;true&lt;/restoreLastMediaSource&gt;
+
+        &lt;!-- Autoplay policy --&gt;
+        &lt;autoPlayOnConnection&gt;true&lt;/autoPlayOnConnection&gt;
+    &lt;/media&gt;
+
+    &lt;!-- Audio settings --&gt;
+    &lt;audio&gt;
+        &lt;!-- Default volume level --&gt;
+        &lt;defaultVolumeLevel&gt;10&lt;/defaultVolumeLevel&gt;
+
+        &lt;!-- Max volume limit (while driving) --&gt;
+        &lt;maxVolumeWhileDriving&gt;25&lt;/maxVolumeWhileDriving&gt;
+
+        &lt;!-- Navigation duck level --&gt;
+        &lt;navigationDuckLevel&gt;0.3&lt;/navigationDuckLevel&gt;
+    &lt;/audio&gt;
+&lt;/carConfig&gt;</code></pre>
+
+            <h3>6.2 Feature Flag Configuration</h3>
+            <pre><code># vendor/build.prop or product.prop
+
+# Enable OEM media features
+persist.vendor.media.custom_eq=true
+persist.vendor.media.spatial_audio=true
+persist.vendor.media.auto_resume=true
+
+# Debug settings
+persist.vendor.media.debug=false
+persist.vendor.audio.log_level=warn</code></pre>
+        </section>
+
+        <!-- Section 7: Certification Considerations -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>GAS Compatibility and Certification</h2>
+
+            <h3>7.1 GAS Compatibility Checklist</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> MediaBrowserService standard interface compliance</li>
+                <li><input type="checkbox"> MediaSession standard callback implementation</li>
+                <li><input type="checkbox"> Car App Library compatibility</li>
+                <li><input type="checkbox"> Android Auto app compatibility</li>
+                <li><input type="checkbox"> Google Assistant media control support</li>
+            </ul>
+
+            <h3>7.2 Prohibited Items</h3>
+            <div class="info-box warning">
+                <strong>Prohibited Customizations for GAS Certification</strong>
+                <ul>
+                    <li>Restricting or blocking Google app functionality</li>
+                    <li>Blocking Play Store media app installation</li>
+                    <li>Modifying MediaSession standard behavior</li>
+                    <li>Blocking Google Assistant media control</li>
+                </ul>
+            </div>
+
+            <h3>7.3 Certification Testing</h3>
+            <pre><code># GAS compatibility pre-testing
+# 1. Check CarMediaService operation
+adb shell dumpsys car_service --services CarMediaService
+
+# 2. MediaBrowserService verification
+adb shell am start -a android.media.action.MEDIA_PLAY_FROM_SEARCH \
+    -e query "play music"
+
+# 3. Assistant media control test
+adb shell am broadcast -a com.google.android.gms.car.MEDIA_COMMAND \
+    --es command "play"
+
+# 4. Run CTS media tests
+atest CtsCarMediaHostTestCases</code></pre>
+        </section>
+
+        <!-- Section 8: Checklist -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>Development Checklist</h2>
+
+            <h3>UI Customization</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> RRO package created</li>
+                <li><input type="checkbox"> Brand colors applied</li>
+                <li><input type="checkbox"> Icons/logo replaced</li>
+                <li><input type="checkbox"> Font customization</li>
+            </ul>
+
+            <h3>Media Features</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Custom media source registered</li>
+                <li><input type="checkbox"> MediaBrowserService implemented</li>
+                <li><input type="checkbox"> Audio presets added</li>
+                <li><input type="checkbox"> EQ/DSP settings UI</li>
+            </ul>
+
+            <h3>System Integration</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Vendor Service implemented</li>
+                <li><input type="checkbox"> Privileged permissions configured</li>
+                <li><input type="checkbox"> Config overlay applied</li>
+                <li><input type="checkbox"> Feature flags configured</li>
+            </ul>
+
+            <h3>Certification</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> GAS compatibility tested</li>
+                <li><input type="checkbox"> CTS media tests passed</li>
+                <li><input type="checkbox"> Assistant integration verified</li>
+            </ul>
+        </section>
+
+        <!-- Related Documents -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>Related Documents</h2>
+            <ul>
+                <li><a href="carmedia.html">Car Media Service</a> - CarMediaService basics</li>
+                <li><a href="multi-zone-audio.html">Multi-Zone Audio</a> - Zone customization</li>
+                <li><a href="gas.html">Google Automotive Services</a> - GAS integration</li>
+                <li><a href="vehicle-hal-media.html">Vehicle HAL Media Integration</a> - Vehicle integration</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+</html>

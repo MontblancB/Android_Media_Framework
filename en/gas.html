@@ -1,0 +1,2659 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Automotive Services (GAS) Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">🚗 Google Automotive Services</h1>
+            <p class="page-subtitle">Google Service Ecosystem for Vehicle Infotainment</p>
+        </header>
+
+        <!-- Section 1: GAS Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                GAS Overview
+            </h2>
+            <p class="section-description">
+                Google Automotive Services (GAS) is a collection of Google applications and services that run on vehicles based on Android Automotive OS (AAOS).
+            </p>
+
+            <div class="highlight-box">
+                <strong>Key Difference:</strong> GAS runs <strong>natively</strong> on the vehicle's built-in system, unlike Android Auto which projects from a smartphone.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        What is GAS?
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Google Automotive Services</strong></p>
+                        <ul>
+                            <li>Collection of Google apps running on AAOS</li>
+                            <li>OEMs integrate into vehicles through licensing</li>
+                            <li>Operates independently without smartphone</li>
+                            <li>Direct integration with vehicle hardware</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        vs Android Auto
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Android Auto</strong>: Projects smartphone apps to vehicle display</li>
+                            <li><strong>GAS/AAOS</strong>: OS embedded in vehicle system</li>
+                            <li>Android Auto requires smartphone</li>
+                            <li>GAS is completely independent</li>
+                            <li>GAS can integrate vehicle control features</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏢</span>
+                        Major Manufacturers
+                    </h3>
+                    <div class="card-description">
+                        <p>Vehicle brands with GAS:</p>
+                        <ul>
+                            <li><strong>Volvo</strong> (including Polestar)</li>
+                            <li><strong>Renault</strong></li>
+                            <li><strong>Ford</strong></li>
+                            <li><strong>GM</strong> (Chevrolet, GMC, Cadillac)</li>
+                            <li><strong>Honda</strong></li>
+                            <li><strong>BMW</strong> (select models)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✨</span>
+                        Key Benefits
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>No smartphone connection required</li>
+                            <li>Integrated vehicle controls (AC, seats, etc.)</li>
+                            <li>Continuous improvement via OTA updates</li>
+                            <li>Familiar Google user experience</li>
+                            <li>Google account synchronization</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: AAOS + GAS Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                AAOS + GAS Architecture
+            </h2>
+            <p class="section-description">
+                Shows the layer structure and relationship between Android Automotive OS and Google Automotive Services.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph VEHICLE["Vehicle System"]
+                    HW["Vehicle Hardware<br />(IVI, ECU, CAN Bus)"]
+                    end
+
+                    subgraph AAOS["Android Automotive OS (Open Source)"]
+                    AOS["Android OS Core<br />(Linux Kernel, HAL)"]
+                    AF["Android Framework<br />(Activity Manager, Window Manager)"]
+                    CAR_API["Android Car API<br />(CarPropertyManager, CarSensorManager)"]
+                    VEHICLE_HAL["Vehicle HAL<br />(HIDL/AIDL Interface)"]
+                    end
+
+                    subgraph GAS["Google Automotive Services (Proprietary)"]
+                    GMAP["Google Maps<br />&amp; Navigation"]
+                    GASSIST["Google<br />Assistant"]
+                    GPLAY["Google<br />Play Store"]
+                    GSERVICES["Google Play<br />Services"]
+                    OTHER["YouTube Music<br />Chrome, etc."]
+                    end
+
+                    subgraph OEM["OEM Customization"]
+                    OEM_APPS["OEM Apps<br />(Climate, Radio)"]
+                    OEM_UI["Custom UI/UX"]
+                    end
+
+                    subgraph USER["User Applications"]
+                    THIRD_PARTY["3rd Party Apps<br />(Spotify, Waze)"]
+                    end
+
+                    HW --> VEHICLE_HAL
+                    VEHICLE_HAL --> CAR_API
+                    CAR_API --> AF
+                    AF --> AOS
+
+                    AOS --> GSERVICES
+                    GSERVICES --> GMAP & GASSIST & GPLAY & OTHER
+
+                    AF --> OEM_APPS & OEM_UI
+                    GPLAY --> THIRD_PARTY
+                    AF --> THIRD_PARTY
+
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        AAOS (Open Source)
+                        <span class="tag tag-aaos">Open Source</span>
+                    </h3>
+                    <div class="card-description">
+                        <p>Android-based vehicle operating system</p>
+                        <ul>
+                            <li>Linux kernel and Android framework</li>
+                            <li>Vehicle hardware connection via Vehicle HAL</li>
+                            <li>Vehicle sensor/control access via Android Car API</li>
+                            <li>OEMs can freely customize</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        GAS (Proprietary)
+                        <span class="tag tag-proprietary">Proprietary</span>
+                    </h3>
+                    <div class="card-description">
+                        <p>Google's licensed service collection</p>
+                        <ul>
+                            <li>Google Maps, Assistant, Play Store, etc.</li>
+                            <li>Requires OEM license agreement</li>
+                            <li>Requires Google-certified AAOS</li>
+                            <li>Regular OTA updates provided</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏭</span>
+                        OEM Customization
+                        <span class="tag tag-oem">OEM</span>
+                    </h3>
+                    <div class="card-description">
+                        <p>Manufacturer-specific customization</p>
+                        <ul>
+                            <li>Brand-specific UI/UX design</li>
+                            <li>Vehicle control apps (AC, seats, etc.)</li>
+                            <li>Radio, navigation integration</li>
+                            <li>Vehicle HAL implementation</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        Third-party Apps
+                    </h3>
+                    <div class="card-description">
+                        <p>Extension through Google Play Store</p>
+                        <ul>
+                            <li>Spotify, Audible, Waze, etc.</li>
+                            <li>UI optimized for vehicles</li>
+                            <li>Design considering driving safety</li>
+                            <li>Voice control support</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: GAS Core Services -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                GAS Core Services
+            </h2>
+            <p class="section-description">
+                Detailed description of the main applications and services included in Google Automotive Services.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🗺️</span>
+                        Google Maps
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Vehicle-optimized Navigation</strong></p>
+                        <ul>
+                            <li>Real-time traffic information and route recalculation</li>
+                            <li>EV charging station finder (electric vehicles)</li>
+                            <li>Parking information and availability</li>
+                            <li>Destination search and autocomplete</li>
+                            <li>UI optimized for vehicle displays</li>
+                            <li>Google account saved places sync</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎤</span>
+                        Google Assistant
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Voice Control Assistant</strong></p>
+                        <ul>
+                            <li>Hands-free activation with "Hey Google"</li>
+                            <li>Navigation voice control</li>
+                            <li>Calls and message sending</li>
+                            <li>Music playback control</li>
+                            <li>Vehicle function control (AC, seats, etc.)</li>
+                            <li>Information queries (weather, news, etc.)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Google Play Store
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Vehicle App Marketplace</strong></p>
+                        <ul>
+                            <li>Only vehicle-certified apps available</li>
+                            <li>Apps meeting driving safety standards</li>
+                            <li>Music: Spotify, YouTube Music</li>
+                            <li>Podcasts: Pocket Casts</li>
+                            <li>Audiobooks: Audible</li>
+                            <li>Navigation: Waze</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Google Play Services
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Background Services</strong></p>
+                        <ul>
+                            <li>Google account authentication and sync</li>
+                            <li>Location services</li>
+                            <li>Push notifications (Cloud Messaging)</li>
+                            <li>App update management</li>
+                            <li>Security and privacy protection</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        YouTube Music
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Music Streaming</strong></p>
+                        <ul>
+                            <li>Millions of songs streaming</li>
+                            <li>Offline download</li>
+                            <li>Recommended playlists</li>
+                            <li>Voice-controlled playback</li>
+                            <li>Google account sync</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        Chrome Browser
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Web Browsing (When Parked)</strong></p>
+                        <ul>
+                            <li>Only available when parked</li>
+                            <li>Bookmark sync</li>
+                            <li>Safe browsing</li>
+                            <li>Google account login</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: OEM Integration -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                OEM Integration Process
+            </h2>
+            <p class="section-description">
+                Explains the process and requirements for automotive manufacturers to integrate GAS into their vehicles.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant OEM as OEM<br />(Automaker)
+                    participant Google as Google
+                    participant DEV as AAOS Development
+                    participant CERT as Certification
+                    participant PROD as Production Vehicle
+
+                    OEM->>Google: 1. GAS License Negotiation
+                    Google-->>OEM: Contract Signed (per model)
+
+                    OEM->>DEV: 2. AAOS Customization
+                    DEV->>DEV: Vehicle HAL Implementation
+                    DEV->>DEV: OEM UI/UX Development
+                    DEV->>DEV: Vehicle Feature Integration
+
+                    DEV->>Google: 3. Request Google Certified Build
+                    Google->>CERT: Hardware/Software Verification
+                    CERT->>CERT: Security Testing
+                    CERT->>CERT: Performance Testing
+                    CERT-->>Google: Certification Complete
+
+                    Google-->>OEM: 4. Provide GAS Installation Package
+                    OEM->>PROD: 5. Install AAOS + GAS on Vehicle
+
+                    PROD->>Google: 6. Receive OTA Updates
+                    Google-->>PROD: Regular Update Deployment
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📋 Requirements and Constraints
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📜</span>
+                        Licensing
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Requires per-model contract with Google</li>
+                            <li>License fees are not publicly disclosed</li>
+                            <li>Includes multi-year support agreement</li>
+                            <li>OTA update authorization granted</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💻</span>
+                        Hardware Requirements
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Sufficient CPU/GPU performance</li>
+                            <li>Minimum 4GB RAM recommended</li>
+                            <li>Touchscreen display</li>
+                            <li>GPS/GNSS module</li>
+                            <li>Cellular connection (for OTA updates)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        Google Certification
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Must use certified AAOS build</li>
+                            <li>Security and privacy standards</li>
+                            <li>Google Play Protect integration</li>
+                            <li>SafetyNet verification</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        Vehicle HAL
+                    </h3>
+                    <div class="card-description">
+                        <p>Interface that OEM must implement</p>
+                        <ul>
+                            <li>Vehicle sensor data (speed, fuel, etc.)</li>
+                            <li>HVAC control (AC, heater)</li>
+                            <li>Audio routing</li>
+                            <li>CAN bus communication</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎨</span>
+                        Customization Scope
+                    </h3>
+                    <div class="card-description">
+                        <p>What OEMs can modify</p>
+                        <ul>
+                            <li>Launcher and home screen UI</li>
+                            <li>App icons and themes</li>
+                            <li>Vehicle control app development</li>
+                            <li>Own navigation integration possible</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        OTA Updates
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Google directly updates GAS apps</li>
+                            <li>OEM manages system updates</li>
+                            <li>Deployed via Wi-Fi or cellular</li>
+                            <li>Safe updates with A/B partitions</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: GAS vs Android Auto -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                GAS vs Android Auto Comparison
+            </h2>
+            <p class="section-description">
+                Clearly compare the differences between the two Google automotive solutions.
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Google Automotive Services (GAS)</th>
+                        <th>Android Auto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Execution Location</strong></td>
+                        <td>Vehicle IVI System (Native)</td>
+                        <td>Smartphone (Projection)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Smartphone Required</strong></td>
+                        <td>Not Required</td>
+                        <td>Required</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Operating System</strong></td>
+                        <td>Android Automotive OS (AAOS)</td>
+                        <td>Vehicle's own system</td>
+                    </tr>
+                    <tr>
+                        <td><strong>App Installation</strong></td>
+                        <td>Direct install from Google Play Store</td>
+                        <td>Smartphone app mirroring</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Vehicle Control</strong></td>
+                        <td>Can directly control AC, seats, etc.</td>
+                        <td>Limited (audio, navigation only)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>OEM Integration</strong></td>
+                        <td>Integrated from vehicle design stage</td>
+                        <td>Aftermarket support available</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Updates</strong></td>
+                        <td>OTA directly on vehicle</td>
+                        <td>Smartphone app update</td>
+                    </tr>
+                    <tr>
+                        <td><strong>User Experience</strong></td>
+                        <td>Vehicle-integrated, instant boot use</td>
+                        <td>Use after phone connection</td>
+                    </tr>
+                    <tr>
+                        <td><strong>License</strong></td>
+                        <td>OEM license required</td>
+                        <td>Free (app download)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Major Manufacturers</strong></td>
+                        <td>Volvo, GM, Renault, Ford</td>
+                        <td>Most vehicle manufacturers</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Connection Method</strong></td>
+                        <td>Built-in cellular/Wi-Fi</td>
+                        <td>USB or wireless (Wi-Fi)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Both Systems Can Coexist:</strong> Some GAS-equipped vehicles also support Android Auto, allowing users to switch to Android Auto when connecting their smartphone.
+            </div>
+        </section>
+
+        <!-- Section 6: Benefits & Challenges -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Benefits and Challenges
+            </h2>
+            <p class="section-description">
+                Analyzes the advantages of GAS adoption and challenges faced by manufacturers.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        User Benefits
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Full functionality without smartphone</li>
+                            <li>Available immediately on boot</li>
+                            <li>Integrated Google account experience</li>
+                            <li>Latest maps and traffic information</li>
+                            <li>Familiar Google UI/UX</li>
+                            <li>Continuous feature improvements</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏭</span>
+                        OEM Benefits
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Proven infotainment solution</li>
+                            <li>Reduced in-house development costs</li>
+                            <li>Leverage Google brand trust</li>
+                            <li>Stay current with regular updates</li>
+                            <li>Utilize developer ecosystem</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        Challenges
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>License cost burden</li>
+                            <li>Increased Google dependency</li>
+                            <li>OEM brand differentiation difficulty</li>
+                            <li>Data privacy concerns</li>
+                            <li>Some market restrictions (China, etc.)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔮</span>
+                        Future Outlook
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>More OEM adoption expected</li>
+                            <li>AI assistant enhancement</li>
+                            <li>EV integration (charging, battery management)</li>
+                            <li>Autonomous vehicle integration</li>
+                            <li>Vehicle-home connectivity expansion</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        Security and Privacy
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Built-in Google Play Protect</li>
+                            <li>Regular security patches</li>
+                            <li>Location data collection management</li>
+                            <li>User-controllable permissions</li>
+                            <li>GDPR compliance</li>
+                        </ul>
+                    </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 class="card-title">
+                            <span class="card-icon">🌍</span>
+                            Global Deployment
+                        </h3>
+                        <div class="card-description">
+                            <ul>
+                                <li>Rapid expansion in North America, Europe</li>
+                                <li>Gradual entry into Asian markets</li>
+                                <li>China prefers its own solutions</li>
+                                <li>Localization and language support expansion</li>
+                                <li>Regional regulatory compliance</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+        </section>
+
+        <!-- Section 7: Google Play Services API Integration -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Google Play Services API Integration
+            </h2>
+            <p class="section-description">
+                Explains the APIs provided by Google Play Services, a core component of GAS, and how to use them in AAOS apps.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📍 Location API (Fused Location Provider)
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// build.gradle
+dependencies {
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
+}
+
+// MainActivity.kt - Using Location Services
+class NavigationActivity : ComponentActivity() {
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        // Get current location
+        if (ActivityCompat.checkSelfPermission(this,
+            Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                location?.let {
+                    Log.d("Location", "Lat: ${it.latitude}, Lng: ${it.longitude}")
+                    updateMapPosition(it)
+                }
+            }
+        }
+    }
+
+    // Real-time location updates
+    private fun startLocationUpdates() {
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            10000 // Update every 10 seconds
+        ).build()
+
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.locations.forEach { location ->
+                    updateNavigationRoute(location)
+                }
+            }
+        }
+
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            Looper.getMainLooper()
+        )
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔐 Google Account Manager
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Get user Google account information
+class UserProfileActivity : ComponentActivity() {
+    private fun getGoogleAccount() {
+        val accountManager = AccountManager.get(this)
+
+        // Query Google account list
+        val accounts = accountManager.getAccountsByType("com.google")
+
+        if (accounts.isNotEmpty()) {
+            val primaryAccount = accounts[0]
+            Log.d("Account", "Email: ${primaryAccount.name}")
+
+            // Sync profile photo, name, etc.
+            syncUserProfile(primaryAccount)
+        } else {
+            // Prompt to add account
+            promptAddAccount()
+        }
+    }
+
+    private fun promptAddAccount() {
+        val intent = AccountManager.newChooseAccountIntent(
+            null, // selectedAccount
+            null, // allowableAccounts
+            arrayOf("com.google"), // allowableAccountTypes
+            false, // alwaysPromptForAccount
+            null, // descriptionOverrideText
+            null, // addAccountAuthTokenType
+            null, // addAccountRequiredFeatures
+            null  // addAccountOptions
+        )
+        startActivityForResult(intent, REQUEST_CODE_ADD_ACCOUNT)
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📨 Firebase Cloud Messaging (FCM)
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Firebase Cloud Messaging Setup
+class MyFirebaseMessagingService : FirebaseMessagingService() {
+
+    // Receive new FCM token
+    override fun onNewToken(token: String) {
+        super.onNewToken(token)
+        Log.d("FCM", "New token: $token")
+
+        // Register token with server
+        sendTokenToServer(token)
+    }
+
+    // Receive push message
+    override fun onMessageReceived(remoteMessage: RemoteMessage) {
+        super.onMessageReceived(remoteMessage)
+
+        remoteMessage.notification?.let {
+            // Display vehicle notification (minimize distraction while driving)
+            if (isParked()) {
+                showNotification(it.title, it.body)
+            } else {
+                // Voice-only notification while driving
+                announceViaAssistant(it.body)
+            }
+        }
+
+        // Handle data messages (OTA update notifications, etc.)
+        remoteMessage.data.isNotEmpty().let {
+            handleDataPayload(remoteMessage.data)
+        }
+    }
+
+    private fun showNotification(title: String?, body: String?) {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE)
+            as NotificationManager
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setSmallIcon(R.drawable.ic_car)
+            .setCategory(NotificationCompat.CATEGORY_CAR_INFORMATION)
+            .build()
+
+        notificationManager.notify(NOTIFICATION_ID, notification)
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 Google Play Services Version Check
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Check Google Play Services availability
+class BaseActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        checkGooglePlayServices()
+    }
+
+    private fun checkGooglePlayServices() {
+        val apiAvailability = GoogleApiAvailability.getInstance()
+        val resultCode = apiAvailability.isGooglePlayServicesAvailable(this)
+
+        when (resultCode) {
+            ConnectionResult.SUCCESS -> {
+                Log.d("GMS", "Google Play Services available")
+            }
+            ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED -> {
+                Log.w("GMS", "Google Play Services update required")
+                // AAOS auto-updates, just inform user
+                showUpdateRequiredDialog()
+            }
+            else -> {
+                Log.e("GMS", "Google Play Services unavailable: $resultCode")
+                // Critical error - most features unavailable without GAS
+                showCriticalError()
+            }
+        }
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        Major API Modules
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>play-services-location</code>: GPS, Fused Location</li>
+                            <li><code>play-services-auth</code>: Google account authentication</li>
+                            <li><code>play-services-maps</code>: Google Maps SDK</li>
+                            <li><code>firebase-messaging</code>: FCM push notifications</li>
+                            <li><code>play-services-cast</code>: Chromecast integration</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        AAOS Specifics
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Play Services is installed as system app</li>
+                            <li>Users cannot manually update</li>
+                            <li>OEM batch updates via OTA</li>
+                            <li>Version mismatch can cause app crashes</li>
+                            <li>Must specify minimum version requirements</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Developing Apps that Interact with GAS -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Developing Apps that Interact with GAS
+            </h2>
+            <p class="section-description">
+                Explains how to develop third-party apps that integrate with GAS apps like Google Maps and Assistant.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🗺️ Starting Navigation with Google Maps
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Launch Google Maps navigation via Intent
+fun startNavigation(latitude: Double, longitude: Double, label: String) {
+    val gmmIntentUri = Uri.parse("google.navigation:q=$latitude,$longitude")
+    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+    mapIntent.setPackage("com.google.android.apps.maps")
+
+    if (mapIntent.resolveActivity(packageManager) != null) {
+        startActivity(mapIntent)
+    } else {
+        // Google Maps not installed (AAOS without GAS)
+        Toast.makeText(this, "Google Maps is not available", Toast.LENGTH_SHORT).show()
+    }
+}
+
+// Navigate to specific address
+fun navigateToAddress(address: String) {
+    val encodedAddress = Uri.encode(address)
+    val uri = Uri.parse("google.navigation:q=$encodedAddress")
+    val intent = Intent(Intent.ACTION_VIEW, uri)
+    intent.setPackage("com.google.android.apps.maps")
+    startActivity(intent)
+}
+
+// Route with waypoints
+fun navigateWithWaypoints(origin: String, destination: String, waypoints: List<String>) {
+    val waypointsStr = waypoints.joinToString("|")
+    val uri = Uri.parse(
+        "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&waypoints=$waypointsStr"
+    )
+    val intent = Intent(Intent.ACTION_VIEW, uri)
+    intent.setPackage("com.google.android.apps.maps")
+    startActivity(intent)
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎤 Google Assistant Actions Integration
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- AndroidManifest.xml - App Actions Definition --&gt;
+&lt;activity android:name=".MainActivity"&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="android.intent.action.MAIN" /&gt;
+        &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
+    &lt;/intent-filter&gt;
+
+    &lt;!-- App Actions: "Hey Google, play music on MyApp" --&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="android.intent.action.VIEW" /&gt;
+        &lt;category android:name="android.intent.category.DEFAULT" /&gt;
+        &lt;category android:name="android.intent.category.BROWSABLE" /&gt;
+        &lt;data android:scheme="myapp" android:host="play" /&gt;
+    &lt;/intent-filter&gt;
+&lt;/activity&gt;</code></pre>
+            </div>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// MainActivity.kt - Handling App Actions
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        handleAssistantIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent?.let { handleAssistantIntent(it) }
+    }
+
+    private fun handleAssistantIntent(intent: Intent) {
+        when (intent.action) {
+            Intent.ACTION_VIEW -> {
+                val uri = intent.data
+                if (uri?.scheme == "myapp" && uri.host == "play") {
+                    val songName = uri.getQueryParameter("song")
+                    playSong(songName)
+                }
+            }
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎵 Integration with YouTube Music
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// YouTube Music playback control
+class MusicControlActivity : ComponentActivity() {
+    private lateinit var mediaController: MediaController
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        connectToYouTubeMusic()
+    }
+
+    private fun connectToYouTubeMusic() {
+        val sessionToken = MediaSessionCompat.Token.fromBundle(
+            Bundle().apply {
+                putString("package", "com.google.android.apps.youtube.music")
+            }
+        )
+
+        val controllerFuture = MediaController.Builder(
+            this,
+            SessionToken(this, ComponentName(
+                "com.google.android.apps.youtube.music",
+                "com.google.android.apps.youtube.music.service.MusicService"
+            ))
+        ).buildAsync()
+
+        controllerFuture.addListener({
+            mediaController = controllerFuture.get()
+
+            // Playback control
+            mediaController.play()
+            mediaController.pause()
+            mediaController.seekToNext()
+        }, MoreExecutors.directExecutor())
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔗</span>
+                        GAS App Intent Schemes
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Maps:</strong> <code>google.navigation:q=</code></li>
+                            <li><strong>Maps Search:</strong> <code>geo:0,0?q=</code></li>
+                            <li><strong>Phone:</strong> <code>tel:</code></li>
+                            <li><strong>SMS:</strong> <code>sms:</code></li>
+                            <li><strong>Email:</strong> <code>mailto:</code></li>
+                            <li><strong>YouTube Music:</strong> MediaSession API</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Play Store Distribution Requirements
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Select Automotive app category</li>
+                            <li>Comply with Driver Distraction Guidelines</li>
+                            <li>Minimum touch target size (48dp)</li>
+                            <li>Night mode support (dark theme)</li>
+                            <li>Voice control recommended</li>
+                            <li>Video playback prohibited while driving</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 9: OEM Customization Implementation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                OEM Customization Implementation
+            </h2>
+            <p class="section-description">
+                Explains customization methods for automotive manufacturers to provide brand-specific experiences in the GAS environment.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎨 Custom Launcher Development
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- AndroidManifest.xml - Custom Launcher --&gt;
+&lt;application&gt;
+    &lt;activity
+        android:name=".CustomLauncherActivity"
+        android:launchMode="singleTask"
+        android:clearTaskOnLaunch="true"
+        android:stateNotNeeded="true"&gt;
+
+        &lt;intent-filter&gt;
+            &lt;action android:name="android.intent.action.MAIN" /&gt;
+            &lt;category android:name="android.intent.category.HOME" /&gt;
+            &lt;category android:name="android.intent.category.DEFAULT" /&gt;
+        &lt;/intent-filter&gt;
+    &lt;/activity&gt;
+&lt;/application&gt;</code></pre>
+            </div>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// CustomLauncherActivity.kt
+class CustomLauncherActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        setContent {
+            CustomLauncherTheme {
+                LauncherHomeScreen()
+            }
+        }
+    }
+}
+
+@Composable
+fun LauncherHomeScreen() {
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Top: OEM brand widget
+        BrandHeader()
+
+        // Center: Main app grid (including GAS apps)
+        AppGrid(apps = listOf(
+            AppInfo("Google Maps", "com.google.android.apps.maps"),
+            AppInfo("YouTube Music", "com.google.android.apps.youtube.music"),
+            AppInfo("Climate Control", "com.oem.climate"),
+            AppInfo("Vehicle Settings", "com.oem.settings")
+        ))
+
+        // Bottom: Media controller
+        MediaController()
+    }
+}
+
+@Composable
+fun AppGrid(apps: List<AppInfo>) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(4),
+        contentPadding = PaddingValues(16.dp)
+    ) {
+        items(apps) { app ->
+            AppIcon(app) {
+                launchApp(app.packageName)
+            }
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ❄️ Vehicle Control App (HVAC)
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// HVACControlActivity.kt - AC Control
+class HVACControlActivity : ComponentActivity() {
+    private lateinit var carPropertyManager: CarPropertyManager
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val car = Car.createCar(this)
+        carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE)
+            as CarPropertyManager
+
+        setContent {
+            HVACControlScreen(carPropertyManager)
+        }
+    }
+}
+
+@Composable
+fun HVACControlScreen(propertyManager: CarPropertyManager) {
+    var temperature by remember { mutableStateOf(22f) }
+    var fanSpeed by remember { mutableStateOf(3) }
+
+    Column(modifier = Modifier.padding(24.dp)) {
+        Text("Climate Control", style = MaterialTheme.typography.headlineLarge)
+
+        // Temperature control
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Temperature: ${temperature.toInt()}°C")
+            Slider(
+                value = temperature,
+                onValueChange = { newTemp ->
+                    temperature = newTemp
+                    setHVACTemperature(propertyManager, newTemp)
+                },
+                valueRange = 16f..30f
+            )
+        }
+
+        // Fan speed control
+        Row {
+            Text("Fan Speed: $fanSpeed")
+            Slider(
+                value = fanSpeed.toFloat(),
+                onValueChange = { newSpeed ->
+                    fanSpeed = newSpeed.toInt()
+                    setFanSpeed(propertyManager, fanSpeed)
+                },
+                valueRange = 1f..7f,
+                steps = 5
+            )
+        }
+    }
+}
+
+fun setHVACTemperature(manager: CarPropertyManager, temp: Float) {
+    manager.setFloatProperty(
+        VehiclePropertyIds.HVAC_TEMPERATURE_SET,
+        VehicleAreaType.VEHICLE_AREA_TYPE_SEAT,
+        temp
+    )
+}
+
+fun setFanSpeed(manager: CarPropertyManager, speed: Int) {
+    manager.setIntProperty(
+        VehiclePropertyIds.HVAC_FAN_SPEED,
+        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+        speed
+    )
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎨 Theme Override
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- res/values/themes.xml - OEM Brand Theme --&gt;
+&lt;resources&gt;
+    &lt;style name="Theme.OEMAutomotive" parent="Theme.MaterialComponents.DayNight.NoActionBar"&gt;
+        &lt;!-- Brand colors --&gt;
+        &lt;item name="colorPrimary"&gt;@color/oem_blue&lt;/item&gt;
+        &lt;item name="colorSecondary"&gt;@color/oem_silver&lt;/item&gt;
+        &lt;item name="colorAccent"&gt;@color/oem_red&lt;/item&gt;
+
+        &lt;!-- Typography --&gt;
+        &lt;item name="fontFamily"&gt;@font/oem_brand_font&lt;/item&gt;
+
+        &lt;!-- Button style --&gt;
+        &lt;item name="buttonStyle"&gt;@style/Widget.OEM.Button&lt;/item&gt;
+    &lt;/style&gt;
+
+    &lt;!-- Night mode (prevent glare while driving) --&gt;
+    &lt;style name="Theme.OEMAutomotive.Night"&gt;
+        &lt;item name="android:windowBackground"&gt;@color/black&lt;/item&gt;
+        &lt;item name="colorPrimary"&gt;@color/oem_blue_dark&lt;/item&gt;
+    &lt;/style&gt;
+&lt;/resources&gt;</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        Customizable Areas
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Home screen and launcher UI</li>
+                            <li>App icons and layout</li>
+                            <li>Brand colors and fonts</li>
+                            <li>Vehicle control apps (HVAC, Seat, etc.)</li>
+                            <li>Status bar and navigation bar</li>
+                            <li>Boot animation</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚫</span>
+                        Non-modifiable Areas
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Google Maps UI (inside GAS app)</li>
+                            <li>Google Assistant voice UI</li>
+                            <li>Play Store UI</li>
+                            <li>Google account settings</li>
+                            <li>GAS app icons (certification failure if changed)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 10: Security and Certification -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                Security and Certification
+            </h2>
+            <p class="section-description">
+                Explains security requirements for GAS certification and SafetyNet, Play Protect integration methods.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🛡️ SafetyNet Attestation API
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// build.gradle
+dependencies {
+    implementation 'com.google.android.gms:play-services-safetynet:18.0.1'
+}
+
+// SafetyNetHelper.kt
+class SafetyNetHelper(private val context: Context) {
+    private val safetyNetClient: SafetyNetClient =
+        SafetyNet.getClient(context)
+
+    fun performAttestation(nonce: ByteArray, callback: (Boolean) -> Unit) {
+        safetyNetClient.attest(nonce, API_KEY)
+            .addOnSuccessListener { response ->
+                val jwsResult = response.jwsResult
+
+                // Send JWS token to server for verification
+                verifyJwsOnServer(jwsResult) { isValid ->
+                    if (isValid) {
+                        Log.d("SafetyNet", "Device attestation passed")
+                        callback(true)
+                    } else {
+                        Log.w("SafetyNet", "Device attestation failed")
+                        callback(false)
+                    }
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("SafetyNet", "Attestation error: ${e.message}")
+                callback(false)
+            }
+    }
+
+    private fun verifyJwsOnServer(jws: String, callback: (Boolean) -> Unit) {
+        // Send JWS to backend server for verification via Google API
+        // Server verifies:
+        // 1. ctsProfileMatch: true (Google certified device)
+        // 2. basicIntegrity: true (device integrity)
+        // 3. nonce match
+    }
+
+    companion object {
+        private const val API_KEY = "YOUR_SAFETYNET_API_KEY"
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔐 Google Play Protect
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Check Play Protect status
+class SecurityCheckActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        checkPlayProtectStatus()
+    }
+
+    private fun checkPlayProtectStatus() {
+        val verifyAppsEnabled = Settings.Global.getInt(
+            contentResolver,
+            "package_verifier_enable",
+            0
+        ) == 1
+
+        if (!verifyAppsEnabled) {
+            Log.w("Security", "Play Protect is disabled")
+            promptEnablePlayProtect()
+        } else {
+            Log.d("Security", "Play Protect enabled")
+        }
+    }
+
+    private fun promptEnablePlayProtect() {
+        // Guide user to enable Play Protect
+        // AAOS should have it enabled by default
+        AlertDialog.Builder(this)
+            .setTitle("Security Warning")
+            .setMessage("Play Protect is disabled. Please enable it for vehicle security.")
+            .setPositiveButton("Go to Settings") { _, _ ->
+                val intent = Intent(Settings.ACTION_SECURITY_SETTINGS)
+                startActivity(intent)
+            }
+            .show()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔑 Certificate Pinning
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Certificate Pinning with OkHttp
+class SecureApiClient {
+    private val certificatePinner = CertificatePinner.Builder()
+        .add("api.example.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+        .build()
+
+    private val client = OkHttpClient.Builder()
+        .certificatePinner(certificatePinner)
+        .build()
+
+    fun makeSecureRequest(url: String): Response {
+        val request = Request.Builder()
+            .url(url)
+            .build()
+
+        return client.newCall(request).execute()
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        GAS Certification Requirements
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>✅ Google-certified AAOS build</li>
+                            <li>✅ SafetyNet ctsProfileMatch: true</li>
+                            <li>✅ Verified Boot (dm-verity)</li>
+                            <li>✅ SELinux Enforcing mode</li>
+                            <li>✅ Secure Boot Chain</li>
+                            <li>✅ Play Protect enabled</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚨</span>
+                        Certification Failure Scenarios
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Bootloader Unlocked → GAS installation blocked</li>
+                            <li>Custom ROM → SafetyNet failure</li>
+                            <li>Root access obtained → Play Protect blocked</li>
+                            <li>System partition modified → Certification denied</li>
+                            <li>OEM key leaked → Google blacklist</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Security Feature</th>
+                        <th>Role</th>
+                        <th>AAOS Required</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>SafetyNet Attestation</td>
+                        <td>Device integrity verification</td>
+                        <td>Required (ctsProfileMatch)</td>
+                    </tr>
+                    <tr>
+                        <td>Google Play Protect</td>
+                        <td>Malware detection and blocking</td>
+                        <td>Required (enabled by default)</td>
+                    </tr>
+                    <tr>
+                        <td>Verified Boot</td>
+                        <td>Partition integrity verification at boot</td>
+                        <td>Required (dm-verity)</td>
+                    </tr>
+                    <tr>
+                        <td>SELinux</td>
+                        <td>Mandatory access control</td>
+                        <td>Required (Enforcing)</td>
+                    </tr>
+                    <tr>
+                        <td>Secure Boot</td>
+                        <td>Bootloader integrity verification</td>
+                        <td>Required</td>
+                    </tr>
+                    <tr>
+                        <td>File-Based Encryption</td>
+                        <td>User data encryption</td>
+                        <td>Recommended</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 11: GAS OTA Updates -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                GAS OTA Update Mechanism
+            </h2>
+            <p class="section-description">
+                Explains the OTA (Over-The-Air) method by which Google directly updates GAS apps.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant Vehicle as Vehicle IVI
+                    participant GMS as Google Play Services
+                    participant PlayStore as Google Play Store
+                    participant Google as Google Update Server
+
+                    Note over Vehicle,Google: Automatic updates at night or when parked
+
+                    Vehicle->>GMS: Periodically check for updates
+                    GMS->>Google: Check for GAS app updates
+                    Google-->>GMS: Available updates list
+
+                    alt Updates available
+                        GMS->>PlayStore: Download update packages
+                        PlayStore->>Google: Download APK (Maps, Assistant, etc.)
+                        Google-->>PlayStore: APK files
+
+                        PlayStore->>PlayStore: Verify signature
+                        PlayStore->>Vehicle: Install updates (background)
+
+                        Vehicle->>Vehicle: Apply updates (A/B partition)
+                        Vehicle-->>GMS: Update complete
+
+                        alt Reboot required (System update)
+                            Vehicle->>Vehicle: Schedule reboot
+                            Note over Vehicle: Applied on next start
+                        end
+                    else No updates
+                        GMS-->>Vehicle: No updates available
+                    end
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 A/B Partition System
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💾</span>
+                        Seamless Updates
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>How it works:</strong></p>
+                        <ul>
+                            <li>Partition A: Currently running system</li>
+                            <li>Partition B: Update target</li>
+                            <li>Update installed on B in background</li>
+                            <li>Switch to B on reboot</li>
+                            <li>Automatic rollback to A on failure</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        GAS App Updates
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Update frequency:</strong></p>
+                        <ul>
+                            <li><strong>Google Maps:</strong> Monthly (including map data)</li>
+                            <li><strong>Google Assistant:</strong> 1-2 times monthly</li>
+                            <li><strong>Play Services:</strong> Monthly</li>
+                            <li><strong>YouTube Music:</strong> Every 2 weeks</li>
+                            <li><strong>Security patches:</strong> Immediate (when urgent)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ⚙️ Update Policy Settings
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- device_policies.xml - OEM Update Policy --&gt;
+&lt;device-owner&gt;
+    &lt;!-- Allowed update time window --&gt;
+    &lt;system-update-policy&gt;
+        &lt;!-- Update only during nighttime (minimize user disruption) --&gt;
+        &lt;install-window start="22:00" end="06:00" /&gt;
+
+        &lt;!-- Large updates only when parked --&gt;
+        &lt;condition type="parking-state" value="true" /&gt;
+
+        &lt;!-- Prefer Wi-Fi --&gt;
+        &lt;network-type preferred="wifi" fallback="cellular" /&gt;
+
+        &lt;!-- When battery is charging --&gt;
+        &lt;battery-level min="30" charging="true" /&gt;
+    &lt;/system-update-policy&gt;
+&lt;/device-owner&gt;</code></pre>
+            </div>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Update Type</th>
+                        <th>Manager</th>
+                        <th>Distribution Method</th>
+                        <th>User Intervention</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>GAS Apps (Maps, Assistant, etc.)</td>
+                        <td>Google</td>
+                        <td>Play Store auto-update</td>
+                        <td>Not required (background)</td>
+                    </tr>
+                    <tr>
+                        <td>Google Play Services</td>
+                        <td>Google</td>
+                        <td>Auto background update</td>
+                        <td>Not required</td>
+                    </tr>
+                    <tr>
+                        <td>AAOS System Update</td>
+                        <td>OEM</td>
+                        <td>OEM server → A/B partition</td>
+                        <td>Reboot required</td>
+                    </tr>
+                    <tr>
+                        <td>OEM Apps (HVAC, Settings, etc.)</td>
+                        <td>OEM</td>
+                        <td>OEM server or Play Store</td>
+                        <td>Optional</td>
+                    </tr>
+                    <tr>
+                        <td>Third-party Apps</td>
+                        <td>Developer</td>
+                        <td>Play Store</td>
+                        <td>Auto/manual selectable</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔒 Security Update Priority:</strong> When Google discovers critical security vulnerabilities, emergency patches are deployed within 24 hours, and OEMs must apply them immediately.
+            </div>
+        </section>
+
+        <!-- Section 12: Real Deployment Cases -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                Real Deployment Cases
+            </h2>
+            <p class="section-description">
+                Analyzes GAS integration cases and performance metrics from major automotive manufacturers.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🚗 Volvo / Polestar
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Integration Strategy
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>First application:</strong> Polestar 2 (2020)</li>
+                            <li><strong>Hardware:</strong> Qualcomm Snapdragon 820A</li>
+                            <li><strong>Customization:</strong> Minimal UI changes</li>
+                            <li><strong>Feature:</strong> Emphasis on Google Assistant voice control</li>
+                            <li><strong>Result:</strong> Industry-leading user satisfaction</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Performance Metrics
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Boot time:</strong> 6 seconds (Cold Boot)</li>
+                            <li><strong>Maps loading:</strong> Under 2 seconds</li>
+                            <li><strong>Assistant response:</strong> 0.5 seconds</li>
+                            <li><strong>App switching:</strong> Instant (no frame drops)</li>
+                            <li><strong>Memory usage:</strong> Average 2.5GB / 4GB</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🚙 General Motors (GM)
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏭</span>
+                        Large-scale Deployment
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Applied models:</strong> Chevrolet, GMC, Cadillac (2021+)</li>
+                            <li><strong>Scale:</strong> 1M+ vehicles annually</li>
+                            <li><strong>Strategy:</strong> Brand-differentiated launchers</li>
+                            <li><strong>OnStar integration:</strong> Coexists with GM's own service</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        Tech Stack
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>SoC:</strong> Qualcomm Snapdragon 820A / 8155</li>
+                            <li><strong>Display:</strong> 10-17 inch touchscreen</li>
+                            <li><strong>Connectivity:</strong> Built-in 5G modem</li>
+                            <li><strong>OTA:</strong> Monthly regular updates</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🚕 Renault
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌍</span>
+                        European Market Focus
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>First model:</strong> Renault Megane E-Tech Electric (2022)</li>
+                            <li><strong>Feature:</strong> EV charging station integrated navigation</li>
+                            <li><strong>Localization:</strong> 15 European languages supported</li>
+                            <li><strong>Ecosystem:</strong> Smart home integration</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        EV Optimization
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Real-time charging station availability display</li>
+                            <li>Route planning based on battery level</li>
+                            <li>YouTube viewing while charging (when parked)</li>
+                            <li>Energy consumption optimized navigation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Manufacturer</th>
+                        <th>First Model</th>
+                        <th>SoC</th>
+                        <th>RAM</th>
+                        <th>Boot Time</th>
+                        <th>Features</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Volvo/Polestar</td>
+                        <td>Polestar 2 (2020)</td>
+                        <td>Snapdragon 820A</td>
+                        <td>4GB</td>
+                        <td>6 sec</td>
+                        <td>Minimal customization</td>
+                    </tr>
+                    <tr>
+                        <td>General Motors</td>
+                        <td>GMC Hummer EV (2021)</td>
+                        <td>Snapdragon 8155</td>
+                        <td>6GB</td>
+                        <td>8 sec</td>
+                        <td>OnStar integration</td>
+                    </tr>
+                    <tr>
+                        <td>Renault</td>
+                        <td>Megane E-Tech (2022)</td>
+                        <td>Snapdragon 820A</td>
+                        <td>4GB</td>
+                        <td>7 sec</td>
+                        <td>EV charging optimization</td>
+                    </tr>
+                    <tr>
+                        <td>Ford</td>
+                        <td>Mustang Mach-E (2023)</td>
+                        <td>Snapdragon 8155</td>
+                        <td>8GB</td>
+                        <td>5 sec</td>
+                        <td>Dual screen</td>
+                    </tr>
+                    <tr>
+                        <td>Honda</td>
+                        <td>Prologue (2024)</td>
+                        <td>Snapdragon 8155</td>
+                        <td>6GB</td>
+                        <td>6 sec</td>
+                        <td>Apple CarPlay coexistence</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>📈 Market Share:</strong> As of 2024, approximately 15% of newly launched vehicles worldwide have GAS installed, expected to grow to over 30% by 2027.
+            </div>
+        </section>
+
+        <!-- Section 13: GAS vs Apple CarPlay Comparison -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                GAS vs Apple CarPlay Comparison
+            </h2>
+            <p class="section-description">
+                Compare Google and Apple's vehicle infotainment solutions to analyze pros and cons of each.
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Google Automotive Services (GAS)</th>
+                        <th>Apple CarPlay</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Platform</strong></td>
+                        <td>Android Automotive OS (vehicle embedded)</td>
+                        <td>iOS mirroring (smartphone projection)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Smartphone Required</strong></td>
+                        <td>Not required</td>
+                        <td>Required (iPhone)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Connection Method</strong></td>
+                        <td>Built-in LTE/5G, Wi-Fi</td>
+                        <td>Lightning/USB-C, wireless (some)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>App Ecosystem</strong></td>
+                        <td>Google Play Store (vehicle apps)</td>
+                        <td>iPhone app mirroring</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Voice Assistant</strong></td>
+                        <td>Google Assistant</td>
+                        <td>Siri</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Navigation</strong></td>
+                        <td>Google Maps (native)</td>
+                        <td>Apple Maps / Google Maps / Waze</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Vehicle Control</strong></td>
+                        <td>Direct control of HVAC, seats, power, etc.</td>
+                        <td>Limited (audio, nav only)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>OEM Customization</strong></td>
+                        <td>Extensive (launcher, theme, apps)</td>
+                        <td>Limited (icon placement only)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Updates</strong></td>
+                        <td>OTA (independent on vehicle)</td>
+                        <td>Dependent on iOS updates</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Offline Use</strong></td>
+                        <td>Most features available</td>
+                        <td>Unavailable without iPhone</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Multi-user</strong></td>
+                        <td>Supported via Google account switching</td>
+                        <td>Only connected iPhone user</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Developer Barrier</strong></td>
+                        <td>Android app development (Java/Kotlin)</td>
+                        <td>iOS app development (Swift)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>License Cost</strong></td>
+                        <td>OEM license required</td>
+                        <td>Free (hardware requirements only)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Major Manufacturers</strong></td>
+                        <td>Volvo, GM, Renault, Ford, Honda</td>
+                        <td>Most automotive manufacturers</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Market Share</strong></td>
+                        <td>~15% (new cars, 2024)</td>
+                        <td>~79% (CarPlay-supported vehicles)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="content-grid" style="margin-top: 40px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        GAS Advantages
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Fully independent operation without smartphone</li>
+                            <li>Deep integration with vehicle hardware</li>
+                            <li>Available immediately on boot</li>
+                            <li>Multi-user support</li>
+                            <li>OEM brand differentiation possible</li>
+                            <li>Continuous OTA improvements</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        CarPlay Advantages
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Familiar iPhone interface</li>
+                            <li>No license cost</li>
+                            <li>Wide vehicle support</li>
+                            <li>Enhanced personal data protection</li>
+                            <li>Apple ecosystem integration</li>
+                            <li>Immediate access to latest iOS features</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">❌</span>
+                        GAS Disadvantages
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>High initial integration cost</li>
+                            <li>Increased Google dependency</li>
+                            <li>Some market restrictions (China, etc.)</li>
+                            <li>Data privacy concerns</li>
+                            <li>High hardware requirements</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">❌</span>
+                        CarPlay Disadvantages
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>iPhone connection required</li>
+                            <li>Limited vehicle control features</li>
+                            <li>Battery drain (phone)</li>
+                            <li>Wired connection hassle (some)</li>
+                            <li>Android users excluded</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔮 Future Outlook:</strong> Many OEMs are adopting a strategy of supporting both GAS and CarPlay simultaneously. Users can choose their preferred platform, and this is evolving toward increasing consumer satisfaction.
+            </div>
+        </section>
+
+        <!-- Section 14: Debugging & Troubleshooting -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                Debugging & Troubleshooting
+            </h2>
+            <p class="section-description">
+                Provides tools for debugging GAS apps and AAOS systems, and common problem-solving methods.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔍 logcat Filtering
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-bash"># Filter GAS app logs
+adb logcat | grep -E "GoogleMaps|Assistant|PlayStore|GmsCore"
+
+# Google Maps related logs only
+adb logcat | grep "com.google.android.apps.maps"
+
+# Google Assistant voice recognition logs
+adb logcat | grep "VoiceInteraction"
+
+# Play Services logs
+adb logcat GmsCore:D *:S
+
+# Show errors only
+adb logcat *:E | grep -E "Google|GMS"
+
+# Specific tag filter
+adb logcat -s ActivityManager PackageManager GooglePlayStore</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 dumpsys Commands
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-bash"># Google Play Services status
+adb shell dumpsys activity service com.google.android.gms
+
+# List installed GAS apps
+adb shell pm list packages | grep google
+
+# Google Maps process info
+adb shell dumpsys meminfo com.google.android.apps.maps
+
+# Location service status
+adb shell dumpsys location
+
+# Account Manager (Google accounts)
+adb shell dumpsys account
+
+# Package installation info
+adb shell dumpsys package com.google.android.gms
+
+# Car Service status (AAOS)
+adb shell dumpsys car_service</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🛠️ Common Problem Solutions
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Problem</th>
+                        <th>Cause</th>
+                        <th>Solution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Google Maps won't launch</td>
+                        <td>Play Services version mismatch</td>
+                        <td><code>adb shell pm clear com.google.android.gms</code><br>Reset after restart</td>
+                    </tr>
+                    <tr>
+                        <td>Google Assistant not responding</td>
+                        <td>Microphone permission or network issue</td>
+                        <td>Check Settings → Apps → Assistant → Permissions<br>Verify network connection</td>
+                    </tr>
+                    <tr>
+                        <td>Play Store login failed</td>
+                        <td>Google account sync issue</td>
+                        <td>Settings → Accounts → Remove and re-add Google account</td>
+                    </tr>
+                    <tr>
+                        <td>Location services not working</td>
+                        <td>GPS HAL or permission issue</td>
+                        <td>Check status with <code>adb shell dumpsys location</code><br>Turn on Settings → Location</td>
+                    </tr>
+                    <tr>
+                        <td>App crashes (repeated)</td>
+                        <td>Cache corruption or version conflict</td>
+                        <td><code>adb shell pm clear [package_name]</code><br>Or reinstall app</td>
+                    </tr>
+                    <tr>
+                        <td>OTA update failed</td>
+                        <td>Insufficient storage or network disconnection</td>
+                        <td>Free up storage (minimum 2GB)<br>Stable Wi-Fi connection</td>
+                    </tr>
+                    <tr>
+                        <td>Play Services version error</td>
+                        <td>Manual update not possible (AAOS)</td>
+                        <td>Wait for OEM OTA update<br>Or factory reset</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🧪 Enabling Developer Mode
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-bash"># Enable developer options
+# Settings → About Car → Build Number tap 7 times
+
+# Enable USB debugging
+# Settings → System → Developer Options → USB Debugging
+
+# ADB connection
+adb connect [vehicle_IP_address]:5555
+
+# Or USB connection
+adb devices
+
+# Wireless debugging (Android 11+)
+adb pair [IP]:[Port]
+adb connect [IP]:5555</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        Developer Tools
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Android Studio:</strong> App development and debugging</li>
+                            <li><strong>adb (Android Debug Bridge):</strong> Command line tool</li>
+                            <li><strong>Logcat:</strong> Real-time log monitoring</li>
+                            <li><strong>Systrace:</strong> Performance analysis</li>
+                            <li><strong>Perfetto:</strong> System tracing</li>
+                            <li><strong>Battery Historian:</strong> Battery usage analysis</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Test Apps
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>GAS Diagnostics:</strong> Google-provided diagnostic tool</li>
+                            <li><strong>Car Service Tester:</strong> AAOS Car API testing</li>
+                            <li><strong>SafetyNet Test:</strong> Device certification check</li>
+                            <li><strong>Location Test:</strong> GPS/Location API testing</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 15: GAS Changes by Android Version -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">15</span>
+                GAS Changes by Android Version
+            </h2>
+            <p class="section-description">
+                Summarizes major changes and improvements for each version of Android Automotive OS and GAS.
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Android Version</th>
+                        <th>AAOS Codename</th>
+                        <th>GAS Major Changes</th>
+                        <th>New Features</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Android 10 (Q)</td>
+                        <td>AAOS 1.0</td>
+                        <td>First commercial GAS</td>
+                        <td>
+                            • Google Maps native integration<br>
+                            • Google Assistant "Hey Google"<br>
+                            • Play Store (vehicle apps)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Android 11 (R)</td>
+                        <td>AAOS 2.0</td>
+                        <td>Performance optimization and stability improvements</td>
+                        <td>
+                            • Wireless Android Auto support<br>
+                            • Multi-display support<br>
+                            • Improved media playback
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Android 12 (S)</td>
+                        <td>AAOS 3.0</td>
+                        <td>Material You design introduction</td>
+                        <td>
+                            • Dynamic Color (auto theme adjustment)<br>
+                            • Privacy dashboard<br>
+                            • Nearby UWB support
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Android 13 (T)</td>
+                        <td>AAOS 4.0</td>
+                        <td>Multi-user improvements, HD maps</td>
+                        <td>
+                            • HD Maps (high-precision maps)<br>
+                            • Improved guest mode<br>
+                            • Bluetooth LE Audio<br>
+                            • Themed app icons
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Android 14 (U)</td>
+                        <td>AAOS 5.0</td>
+                        <td>AI integration, performance improvements</td>
+                        <td>
+                            • Bard AI integration (Assistant)<br>
+                            • Ultra HDR display support<br>
+                            • 20% battery efficiency improvement<br>
+                            • Satellite connection preparation
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Android 15 (V)</td>
+                        <td>AAOS 6.0 (planned)</td>
+                        <td>Next-gen AI, AR navigation</td>
+                        <td>
+                            • Gemini AI integration<br>
+                            • AR augmented reality navigation<br>
+                            • Vehicle-to-Everything (V2X)<br>
+                            • 8K display support
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📈 Major Improvement Trends
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        Performance Improvements
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Boot time: 15s → 5s (Android 10→14)</li>
+                            <li>Memory usage: 3GB → 2.5GB (optimized)</li>
+                            <li>Maps rendering speed 2x faster</li>
+                            <li>40% battery efficiency improvement</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎨</span>
+                        UI/UX Evolution
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Material Design → Material You</li>
+                            <li>Dark mode default support</li>
+                            <li>Dynamic Color (auto brand color application)</li>
+                            <li>Animation smoothness (120Hz support)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🤖</span>
+                        AI Integration
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Google Assistant → Bard → Gemini</li>
+                            <li>Context-aware voice commands</li>
+                            <li>Smart route recommendations (AI-based)</li>
+                            <li>Voice summaries (news, messages, etc.)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        Security Enhancements
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Privacy dashboard</li>
+                            <li>Auto permission revocation</li>
+                            <li>SafetyNet → Play Integrity API</li>
+                            <li>Biometric authentication support (fingerprint, face)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 16: Reference Documents -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">16</span>
+                Reference Documents and Resources
+            </h2>
+            <p class="section-description">
+                Organizes official documentation, AOSP source code, and external resources useful for GAS and AAOS development.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📚 Official Documentation
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Document</th>
+                        <th>Link</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Android Automotive OS</td>
+                        <td><a href="https://source.android.com/docs/automotive" style="color: var(--accent-automotive);">source.android.com/automotive</a></td>
+                        <td>Official AAOS guide</td>
+                    </tr>
+                    <tr>
+                        <td>Google Automotive Services</td>
+                        <td><a href="https://www.android.com/auto/embedded/" style="color: var(--accent-automotive);">android.com/auto/embedded</a></td>
+                        <td>GAS introduction and partnership</td>
+                    </tr>
+                    <tr>
+                        <td>Android for Cars App Library</td>
+                        <td><a href="https://developer.android.com/training/cars" style="color: var(--accent-automotive);">developer.android.com/cars</a></td>
+                        <td>Vehicle app development guide</td>
+                    </tr>
+                    <tr>
+                        <td>Google Play Services</td>
+                        <td><a href="https://developers.google.com/android/guides/overview" style="color: var(--accent-automotive);">developers.google.com/android</a></td>
+                        <td>Play Services API documentation</td>
+                    </tr>
+                    <tr>
+                        <td>Google Maps Platform</td>
+                        <td><a href="https://developers.google.com/maps" style="color: var(--accent-automotive);">developers.google.com/maps</a></td>
+                        <td>Maps API and SDK</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                💻 AOSP Source Code
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Path</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Car API</td>
+                        <td>packages/services/Car/car-lib/</td>
+                        <td>Android Car API (CarPropertyManager, etc.)</td>
+                    </tr>
+                    <tr>
+                        <td>Car Service</td>
+                        <td>packages/services/Car/service/</td>
+                        <td>Vehicle service implementation</td>
+                    </tr>
+                    <tr>
+                        <td>Vehicle HAL (AIDL)</td>
+                        <td>hardware/interfaces/automotive/vehicle/</td>
+                        <td>Vehicle HAL interface</td>
+                    </tr>
+                    <tr>
+                        <td>Car Settings</td>
+                        <td>packages/apps/Car/Settings/</td>
+                        <td>Vehicle settings app</td>
+                    </tr>
+                    <tr>
+                        <td>Car Launcher</td>
+                        <td>packages/apps/Car/Launcher/</td>
+                        <td>Default launcher implementation</td>
+                    </tr>
+                    <tr>
+                        <td>Car Media</td>
+                        <td>packages/apps/Car/Media/</td>
+                        <td>Media app template</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🛠️ Development Tools
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        Essential Tools
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Android Studio:</strong> Official IDE</li>
+                            <li><strong>AOSP Build System:</strong> System image build</li>
+                            <li><strong>Automotive Emulator:</strong> AAOS emulator</li>
+                            <li><strong>Car Template Library:</strong> UI templates</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📖</span>
+                        Learning Resources
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Android Developers:</strong> Codelabs & Tutorials</li>
+                            <li><strong>Google I/O Sessions:</strong> Annual presentation videos</li>
+                            <li><strong>Stack Overflow:</strong> Community Q&A</li>
+                            <li><strong>GitHub:</strong> Open source sample code</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 17: Related Detailed Documents -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">17</span>
+                Related Detailed Documents
+            </h2>
+            <p class="section-description">
+                Provides links to other AAOS and media framework documents related to GAS.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Android Automotive OS
+                    </h3>
+                    <div class="card-description">
+                        Detailed explanation of AAOS architecture, Vehicle HAL, Car Service, and system design.
+                    </div>
+                    <a href="aaos.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Car Media Service
+                    </h3>
+                    <div class="card-description">
+                        Covers AAOS media management service, Last Media Source, Autoplay policy, and more.
+                    </div>
+                    <a href="carmedia.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⌨️</span>
+                        AAOS Key Events
+                    </h3>
+                    <div class="card-description">
+                        Explains vehicle steering wheel button, physical key event handling, and Google Assistant integration.
+                    </div>
+                    <a href="aaos-key-events.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        Explains the core architecture of Android media framework (MediaPlayer, MediaSession, etc.).
+                    </div>
+                    <a href="media-framework-core.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        Covers AAOS audio system architecture including AudioFlinger, AudioPolicyService, etc.
+                    </div>
+                    <a href="audio-framework.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Power Policy & Suspend
+                    </h3>
+                    <div class="card-description">
+                        Explains AAOS power management, Suspend-to-RAM, Deep Sleep mechanisms.
+                    </div>
+                    <a href="power-policy-suspend.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧪</span>
+                        CTS/GTS Testing
+                    </h3>
+                    <div class="card-description">
+                        Summarizes CTS/VTS/GTS test framework and requirements for GAS certification.
+                    </div>
+                    <a href="cts.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        CDD (Compatibility Definition Document)
+                    </h3>
+                    <div class="card-description">
+                        Covers Android CDD Automotive section requirements and GAS certification criteria.
+                    </div>
+                    <a href="cdd.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Google Automotive Services (GAS) Architecture</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                The Future of Vehicle Infotainment · AAOS + GAS
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-automotive); text-decoration: none;">
+                    ← Back to AOSP Media Framework
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script>
+        // Add scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

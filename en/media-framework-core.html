@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Framework Core</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">Media Framework Core</h1>
+            <p class="page-subtitle">Core architecture and detailed layer structure of the Android Media Framework</p>
+        </header>
+
+        <!-- Section 1: Overall Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overall Architecture
+            </h2>
+            <p class="section-description">
+                The AOSP Media Framework follows the standard AOSP 5-layer architecture, with each layer separated by clear interfaces.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Layer1["Layer 1: Application Layer"]
+                        APP["Media Apps<br/>YouTube, Spotify, Camera"]
+                    end
+
+                    subgraph Layer2["Layer 2: Java API Framework"]
+                        FRAMEWORK["android.media.*<br/>MediaPlayer • MediaCodec • MediaRecorder<br/>MediaSession • MediaRouter • MediaDrm"]
+                    end
+
+                    subgraph Layer3["Layer 3: Native Libraries & Runtime"]
+                        ART["Android Runtime (ART)"]
+                        NATIVE["Media Native Libraries<br/>libmedia • libstagefright • libmediaplayerservice<br/>NuPlayer • MediaExtractor"]
+                    end
+
+                    subgraph Layer4["Layer 4: Hardware Abstraction Layer"]
+                        HAL["Media HALs<br/>Codec2 HAL • Audio HAL • Camera HAL"]
+                    end
+
+                    subgraph Layer5["Layer 5: Linux Kernel"]
+                        KERNEL["Kernel Drivers<br/>ALSA • V4L2 • Hardware Codecs"]
+                    end
+
+                    APP -->|Java API| FRAMEWORK
+                    FRAMEWORK -->|JNI| ART
+                    ART -->|Native Calls| NATIVE
+                    NATIVE -->|Binder IPC| NATIVE
+                    NATIVE -->|HIDL/AIDL| HAL
+                    HAL -->|System Calls| KERNEL
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>Key Concepts</strong><br/>
+                • <strong>Application Layer</strong>: Media apps (user interface)<br/>
+                • <strong>Framework</strong>: Java API (MediaPlayer, MediaCodec, etc.)<br/>
+                • <strong>Native</strong>: C++ media engine (Stagefright, NuPlayer)<br/>
+                • <strong>HAL</strong>: Hardware abstraction (Codec2, Audio, Camera)<br/>
+                • <strong>Kernel</strong>: Hardware drivers (ALSA, V4L2)
+            </div>
+        </section>
+
+        <!-- Section 2: Application Framework -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Application Framework Layer
+            </h2>
+            <p class="section-description">
+                High-level Java/Kotlin APIs used by Android applications to access media functionality.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        MediaPlayer
+                    </h3>
+                    <div class="card-description">
+                        <p>High-level media playback API</p>
+                        <ul>
+                            <li>Audio/video file playback</li>
+                            <li>Streaming support (HTTP, RTSP)</li>
+                            <li>Simple playback control (play, pause, stop)</li>
+                            <li>Uses NuPlayer internally</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        MediaCodec
+                    </h3>
+                    <div class="card-description">
+                        <p>Low-level codec access API</p>
+                        <ul>
+                            <li>Direct control of hardware/software codecs</li>
+                            <li>Encoder/decoder buffer management</li>
+                            <li>Asynchronous processing support</li>
+                            <li>Surface output support</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📹</span>
+                        MediaRecorder
+                    </h3>
+                    <div class="card-description">
+                        <p>Media recording API</p>
+                        <ul>
+                            <li>Audio/video capture</li>
+                            <li>Various format support (MP4, 3GP, etc.)</li>
+                            <li>Camera/microphone integration</li>
+                            <li>Real-time encoding</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔗</span>
+                        JNI Bridge
+                    </h3>
+                    <div class="card-description">
+                        <p>Java-Native connection</p>
+                        <ul>
+                            <li>Java API → C++ Native code translation</li>
+                            <li>Type mapping and memory management</li>
+                            <li>Exception handling bridge</li>
+                            <li><code>android_media_MediaPlayer.cpp</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Native Framework -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Native Framework Layer
+            </h2>
+            <p class="section-description">
+                Core media processing engine implemented in C++. Built around the Stagefright engine.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                    subgraph STAGEFRIGHT["Stagefright Engine"]
+                    ME["MediaExtractor<br />(Demuxer)"]
+                    NP["NuPlayer<br />(Player Engine)"]
+                    CC["CCodec<br />(Codec2)"]
+                    AC["ACodec<br />(OpenMAX)"]
+                    end
+
+                    subgraph COMPONENTS["Core Components"]
+                    LM["libmedia<br />(IPC Client)"]
+                    LS["libstagefright<br />(Core Logic)"]
+                    end
+
+                    APP["Application<br />Framework"] --> LM
+                    LM --> ME
+                    ME --> NP
+                    NP --> CC & AC
+                    NP --> LS
+
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        MediaExtractor
+                    </h3>
+                    <div class="card-description">
+                        <p>Media container parsing</p>
+                        <ul>
+                            <li>Various container format support (MP4, MKV, WebM)</li>
+                            <li>Track separation (audio/video)</li>
+                            <li>Metadata extraction</li>
+                            <li>Updatable via APEX module</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">▶️</span>
+                        NuPlayer
+                    </h3>
+                    <div class="card-description">
+                        <p>Unified playback engine (Android 5.0+)</p>
+                        <ul>
+                            <li>Audio/video synchronization</li>
+                            <li>Buffer management and scheduling</li>
+                            <li>Decoder control</li>
+                            <li>Renderer (AudioTrack, Surface) connection</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🆕</span>
+                        CCodec
+                        <span class="tag tag-new">Modern</span>
+                    </h3>
+                    <div class="card-description">
+                        <p>Codec2 Framework entry point</p>
+                        <ul>
+                            <li><code>/frameworks/av/media/codec2/sfplugin/</code></li>
+                            <li>Provides consistent API with ACodec</li>
+                            <li>Interacts with Codec2Client</li>
+                            <li>Zero-copy buffer channel</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔙</span>
+                        ACodec
+                        <span class="tag tag-legacy">Legacy</span>
+                    </h3>
+                    <div class="card-description">
+                        <p>OpenMAX IL entry point</p>
+                        <ul>
+                            <li>Primarily used in Android 9 and below</li>
+                            <li>OMXCodec wrapper</li>
+                            <li>Provides backward compatibility</li>
+                            <li>Migrating to Codec2</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3.5: Codec2 Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Codec2 Architecture
+                <span class="tag tag-new">Android 10+</span>
+            </h2>
+            <p class="section-description">
+                Codec2 is a modern codec framework replacing OpenMAX IL.
+                It provides performance improvements, modularization, and mainline updates.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP_LAYER["Application Layer"]
+                    MC["MediaCodec API"]
+                    end
+
+                    subgraph CCODEC["CCodec Layer"]
+                    CC_MAIN["CCodec<br />(Entry Point)"]
+                    CC_BUFFER["CCodecBufferChannel<br />(Zero-Copy Buffers)"]
+                    CC_CLIENT["Codec2Client"]
+                    end
+
+                    subgraph C2_CORE["Codec2 Core"]
+                    C2_COMP["C2Component<br />(Decoder/Encoder)"]
+                    C2_STORE["C2ComponentStore<br />(Factory)"]
+                    C2_PARAM["C2Params<br />(Configuration)"]
+                    end
+
+                    subgraph C2_IMPL["Component Implementations"]
+                    C2_SW["Software Codecs<br />(c2.android.*)"]
+                    C2_HW["Hardware Codecs<br />(c2.vendor.*)"]
+                    end
+
+                    subgraph C2_HAL["Codec2 HAL"]
+                    HAL_INTF["android.hardware<br />.media.c2@1.x"]
+                    end
+
+                    MC --> CC_MAIN
+                    CC_MAIN --> CC_BUFFER & CC_CLIENT
+                    CC_CLIENT --> C2_COMP & C2_STORE
+                    C2_COMP --> C2_PARAM
+                    C2_STORE --> C2_SW & C2_HW
+                    C2_HW --> HAL_INTF
+
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        Codec2Client
+                    </h3>
+                    <div class="card-description">
+                        <p>Codec2 Framework entry point</p>
+                        <ul>
+                            <li>Creates Component and Interface objects</li>
+                            <li>Accesses Vendor ComponentStore</li>
+                            <li>Manages listener callbacks</li>
+                            <li>HIDL/AIDL communication</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        C2Component
+                    </h3>
+                    <div class="card-description">
+                        <p>Actual codec component</p>
+                        <ul>
+                            <li>Specific codec implementation (H.264, VP8, VP9, AV1)</li>
+                            <li>Unique component names (<code>c2.android.*</code>)</li>
+                            <li>Work queue processing (Input/Output)</li>
+                            <li>Parameter query and configuration</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏭</span>
+                        C2ComponentStore
+                    </h3>
+                    <div class="card-description">
+                        <p>Component factory and management</p>
+                        <ul>
+                            <li>Component creation and lifecycle management</li>
+                            <li>C2PlatformComponentStore implementation</li>
+                            <li>Vendor custom implementations possible</li>
+                            <li>APEX packaging support</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        C2BufferChannel
+                    </h3>
+                    <div class="card-description">
+                        <p>Zero-copy buffer management</p>
+                        <ul>
+                            <li>Efficient buffer transfer (Zero-Copy)</li>
+                            <li>Shared Memory utilization</li>
+                            <li>Key element for performance optimization</li>
+                            <li>Input/output buffer scheduling</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        C2Params
+                    </h3>
+                    <div class="card-description">
+                        <p>Configuration parameters</p>
+                        <ul>
+                            <li><strong>Static parameters:</strong> Resolution, profile, keyframe interval</li>
+                            <li><strong>Dynamic parameters:</strong> Bitrate, framerate, keyframe request</li>
+                            <li>Unique C2Param structure per type</li>
+                            <li>Per-component configuration</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Mainline Module
+                    </h3>
+                    <div class="card-description">
+                        <p>Google-managed updates</p>
+                        <ul>
+                            <li>Manufacturers cannot directly modify</li>
+                            <li>Security updates via Play Store</li>
+                            <li>Reduced fragmentation</li>
+                            <li>Fast bug fixes and feature additions</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Codec2 vs OpenMAX Comparison -->
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Codec2 vs OpenMAX IL Comparison
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Codec2 (C2)</th>
+                        <th>OpenMAX IL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Introduction</strong></td>
+                        <td>Android 10 (2019)</td>
+                        <td>Early Android versions</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Buffer Management</strong></td>
+                        <td>Zero-Copy (shared memory)</td>
+                        <td>Buffer copy required</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Performance</strong></td>
+                        <td>High (copy overhead eliminated)</td>
+                        <td>Relatively lower</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Modularization</strong></td>
+                        <td>Mainline module (Google-managed)</td>
+                        <td>Included in system image</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Updates</strong></td>
+                        <td>Independent updates via Play Store</td>
+                        <td>Requires system OTA</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Extensibility</strong></td>
+                        <td>Component chaining, filter support</td>
+                        <td>Limited</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Configuration Management</strong></td>
+                        <td>C2Params (type-safe)</td>
+                        <td>OMX Index (less safe)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HAL Interface</strong></td>
+                        <td>HIDL/AIDL based</td>
+                        <td>OMX IL interface</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Current Status</strong></td>
+                        <td>Active development and recommended</td>
+                        <td>Legacy, being phased out</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 4: Media Server -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Media Server
+            </h2>
+            <p class="section-description">
+                A system process that provides media services. Communicates with clients via Binder IPC.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph CLIENT["Client Process"]
+                    C1["MediaPlayer<br />(App)"]
+                    end
+
+                    subgraph BINDER["Binder IPC"]
+                    B1["IMediaPlayer<br />(Interface)"]
+                    end
+
+                    subgraph SERVER["Media Server Process"]
+                    MS["MediaPlayerService"]
+                    AF["AudioFlinger"]
+                    CS["CameraService"]
+                    end
+
+                    subgraph HAL_LAYER["HAL Layer"]
+                    AHAL["Audio HAL"]
+                    CHAL["Camera HAL"]
+                    end
+
+                    C1 -->|"IPC Call"| B1
+                    B1 --> MS
+                    MS --> AF & CS
+                    AF --> AHAL
+                    CS --> CHAL
+
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎮</span>
+                        MediaPlayerService
+                    </h3>
+                    <div class="card-description">
+                        <p>Media playback service</p>
+                        <ul>
+                            <li>MediaPlayer instance creation and management</li>
+                            <li>Stagefright engine selection and control</li>
+                            <li>Per-client session management</li>
+                            <li>Resource management and prioritization</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        AudioFlinger
+                    </h3>
+                    <div class="card-description">
+                        <p>Audio mixing engine</p>
+                        <ul>
+                            <li>Multiple audio stream mixing</li>
+                            <li>Direct communication with Audio HAL</li>
+                            <li>Sample rate conversion</li>
+                            <li>Audio effect application</li>
+                            <li>Audio routing control</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📸</span>
+                        CameraService
+                    </h3>
+                    <div class="card-description">
+                        <p>Camera management service</p>
+                        <ul>
+                            <li>Camera device connection and control</li>
+                            <li>Camera HAL interface</li>
+                            <li>Frame capture and streaming</li>
+                            <li>Multi-camera support</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔗</span>
+                        Binder IPC
+                    </h3>
+                    <div class="card-description">
+                        <p>Inter-process communication</p>
+                        <ul>
+                            <li>Client-server RPC mechanism</li>
+                            <li>Auto-generated proxy and stub</li>
+                            <li>Shared memory support</li>
+                            <li><code>/frameworks/av/media/libmedia</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: HAL Layer -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Hardware Abstraction Layer (HAL)
+                <span class="tag tag-hal">Hardware</span>
+            </h2>
+            <p class="section-description">
+                The Hardware Abstraction Layer provides a standard interface between the Android Framework and hardware drivers.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Audio HAL
+                    </h3>
+                    <div class="card-description">
+                        <p>Audio hardware interface (AIDL)</p>
+                        <ul>
+                            <li><strong>Core HAL:</strong> Main API used by AudioFlinger</li>
+                            <li><strong>Effects HAL:</strong> Audio effect control (AGC, NS)</li>
+                            <li><strong>Common HAL:</strong> Common data type library</li>
+                            <li>Android 14+ is AIDL-based</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Codec2 HAL
+                    </h3>
+                    <div class="card-description">
+                        <p>Video/audio codec HAL</p>
+                        <ul>
+                            <li><code>android.hardware.media.c2@1.x</code></li>
+                            <li>Hardware encoder/decoder access</li>
+                            <li>Vendor custom codec support</li>
+                            <li>C2ComponentStore implementation</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📷</span>
+                        Camera HAL
+                    </h3>
+                    <div class="card-description">
+                        <p>Camera hardware interface</p>
+                        <ul>
+                            <li>HAL3 (for Camera2 API)</li>
+                            <li>Pipeline setup and control</li>
+                            <li>Capture request processing</li>
+                            <li>Metadata and image streams</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔙</span>
+                        OpenMAX IL (Legacy)
+                        <span class="tag tag-legacy">Deprecated</span>
+                    </h3>
+                    <div class="card-description">
+                        <p>Legacy codec interface</p>
+                        <ul>
+                            <li>Used in Android 9 and below</li>
+                            <li>Based on Khronos standard</li>
+                            <li>Port-based buffer communication</li>
+                            <li>Replaced by Codec2 in Android 10+</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Video Playback Flow -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Video Playback Flow
+            </h2>
+            <p class="section-description">
+                Shows how data is transformed and processed through each layer when a video file is played.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App as Application
+                    participant MP as MediaPlayer
+                    participant NP as NuPlayer
+                    participant ME as MediaExtractor
+                    participant CC as CCodec
+                    participant C2 as C2Component
+                    participant HAL as Codec2 HAL
+                    participant HW as Hardware Decoder
+                    participant SF as Surface
+
+                    App->>MP: setDataSource(url)
+                    App->>MP: prepare()
+                    MP->>NP: Initialize
+                    NP->>ME: Parse container
+                    ME-->>NP: Video track info
+                    NP->>CC: Request decoder creation
+                    CC->>C2: Codec2Client.createComponent()
+                    C2->>HAL: Check hardware codec
+                    HAL-->>C2: Create component
+
+                    App->>MP: start()
+                    loop Playback loop
+                    NP->>ME: getSample()
+                    ME-->>NP: Compressed video frame
+                    NP->>CC: queueInputBuffer()
+                    CC->>C2: queue() - Zero-Copy
+                    C2->>HW: Hardware decoding
+                    HW-->>C2: Decoded frame
+                    C2-->>CC: dequeueOutputBuffer()
+                    CC-->>NP: Decoded frame
+                    NP->>SF: renderToSurface()
+                    end
+
+                    App->>MP: stop()
+                    MP->>NP: Stop
+                    NP->>CC: Release decoder
+                    CC->>C2: Release component
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 30px; margin-bottom: 15px;">
+                Step-by-Step Detailed Explanation
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">1. Source Setup</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>App calls <code>MediaPlayer.setDataSource()</code></li>
+                            <li>Specifies local file or network URL</li>
+                            <li>Creates NuPlayer instance</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">2. Container Parsing</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>MediaExtractor analyzes MP4/MKV container</li>
+                            <li>Identifies video/audio/subtitle tracks</li>
+                            <li>Extracts codec info and metadata</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">3. Decoder Creation</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Calls Codec2Client through CCodec</li>
+                            <li>Selects appropriate C2Component (H.264, VP9, etc.)</li>
+                            <li>Hardware codec preferred, software codec fallback</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">4. Decoding Loop</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Queue compressed frames to input buffer</li>
+                            <li>Transfer to hardware decoder via zero-copy</li>
+                            <li>Receive decoded YUV frames</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">5. Rendering</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Pass decoded frames to Surface</li>
+                            <li>SurfaceFlinger composites the screen</li>
+                            <li>Synchronize with audio (A/V Sync)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">6. Cleanup</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Release decoder when playback ends</li>
+                            <li>Free buffer memory</li>
+                            <li>Return hardware resources</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Audio Playback Flow -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Audio Playback Flow
+            </h2>
+            <p class="section-description">
+                Visualizes the data flow and role of each component when an audio file is played.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App as Application
+                    participant MP as MediaPlayer
+                    participant NP as NuPlayer
+                    participant ME as MediaExtractor
+                    participant C2 as C2Component<br />(Audio Decoder)
+                    participant AF as AudioFlinger
+                    participant AHAL as Audio HAL
+                    participant SPK as Speaker
+
+                    App->>MP: setDataSource(audio.mp3)
+                    App->>MP: prepare()
+                    MP->>NP: Initialize
+                    NP->>ME: Parse MP3
+                    ME-->>NP: Audio track (AAC/MP3)
+                    NP->>C2: Create audio decoder
+
+                    App->>MP: start()
+                    loop Playback loop
+                    NP->>ME: getSample()
+                    ME-->>NP: Compressed audio frame
+                    NP->>C2: Request decoding
+                    C2-->>NP: PCM data
+                    NP->>AF: AudioTrack.write()
+                    AF->>AF: Mixing & Effects
+                    AF->>AHAL: Audio output
+                    AHAL->>SPK: Playback
+                    end
+
+                    App->>MP: stop()
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎼</span>
+                        Compressed Formats
+                    </h3>
+                    <div class="card-description">
+                        <p>Input audio formats</p>
+                        <ul>
+                            <li>AAC (Advanced Audio Coding)</li>
+                            <li>MP3 (MPEG Audio Layer 3)</li>
+                            <li>Opus, Vorbis, FLAC</li>
+                            <li>Bitrate: 128-320 kbps (MP3)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        Decoding
+                    </h3>
+                    <div class="card-description">
+                        <p>Audio decoder processing</p>
+                        <ul>
+                            <li>C2Component (software decoder)</li>
+                            <li>Compressed → PCM conversion</li>
+                            <li>Sample rate: 44.1kHz / 48kHz</li>
+                            <li>Channels: Stereo (2ch) / Multichannel</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎚️</span>
+                        AudioFlinger
+                    </h3>
+                    <div class="card-description">
+                        <p>Audio mixing and processing</p>
+                        <ul>
+                            <li>Multiple AudioTrack mixing</li>
+                            <li>Volume adjustment and fading</li>
+                            <li>Effect application (EQ, Reverb)</li>
+                            <li>Sample rate resampling</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio HAL
+                    </h3>
+                    <div class="card-description">
+                        <p>Hardware audio output</p>
+                        <ul>
+                            <li>PCM data → Hardware transfer</li>
+                            <li>ALSA/OSS driver control</li>
+                            <li>Audio routing (speaker/headphones)</li>
+                            <li>Low-power audio path</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
+                Buffer Management and Synchronization
+            </h3>
+
+            <div class="card">
+                <div class="card-description">
+                    <p><strong>Buffer Flow:</strong></p>
+                    <ol style="margin-top: 10px; padding-left: 20px;">
+                        <li><strong>Input Buffer:</strong> Extract compressed audio frames from MediaExtractor</li>
+                        <li><strong>Decoder Buffer:</strong> C2Component decompresses and generates PCM</li>
+                        <li><strong>AudioTrack Buffer:</strong> NuPlayer delivers PCM data to AudioFlinger</li>
+                        <li><strong>HAL Buffer:</strong> AudioFlinger mixes and delivers to Audio HAL</li>
+                        <li><strong>Hardware Buffer:</strong> Playback to speaker via DMA</li>
+                    </ol>
+
+                    <p style="margin-top: 20px;"><strong>Latency Minimization:</strong></p>
+                    <ul style="margin-top: 10px; padding-left: 20px;">
+                        <li>Reduce latency with smaller buffer sizes</li>
+                        <li>Fast Audio Path (low-power mode)</li>
+                        <li>AAudio API (low-latency audio)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: MediaSession Framework -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                MediaSession Framework
+            </h2>
+            <p class="section-description">
+                MediaSession is a standard framework for media playback control and metadata sharing.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph MediaApp["Media App"]
+                        MS["MediaSession<br/>(Server)"]
+                        PLAYER["ExoPlayer/MediaPlayer"]
+                    end
+
+                    subgraph Controller["Controller Apps"]
+                        MC1["System UI<br/>(Notification)"]
+                        MC2["Wear OS<br/>(Watch Control)"]
+                        MC3["Auto/AAOS<br/>(Car Display)"]
+                    end
+
+                    subgraph Framework["Framework"]
+                        MSS["MediaSessionService<br/>(System Server)"]
+                    end
+
+                    MS -->|Register| MSS
+                    MS -.->|Metadata & State| MSS
+                    PLAYER -->|Playback Events| MS
+
+                    MC1 & MC2 & MC3 -->|Connect| MSS
+                    MSS -->|Control Commands| MS
+                    MS -->|Execute| PLAYER
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        MediaSession (Server)
+                    </h3>
+                    <div class="card-description">
+                        <p>Session provided by media app</p>
+                        <ul>
+                            <li>Publish playback state and metadata</li>
+                            <li>Receive control commands (Play, Pause, Skip)</li>
+                            <li>Queue management</li>
+                            <li>Custom action support</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎮</span>
+                        MediaController (Client)
+                    </h3>
+                    <div class="card-description">
+                        <p>Client used by control apps</p>
+                        <ul>
+                            <li>Query currently playing media</li>
+                            <li>Send playback control commands</li>
+                            <li>Receive metadata (title, artist, album art)</li>
+                            <li>Playback state change listener</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Media3 MediaSession
+                        <span class="tag tag-new">Recommended</span>
+                    </h3>
+                    <div class="card-description">
+                        <p>Jetpack Media3 version</p>
+                        <ul>
+                            <li><code>androidx.media3.session.MediaSession</code></li>
+                            <li>Richer features than Framework MediaSession</li>
+                            <li>Backward Compatibility (Android 5.0+)</li>
+                            <li>Modern API and Kotlin support</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        Use Cases
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Notification control</strong>: Playback control from notification</li>
+                            <li><strong>Wear OS</strong>: Control from smartwatch</li>
+                            <li><strong>Android Auto/AAOS</strong>: Car display</li>
+                            <li><strong>Google Assistant</strong>: Voice commands</li>
+                            <li><strong>Bluetooth</strong>: AVRCP protocol</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 9: MediaDrm Framework -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                MediaDrm Framework
+            </h2>
+            <p class="section-description">
+                A framework for playing content protected by DRM (Digital Rights Management).
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph App["Application"]
+                        PLAYER["ExoPlayer/MediaPlayer"]
+                        MD["MediaDrm API"]
+                        MC["MediaCodec"]
+                    end
+
+                    subgraph Framework["Framework"]
+                        MDSERVICE["MediaDrmService"]
+                    end
+
+                    subgraph Plugin["DRM Plugin"]
+                        WV["Widevine CDM<br/>(Content Decryption Module)"]
+                    end
+
+                    subgraph TEE["Trusted Execution Environment"]
+                        KM["Keymaster<br/>(Key Storage)"]
+                        SD["Secure Decoder"]
+                    end
+
+                    PLAYER -->|Encrypted Content| MD
+                    MD -->|License Request| MDSERVICE
+                    MDSERVICE --> WV
+                    WV -->|Store Keys| KM
+
+                    MC -->|Encrypted Buffer| SD
+                    SD -->|Access Keys| KM
+                    SD -->|Decrypted Frame| MC
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        MediaDrm API
+                    </h3>
+                    <div class="card-description">
+                        <p>DRM system interface (API 18+)</p>
+                        <ul>
+                            <li>License request and acquisition</li>
+                            <li>Key loading and management</li>
+                            <li>Provisioning (device registration)</li>
+                            <li>Supported DRM: Widevine, PlayReady, ClearKey</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        Widevine Levels
+                    </h3>
+                    <div class="card-description">
+                        <p>Hardware security levels</p>
+                        <ul>
+                            <li><strong>L1 (Hardware)</strong>: All processing in TEE, 4K/HDR support</li>
+                            <li><strong>L2 (Hybrid)</strong>: Only encryption in HW, max 540p</li>
+                            <li><strong>L3 (Software)</strong>: All SW processing, SD resolution only</li>
+                            <li>L1 required: Netflix 4K, Amazon Prime HDR</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        Secure Playback
+                    </h3>
+                    <div class="card-description">
+                        <p>Secure playback pipeline</p>
+                        <ul>
+                            <li><strong>Encrypted Buffer</strong>: Delivered in encrypted state</li>
+                            <li><strong>Secure Decoder</strong>: Decryption in TEE</li>
+                            <li><strong>Protected Surface</strong>: Screen capture prevention</li>
+                            <li><strong>HDCP</strong>: External display protection</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔑</span>
+                        Key Management
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Keymaster HAL</strong>: Hardware key storage</li>
+                            <li><strong>StrongBox</strong>: Dedicated security chip (Android 9+)</li>
+                            <li>Keys cannot be extracted (Hardware-backed)</li>
+                            <li>Session-specific temporary key generation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 10: MediaProvider & MediaStore -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                MediaProvider & MediaStore
+            </h2>
+            <p class="section-description">
+                A Content Provider that indexes and provides system media files to apps.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Apps["Applications"]
+                        GALLERY["Gallery App"]
+                        MUSIC["Music Player"]
+                    end
+
+                    subgraph Framework["Framework"]
+                        MS["MediaStore API<br/>(ContentResolver)"]
+                    end
+
+                    subgraph MediaProvider["MediaProvider Process"]
+                        MP["MediaProvider<br/>(Content Provider)"]
+                        SCANNER["MediaScanner<br/>(File Indexer)"]
+                        DB["SQLite Database<br/>(external.db)"]
+                    end
+
+                    subgraph Storage["Storage"]
+                        FILES["Media Files<br/>(Images, Videos, Audio)"]
+                    end
+
+                    GALLERY & MUSIC -->|Query| MS
+                    MS -->|ContentProvider IPC| MP
+                    MP -->|SQL Query| DB
+
+                    SCANNER -->|Scan| FILES
+                    SCANNER -->|Index| DB
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📂</span>
+                        MediaStore API
+                    </h3>
+                    <div class="card-description">
+                        <p>Media file access API</p>
+                        <ul>
+                            <li><code>MediaStore.Images</code>: Image query</li>
+                            <li><code>MediaStore.Video</code>: Video query</li>
+                            <li><code>MediaStore.Audio</code>: Audio query</li>
+                            <li>Metadata (title, artist, album, duration)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        MediaScanner
+                    </h3>
+                    <div class="card-description">
+                        <p>File indexing service</p>
+                        <ul>
+                            <li>Storage scan and media file discovery</li>
+                            <li>Metadata extraction (ID3, EXIF)</li>
+                            <li>Thumbnail generation (image/video)</li>
+                            <li>Database update</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🗄️</span>
+                        Database Structure
+                    </h3>
+                    <div class="card-description">
+                        <p>SQLite database</p>
+                        <ul>
+                            <li><strong>files</strong> table: All media files</li>
+                            <li><strong>audio_meta</strong>: Audio metadata</li>
+                            <li><strong>images</strong>: Image information</li>
+                            <li><strong>video</strong>: Video information</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        Scoped Storage (Android 10+)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Isolated storage space per app</li>
+                            <li>Permission required for shared storage access</li>
+                            <li>Secure access through MediaStore</li>
+                            <li>Direct file path access restricted</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 11: ExoPlayer & Media3 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                ExoPlayer & Media3
+                <span class="tag tag-new">Modern App Layer</span>
+            </h2>
+            <p class="section-description">
+                Modern media player libraries used at the app level.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Legacy["Legacy (2008-2022)"]
+                        MP["MediaPlayer<br/>(Framework API)"]
+                        EXO1["ExoPlayer Standalone<br/>(Google I/O Library)"]
+                    end
+
+                    subgraph Modern["Modern (2022+)"]
+                        M3["Media3<br/>(androidx.media3)"]
+                        M3_EXO["Media3 ExoPlayer"]
+                        M3_SESSION["Media3 MediaSession"]
+                        M3_UI["Media3 UI Components"]
+                    end
+
+                    subgraph Framework_Layer["Framework APIs"]
+                        MC["MediaCodec"]
+                        MS_FW["MediaSession (Framework)"]
+                        AUDIO["AudioTrack"]
+                    end
+
+                    MP -.->|Deprecated| M3
+                    EXO1 -.->|Migrated| M3_EXO
+
+                    M3 --> M3_EXO & M3_SESSION & M3_UI
+                    M3_EXO --> MC & AUDIO
+                    M3_SESSION --> MS_FW
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        MediaPlayer (Framework)
+                        <span class="tag tag-legacy">Legacy</span>
+                    </h3>
+                    <div class="card-description">
+                        <p>AOSP built-in player API</p>
+                        <ul>
+                            <li><strong>Pros</strong>: Simple API, OS integration</li>
+                            <li><strong>Cons</strong>: Limited customization, device inconsistency</li>
+                            <li><strong>Use</strong>: Simple local playback only</li>
+                            <li>HLS/DASH unsupported or unstable</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Media3 ExoPlayer
+                        <span class="tag tag-new">Recommended</span>
+                    </h3>
+                    <div class="card-description">
+                        <p>App-level advanced player</p>
+                        <ul>
+                            <li><strong>DASH, HLS, SmoothStreaming</strong> support</li>
+                            <li><strong>Custom Renderer</strong>: Extensible</li>
+                            <li><strong>Consistent behavior</strong>: Same across all devices</li>
+                            <li><strong>DRM integration</strong>: Widevine, PlayReady</li>
+                            <li>Used by Google, Netflix, Spotify</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Media3 MediaSession
+                    </h3>
+                    <div class="card-description">
+                        <p>Unified session management</p>
+                        <ul>
+                            <li>ExoPlayer + MediaSession integration</li>
+                            <li>MediaController compatible</li>
+                            <li>Auto/Wear/Assistant support</li>
+                            <li>Backward Compatibility (Android 5.0+)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📚</span>
+                        Media3 UI Components
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>PlayerView</strong>: Video player UI</li>
+                            <li><strong>PlayerControlView</strong>: Playback controls</li>
+                            <li><strong>StyledPlayerView</strong>: Theme support</li>
+                            <li>Fully customizable</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>API Selection Guide</strong><br/>
+                • <strong>Simple local playback</strong>: MediaPlayer<br/>
+                • <strong>Streaming (DASH/HLS)</strong>: Media3 ExoPlayer<br/>
+                • <strong>Low-level control</strong>: Use MediaCodec directly<br/>
+                • <strong>Background playback</strong>: Media3 MediaSession<br/>
+                • <strong>Recommendation</strong>: Use Media3 for new apps
+            </div>
+        </section>
+
+        <!-- Section 12: Related Pages -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                Related Documentation
+            </h2>
+            <p class="section-description">
+                For detailed explanations on each topic of the media framework, please refer to the pages below.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Codec 2.0 & Media HAL
+                    </h3>
+                    <div class="card-description">
+                        <p>Latest codec framework architecture</p>
+                        <ul>
+                            <li>Detailed Codec2 architecture</li>
+                            <li>C2Component structure</li>
+                            <li>HAL interface (HIDL/AIDL)</li>
+                            <li>OpenMAX IL migration</li>
+                        </ul>
+                        <a href="codec2.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Media Pipeline & Data Flow
+                    </h3>
+                    <div class="card-description">
+                        <p>Detailed media playback pipeline</p>
+                        <ul>
+                            <li>End-to-End data flow</li>
+                            <li>Buffer management strategy</li>
+                            <li>A/V synchronization mechanism</li>
+                            <li>Performance optimization techniques</li>
+                        </ul>
+                        <a href="media-playback.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        MediaExtractor & Container
+                    </h3>
+                    <div class="card-description">
+                        <p>Container parsing and demuxing</p>
+                        <ul>
+                            <li>MediaExtractor architecture</li>
+                            <li>MP4/MKV/WebM parsing</li>
+                            <li>Track separation and metadata</li>
+                            <li>Extractor plugin structure</li>
+                        </ul>
+                        <a href="media-extractor.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎮</span>
+                        MediaSession Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>Detailed media session documentation</p>
+                        <ul>
+                            <li>MediaSession architecture</li>
+                            <li>Controller-Session communication</li>
+                            <li>Notification Integration</li>
+                            <li>Auto/Wear/Assistant integration</li>
+                        </ul>
+                        <a href="mediasession.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🗄️</span>
+                        MediaProvider & Storage
+                    </h3>
+                    <div class="card-description">
+                        <p>Media file indexing and access</p>
+                        <ul>
+                            <li>MediaStore API usage</li>
+                            <li>MediaScanner operation</li>
+                            <li>Scoped Storage policy</li>
+                            <li>Database structure</li>
+                        </ul>
+                        <a href="mediaprovider.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>Audio processing pipeline</p>
+                        <ul>
+                            <li>AudioFlinger architecture</li>
+                            <li>AudioPolicyService</li>
+                            <li>Audio routing and mixing</li>
+                            <li>Audio HAL interface</li>
+                        </ul>
+                        <a href="audio-framework.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer
+            style="text-align: center; margin-top: 60px; padding: 40px; color: var(--text-muted); border-top: 1px solid var(--border-color);">
+            <p>© Android Media Framework Documentation</p>
+        </footer>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

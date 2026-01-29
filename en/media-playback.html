@@ -1,0 +1,2215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediaProvider in Media Playback Flow</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="mediaprovider.html" class="nav-button">
+            ← MediaProvider Overview
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">Media Playback Flow</h1>
+            <p class="page-subtitle">MediaProvider's Role and Audio/Video Playback Process</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overview: MediaProvider's Role in Media Playback
+            </h2>
+            <p class="section-description">
+                During audio/video playback, MediaProvider plays a crucial role in media file discovery, metadata provision, and file access control.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        Media Discovery and Indexing
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Media Search via MediaStore</strong></p>
+                        <ul>
+                            <li>Storage scanning and metadata indexing</li>
+                            <li>Media identification via <code>content://</code> URI</li>
+                            <li>Provides title, artist, album, duration metadata</li>
+                            <li>Automatic MIME type detection</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📂</span>
+                        File Access Provision
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Data Access via ContentResolver</strong></p>
+                        <ul>
+                            <li>File descriptor via <code>openFileDescriptor()</code></li>
+                            <li>Stream via <code>openInputStream()</code></li>
+                            <li>Scoped Storage permission checking</li>
+                            <li>Real-time access control via FUSE</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        Security and Privacy
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Secure Media Access</strong></p>
+                        <ul>
+                            <li>Per-app permission checking (READ_MEDIA_*)</li>
+                            <li>Automatic location redaction</li>
+                            <li>Protection of other apps' media</li>
+                            <li>Real-time filtering via FUSE Daemon</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Performance Optimization
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>FUSE Passthrough (Android 12+)</strong></p>
+                        <ul>
+                            <li>Direct file system access after permission check</li>
+                            <li>I/O performance improvement by bypassing user-space</li>
+                            <li>Random read performance improvement</li>
+                            <li>Native file system level speed</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Complete Playback Flow -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Complete Playback Flow
+            </h2>
+            <p class="section-description">
+                Visualizes the complete process from app media search to playback.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App as Media App
+                    participant CR as ContentResolver
+                    participant MP as MediaProvider
+                    participant DB as SQLite DB
+                    participant FUSE as FUSE Daemon
+                    participant FS as File System
+                    participant Player as MediaPlayer/Extractor
+
+                    Note over App,Player: 1. Media Search Phase
+                    App->>CR: query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
+                    CR->>MP: query() call
+                    MP->>DB: SELECT * FROM audio WHERE...
+                    DB-->>MP: Cursor (metadata)
+                    MP-->>CR: Return Cursor
+                    CR-->>App: Return Cursor
+                    App->>App: Iterate Cursor and extract URI
+
+                    Note over App,Player: 2. File Access Phase
+                    App->>CR: openFileDescriptor(content://media/...)
+                    CR->>MP: openFile() call
+                    MP->>MP: Permission check (READ_MEDIA_AUDIO)
+                    MP->>FUSE: FUSE_OPEN request
+                    FUSE->>FUSE: App UID verification
+                    FUSE->>FS: Open actual file
+                    FS-->>FUSE: File Descriptor
+                    FUSE->>FUSE: FUSE Passthrough setup (Android 12+)
+                    FUSE-->>MP: Return FD
+                    MP-->>CR: ParcelFileDescriptor
+                    CR-->>App: ParcelFileDescriptor
+
+                    Note over App,Player: 3. Media Playback Phase
+                    App->>Player: setDataSource(fileDescriptor)
+                    Player->>Player: MediaExtractor initialization
+                    Player->>FS: read() - Direct access when Passthrough enabled
+                    FS-->>Player: Media data
+                    Player->>Player: Decoding and rendering
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>Key Points:</strong>
+                <ul>
+                    <li><strong>Phase 1 (Search)</strong>: Query metadata from MediaProvider's SQLite DB</li>
+                    <li><strong>Phase 2 (Access)</strong>: Permission check via FUSE Daemon and file descriptor provision</li>
+                    <li><strong>Phase 3 (Playback)</strong>: MediaPlayer/MediaExtractor reads directly via file descriptor</li>
+                    <li><strong>Performance</strong>: Native speed achieved via FUSE Passthrough bypassing user-space</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 3: MediaPlayer Flow -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Playback via MediaPlayer
+            </h2>
+            <p class="section-description">
+                Simple media playback method using the high-level MediaPlayer API.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TD
+                    START[App Start] --> QUERY[MediaStore Query]
+                    QUERY --> URI[Obtain content:// URI]
+                    URI --> MP_CREATE[Create MediaPlayer]
+
+                    MP_CREATE --> SET_DS{setDataSource Method}
+
+                    SET_DS -->|Method 1| URI_DS[setDataSource<br />context, uri]
+                    SET_DS -->|Method 2| FD_DS[setDataSource<br />fileDescriptor]
+
+                    URI_DS --> MP_INTERNAL[MediaPlayer Internal<br />ContentResolver Call]
+                    FD_DS --> SKIP[App Directly<br />Obtains FD]
+
+                    MP_INTERNAL --> OPEN_FD[openFileDescriptor]
+                    SKIP --> OPEN_FD
+
+                    OPEN_FD --> FUSE_CHECK[FUSE Daemon<br />Permission Check]
+                    FUSE_CHECK --> PASSTHROUGH{FUSE Passthrough<br />Available?<br />Android 12+}
+
+                    PASSTHROUGH -->|Yes| DIRECT[Direct File<br />System Access]
+                    PASSTHROUGH -->|No| USERSPACE[Access via<br />User-space]
+
+                    DIRECT --> PREPARE[prepare /<br />prepareAsync]
+                    USERSPACE --> PREPARE
+
+                    PREPARE --> START_PLAY[start]
+                    START_PLAY --> DECODE[Decoding and Playback]
+                    DECODE --> END[Playback Complete]
+
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                MediaPlayer Usage Methods
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        URI Method (Recommended)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Simplest Approach</strong></p>
+                        <ul>
+                            <li><code>setDataSource(context, uri)</code></li>
+                            <li>MediaPlayer internally calls ContentResolver</li>
+                            <li>Automated permission handling</li>
+                            <li>Full Scoped Storage support</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        FileDescriptor Method
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Fine-grained Control</strong></p>
+                        <ul>
+                            <li>App directly calls <code>openFileDescriptor()</code></li>
+                            <li><code>setDataSource(fileDescriptor)</code></li>
+                            <li>Can specify offset and length</li>
+                            <li>Reusable across multiple MediaPlayer instances</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        Cautions
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>File Descriptor Constraints</strong></p>
+                        <ul>
+                            <li>Seekable FD required (Pipe not supported)</li>
+                            <li>Cannot use <code>ParcelFileDescriptor.createPipe()</code></li>
+                            <li>MediaPlayer requires Random Access</li>
+                            <li>Use <code>openFileDescriptor()</code> recommended</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        Performance Considerations
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Optimization Tips</strong></p>
+                        <ul>
+                            <li>Use <code>prepareAsync()</code> (prevent UI thread blocking)</li>
+                            <li>Leverage FUSE Passthrough (Android 12+)</li>
+                            <li>URI method efficient for local files</li>
+                            <li>Use URL method for streaming</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: MediaExtractor Flow -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Playback via MediaExtractor
+            </h2>
+            <p class="section-description">
+                Advanced media processing using low-level APIs: MediaExtractor and MediaCodec.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App
+                    participant CR as ContentResolver
+                    participant MP as MediaProvider
+                    participant FUSE as FUSE Daemon
+                    participant FS as File System
+                    participant ME as MediaExtractor
+                    participant MC as MediaCodec
+
+                    App->>CR: openFileDescriptor(uri)
+                    CR->>MP: openFile()
+                    MP->>FUSE: FUSE_OPEN
+                    FUSE->>FS: Open file
+                    FS-->>FUSE: FD
+                    FUSE->>FUSE: Passthrough setup
+                    FUSE-->>MP: FD
+                    MP-->>CR: ParcelFileDescriptor
+                    CR-->>App: ParcelFileDescriptor
+
+                    App->>ME: setDataSource(fileDescriptor)
+                    ME->>FS: Container parsing (MP4, MKV, etc.)
+                    FS-->>ME: Track info
+                    ME-->>App: Return Track Count
+
+                    App->>ME: selectTrack(trackIndex)
+                    App->>MC: Create MediaCodec and configure()
+                    App->>MC: start()
+
+                    loop Decoding Loop
+                    App->>ME: readSampleData(buffer)
+                    ME->>FS: read() - Direct access via Passthrough
+                    FS-->>ME: Encoded sample data
+                    ME-->>App: Return sample data
+
+                    App->>MC: queueInputBuffer()
+                    MC->>MC: Hardware decoding
+                    MC-->>App: dequeueOutputBuffer()
+                    App->>App: Rendering (AudioTrack/Surface)
+
+                    App->>ME: advance()
+                    end
+
+                    App->>ME: release()
+                    App->>MC: release()
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                MediaExtractor Advantages
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎛️</span>
+                        Fine-grained Control
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Frame-level Processing</strong></p>
+                        <ul>
+                            <li>Individual sample data access</li>
+                            <li>Presentation timestamp control</li>
+                            <li>Specific track selection (audio/video/subtitle)</li>
+                            <li>Precise seek position control</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎨</span>
+                        Custom Processing
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Media Editing and Conversion</strong></p>
+                        <ul>
+                            <li>Video editing (trimming, merging)</li>
+                            <li>Format conversion (Transcoding)</li>
+                            <li>Filter application (color correction, effects)</li>
+                            <li>Audio mixing</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Metadata Extraction
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Detailed Information Retrieval</strong></p>
+                        <ul>
+                            <li>Codec info (MIME, Profile, Level)</li>
+                            <li>Resolution and frame rate</li>
+                            <li>Bitrate and sample rate</li>
+                            <li>Duration and track count</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Performance Optimization
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Efficient Data Processing</strong></p>
+                        <ul>
+                            <li>Zero-copy buffer usage</li>
+                            <li>Hardware-accelerated decoding</li>
+                            <li>I/O optimization via FUSE Passthrough</li>
+                            <li>Asynchronous processing capable</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: FUSE Passthrough Performance -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                FUSE Passthrough Performance Optimization
+            </h2>
+            <p class="section-description">
+                FUSE Passthrough introduced in Android 12+ dramatically improves media playback performance.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TB
+                    subgraph LEGACY ["Legacy FUSE - Android 11"]
+                    direction TB
+                    L_APP[App] --> L_KERNEL[Kernel FUSE]
+                    L_KERNEL --> L_DAEMON[FUSE Daemon<br />User-space]
+                    L_DAEMON --> L_KERNEL2[Kernel]
+                    L_KERNEL2 --> L_FS[File System]
+                    end
+
+                    subgraph PASSTHROUGH ["FUSE Passthrough - Android 12+"]
+                    direction TB
+                    P_APP[App] --> P_KERNEL[Kernel FUSE]
+                    P_KERNEL --> P_CHECK{Permission Check<br />Once Only}
+                    P_CHECK -->|Allowed| P_DIRECT[Direct Access<br />Kernel Only]
+                    P_DIRECT --> P_FS[File System]
+                    P_CHECK -.->|Check Only| P_DAEMON[FUSE Daemon]
+                    end
+
+                    LEGACY -.->|Performance Improvement| PASSTHROUGH
+
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Performance Comparison
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🐌</span>
+                        Legacy FUSE (Android 11)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Via User-space</strong></p>
+                        <ul>
+                            <li>All read/write goes through FUSE Daemon</li>
+                            <li>Kernel to User-space context switch overhead</li>
+                            <li>Random read performance degradation</li>
+                            <li>Performance issues on mid/low-end devices</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        FUSE Passthrough (Android 12+)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Direct File System Access</strong></p>
+                        <ul>
+                            <li>Direct access after initial permission check</li>
+                            <li>Bypasses user-space</li>
+                            <li>Native file system level performance</li>
+                            <li>Eliminates media playback stuttering</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Passthrough Operation
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>ioctl-based Optimization</strong></p>
+                        <ul>
+                            <li>Uses <code>FUSE_DEV_IOC_PASSTHROUGH_OPEN</code> ioctl</li>
+                            <li>Direct connection between FUSE file object and underlying file object</li>
+                            <li>Only Read/Write passthrough (other operations via Daemon)</li>
+                            <li>Policy-based selective application</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Performance Improvement Metrics
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Benchmark Results</strong></p>
+                        <ul>
+                            <li>Random Read: ~2-3x improvement</li>
+                            <li>Sequential Write: ~1.5-2x improvement</li>
+                            <li>Eliminates 4K video playback stuttering</li>
+                            <li>Particularly effective on budget devices</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>Additional Optimization Techniques:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Splicing</strong>: Minimize data copying</li>
+                    <li><strong>Write-back Cache</strong>: Utilize FUSE write cache</li>
+                    <li><strong>Permission Caching</strong>: Cache permission check results to reduce IPC</li>
+                    <li><strong>FUSE Bypass</strong>: <code>/Android/data</code>, <code>/Android/obb</code> directories bypass FUSE</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 6: Best Practices -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Media Playback Best Practices
+            </h2>
+            <p class="section-description">
+                Recommendations for efficient media playback using MediaProvider.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        Recommended Practices
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Use URI</strong>: Access media via <code>content://</code> URI</li>
+                            <li><strong>Use MediaStore</strong>: Use MediaStore API instead of file paths</li>
+                            <li><strong>Async Processing</strong>: Protect UI thread with <code>prepareAsync()</code></li>
+                            <li><strong>Request Permissions</strong>: Explicitly request <code>READ_MEDIA_*</code> permissions</li>
+                            <li><strong>Release Resources</strong>: Clean up with <code>release()</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">❌</span>
+                        Practices to Avoid
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Direct File Paths</strong>: Avoid direct <code>/storage/emulated/0/...</code> access</li>
+                            <li><strong>Using Pipes</strong>: Cannot pass Pipe FileDescriptor to MediaPlayer</li>
+                            <li><strong>UI Thread Blocking</strong>: Use <code>prepareAsync()</code> instead of <code>prepare()</code></li>
+                            <li><strong>Skipping Permission Check</strong>: Don't attempt media access without permissions</li>
+                            <li><strong>Resource Leaks</strong>: Always release MediaPlayer/MediaExtractor</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Performance Optimization
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Target Android 12+</strong>: Leverage FUSE Passthrough</li>
+                            <li><strong>Local Files</strong>: URI method is most efficient</li>
+                            <li><strong>Streaming</strong>: Use HTTP URL directly</li>
+                            <li><strong>Large Files</strong>: Process in chunks with MediaExtractor</li>
+                            <li><strong>Caching</strong>: Cache frequently used metadata</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        Security Considerations
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Comply with Scoped Storage</strong>: Follow Android 10+ policies</li>
+                            <li><strong>Principle of Least Privilege</strong>: Request only necessary permissions</li>
+                            <li><strong>User Consent</strong>: Obtain consent when modifying other apps' media</li>
+                            <li><strong>Protect Sensitive Info</strong>: Be aware of location redaction</li>
+                            <li><strong>Safe URIs</strong>: Only use URIs from trusted sources</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: NuPlayer Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                NuPlayer Architecture
+            </h2>
+            <p class="section-description">
+                Internal structure of NuPlayer, the core media playback engine used since Android 5.0+.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP["Application"]
+                        MEDIAPLAYER["MediaPlayer API"]
+                    end
+
+                    subgraph NUPLAYER["NuPlayer Engine"]
+                        NUPLAYER_MAIN["NuPlayer<br/>(Main Controller)"]
+
+                        subgraph SOURCE["Source"]
+                            GENERIC_SRC["GenericSource<br/>(Local File/FD)"]
+                            HTTP_SRC["HTTPLiveSource<br/>(HLS Streaming)"]
+                            RTSP_SRC["RTSPSource<br/>(RTSP Streaming)"]
+                        end
+
+                        subgraph DECODER["Decoder"]
+                            VIDEO_DEC["DecoderPassThrough<br/>(Video Decoder)"]
+                            AUDIO_DEC["DecoderPassThrough<br/>(Audio Decoder)"]
+                        end
+
+                        subgraph RENDERER["Renderer"]
+                            VIDEO_REN["VideoRenderer<br/>(Surface)"]
+                            AUDIO_REN["AudioRenderer<br/>(AudioSink)"]
+                        end
+                    end
+
+                    subgraph CODEC["Codec Layer"]
+                        MEDIACODEC["MediaCodec"]
+                        CODEC2["Codec2"]
+                    end
+
+                    subgraph OUTPUT["Output"]
+                        SURFACE["Surface<br/>(SurfaceFlinger)"]
+                        AUDIOTRACK["AudioTrack<br/>(AudioFlinger)"]
+                    end
+
+                    MEDIAPLAYER --> NUPLAYER_MAIN
+                    NUPLAYER_MAIN --> SOURCE
+                    SOURCE --> DECODER
+                    DECODER --> MEDIACODEC
+                    DECODER --> CODEC2
+                    MEDIACODEC --> RENDERER
+                    CODEC2 --> RENDERER
+                    VIDEO_REN --> SURFACE
+                    AUDIO_REN --> AUDIOTRACK
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                NuPlayer Key Components
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        NuPlayer Main Controller
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Central Control Logic</strong></p>
+                        <ul>
+                            <li>State machine management (Idle, Preparing, Started, Paused)</li>
+                            <li>Message coordination between Source, Decoder, Renderer</li>
+                            <li>Playback control: Seek, Pause, Resume</li>
+                            <li>Error handling and callbacks</li>
+                            <li><code>frameworks/av/media/libmediaplayerservice/nuplayer/NuPlayer.cpp</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Source (GenericSource)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Data Source Management</strong></p>
+                        <ul>
+                            <li>Container parsing via MediaExtractor</li>
+                            <li>Track selection (audio/video/subtitle)</li>
+                            <li>Reading compressed sample data</li>
+                            <li>Seek position control</li>
+                            <li>Supports local files, FileDescriptor, content:// URI</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Decoder (DecoderPassThrough)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Codec Wrapper</strong></p>
+                        <ul>
+                            <li>Uses MediaCodec or Codec2</li>
+                            <li>Input buffer queuing (compressed data)</li>
+                            <li>Output buffer dequeuing (decoded data)</li>
+                            <li>Format change detection (resolution, channel changes)</li>
+                            <li>Asynchronous processing and callbacks</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🖥️</span>
+                        Renderer (Video/Audio)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Output Rendering</strong></p>
+                        <ul>
+                            <li><strong>VideoRenderer</strong>: Frame rendering to Surface</li>
+                            <li><strong>AudioRenderer</strong>: Audio output via AudioSink</li>
+                            <li>A/V synchronization (PTS-based)</li>
+                            <li>Buffering and latency management</li>
+                            <li>Drop/Duplicate frame handling</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                NuPlayer State Machine
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    stateDiagram-v2
+                    [*] --> IDLE
+                    IDLE --> PREPARING: setDataSource() + prepare()
+                    PREPARING --> PREPARED: onPrepared()
+                    PREPARED --> STARTED: start()
+                    STARTED --> PAUSED: pause()
+                    PAUSED --> STARTED: start()
+                    STARTED --> STARTED: seekTo() (internal processing)
+                    PAUSED --> PREPARING: reset()
+                    STARTED --> PREPARING: reset()
+                    PREPARED --> IDLE: release()
+                    PREPARING --> IDLE: release()
+                    STARTED --> IDLE: release()
+                    PAUSED --> IDLE: release()
+                    IDLE --> [*]
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>NuPlayer vs AwesomePlayer</strong><br/>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>AwesomePlayer</strong>: Legacy player used in Android 4.x and below (synchronous, limited features)</li>
+                    <li><strong>NuPlayer</strong>: Modern player introduced in Android 5.0+ (asynchronous, HLS/DASH support)</li>
+                    <li><strong>Difference</strong>: NuPlayer completely redesigned with async message-based architecture</li>
+                    <li><strong>Current</strong>: AwesomePlayer completely removed, only NuPlayer used</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 8: Buffer Management and Data Flow -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Buffer Management and Data Flow
+            </h2>
+            <p class="section-description">
+                Detailed explanation of how buffers are managed and data flows during media playback.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                End-to-End Data Flow
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                    subgraph STORAGE["Storage"]
+                        FILE["MP4 File<br/>(Container)"]
+                    end
+
+                    subgraph EXTRACTOR["MediaExtractor"]
+                        PARSER["Container Parser"]
+                        DEMUX["Demuxer"]
+                    end
+
+                    subgraph CODEC["MediaCodec"]
+                        INPUT_Q["Input Queue<br/>(Compressed)"]
+                        DECODER["Decoder<br/>(HW/SW)"]
+                        OUTPUT_Q["Output Queue<br/>(Raw)"]
+                    end
+
+                    subgraph RENDERER["Renderer"]
+                        V_RENDER["Video Renderer"]
+                        A_RENDER["Audio Renderer"]
+                    end
+
+                    subgraph OUTPUT["Output"]
+                        SURFACE["Surface<br/>(YUV/RGB)"]
+                        AUDIOSINK["AudioSink<br/>(PCM)"]
+                    end
+
+                    FILE -->|read()| PARSER
+                    PARSER --> DEMUX
+                    DEMUX -->|H.264 NAL| INPUT_Q
+                    DEMUX -->|AAC Frame| INPUT_Q
+                    INPUT_Q --> DECODER
+                    DECODER --> OUTPUT_Q
+                    OUTPUT_Q -->|YUV Buffer| V_RENDER
+                    OUTPUT_Q -->|PCM Buffer| A_RENDER
+                    V_RENDER --> SURFACE
+                    A_RENDER --> AUDIOSINK
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Buffer Queue Structure
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📥</span>
+                        Input Buffer Queue
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Compressed Data Input</strong></p>
+                        <ul>
+                            <li><strong>Capacity</strong>: Typically 4-16 buffers</li>
+                            <li><strong>Size</strong>: Varies by codec (H.264: ~1MB, AAC: ~8KB)</li>
+                            <li><strong>Data</strong>: Compressed video/audio frames</li>
+                            <li><strong>Metadata</strong>: PTS, Flags (KeyFrame, EOS)</li>
+                            <li><strong>Flow</strong>: MediaExtractor → Input Queue → Decoder</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📤</span>
+                        Output Buffer Queue
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Decoded Data Output</strong></p>
+                        <ul>
+                            <li><strong>Capacity</strong>: Typically 4-16 buffers</li>
+                            <li><strong>Size</strong>: Large (1920x1080 YUV: ~3MB, PCM: ~192KB)</li>
+                            <li><strong>Data</strong>: YUV frames or PCM audio</li>
+                            <li><strong>Metadata</strong>: PTS, color format</li>
+                            <li><strong>Flow</strong>: Decoder → Output Queue → Renderer</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Zero-Copy Mechanism
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Minimize Memory Copying</strong></p>
+                        <ul>
+                            <li><strong>Shared Memory</strong>: Buffer sharing between processes</li>
+                            <li><strong>ION Allocator</strong>: Kernel-level memory allocation</li>
+                            <li><strong>Gralloc</strong>: Graphics buffer sharing</li>
+                            <li><strong>File Descriptor</strong>: Buffer handle passing</li>
+                            <li><strong>Performance</strong>: Reduced CPU usage and memory bandwidth</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏊</span>
+                        Buffer Pool
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Buffer Reuse</strong></p>
+                        <ul>
+                            <li><strong>C2BlockPool</strong>: Codec2's buffer pool</li>
+                            <li><strong>Allocation Strategy</strong>: Pre-allocate and reuse</li>
+                            <li><strong>Memory Efficiency</strong>: Eliminate allocation/deallocation overhead</li>
+                            <li><strong>Reference Counting</strong>: Track buffers in use</li>
+                            <li><strong>Release Timing</strong>: Return to pool when reference count is 0</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Buffer Lifecycle
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant Pool as Buffer Pool
+                    participant Source as NuPlayer Source
+                    participant Decoder as MediaCodec
+                    participant Renderer as Renderer
+                    participant Surface as Surface/AudioSink
+
+                    Note over Pool: Buffer Allocation Phase
+                    Pool->>Pool: Pre-allocate buffers (initialization)
+
+                    Note over Source,Renderer: Playback Loop
+                    loop For Each Frame
+                        Source->>Pool: Request buffer
+                        Pool-->>Source: Provide empty buffer
+                        Source->>Source: Read data via MediaExtractor
+                        Source->>Decoder: queueInputBuffer(compressed data)
+
+                        Decoder->>Decoder: Hardware decoding
+
+                        Decoder->>Pool: Request output buffer
+                        Pool-->>Decoder: Provide empty buffer
+                        Decoder-->>Renderer: dequeueOutputBuffer(decoded data)
+
+                        Renderer->>Surface: Render (releaseOutputBuffer)
+                        Surface-->>Pool: Return buffer (decrement reference count)
+                    end
+
+                    Note over Pool: On Termination
+                    Pool->>Pool: Release all buffers
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>Buffer Management Cautions</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Buffer Shortage</strong>: Empty input queue causes decoder starvation → frame drops</li>
+                    <li><strong>Buffer Overflow</strong>: Full output queue causes decoder blocking → increased latency</li>
+                    <li><strong>Memory Leak</strong>: Not releasing buffers causes memory leak → app crash</li>
+                    <li><strong>Sync Issues</strong>: Passing buffers with incorrect PTS breaks A/V sync</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: A/V Sync Mechanism -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                A/V Synchronization Mechanism
+            </h2>
+            <p class="section-description">
+                Methods to accurately synchronize audio and video to maintain lip-sync.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph DECODER["Decoder"]
+                        V_DEC["Video Decoder"]
+                        A_DEC["Audio Decoder"]
+                    end
+
+                    subgraph TIMESTAMP["Timestamp"]
+                        V_PTS["Video PTS<br/>(us)"]
+                        A_PTS["Audio PTS<br/>(us)"]
+                    end
+
+                    subgraph SYNC["Sync Controller"]
+                        MEDIASYNC["MediaClock<br/>(Master Clock)"]
+                        COMPARE["PTS Comparison"]
+                    end
+
+                    subgraph RENDERER["Renderer"]
+                        V_REN["VideoRenderer"]
+                        A_REN["AudioRenderer"]
+                    end
+
+                    subgraph ACTION["Action"]
+                        DROP["Drop Frame<br/>(Video Late)"]
+                        DUPLICATE["Duplicate Frame<br/>(Video Early)"]
+                        NORMAL["Normal Render"]
+                    end
+
+                    V_DEC --> V_PTS
+                    A_DEC --> A_PTS
+                    V_PTS --> COMPARE
+                    A_PTS --> MEDIASYNC
+                    MEDIASYNC --> COMPARE
+                    COMPARE --> DROP
+                    COMPARE --> DUPLICATE
+                    COMPARE --> NORMAL
+                    DROP --> V_REN
+                    DUPLICATE --> V_REN
+                    NORMAL --> V_REN
+                    A_PTS --> A_REN
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                PTS (Presentation Time Stamp)
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        PTS Concept
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Playback Time Information</strong></p>
+                        <ul>
+                            <li><strong>Definition</strong>: Time when each frame/sample should be played (in microseconds)</li>
+                            <li><strong>Reference</strong>: Elapsed time from media start</li>
+                            <li><strong>Source</strong>: Extracted from container (MP4, MKV, etc.)</li>
+                            <li><strong>Flow</strong>: MediaExtractor → Decoder → Renderer</li>
+                            <li><strong>Example</strong>: 2nd frame of 30fps video PTS = 33,333us</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio as Master Clock
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Synchronization Based on Audio</strong></p>
+                        <ul>
+                            <li><strong>Reason</strong>: Humans are more sensitive to audio delays</li>
+                            <li><strong>Method</strong>: Use AudioSink's current playback position as Master Clock</li>
+                            <li><strong>Calculation</strong>: Track actual playback time via getPosition()</li>
+                            <li><strong>Video Adjustment</strong>: Render video matching audio PTS</li>
+                            <li><strong>Tolerance</strong>: Generally within 50ms</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Synchronization Strategy
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>PTS Difference Handling</strong></p>
+                        <ul>
+                            <li><strong>Video Late (Video PTS > Audio PTS + 50ms)</strong>:
+                                <ul style="margin-top: 5px; padding-left: 20px;">
+                                    <li>→ Drop Frame</li>
+                                    <li>→ Fast Forward Decoding</li>
+                                </ul>
+                            </li>
+                            <li><strong>Video Early (Video PTS < Audio PTS - 50ms)</strong>:
+                                <ul style="margin-top: 5px; padding-left: 20px;">
+                                    <li>→ Duplicate Frame</li>
+                                    <li>→ Delay Render</li>
+                                </ul>
+                            </li>
+                            <li><strong>Normal Range (within 50ms)</strong>: Normal rendering</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Synchronization Implementation
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Synchronization in NuPlayer</strong></p>
+                        <ul>
+                            <li><strong>MediaClock</strong>: Class for tracking playback time</li>
+                            <li><strong>VideoRenderer</strong>: PTS comparison in onDrainVideoQueue()</li>
+                            <li><strong>AudioRenderer</strong>: Provides actual playback position via AudioSink</li>
+                            <li><strong>Latency Compensation</strong>: Considers audio output delay</li>
+                            <li><strong>Real-time Adjustment</strong>: Sync check on every frame</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Sync Issue Troubleshooting
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Cause</th>
+                        <th>Solution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Lip-sync Mismatch</strong></td>
+                        <td>Incorrect PTS, decoder delay</td>
+                        <td>Check MediaExtractor PTS, use hardware decoder</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Audio Heard First</strong></td>
+                        <td>Video decoding slow</td>
+                        <td>Drop frames, lower resolution, change codec</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Video Seen First</strong></td>
+                        <td>Audio buffering delay</td>
+                        <td>Adjust AudioTrack buffer size, check output latency</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sync Breaks During Playback</strong></td>
+                        <td>CPU load, buffer shortage</td>
+                        <td>Stop background tasks, increase buffer queue size</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sync Breaks After Seek</strong></td>
+                        <td>Keyframe seek error</td>
+                        <td>Use SEEK_TO_CLOSEST_SYNC flag</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>Synchronization Debugging</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>logcat</strong>: <code>adb logcat -s NuPlayer NuPlayerRenderer</code></li>
+                    <li><strong>PTS Log</strong>: Search for "video PTS", "audio PTS"</li>
+                    <li><strong>Drop/Duplicate</strong>: Check for "drop", "late" keywords</li>
+                    <li><strong>Systrace</strong>: Analyze MediaCodec, AudioTrack timing</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 10: Streaming Pipeline -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                Streaming Pipeline
+            </h2>
+            <p class="section-description">
+                Explanation of adaptive streaming protocols like HLS, DASH and ExoPlayer architecture.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                Adaptive Streaming Protocols
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        HLS (HTTP Live Streaming)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Apple Developed, Widely Supported</strong></p>
+                        <ul>
+                            <li><strong>Format</strong>: .m3u8 playlist + .ts segments</li>
+                            <li><strong>Segments</strong>: Typically 6-10 seconds</li>
+                            <li><strong>Codecs</strong>: H.264, HEVC / AAC, AC-3</li>
+                            <li><strong>DRM</strong>: FairPlay (iOS), Widevine (Android)</li>
+                            <li><strong>Usage</strong>: Apple, YouTube, Twitch</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        DASH (Dynamic Adaptive Streaming over HTTP)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MPEG Standard, Flexible Structure</strong></p>
+                        <ul>
+                            <li><strong>Format</strong>: .mpd manifest + .m4s segments</li>
+                            <li><strong>Segments</strong>: 2-10 seconds (configurable)</li>
+                            <li><strong>Codecs</strong>: H.264, VP9, AV1 / AAC, Opus</li>
+                            <li><strong>DRM</strong>: Widevine, PlayReady</li>
+                            <li><strong>Usage</strong>: Netflix, YouTube (partial)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Adaptive Bitrate (ABR)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Quality Adjustment Based on Network Bandwidth</strong></p>
+                        <ul>
+                            <li><strong>Multi-bitrate</strong>: Same content encoded at multiple resolutions/bitrates</li>
+                            <li><strong>Bandwidth Measurement</strong>: Real-time download speed measurement</li>
+                            <li><strong>Quality Switching</strong>: Automatic switching based on network conditions
+                                <ul style="margin-top: 5px; padding-left: 20px;">
+                                    <li>Fast: 1080p (6Mbps)</li>
+                                    <li>Medium: 720p (3Mbps)</li>
+                                    <li>Slow: 480p (1Mbps)</li>
+                                </ul>
+                            </li>
+                            <li><strong>Minimize Buffering</strong>: Prevent stuttering</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Segment Download Strategy
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Initial Buffering</strong>: Pre-download 3-5 segments</li>
+                            <li><strong>During Playback</strong>: Download 1-2 segments ahead</li>
+                            <li><strong>Seek</strong>: Re-download from keyframe segment</li>
+                            <li><strong>Caching</strong>: Store downloaded segments on disk</li>
+                            <li><strong>Prefetch</strong>: Pre-download expected playback path</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ExoPlayer Architecture
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP["Application"]
+                        PLAYER_API["ExoPlayer API"]
+                    end
+
+                    subgraph EXOPLAYER["ExoPlayer Core"]
+                        PLAYBACK_THREAD["Playback Thread"]
+
+                        subgraph COMPONENTS["Components"]
+                            MEDIA_SOURCE["MediaSource<br/>(HLS/DASH/Local)"]
+                            TRACK_SELECTOR["TrackSelector<br/>(Quality Selection)"]
+                            LOAD_CONTROL["LoadControl<br/>(Buffering Policy)"]
+                        end
+
+                        subgraph RENDERERS["Renderers"]
+                            VIDEO_RENDERER["VideoRenderer"]
+                            AUDIO_RENDERER["AudioRenderer"]
+                            TEXT_RENDERER["TextRenderer"]
+                        end
+                    end
+
+                    subgraph PLATFORM["Platform"]
+                        MEDIACODEC["MediaCodec"]
+                        AUDIOTRACK["AudioTrack"]
+                        SURFACE["Surface"]
+                    end
+
+                    PLAYER_API --> PLAYBACK_THREAD
+                    PLAYBACK_THREAD --> COMPONENTS
+                    COMPONENTS --> RENDERERS
+                    VIDEO_RENDERER --> MEDIACODEC
+                    AUDIO_RENDERER --> MEDIACODEC
+                    MEDIACODEC --> SURFACE
+                    MEDIACODEC --> AUDIOTRACK
+                </div>
+            </div>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        MediaSource
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Data Source Abstraction</strong></p>
+                        <ul>
+                            <li><strong>HlsMediaSource</strong>: HLS streaming</li>
+                            <li><strong>DashMediaSource</strong>: DASH streaming</li>
+                            <li><strong>ProgressiveMediaSource</strong>: Local files, HTTP download</li>
+                            <li><strong>ConcatenatingMediaSource</strong>: Merge multiple sources</li>
+                            <li><strong>ClippingMediaSource</strong>: Play partial segment only</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        TrackSelector
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Track Selection Logic</strong></p>
+                        <ul>
+                            <li><strong>DefaultTrackSelector</strong>: Automatic quality selection</li>
+                            <li><strong>Resolution Selection</strong>: Considers screen size and bandwidth</li>
+                            <li><strong>Language Selection</strong>: User preferred language</li>
+                            <li><strong>Subtitle Selection</strong>: Auto/manual subtitle track selection</li>
+                            <li><strong>Customization</strong>: Implement app-specific selection policy</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        LoadControl
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Buffering Policy Control</strong></p>
+                        <ul>
+                            <li><strong>minBufferMs</strong>: Minimum buffer (default: 50s)</li>
+                            <li><strong>maxBufferMs</strong>: Maximum buffer (default: 50s)</li>
+                            <li><strong>bufferForPlaybackMs</strong>: Buffer to start playback (default: 2.5s)</li>
+                            <li><strong>bufferForPlaybackAfterRebufferMs</strong>: After rebuffer (default: 5s)</li>
+                            <li><strong>Custom Policy</strong>: Dynamic adjustment based on network conditions</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎨</span>
+                        ExoPlayer Advantages
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Consistency</strong>: Same behavior across all devices</li>
+                            <li><strong>Latest Features</strong>: Independent updates via Google Play</li>
+                            <li><strong>Extensibility</strong>: Custom Renderer, Extractor support</li>
+                            <li><strong>DRM Integration</strong>: Built-in Widevine, PlayReady support</li>
+                            <li><strong>Debugging</strong>: Detailed logs and event listeners</li>
+                            <li><strong>Media3</strong>: Evolution to latest Jetpack library</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>ExoPlayer vs MediaPlayer</strong><br/>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>MediaPlayer</strong>: Suitable for simple local playback, behavior varies by OS version</li>
+                    <li><strong>ExoPlayer (Media3)</strong>: Essential for streaming, consistent behavior, recommended for advanced features</li>
+                    <li><strong>Recommendation</strong>: Use Media3 ExoPlayer for new apps</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 11: Code Examples -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                Code Examples
+            </h2>
+            <p class="section-description">
+                Actual playback code using MediaPlayer, MediaExtractor, and ExoPlayer.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                MediaPlayer Basic Playback
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        URI Method Playback
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Using content:// URI</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Get audio URI from MediaStore
+val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+val projection = arrayOf(MediaStore.Audio.Media._ID)
+val cursor = contentResolver.query(uri, projection, null, null, null)
+
+cursor?.use {
+    if (it.moveToFirst()) {
+        val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
+        val audioUri = ContentUris.withAppendedId(uri, id)
+
+        // Initialize MediaPlayer
+        val mediaPlayer = MediaPlayer().apply {
+            setDataSource(applicationContext, audioUri)
+            prepareAsync()
+            setOnPreparedListener {
+                start()  // Start playback
+            }
+            setOnCompletionListener {
+                release()  // Release resources
+            }
+        }
+    }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📂</span>
+                        FileDescriptor Method
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Direct FD Acquisition</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Get FileDescriptor
+val pfd = contentResolver.openFileDescriptor(audioUri, "r")
+
+pfd?.use { parcelFd ->
+    val mediaPlayer = MediaPlayer().apply {
+        setDataSource(parcelFd.fileDescriptor)
+        prepare()  // Synchronous
+        start()
+
+        // Seek example
+        seekTo(30000)  // Move to 30 seconds
+
+        // Check status
+        val duration = duration  // ms
+        val position = currentPosition  // ms
+    }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                MediaExtractor + MediaCodec
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        MediaExtractor Initialization
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>val extractor = MediaExtractor()
+val pfd = contentResolver.openFileDescriptor(videoUri, "r")
+
+pfd?.use {
+    extractor.setDataSource(it.fileDescriptor)
+
+    // Find video track
+    var videoTrackIndex = -1
+    for (i in 0 until extractor.trackCount) {
+        val format = extractor.getTrackFormat(i)
+        val mime = format.getString(MediaFormat.KEY_MIME)
+        if (mime?.startsWith("video/") == true) {
+            videoTrackIndex = i
+            extractor.selectTrack(i)
+            break
+        }
+    }
+
+    val format = extractor.getTrackFormat(videoTrackIndex)
+    val width = format.getInteger(MediaFormat.KEY_WIDTH)
+    val height = format.getInteger(MediaFormat.KEY_HEIGHT)
+    val duration = format.getLong(MediaFormat.KEY_DURATION)  // us
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        MediaCodec Decoding Loop
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>val decoder = MediaCodec.createDecoderByType("video/avc")
+decoder.configure(format, surface, null, 0)
+decoder.start()
+
+val bufferInfo = MediaCodec.BufferInfo()
+var isEOS = false
+
+while (!isEOS) {
+    // Process input buffer
+    val inputIndex = decoder.dequeueInputBuffer(10000)
+    if (inputIndex >= 0) {
+        val inputBuffer = decoder.getInputBuffer(inputIndex)!!
+        val sampleSize = extractor.readSampleData(inputBuffer, 0)
+
+        if (sampleSize < 0) {
+            decoder.queueInputBuffer(inputIndex, 0, 0, 0,
+                MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+            isEOS = true
+        } else {
+            val pts = extractor.sampleTime
+            decoder.queueInputBuffer(inputIndex, 0, sampleSize, pts, 0)
+            extractor.advance()
+        }
+    }
+
+    // Process output buffer
+    val outputIndex = decoder.dequeueOutputBuffer(bufferInfo, 10000)
+    if (outputIndex >= 0) {
+        decoder.releaseOutputBuffer(outputIndex, true)  // Render to Surface
+    }
+}
+
+decoder.stop()
+decoder.release()
+extractor.release()</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ExoPlayer (Media3) Playback
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        HLS Streaming
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// build.gradle
+implementation("androidx.media3:media3-exoplayer:1.2.0")
+implementation("androidx.media3:media3-exoplayer-hls:1.2.0")
+implementation("androidx.media3:media3-ui:1.2.0")
+
+// Initialize ExoPlayer
+val player = ExoPlayer.Builder(context)
+    .setLoadControl(
+        DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                15000,  // minBufferMs
+                50000,  // maxBufferMs
+                2500,   // bufferForPlaybackMs
+                5000    // bufferForPlaybackAfterRebufferMs
+            )
+            .build()
+    )
+    .build()
+
+// HLS MediaSource
+val hlsUrl = "https://example.com/playlist.m3u8"
+val mediaItem = MediaItem.fromUri(hlsUrl)
+player.setMediaItem(mediaItem)
+player.prepare()
+player.play()
+
+// Connect to PlayerView
+val playerView = findViewById<PlayerView>(R.id.player_view)
+playerView.player = player</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        Local File Playback
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Using content:// URI
+val mediaItem = MediaItem.fromUri(contentUri)
+
+val player = ExoPlayer.Builder(context).build().apply {
+    setMediaItem(mediaItem)
+
+    // Event listener
+    addListener(object : Player.Listener {
+        override fun onPlaybackStateChanged(state: Int) {
+            when (state) {
+                Player.STATE_BUFFERING -> Log.d(TAG, "Buffering...")
+                Player.STATE_READY -> Log.d(TAG, "Ready to play")
+                Player.STATE_ENDED -> Log.d(TAG, "Playback ended")
+            }
+        }
+
+        override fun onPlayerError(error: PlaybackException) {
+            Log.e(TAG, "Playback error: ${error.message}")
+        }
+    })
+
+    prepare()
+    play()
+}
+
+// Seek
+player.seekTo(60000)  // 60 seconds position
+
+// Playback speed
+player.setPlaybackSpeed(1.5f)  // 1.5x speed
+
+// Release
+player.release()</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>Code Usage Notes</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Permissions</strong>: READ_MEDIA_AUDIO, READ_MEDIA_VIDEO required (Android 13+)</li>
+                    <li><strong>UI Thread</strong>: Use prepareAsync() or ExoPlayer async</li>
+                    <li><strong>Resource Release</strong>: Always call release() (prevent memory leaks)</li>
+                    <li><strong>Lifecycle</strong>: Pause/resume matching Activity/Fragment lifecycle</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 12: Performance Profiling -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                Performance Profiling and Debugging
+            </h2>
+            <p class="section-description">
+                Methods to measure media playback performance and troubleshoot issues.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                Debugging Tools
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        adb logcat Filtering
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Extracting Media Playback Logs</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># NuPlayer logs
+adb logcat -s NuPlayer NuPlayerDriver NuPlayerRenderer
+
+# MediaCodec logs
+adb logcat -s MediaCodec ACodec CCodec
+
+# MediaExtractor logs
+adb logcat -s MediaExtractor MPEG4Extractor
+
+# ExoPlayer logs
+adb logcat -s ExoPlayerImpl DefaultTrackSelector LoadControl
+
+# A/V Sync issue debugging
+adb logcat | grep -iE "pts|sync|late|drop"
+
+# Buffering issues
+adb logcat | grep -iE "buffer|starv|underrun"</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        dumpsys Analysis
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>System State Query</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># MediaPlayer instance status
+adb shell dumpsys media.player
+
+# MediaCodec usage
+adb shell dumpsys media.codec
+
+# AudioFlinger status
+adb shell dumpsys media.audio_flinger
+
+# Resource usage
+adb shell dumpsys media.resource_manager
+
+# Surface status
+adb shell dumpsys SurfaceFlinger</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📈</span>
+                        Systrace Profiling
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Timing Analysis</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Capture Systrace (10 seconds)
+adb shell atrace -z -t 10 \
+  gfx input view webview wm am audio video camera hal \
+  sched freq idle disk mmc load sync workq memreclaim \
+  -o /data/local/tmp/trace.html
+
+# Copy to PC
+adb pull /data/local/tmp/trace.html
+
+# Open chrome://tracing in Chrome to analyze
+
+# Key things to check:
+# - MediaCodec decoding time
+# - AudioTrack write timing
+# - SurfaceFlinger vsync
+# - CPU usage and scheduling</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        ExoPlayer EventLogger
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Detailed Event Logging</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Add EventLogger to ExoPlayer
+val player = ExoPlayer.Builder(context).build()
+player.addAnalyticsListener(EventLogger())
+
+// Log output contents:
+// - Track selection (video/audio quality)
+// - Buffering events (start/end)
+// - Decoder initialization
+// - Number of dropped frames
+// - Network bandwidth measurements
+// - Errors and warnings</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Common Issues and Solutions
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Cause</th>
+                        <th>Solution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Slow Playback Start</strong></td>
+                        <td>Synchronous prepare() call, large file</td>
+                        <td>Use prepareAsync(), adjust buffer size</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Video Stuttering (Buffering)</strong></td>
+                        <td>Slow network, slow decoder</td>
+                        <td>Increase LoadControl buffer, lower resolution</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Frame Drops</strong></td>
+                        <td>CPU load, decoder performance insufficient</td>
+                        <td>Use hardware decoder, stop background tasks</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Audio Stuttering</strong></td>
+                        <td>AudioTrack buffer shortage, underrun</td>
+                        <td>Increase AudioTrack buffer size, raise priority</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Slow Seek</strong></td>
+                        <td>Keyframe far away, no index</td>
+                        <td>Use SEEK_TO_CLOSEST_SYNC flag, adjust segment size</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Out of Memory</strong></td>
+                        <td>Resources not released, large buffers</td>
+                        <td>Call release(), reduce buffer size, lower resolution</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DRM Playback Failure</strong></td>
+                        <td>License expired, no secure decoder</td>
+                        <td>Renew license, verify Widevine L1 support</td>
+                    </tr>
+                    <tr>
+                        <td><strong>4K Playback Not Working</strong></td>
+                        <td>Hardware not supported, insufficient memory</td>
+                        <td>Check media_codecs.xml, optimize memory</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Performance Metrics
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏱️</span>
+                        Time to First Frame
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Target</strong>: Under 1 second</li>
+                            <li><strong>Measurement</strong>: setDataSource() to onPrepared()</li>
+                            <li><strong>Factors</strong>: Network latency, container parsing, decoder initialization</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📉</span>
+                        Dropped Frame Rate
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Target</strong>: Under 1%</li>
+                            <li><strong>Measurement</strong>: dumpsys media.codec or Systrace</li>
+                            <li><strong>Acceptable</strong>: Temporary drops right after seek are normal</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Buffering Frequency
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Target</strong>: Less than once per 5 minutes</li>
+                            <li><strong>Measurement</strong>: ExoPlayer EventLogger</li>
+                            <li><strong>Improvement</strong>: Increase initial buffer, adjust ABR algorithm</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💾</span>
+                        Memory Usage
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Target</strong>: Under 100MB (for 1080p)</li>
+                            <li><strong>Measurement</strong>: Android Profiler</li>
+                            <li><strong>Note</strong>: Proportional to buffer size and resolution</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>Performance Optimization Tips</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Prefer Hardware Decoder</strong>: 10x more efficient than software decoder</li>
+                    <li><strong>Appropriate Buffer Size</strong>: Too large wastes memory, too small causes buffering</li>
+                    <li><strong>Direct Surface Rendering</strong>: Faster than ByteBuffer copying</li>
+                    <li><strong>Use ExoPlayer</strong>: More stable and feature-rich than MediaPlayer</li>
+                    <li><strong>FUSE Passthrough</strong>: Target Android 12+ for I/O performance improvement</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 13: AOSP Source Code Reference -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                AOSP Source Code Reference
+            </h2>
+            <p class="section-description">
+                AOSP source code locations and key files related to the media playback pipeline.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                Key Directories
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        NuPlayer
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/av/media/libmediaplayerservice/nuplayer/</code><br/>
+                            → NuPlayer.cpp (Main Controller)</li>
+                            <li><code>NuPlayerSource.cpp</code><br/>
+                            → Source Interface</li>
+                            <li><code>GenericSource.cpp</code><br/>
+                            → Local File Source</li>
+                            <li><code>NuPlayerRenderer.cpp</code><br/>
+                            → VideoRenderer, AudioRenderer</li>
+                            <li><code>NuPlayerDecoder.cpp</code><br/>
+                            → MediaCodec Wrapper</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        MediaExtractor
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/av/media/libstagefright/</code><br/>
+                            → MediaExtractor.cpp</li>
+                            <li><code>MPEG4Extractor.cpp</code><br/>
+                            → MP4/MOV Parser</li>
+                            <li><code>MatroskaExtractor.cpp</code><br/>
+                            → MKV/WebM Parser</li>
+                            <li><code>frameworks/av/media/extractors/</code><br/>
+                            → Various Extractor Plugins</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        MediaCodec
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/av/media/libstagefright/</code><br/>
+                            → MediaCodec.cpp (API)</li>
+                            <li><code>frameworks/av/media/codec2/</code><br/>
+                            → Codec2 Framework</li>
+                            <li><code>ACodec.cpp</code><br/>
+                            → OpenMAX IL Wrapper (Legacy)</li>
+                            <li><code>CCodec.cpp</code><br/>
+                            → Codec2 Wrapper</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Output
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/av/media/libaudioclient/</code><br/>
+                            → AudioTrack.cpp</li>
+                            <li><code>frameworks/av/services/audioflinger/</code><br/>
+                            → AudioFlinger.cpp (Mixing)</li>
+                            <li><code>Threads.cpp</code><br/>
+                            → PlaybackThread</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Core Code Examples
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        NuPlayer State Management
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>NuPlayer.cpp</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/av/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+
+void NuPlayer::onMessageReceived(const sp&lt;AMessage&gt; &msg) {
+    switch (msg->what()) {
+        case kWhatSetDataSource:
+        {
+            sp&lt;RefBase&gt; obj;
+            CHECK(msg->findObject("source", &obj));
+            mSource = static_cast&lt;Source *&gt;(obj.get());
+            break;
+        }
+
+        case kWhatPrepare:
+        {
+            mSource->prepareAsync();
+            postScanSources();
+            break;
+        }
+
+        case kWhatStart:
+        {
+            mOffloadAudio = false;
+            onStart();
+            mPausedByClient = false;
+            break;
+        }
+
+        // ... other message handling
+    }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        A/V Sync Implementation
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>NuPlayerRenderer.cpp</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/av/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
+
+void NuPlayerRenderer::onDrainVideoQueue() {
+    VideoEntry entry = mVideoQueue.front();
+    int64_t videoPTS = entry.mNotify->getInt64("timeUs");
+
+    // Get audio reference time
+    int64_t mediaTimeUs;
+    int64_t nowUs = ALooper::GetNowUs();
+    status_t result = getCurrentPosition(&mediaTimeUs);
+
+    // Calculate PTS difference
+    int64_t lateByUs = nowUs - videoPTS;
+
+    if (lateByUs > 50000) {
+        // More than 50ms late → drop frame
+        ALOGV("video late by %lld us, dropping frame", lateByUs);
+        mVideoQueue.pop_front();
+        notifyPendingBufferDrop();
+        return;
+    }
+
+    // Normal rendering
+    renderVideoFrame(entry);
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>Useful AOSP Links</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>AOSP Source Browser</strong>: <a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/av/media/" target="_blank" style="color: var(--accent-primary);">cs.android.com (media)</a></li>
+                    <li><strong>Media Official Docs</strong>: <a href="https://source.android.com/docs/core/media" target="_blank" style="color: var(--accent-primary);">source.android.com/media</a></li>
+                    <li><strong>MediaPlayer API</strong>: <a href="https://developer.android.com/reference/android/media/MediaPlayer" target="_blank" style="color: var(--accent-primary);">developer.android.com</a></li>
+                    <li><strong>ExoPlayer Docs</strong>: <a href="https://developer.android.com/media/media3/exoplayer" target="_blank" style="color: var(--accent-primary);">Media3 ExoPlayer</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 14: Related Pages -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                Related Documentation
+            </h2>
+            <p class="section-description">
+                Explore other topics related to the media playback pipeline.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        <p>Overall media framework architecture</p>
+                        <ul>
+                            <li>AOSP 5-Layer structure</li>
+                            <li>Application to HAL data flow</li>
+                            <li>MediaPlayer/MediaCodec positioning</li>
+                            <li>NuPlayer's role in overall structure</li>
+                        </ul>
+                        <a href="media-framework-core.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Codec 2.0
+                    </h3>
+                    <div class="card-description">
+                        <p>Next-generation codec framework</p>
+                        <ul>
+                            <li>C2Component structure</li>
+                            <li>Zero-copy buffer mechanism</li>
+                            <li>HAL interface (HIDL/AIDL)</li>
+                            <li>Integration with MediaCodec</li>
+                        </ul>
+                        <a href="codec2.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        MediaExtractor
+                    </h3>
+                    <div class="card-description">
+                        <p>Container parsing and demuxing</p>
+                        <ul>
+                            <li>MP4/MKV/WebM parsing</li>
+                            <li>Track separation and metadata</li>
+                            <li>NuPlayer GenericSource integration</li>
+                            <li>Extractor plugin structure</li>
+                        </ul>
+                        <a href="media-extractor.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>Audio processing pipeline</p>
+                        <ul>
+                            <li>AudioFlinger mixing engine</li>
+                            <li>AudioTrack API</li>
+                            <li>Audio HAL interface</li>
+                            <li>NuPlayer AudioRenderer integration</li>
+                        </ul>
+                        <a href="audio-framework.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🗄️</span>
+                        MediaProvider
+                    </h3>
+                    <div class="card-description">
+                        <p>Media file indexing and access</p>
+                        <ul>
+                            <li>MediaStore API</li>
+                            <li>FUSE Daemon and Passthrough</li>
+                            <li>Scoped Storage policy</li>
+                            <li>Role in playback flow</li>
+                        </ul>
+                        <a href="mediaprovider.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Widevine DRM
+                    </h3>
+                    <div class="card-description">
+                        <p>DRM protected content playback</p>
+                        <ul>
+                            <li>Widevine L1/L2/L3</li>
+                            <li>MediaDrm + MediaCodec integration</li>
+                            <li>Secure Decoder (TEE)</li>
+                            <li>ExoPlayer DRM support</li>
+                        </ul>
+                        <a href="widevine.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Media Playback Pipeline & Data Flow</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                Complete guide to Android media playback architecture
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-primary); text-decoration: none;">
+                    ← Back to AOSP Media Framework
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script>
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

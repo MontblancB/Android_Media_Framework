@@ -1,0 +1,2349 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Framework - Android Media Framework</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">← Android Media Framework</a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">Audio Framework Architecture</h1>
+            <p class="page-subtitle">
+                Detailed architecture and flow of Android Audio Framework<br>
+                AudioFlinger, AudioPolicyService, Audio HAL, and Native API integration
+            </p>
+        </header>
+
+        <!-- Section 1: Architecture Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">01</span>
+                Architecture Overview
+            </h2>
+            <p class="section-description">
+                The Android Audio Framework consists of multi-layer architecture, from the Application layer to Kernel drivers.
+                AudioFlinger manages audio mixing and routing, while AudioPolicyService determines audio policy.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TB
+                    subgraph APP["Application Layer"]
+                        MA[Media App]
+                        AM[AudioManager]
+                        AT[AudioTrack / AudioRecord]
+                        MP[MediaPlayer / ExoPlayer]
+                    end
+
+                    subgraph FW["Framework Layer (Java/Kotlin)"]
+                        AMS[AudioManagerService]
+                        AFS[AudioFocusService]
+                        MPS[MediaPlayerService]
+                    end
+
+                    subgraph NATIVE["Native Layer (C++)"]
+                        AF[AudioFlinger]
+                        APS[AudioPolicyService]
+                        AAudio[AAudio / Oboe]
+                    end
+
+                    subgraph HAL["Audio HAL Layer"]
+                        AHAL[Audio HAL AIDL/HIDL]
+                        AHW[Audio Hardware]
+                    end
+
+                    subgraph KERNEL["Linux Kernel"]
+                        ALSA[ALSA / TinyALSA]
+                        DRIVER[Audio Driver]
+                    end
+
+                    MA --> AM
+                    MA --> AT
+                    MA --> MP
+                    AM --> AMS
+                    AT --> AF
+                    MP --> MPS
+                    MPS --> AF
+                    AMS --> APS
+                    AFS --> APS
+                    AF --> AHAL
+                    APS --> AHAL
+                    AAudio --> AF
+                    AHAL --> AHW
+                    AHW --> ALSA
+                    ALSA --> DRIVER
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: AudioFlinger -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">02</span>
+                AudioFlinger
+            </h2>
+            <p class="section-description">
+                AudioFlinger is the core service responsible for mixing and routing audio in Android.
+                It handles all audio output and input streams and combines multiple audio sources into one.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">MixerThread</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Mixes multiple audio tracks</li>
+                            <li>32-bit float internal processing</li>
+                            <li>Volume, pan, effects processing</li>
+                            <li>Sample rate conversion</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">RecordThread</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Audio input (recording) processing</li>
+                            <li>Microphone/external input management</li>
+                            <li>Echo cancellation, noise removal</li>
+                            <li>Audio capture policy enforcement</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">FastMixer</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Real-time low-latency mixing</li>
+                            <li>Directly connected to HAL</li>
+                            <li>Games, musical instrument app optimized</li>
+                            <li>Minimal processing overhead</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">AudioFlinger Architecture</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart LR
+                    subgraph AF["AudioFlinger"]
+                        direction TB
+                        subgraph Threads["Thread Pool"]
+                            MT1[MixerThread 1<br/>Speaker]
+                            MT2[MixerThread 2<br/>Headphone]
+                            RT[RecordThread<br/>Microphone]
+                            FM[FastMixer<br/>Low Latency]
+                        end
+
+                        subgraph Tracks["Audio Tracks"]
+                            T1[Track 1: Music]
+                            T2[Track 2: Notification]
+                            T3[Track 3: Navigation]
+                        end
+
+                        subgraph Effects["Effects Chain"]
+                            EQ[Equalizer]
+                            BB[BassBoost]
+                            VIR[Virtualizer]
+                        end
+                    end
+
+                    T1 --> MT1
+                    T2 --> MT1
+                    T3 --> MT2
+                    MT1 --> EQ
+                    EQ --> BB
+                    BB --> HAL1[Audio HAL]
+                    MT2 --> HAL2[Audio HAL]
+                    FM --> HAL1
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: AudioPolicyService -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">03</span>
+                AudioPolicyService
+            </h2>
+            <p class="section-description">
+                AudioPolicyService determines audio routing policy.
+                It decides where to output audio based on AudioAttributes usage type, device connection status, and user settings.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Core Functions</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Device Routing</strong>: Output device selection</li>
+                            <li><strong>Volume Control</strong>: Stream-specific volume management</li>
+                            <li><strong>Audio Focus</strong>: Priority arbitration between apps</li>
+                            <li><strong>Effect Routing</strong>: Audio effect chain management</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Configuration Files</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>audio_policy_configuration.xml</code></li>
+                            <li><code>audio_policy_volumes.xml</code></li>
+                            <li>Device-specific policy definition</li>
+                            <li>Volume curve settings</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">audio_policy_configuration.xml Example</h3>
+            <div class="code-block">
+                <pre><code>&lt;!-- audio_policy_configuration.xml: Device audio output configuration --&gt;
+&lt;audioPolicyConfiguration version="1.0" xmlns:xi="http://www.w3.org/2001/XInclude"&gt;
+    &lt;modules&gt;
+        &lt;module name="primary" halVersion="3.0"&gt;
+            &lt;mixPorts&gt;
+                &lt;!-- Primary Output (Speaker) --&gt;
+                &lt;mixPort name="primary output" role="source"
+                    flags="AUDIO_OUTPUT_FLAG_PRIMARY"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                        samplingRates="48000" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/mixPort&gt;
+
+                &lt;!-- Deep Buffer for Music --&gt;
+                &lt;mixPort name="deep_buffer" role="source"
+                    flags="AUDIO_OUTPUT_FLAG_DEEP_BUFFER"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                        samplingRates="44100,48000" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/mixPort&gt;
+
+                &lt;!-- Low Latency for Games --&gt;
+                &lt;mixPort name="low_latency" role="source"
+                    flags="AUDIO_OUTPUT_FLAG_FAST"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                        samplingRates="48000" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/mixPort&gt;
+            &lt;/mixPorts&gt;
+
+            &lt;devicePorts&gt;
+                &lt;devicePort tagName="Speaker" type="AUDIO_DEVICE_OUT_SPEAKER" role="sink"/&gt;
+                &lt;devicePort tagName="Headphones" type="AUDIO_DEVICE_OUT_WIRED_HEADPHONE" role="sink"/&gt;
+                &lt;devicePort tagName="BT A2DP" type="AUDIO_DEVICE_OUT_BLUETOOTH_A2DP" role="sink"/&gt;
+            &lt;/devicePorts&gt;
+
+            &lt;routes&gt;
+                &lt;route type="mix" sink="Speaker" sources="primary output,deep_buffer"/&gt;
+                &lt;route type="mix" sink="Headphones" sources="primary output,deep_buffer,low_latency"/&gt;
+            &lt;/routes&gt;
+        &lt;/module&gt;
+    &lt;/modules&gt;
+&lt;/audioPolicyConfiguration&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 4: Audio Focus -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">04</span>
+                Audio Focus
+            </h2>
+            <p class="section-description">
+                Audio Focus is a mechanism for arbitrating audio output priority between multiple apps.
+                Only one app can hold focus at a time, and other apps must respond accordingly (pause, duck volume, etc.).
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">AUDIOFOCUS_GAIN</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Long-term focus acquisition</li>
+                            <li>Music, video playback</li>
+                            <li>Other apps stop playback</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">AUDIOFOCUS_GAIN_TRANSIENT</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Temporary focus</li>
+                            <li>Notifications, phone calls</li>
+                            <li>Other apps pause</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>May duck other audio</li>
+                            <li>Navigation guidance</li>
+                            <li>Other apps lower volume</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Audio Focus Request Example</h3>
+            <div class="code-block">
+                <pre><code>// Audio Focus Request (Android 8.0+)
+val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+val audioAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_MEDIA)
+    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+    .build()
+
+val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+    .setAudioAttributes(audioAttributes)
+    .setAcceptsDelayedFocusGain(true)
+    .setOnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                // Focus gained: Resume playback
+                mediaPlayer.start()
+            }
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                // Permanent focus loss: Stop playback
+                mediaPlayer.stop()
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                // Temporary focus loss: Pause
+                mediaPlayer.pause()
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                // May duck: Lower volume
+                mediaPlayer.setVolume(0.2f, 0.2f)
+            }
+        }
+    }
+    .build()
+
+// Request Focus
+val result = audioManager.requestAudioFocus(focusRequest)
+
+when (result) {
+    AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> {
+        // Focus granted: Start playback
+        mediaPlayer.start()
+    }
+    AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> {
+        // Focus delayed: Wait
+        // Play when AUDIOFOCUS_GAIN is received
+    }
+    AudioManager.AUDIOFOCUS_REQUEST_FAILED -> {
+        // Focus request failed
+        Log.e("Audio", "Audio focus request failed")
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 5: AudioTrack & AudioRecord -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">05</span>
+                AudioTrack & AudioRecord
+            </h2>
+            <p class="section-description">
+                AudioTrack is a low-level API for audio playback, and AudioRecord is for audio recording.
+                It supports direct PCM data transfer, providing finer control over audio than MediaPlayer.
+            </p>
+
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>AudioTrack</th>
+                            <th>AudioRecord</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Purpose</td>
+                            <td>Audio Playback</td>
+                            <td>Audio Recording</td>
+                        </tr>
+                        <tr>
+                            <td>Data Format</td>
+                            <td>PCM</td>
+                            <td>PCM</td>
+                        </tr>
+                        <tr>
+                            <td>Latency</td>
+                            <td>Low (5-50ms)</td>
+                            <td>Low (10-50ms)</td>
+                        </tr>
+                        <tr>
+                            <td>Transfer Mode</td>
+                            <td>MODE_STREAM / MODE_STATIC</td>
+                            <td>MODE_STREAM</td>
+                        </tr>
+                        <tr>
+                            <td>Use Cases</td>
+                            <td>Games, instrument apps, synthesizers</td>
+                            <td>Voice recorder, voice recognition</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">AudioTrack Usage Example</h3>
+            <div class="code-block">
+                <pre><code>// AudioTrack: Low-latency audio playback
+val sampleRate = 44100
+val channelConfig = AudioFormat.CHANNEL_OUT_STEREO
+val audioFormat = AudioFormat.ENCODING_PCM_16BIT
+
+// Calculate minimum buffer size
+val bufferSize = AudioTrack.getMinBufferSize(sampleRate, channelConfig, audioFormat)
+
+val audioAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_GAME)
+    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+    .build()
+
+val audioTrack = AudioTrack.Builder()
+    .setAudioAttributes(audioAttributes)
+    .setAudioFormat(
+        AudioFormat.Builder()
+            .setSampleRate(sampleRate)
+            .setEncoding(audioFormat)
+            .setChannelMask(channelConfig)
+            .build()
+    )
+    .setBufferSizeInBytes(bufferSize)
+    .setTransferMode(AudioTrack.MODE_STREAM)
+    .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
+    .build()
+
+// Start playback
+audioTrack.play()
+
+// Write PCM data in background thread
+thread {
+    val buffer = ShortArray(bufferSize / 2)
+    while (isPlaying) {
+        // Generate or get PCM data
+        generatePcmData(buffer)
+        audioTrack.write(buffer, 0, buffer.size)
+    }
+}
+
+// Stop
+audioTrack.stop()
+audioTrack.release()</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 6: AAudio API -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">06</span>
+                AAudio (Android Audio API)
+            </h2>
+            <p class="section-description">
+                AAudio is a native C API introduced in Android 8.0 (API 26), providing ultra-low latency audio.
+                Oboe library wraps AAudio and OpenSL ES for easy cross-version support.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Key Features</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Ultra-low latency (~5ms)</li>
+                            <li>EXCLUSIVE mode: Direct HAL connection</li>
+                            <li>MMAP support (memory-mapped)</li>
+                            <li>Automatic buffer size tuning</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Sharing Mode</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>EXCLUSIVE</strong>: Direct HAL connection (lowest latency)</li>
+                            <li><strong>SHARED</strong>: Mixed via AudioFlinger (compatibility)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Performance Mode</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>LOW_LATENCY</strong>: Lowest latency priority</li>
+                            <li><strong>POWER_SAVING</strong>: Battery efficiency priority</li>
+                            <li><strong>NONE</strong>: Default behavior</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">AAudio C API Usage Example</h3>
+            <div class="code-block">
+                <pre><code>// AAudio: Ultra-low latency native audio API
+#include &lt;aaudio/AAudio.h&gt;
+
+// Create stream builder
+AAudioStreamBuilder* builder;
+AAudio_createStreamBuilder(&builder);
+
+// Configure stream
+AAudioStreamBuilder_setDirection(builder, AAUDIO_DIRECTION_OUTPUT);
+AAudioStreamBuilder_setPerformanceMode(builder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
+AAudioStreamBuilder_setSharingMode(builder, AAUDIO_SHARING_MODE_EXCLUSIVE);
+AAudioStreamBuilder_setFormat(builder, AAUDIO_FORMAT_PCM_FLOAT);
+AAudioStreamBuilder_setChannelCount(builder, 2);
+AAudioStreamBuilder_setSampleRate(builder, 48000);
+
+// Set callback
+AAudioStreamBuilder_setDataCallback(builder, audioDataCallback, userData);
+AAudioStreamBuilder_setErrorCallback(builder, errorCallback, userData);
+
+// Open stream
+AAudioStream* stream;
+aaudio_result_t result = AAudioStreamBuilder_openStream(builder, &stream);
+
+if (result == AAUDIO_OK) {
+    // Start stream
+    AAudioStream_requestStart(stream);
+
+    // Check latency
+    int32_t framesPerBurst = AAudioStream_getFramesPerBurst(stream);
+    int32_t sampleRate = AAudioStream_getSampleRate(stream);
+    double latencyMs = (double)framesPerBurst / sampleRate * 1000.0;
+
+    printf("Latency: %.2f ms\n", latencyMs);
+}
+
+// Audio data callback
+aaudio_data_callback_result_t audioDataCallback(
+    AAudioStream* stream,
+    void* userData,
+    void* audioData,
+    int32_t numFrames
+) {
+    float* output = (float*)audioData;
+
+    // Generate audio data
+    for (int i = 0; i &lt; numFrames * 2; i++) {
+        output[i] = generateSample();
+    }
+
+    return AAUDIO_CALLBACK_RESULT_CONTINUE;
+}
+
+// Cleanup
+AAudioStream_requestStop(stream);
+AAudioStream_close(stream);
+AAudioStreamBuilder_delete(builder);</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 7: Audio HAL -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">07</span>
+                Audio HAL
+            </h2>
+            <p class="section-description">
+                Audio HAL (Hardware Abstraction Layer) is the interface connecting AudioFlinger to actual audio hardware.
+                Currently transitioning from HIDL (Hardware Interface Definition Language) to AIDL.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TB
+                    subgraph Framework["Android Framework"]
+                        AF[AudioFlinger]
+                        APS[AudioPolicyService]
+                    end
+
+                    subgraph HAL["Audio HAL"]
+                        direction TB
+                        AIDL[AIDL HAL<br/>Android 12+]
+                        HIDL[HIDL HAL<br/>Android 8-13]
+
+                        subgraph Impl["HAL Implementation"]
+                            Primary[audio.primary]
+                            USB[audio.usb]
+                            BT[audio.bluetooth]
+                            Remote[audio.remote_submix]
+                        end
+                    end
+
+                    subgraph HW["Hardware"]
+                        Codec[Audio Codec]
+                        Amp[Amplifier]
+                        DSP[Audio DSP]
+                    end
+
+                    AF --> AIDL
+                    AF --> HIDL
+                    APS --> AIDL
+                    APS --> HIDL
+                    AIDL --> Primary
+                    AIDL --> USB
+                    AIDL --> BT
+                    HIDL --> Primary
+                    HIDL --> Remote
+                    Primary --> Codec
+                    Codec --> Amp
+                    Codec --> DSP
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Audio HAL AIDL Interface</h3>
+            <div class="code-block">
+                <pre><code>// IDevice.aidl - Audio Device Interface (Android 12+)
+package android.hardware.audio;
+
+interface IDevice {
+    // Open output stream
+    IStreamOut openOutputStream(
+        int ioHandle,
+        AudioDevice device,
+        AudioConfig config,
+        AudioOutputFlag[] flags
+    );
+
+    // Open input stream
+    IStreamIn openInputStream(
+        int ioHandle,
+        AudioDevice device,
+        AudioConfig config,
+        AudioInputFlag[] flags
+    );
+
+    // Set master volume
+    void setMasterVolume(float volume);
+
+    // Set audio port configuration
+    void setAudioPortConfig(AudioPortConfig config);
+}
+
+// IStreamOut.aidl - Output Stream Interface
+interface IStreamOut {
+    // Write PCM data
+    WriteResult write(byte[] data);
+
+    // Stream control
+    void standby();
+    void pause();
+    void resume();
+
+    // Get latency
+    long getLatency();
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 8: Audio Effects -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">08</span>
+                Audio Effects
+            </h2>
+            <p class="section-description">
+                Android provides various audio effect APIs that can be applied to AudioTrack or MediaPlayer sessions.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Equalizer</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Frequency band volume adjustment</li>
+                            <li>Preset support (Rock, Jazz, etc.)</li>
+                            <li>5-10 band support</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">BassBoost</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Low frequency emphasis</li>
+                            <li>Strength: 0-1000</li>
+                            <li>Device speaker compensation</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Virtualizer</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Virtual surround effect</li>
+                            <li>Stereo widening</li>
+                            <li>Headphone 3D effect</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">DynamicsProcessing</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Multi-band compressor</li>
+                            <li>Limiter</li>
+                            <li>Dynamic range control</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Audio Effects Usage Example</h3>
+            <div class="code-block">
+                <pre><code>// Audio Effects Application
+val audioSessionId = mediaPlayer.audioSessionId
+
+// Equalizer
+val equalizer = Equalizer(0, audioSessionId)
+equalizer.enabled = true
+
+// Get frequency band count
+val bands = equalizer.numberOfBands
+for (band in 0 until bands) {
+    val freqRange = equalizer.getBandFreqRange(band.toShort())
+    val level = equalizer.getBandLevel(band.toShort())
+    Log.d("EQ", "Band $band: ${freqRange[0]}-${freqRange[1]} Hz, Level: $level")
+}
+
+// Apply preset
+equalizer.usePreset(Equalizer.PRESET_ROCK.toShort())
+
+// BassBoost
+val bassBoost = BassBoost(0, audioSessionId)
+bassBoost.enabled = true
+bassBoost.setStrength(500.toShort())  // 0-1000
+
+// Virtualizer
+val virtualizer = Virtualizer(0, audioSessionId)
+virtualizer.enabled = true
+virtualizer.setStrength(750.toShort())
+
+// DynamicsProcessing (Android 9.0+)
+val dynamicsProcessing = DynamicsProcessing(audioSessionId)
+dynamicsProcessing.enabled = true
+
+// Configure limiter
+val limiter = DynamicsProcessing.Limiter(
+    true,           // enabled
+    true,           // linkGroup
+    5.0f,           // attack time (ms)
+    50.0f,          // release time (ms)
+    1.0f,           // ratio (n:1)
+    -3.0f,          // threshold (dB)
+    0.0f            // post gain (dB)
+)
+dynamicsProcessing.setLimiterByChannelIndex(0, limiter)
+
+// Cleanup
+equalizer.release()
+bassBoost.release()
+virtualizer.release()
+dynamicsProcessing.release()</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 9: AudioAttributes -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">09</span>
+                AudioAttributes
+            </h2>
+            <p class="section-description">
+                AudioAttributes describes the purpose of audio playback. AudioPolicyService uses this to determine routing and mixing policies.
+            </p>
+
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Usage</th>
+                            <th>Description</th>
+                            <th>Example Apps</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>USAGE_MEDIA</td>
+                            <td>General media playback</td>
+                            <td>Music, Video player</td>
+                        </tr>
+                        <tr>
+                            <td>USAGE_GAME</td>
+                            <td>Game audio</td>
+                            <td>Games, AR apps</td>
+                        </tr>
+                        <tr>
+                            <td>USAGE_VOICE_COMMUNICATION</td>
+                            <td>Voice calls</td>
+                            <td>Phone, VoIP</td>
+                        </tr>
+                        <tr>
+                            <td>USAGE_NOTIFICATION</td>
+                            <td>Notifications</td>
+                            <td>Alarms, Messages</td>
+                        </tr>
+                        <tr>
+                            <td>USAGE_ASSISTANT</td>
+                            <td>Voice assistant</td>
+                            <td>Google Assistant</td>
+                        </tr>
+                        <tr>
+                            <td>USAGE_ASSISTANCE_NAVIGATION_GUIDANCE</td>
+                            <td>Navigation guidance</td>
+                            <td>Google Maps, Waze</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">AudioAttributes Configuration Example</h3>
+            <div class="code-block">
+                <pre><code>// AudioAttributes Configuration
+val mediaAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_MEDIA)
+    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+    .build()
+
+val gameAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_GAME)
+    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+    .setFlags(AudioAttributes.FLAG_LOW_LATENCY)
+    .build()
+
+val navigationAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+    .build()
+
+// Apply to MediaPlayer
+mediaPlayer.setAudioAttributes(mediaAttributes)
+
+// Apply to AudioTrack
+val audioTrack = AudioTrack.Builder()
+    .setAudioAttributes(gameAttributes)
+    .setAudioFormat(audioFormat)
+    .setBufferSizeInBytes(bufferSize)
+    .build()</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 10: Bluetooth Audio -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                Bluetooth Audio
+            </h2>
+            <p class="section-description">
+                Bluetooth audio is divided into classic A2DP and new LE Audio, each supporting different codecs.
+            </p>
+
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Codec</th>
+                            <th>Bitrate</th>
+                            <th>Latency</th>
+                            <th>Features</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>SBC</td>
+                            <td>198-345 kbps</td>
+                            <td>~150ms</td>
+                            <td>Default codec, universal</td>
+                        </tr>
+                        <tr>
+                            <td>AAC</td>
+                            <td>256 kbps</td>
+                            <td>~120ms</td>
+                            <td>iPhone optimized</td>
+                        </tr>
+                        <tr>
+                            <td>aptX</td>
+                            <td>352 kbps</td>
+                            <td>~70ms</td>
+                            <td>Qualcomm, low latency</td>
+                        </tr>
+                        <tr>
+                            <td>aptX HD</td>
+                            <td>576 kbps</td>
+                            <td>~80ms</td>
+                            <td>24-bit/48kHz</td>
+                        </tr>
+                        <tr>
+                            <td>LDAC</td>
+                            <td>330-990 kbps</td>
+                            <td>~100ms</td>
+                            <td>Sony, Hi-Res Audio</td>
+                        </tr>
+                        <tr>
+                            <td>LC3 (LE Audio)</td>
+                            <td>16-345 kbps</td>
+                            <td>~20ms</td>
+                            <td>New standard, multi-stream</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Bluetooth Codec Selection</h3>
+            <div class="code-block">
+                <pre><code>// Bluetooth Codec Priority Setting (System API)
+val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+val a2dp = bluetoothAdapter.getProfileProxy(context, object : BluetoothProfile.ServiceListener {
+    override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
+        val a2dpProfile = proxy as BluetoothA2dp
+
+        // Get connected device
+        val connectedDevices = a2dpProfile.connectedDevices
+        connectedDevices.firstOrNull()?.let { device ->
+            // Check codec configuration (Android 8.0+)
+            val codecStatus = a2dpProfile.getCodecStatus(device)
+            val currentCodec = codecStatus?.codecConfig
+
+            Log.d("BT", "Current codec: ${currentCodec?.codecType}")
+            Log.d("BT", "Sample rate: ${currentCodec?.sampleRate}")
+            Log.d("BT", "Bits per sample: ${currentCodec?.bitsPerSample}")
+        }
+    }
+
+    override fun onServiceDisconnected(profile: Int) {}
+}, BluetoothProfile.A2DP)
+
+// Codec type constants
+// BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC = 0
+// BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC = 1
+// BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX = 2
+// BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD = 3
+// BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC = 4</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 11: Audio Routing -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                Audio Routing
+            </h2>
+            <p class="section-description">
+                Audio Routing determines which output device the audio will be played through.
+                AudioPolicyService automatically selects based on connected devices and AudioAttributes.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart LR
+                    subgraph Input["Audio Source"]
+                        Music[Music App]
+                        Call[Phone Call]
+                        Nav[Navigation]
+                        Game[Game]
+                    end
+
+                    subgraph Policy["AudioPolicyService"]
+                        AP[Audio Policy]
+                    end
+
+                    subgraph Output["Output Device"]
+                        SPK[Speaker]
+                        HP[Headphone]
+                        BT[Bluetooth]
+                        USB[USB Audio]
+                        HDMI[HDMI]
+                    end
+
+                    Music --> AP
+                    Call --> AP
+                    Nav --> AP
+                    Game --> AP
+
+                    AP --> SPK
+                    AP --> HP
+                    AP --> BT
+                    AP --> USB
+                    AP --> HDMI
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Audio Routing Priority</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Priority</th>
+                            <th>Device</th>
+                            <th>Condition</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>Wired Headset (with mic)</td>
+                            <td>Connected</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Wired Headphone</td>
+                            <td>Connected</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>Bluetooth A2DP</td>
+                            <td>Connected</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>USB Audio</td>
+                            <td>Connected</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>Speaker</td>
+                            <td>Default</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 12: AAOS Multi-Zone Audio -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                AAOS Multi-Zone Audio
+            </h2>
+            <p class="section-description">
+                Android Automotive OS (AAOS) supports Multi-Zone Audio allowing independent audio playback for each seat zone.
+                CarAudioService manages audio contexts for Driver Zone, Rear Seat Zone, etc.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TB
+                    subgraph AAOS["Android Automotive OS"]
+                        CAS[CarAudioService]
+                        CAZ[CarAudioZone]
+                    end
+
+                    subgraph Zones["Audio Zones"]
+                        Z0[Zone 0: Driver<br/>Navigation, Call, Media]
+                        Z1[Zone 1: Front Passenger<br/>Media]
+                        Z2[Zone 2: Rear Left<br/>Rear Entertainment]
+                        Z3[Zone 3: Rear Right<br/>Rear Entertainment]
+                    end
+
+                    subgraph Output["Output Devices"]
+                        SPK1[Front Speakers]
+                        SPK2[Rear Speakers]
+                        HP1[Headphone Jack 1]
+                        HP2[Headphone Jack 2]
+                    end
+
+                    CAS --> CAZ
+                    CAZ --> Z0
+                    CAZ --> Z1
+                    CAZ --> Z2
+                    CAZ --> Z3
+
+                    Z0 --> SPK1
+                    Z1 --> SPK1
+                    Z2 --> SPK2
+                    Z2 --> HP1
+                    Z3 --> SPK2
+                    Z3 --> HP2
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">car_audio_configuration.xml Example</h3>
+            <div class="code-block">
+                <pre><code>&lt;!-- car_audio_configuration.xml: Vehicle audio zone configuration --&gt;
+&lt;carAudioConfiguration version="2"&gt;
+    &lt;!-- Zone 0: Driver Seat --&gt;
+    &lt;zone name="primary zone" audioZoneId="0" isPrimary="true"&gt;
+        &lt;volumeGroups&gt;
+            &lt;group&gt;
+                &lt;device address="bus0_media_out"&gt;
+                    &lt;context context="music"/&gt;
+                    &lt;context context="navigation"/&gt;
+                &lt;/device&gt;
+            &lt;/group&gt;
+
+            &lt;group&gt;
+                &lt;device address="bus1_call_out"&gt;
+                    &lt;context context="call"/&gt;
+                    &lt;context context="call_ring"/&gt;
+                &lt;/device&gt;
+            &lt;/group&gt;
+
+            &lt;group&gt;
+                &lt;device address="bus2_notification_out"&gt;
+                    &lt;context context="alarm"/&gt;
+                    &lt;context context="notification"/&gt;
+                &lt;/device&gt;
+            &lt;/group&gt;
+        &lt;/volumeGroups&gt;
+    &lt;/zone&gt;
+
+    &lt;!-- Zone 1: Rear Seat --&gt;
+    &lt;zone name="rear seat zone" audioZoneId="1"&gt;
+        &lt;volumeGroups&gt;
+            &lt;group&gt;
+                &lt;device address="bus100_rear_media_out"&gt;
+                    &lt;context context="music"/&gt;
+                    &lt;context context="media"/&gt;
+                &lt;/device&gt;
+            &lt;/group&gt;
+        &lt;/volumeGroups&gt;
+    &lt;/zone&gt;
+&lt;/carAudioConfiguration&gt;</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Vehicle Multi-Zone Audio Usage Example</h3>
+            <div class="code-block">
+                <pre><code>// Audio routing to specific zone in AAOS
+class CarAudioManager(private val context: Context) {
+    private val carAudioManager =
+        (context.getSystemService(Context.CAR_SERVICE) as Car)
+            .getCarManager(Car.AUDIO_SERVICE) as android.car.media.CarAudioManager
+
+    fun playAudioInZone(zoneId: Int) {
+        // Check zone info
+        val zoneCount = carAudioManager.audioZoneIds.size
+        Log.d("CarAudio", "Total zones: $zoneCount")
+
+        // Create AudioAttributes for specific zone
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .build()
+
+        // Check volume groups per zone
+        val volumeGroupCount = carAudioManager.getVolumeGroupCount(zoneId)
+        for (groupId in 0 until volumeGroupCount) {
+            val groupVolume = carAudioManager.getGroupVolume(zoneId, groupId)
+            val maxVolume = carAudioManager.getGroupMaxVolume(zoneId, groupId)
+
+            Log.d("CarAudio", "Zone $zoneId, Group $groupId: $groupVolume / $maxVolume")
+        }
+
+        // Create AudioPlayer (zone routing is automatic by CarAudioService
+        // based on AudioAttributes Usage/ContentType)
+        val player = MediaPlayer().apply {
+            setDataSource(context, audioUri)
+            setAudioAttributes(audioAttributes)
+
+            prepare()
+            start()
+        }
+    }
+
+    fun setZoneVolume(zoneId: Int, groupId: Int, volume: Int) {
+        carAudioManager.setGroupVolume(zoneId, groupId, volume, 0)
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Vehicle Audio Zone Comparison</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Primary Zone (Zone 0)</th>
+                            <th>Rear Zone (Zone 1+)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Location</td>
+                            <td>Driver / Front</td>
+                            <td>Rear Seat / Back</td>
+                        </tr>
+                        <tr>
+                            <td>Priority</td>
+                            <td>High (safety-related)</td>
+                            <td>Low (entertainment)</td>
+                        </tr>
+                        <tr>
+                            <td>Supported Contexts</td>
+                            <td>All contexts</td>
+                            <td>Mainly MUSIC, MEDIA</td>
+                        </tr>
+                        <tr>
+                            <td>Navigation</td>
+                            <td>Supported</td>
+                            <td>Not supported</td>
+                        </tr>
+                        <tr>
+                            <td>Phone Calls</td>
+                            <td>Supported</td>
+                            <td>Not supported</td>
+                        </tr>
+                        <tr>
+                            <td>Volume Control</td>
+                            <td>Independent</td>
+                            <td>Independent</td>
+                        </tr>
+                        <tr>
+                            <td>Use Cases</td>
+                            <td>Navigation, calls, media</td>
+                            <td>Rear seat entertainment</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 13: Performance Optimization -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                Performance Optimization
+            </h2>
+            <p class="section-description">
+                Methods to minimize latency and maximize performance in audio applications.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Buffer Size Optimization</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Small buffer</strong>: Low latency, high CPU</li>
+                            <li><strong>Large buffer</strong>: High latency, low CPU</li>
+                            <li>Optimal: Device-specific <code>framesPerBurst</code></li>
+                            <li>AAudio automatic buffer tuning</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Latency Measurement</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Roundtrip Latency</strong>: Input to Output</li>
+                            <li>Oboe library's LatencyTuner</li>
+                            <li>AAudio <code>getTimestamp()</code></li>
+                            <li>Target: Under 10ms</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Optimization Techniques</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Use EXCLUSIVE sharing mode</li>
+                            <li>LOW_LATENCY performance mode</li>
+                            <li>Remove blocking operations from callback</li>
+                            <li>NEON optimization (ARM)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Latency Benchmark (Typical Values)</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>API / Configuration</th>
+                            <th>Latency (Output)</th>
+                            <th>Roundtrip</th>
+                            <th>Suitable Use Cases</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>AAudio EXCLUSIVE + LOW_LATENCY</td>
+                            <td>5-10 ms</td>
+                            <td>10-20 ms</td>
+                            <td>Games, instrument apps, VoIP</td>
+                        </tr>
+                        <tr>
+                            <td>AAudio SHARED + LOW_LATENCY</td>
+                            <td>10-20 ms</td>
+                            <td>20-40 ms</td>
+                            <td>Real-time audio processing</td>
+                        </tr>
+                        <tr>
+                            <td>OpenSL ES</td>
+                            <td>10-30 ms</td>
+                            <td>20-60 ms</td>
+                            <td>Legacy games</td>
+                        </tr>
+                        <tr>
+                            <td>AudioTrack (small buffer)</td>
+                            <td>20-50 ms</td>
+                            <td>40-100 ms</td>
+                            <td>Low-latency playback</td>
+                        </tr>
+                        <tr>
+                            <td>AudioTrack (default buffer)</td>
+                            <td>50-100 ms</td>
+                            <td>100-200 ms</td>
+                            <td>General media playback</td>
+                        </tr>
+                        <tr>
+                            <td>MediaPlayer</td>
+                            <td>100-200 ms</td>
+                            <td>N/A</td>
+                            <td>Music/video playback</td>
+                        </tr>
+                        <tr>
+                            <td>Bluetooth A2DP</td>
+                            <td>100-300 ms</td>
+                            <td>N/A</td>
+                            <td>Wireless audio</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">AAudio Buffer Size Optimization</h3>
+            <div class="code-block">
+                <pre><code>// Minimize latency with AAudio dynamic buffer size adjustment
+void optimizeBufferSize(AAudioStream* stream) {
+    // Minimum buffer size supported by device
+    int32_t framesPerBurst = AAudioStream_getFramesPerBurst(stream);
+
+    // Initial buffer size: 2 x framesPerBurst (safe starting point)
+    int32_t initialBufferSize = framesPerBurst * 2;
+    AAudioStream_setBufferSizeInFrames(stream, initialBufferSize);
+
+    // Performance monitoring
+    int32_t underrunCount = 0;
+    int32_t previousUnderrunCount = AAudioStream_getXRunCount(stream);
+
+    // Dynamic adjustment during runtime
+    while (isPlaying) {
+        // Check current underrun
+        int32_t currentUnderrunCount = AAudioStream_getXRunCount(stream);
+
+        if (currentUnderrunCount > previousUnderrunCount) {
+            // Underrun occurred -> Increase buffer
+            int32_t currentSize = AAudioStream_getBufferSizeInFrames(stream);
+            int32_t newSize = currentSize + framesPerBurst;
+
+            AAudioStream_setBufferSizeInFrames(stream, newSize);
+
+            Log("Buffer increased to %d frames due to underrun", newSize);
+        } else {
+            // No underrun -> Try gradual buffer decrease
+            int32_t currentSize = AAudioStream_getBufferSizeInFrames(stream);
+            int32_t newSize = std::max(currentSize - framesPerBurst / 4, framesPerBurst);
+
+            AAudioStream_setBufferSizeInFrames(stream, newSize);
+        }
+
+        previousUnderrunCount = currentUnderrunCount;
+
+        // Check every 1 second
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+}
+
+// Using Oboe library (AAudio wrapper)
+#include &lt;oboe/Oboe.h&gt;
+
+class OboeAudioPlayer : public oboe::AudioStreamCallback {
+public:
+    void start() {
+        oboe::AudioStreamBuilder builder;
+
+        builder.setDirection(oboe::Direction::Output)
+               ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
+               ->setSharingMode(oboe::SharingMode::Exclusive)
+               ->setFormat(oboe::AudioFormat::Float)
+               ->setChannelCount(oboe::ChannelCount::Stereo)
+               ->setCallback(this);
+
+        oboe::Result result = builder.openStream(stream);
+
+        if (result == oboe::Result::OK) {
+            stream->requestStart();
+
+            // Enable Oboe automatic buffer adjustment
+            int32_t framesPerBurst = stream->getFramesPerBurst();
+            Log("Frames per burst: %d", framesPerBurst);
+        }
+    }
+
+    oboe::DataCallbackResult onAudioReady(
+        oboe::AudioStream* stream,
+        void* audioData,
+        int32_t numFrames
+    ) override {
+        // Generate audio data
+        return oboe::DataCallbackResult::Continue;
+    }
+
+private:
+    std::shared_ptr&lt;oboe::AudioStream&gt; stream;
+};</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Performance Profiling</h3>
+            <div class="code-block">
+                <pre><code># Analyze audio performance with Systrace
+adb shell atrace -t 10 -b 32768 audio sched freq idle > trace.html
+
+# Key areas to check:
+# - AudioFlinger thread execution time
+# - Underrun frequency
+# - CPU scheduling delays
+
+# Check AudioFlinger status with dumpsys
+adb shell dumpsys media.audio_flinger
+
+# Example output:
+# Latency (msec): 10
+# Frames per buffer: 192
+# Sample rate: 48000
+# Underruns: 5
+
+# Check AAudio logs with logcat
+adb logcat -s AAudio:V
+
+# Measure latency
+adb shell dumpsys media.audio_flinger | grep -i latency</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 14: Android Version Changes -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                Android Version Changes
+            </h2>
+            <p class="section-description">
+                Major changes and API evolution of the Audio Framework across Android versions.
+            </p>
+
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>Major Changes</th>
+                            <th>New Features</th>
+                            <th>HAL Version</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Android 14</strong><br />(API 34)</td>
+                            <td>
+                                - Audio HAL AIDL transition complete<br />
+                                - Spatial Audio improvements<br />
+                                - LE Audio support enhanced
+                            </td>
+                            <td>
+                                - AIDL Audio HAL<br />
+                                - Loudness Metadata API<br />
+                                - Multi-channel audio
+                            </td>
+                            <td>AIDL V3</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android 13</strong><br />(API 33)</td>
+                            <td>
+                                - Bluetooth LE Audio<br />
+                                - Spatial Audio<br />
+                                - MIDI 2.0
+                            </td>
+                            <td>
+                                - LE Audio codec<br />
+                                - Head tracking API<br />
+                                - MIDI 2.0 API
+                            </td>
+                            <td>AIDL V2</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android 12</strong><br />(API 31)</td>
+                            <td>
+                                - Audio Focus auto Fade<br />
+                                - MPEG-H 3D Audio<br />
+                                - Multi-device output
+                            </td>
+                            <td>
+                                - AudioManager.setAllowedCapturePolicy()<br />
+                                - Haptic generator<br />
+                                - Audio capture improvements
+                            </td>
+                            <td>AIDL V1<br />HIDL 2.0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android 11</strong><br />(API 30)</td>
+                            <td>
+                                - Audio HAL V7.0<br />
+                                - AAudio MMAP improvements<br />
+                                - Audio sharing
+                            </td>
+                            <td>
+                                - Low-latency capture<br />
+                                - AudioRecord sharing<br />
+                                - Direct playback
+                            </td>
+                            <td>HIDL 7.0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android 10</strong><br />(API 29)</td>
+                            <td>
+                                - AudioPlaybackCapture API<br />
+                                - Audio capture policy<br />
+                                - Opus encoder
+                            </td>
+                            <td>
+                                - Playback capture<br />
+                                - AudioAttributes privacy flag<br />
+                                - Dynamic sensor routing
+                            </td>
+                            <td>HIDL 6.0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android 9</strong><br />(API 28)</td>
+                            <td>
+                                - AAudio official support<br />
+                                - 32-bit float mixing<br />
+                                - Multi-channel improvements
+                            </td>
+                            <td>
+                                - AAudio API stable<br />
+                                - Dynamics Processing API<br />
+                                - USB audio routing
+                            </td>
+                            <td>HIDL 5.0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android 8.0</strong><br />(API 26)</td>
+                            <td>
+                                - AAudio introduced<br />
+                                - Audio Focus improvements<br />
+                                - AudioAttributes extended
+                            </td>
+                            <td>
+                                - AAudio API (native)<br />
+                                - AudioFocusRequest<br />
+                                - Background audio limits
+                            </td>
+                            <td>HIDL 4.0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Audio HAL Version Differences</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>HIDL (Legacy)</th>
+                            <th>AIDL (Current)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Supported Versions</td>
+                            <td>Android 8.0 - 13</td>
+                            <td>Android 12+ (recommended: 14+)</td>
+                        </tr>
+                        <tr>
+                            <td>Definition Files</td>
+                            <td>.hal files</td>
+                            <td>.aidl files</td>
+                        </tr>
+                        <tr>
+                            <td>Location</td>
+                            <td>hardware/interfaces/audio/</td>
+                            <td>hardware/interfaces/audio/aidl/</td>
+                        </tr>
+                        <tr>
+                            <td>Versioning</td>
+                            <td>Major.Minor (e.g., 7.0)</td>
+                            <td>Single version (V1, V2, V3)</td>
+                        </tr>
+                        <tr>
+                            <td>Performance</td>
+                            <td>Normal</td>
+                            <td>Improved (faster IPC)</td>
+                        </tr>
+                        <tr>
+                            <td>Flexibility</td>
+                            <td>Limited</td>
+                            <td>High (backward compatible)</td>
+                        </tr>
+                        <tr>
+                            <td>Status</td>
+                            <td>Deprecated</td>
+                            <td>Active development</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Migration Guide</h3>
+            <div class="code-block">
+                <pre><code>// AudioFocus: Legacy -> Modern API Migration
+
+// Legacy API (Android 7.1 and below)
+@Deprecated
+val result = audioManager.requestAudioFocus(
+    focusChangeListener,
+    AudioManager.STREAM_MUSIC,
+    AudioManager.AUDIOFOCUS_GAIN
+)
+
+// Modern API (Android 8.0+)
+val audioAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_MEDIA)
+    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+    .build()
+
+val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+    .setAudioAttributes(audioAttributes)
+    .setOnAudioFocusChangeListener(focusChangeListener)
+    .setAcceptsDelayedFocusGain(true)
+    .build()
+
+val result = audioManager.requestAudioFocus(focusRequest)
+
+// AudioTrack: STREAM_TYPE -> AudioAttributes Migration
+
+// Legacy (Deprecated)
+@Deprecated
+val audioTrack = AudioTrack(
+    AudioManager.STREAM_MUSIC,  // Stream type (deprecated)
+    44100,
+    AudioFormat.CHANNEL_OUT_STEREO,
+    AudioFormat.ENCODING_PCM_16BIT,
+    bufferSize,
+    AudioTrack.MODE_STREAM
+)
+
+// Modern (Android 5.0+)
+val audioAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_MEDIA)
+    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+    .build()
+
+val audioFormat = AudioFormat.Builder()
+    .setSampleRate(44100)
+    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+    .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+    .build()
+
+val audioTrack = AudioTrack.Builder()
+    .setAudioAttributes(audioAttributes)
+    .setAudioFormat(audioFormat)
+    .setBufferSizeInBytes(bufferSize)
+    .setTransferMode(AudioTrack.MODE_STREAM)
+    .build()</code></pre>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    timeline
+                        title Android Audio Framework Evolution
+
+                        section Android 8.0
+                            AAudio introduced : HIDL Audio HAL 4.0
+
+                        section Android 9.0
+                            32-bit float mixing : AAudio official support
+
+                        section Android 10
+                            AudioPlaybackCapture : App-to-app audio capture
+
+                        section Android 11
+                            Low-latency capture : HIDL 7.0
+
+                        section Android 12
+                            AIDL HAL introduced : Auto Fade
+
+                        section Android 13
+                            LE Audio : Spatial Audio
+
+                        section Android 14
+                            AIDL transition complete : Loudness Metadata
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 15: Debugging & Troubleshooting -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">15</span>
+                Debugging & Troubleshooting
+            </h2>
+            <p class="section-description">
+                Tools and methodologies for diagnosing and resolving audio issues.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Key Debugging Tools</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>dumpsys media.audio_flinger</code></li>
+                            <li><code>dumpsys audio</code></li>
+                            <li><code>adb logcat -s AudioFlinger:V</code></li>
+                            <li>Systrace (atrace)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Common Issues</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Underrun (glitches, noise)</li>
+                            <li>High latency</li>
+                            <li>Audio routing failure</li>
+                            <li>Volume control issues</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Performance Monitoring</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Track underrun count</li>
+                            <li>Measure latency</li>
+                            <li>CPU usage profiling</li>
+                            <li>Memory usage analysis</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Key dumpsys Commands</h3>
+            <div class="code-block">
+                <pre><code># Check AudioFlinger status
+adb shell dumpsys media.audio_flinger
+
+# Example output:
+# Hardware status:
+#   Latency (msec): 10
+#   Sample rate: 48000
+#   Frames per buffer: 192
+#   Underruns: 5
+#   Overruns: 0
+#
+# Active tracks:
+#   Session ID: 123
+#   Stream type: MUSIC
+#   Format: PCM 16-bit
+#   Channel count: 2
+
+# Check audio policy and device status
+adb shell dumpsys audio
+
+# Example output:
+# Audio Devices:
+#   Type: WIRED_HEADSET
+#   Address:
+#   State: AVAILABLE
+#
+# Audio Focus:
+#   UID: 10123
+#   Package: com.example.musicapp
+#   Focus: GAIN
+#   Usage: MEDIA
+
+# Check audio routing
+adb shell dumpsys media.audio_policy
+
+# Check active streams
+adb shell dumpsys media.audio_flinger | grep -A 10 "Output thread"
+
+# Check underrun count
+adb shell dumpsys media.audio_flinger | grep -i underrun</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">logcat Filtering</h3>
+            <div class="code-block">
+                <pre><code># Show only AudioFlinger logs
+adb logcat -s AudioFlinger:V
+
+# All audio-related logs
+adb logcat -s AudioFlinger:V AudioPolicyService:V AAudio:V
+
+# Specific app's audio logs
+adb logcat | grep -E "AudioTrack|AudioRecord"
+
+# Track underrun occurrences
+adb logcat | grep -i underrun
+
+# Track Audio Focus changes
+adb logcat -s AudioManager:V | grep -i focus
+
+# Latency-related logs
+adb logcat | grep -i latency</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Troubleshooting Guide</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Symptom</th>
+                            <th>Possible Causes</th>
+                            <th>Solutions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Audio glitches / Noise</td>
+                            <td>
+                                - Underrun occurring<br />
+                                - Buffer size too small<br />
+                                - CPU insufficient
+                            </td>
+                            <td>
+                                - Increase buffer size<br />
+                                - Remove blocking in callback<br />
+                                - Raise CPU priority
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>High latency</td>
+                            <td>
+                                - Buffer size too large<br />
+                                - Using SHARED mode<br />
+                                - Inefficient API (MediaPlayer)
+                            </td>
+                            <td>
+                                - Decrease buffer size<br />
+                                - Use EXCLUSIVE mode<br />
+                                - Switch to AAudio
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>No sound</td>
+                            <td>
+                                - Wrong routing<br />
+                                - Volume at 0<br />
+                                - Audio Focus not acquired
+                            </td>
+                            <td>
+                                - Check device with dumpsys audio<br />
+                                - Check volume settings<br />
+                                - Request Audio Focus
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Bluetooth audio delay</td>
+                            <td>
+                                - A2DP protocol delay<br />
+                                - Codec settings
+                            </td>
+                            <td>
+                                - Use aptX/LDAC codec<br />
+                                - Implement delay compensation<br />
+                                - Consider LE Audio
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Recording not working</td>
+                            <td>
+                                - Permission not granted<br />
+                                - Another app is recording<br />
+                                - Audio Source issue
+                            </td>
+                            <td>
+                                - Check RECORD_AUDIO permission<br />
+                                - Request Audio Focus<br />
+                                - Change Audio Source
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Volume control not working</td>
+                            <td>
+                                - Wrong Stream Type<br />
+                                - DND mode<br />
+                                - System volume locked
+                            </td>
+                            <td>
+                                - Check AudioAttributes<br />
+                                - Check DND settings<br />
+                                - Analyze dumpsys audio
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Audio Effects not applying</td>
+                            <td>
+                                - Wrong Session ID<br />
+                                - Effect not supported on device<br />
+                                - Insufficient permissions
+                            </td>
+                            <td>
+                                - Use AudioTrack's Session ID<br />
+                                - Check device capabilities<br />
+                                - MODIFY_AUDIO_SETTINGS permission
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>AAOS Multi-zone issues</td>
+                            <td>
+                                - Wrong Zone ID<br />
+                                - car_audio_configuration.xml error<br />
+                                - CarAudioService not working
+                            </td>
+                            <td>
+                                - Check dumpsys car_service<br />
+                                - Verify XML configuration<br />
+                                - Analyze logs (CarAudioService)
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Systrace Profiling</h3>
+            <div class="code-block">
+                <pre><code># Analyze audio performance with Systrace (10 seconds)
+adb shell atrace -t 10 -b 32768 audio sched freq idle am wm > audio_trace.html
+
+# Open audio_trace.html in browser
+
+# What to check:
+# 1. AudioFlinger thread execution cycle
+#    - Is MixerThread running at regular intervals?
+#    - Are there scheduling delays?
+#
+# 2. Underrun occurrence points
+#    - When does data shortage occur?
+#
+# 3. CPU frequency
+#    - Is CPU running at sufficient clock during audio processing?
+#
+# 4. App callback execution time
+#    - Are there long-running operations in callbacks?
+
+# Trace specific process only
+adb shell atrace -t 10 --app=com.example.audioapp audio > trace.html</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 16: AOSP Source Reference -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">16</span>
+                AOSP Source Code Reference
+            </h2>
+            <p class="section-description">
+                Key source code locations and important files for Android Audio Framework.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">AudioFlinger</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>AudioFlinger.cpp</strong></li>
+                            <li>frameworks/av/services/audioflinger/</li>
+                            <li>Audio mixing engine implementation</li>
+                            <li>PlaybackThread, RecordThread</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">AudioPolicyService</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>AudioPolicyService.cpp</strong></li>
+                            <li>frameworks/av/services/audiopolicy/</li>
+                            <li>Routing policy decisions</li>
+                            <li>audio_policy_configuration.xml</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Audio HAL</span>
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>AIDL</strong>: hardware/interfaces/audio/aidl/</li>
+                            <li><strong>HIDL</strong>: hardware/interfaces/audio/</li>
+                            <li>IDevice.aidl, IStreamOut.aidl</li>
+                            <li>default implementation: audio.primary.default.so</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Key Directory Structure</h3>
+            <div class="code-block">
+                <pre><code># AudioFlinger (Native Audio Server)
+frameworks/av/services/audioflinger/
+├── AudioFlinger.cpp                    # Main audio server
+├── AudioFlinger.h
+├── Threads.cpp                         # PlaybackThread, RecordThread implementation
+├── Tracks.cpp                          # AudioTrack, AudioRecord management
+├── AudioMixer.cpp                      # Mixing engine (32-bit float)
+├── Effects.cpp                         # Audio effect processing
+└── FastMixer.cpp                       # Low-latency Fast Mixer
+
+# AudioPolicyService (Policy Manager)
+frameworks/av/services/audiopolicy/
+├── AudioPolicyService.cpp              # Policy service
+├── AudioPolicyManager.cpp              # Routing decisions
+├── AudioPolicyInterface.h
+└── config/
+    └── audio_policy_configuration.xsd  # Configuration schema
+
+# Framework API (Java/Kotlin)
+frameworks/base/media/java/android/media/
+├── AudioManager.java                   # Audio system management
+├── AudioTrack.java                     # Low-level playback API
+├── AudioRecord.java                    # Low-level recording API
+├── AudioAttributes.java                # Audio attributes
+├── AudioFocusRequest.java              # Focus request (Android 8.0+)
+├── MediaPlayer.java                    # High-level playback API
+└── audiofx/
+    ├── Equalizer.java                  # Equalizer
+    ├── BassBoost.java                  # Bass Boost
+    ├── Virtualizer.java                # Virtual surround
+    └── Visualizer.java                 # Visualization
+
+# Native API (C++)
+frameworks/av/media/libaudioclient/
+├── AudioTrack.cpp                      # AudioTrack native implementation
+├── AudioRecord.cpp                     # AudioRecord native implementation
+├── AudioSystem.cpp                     # Audio system interface
+└── include/
+    └── media/
+        ├── AudioTrack.h
+        └── AudioRecord.h
+
+# AAudio (Low-latency Native API)
+frameworks/av/media/libaaudio/
+├── src/
+│   ├── AAudioService.cpp               # AAudio service
+│   ├── AAudioStreamTracker.cpp         # Stream management
+│   └── binding/
+│       ├── AAudioStreamRequest.cpp
+│       └── AAudioStreamConfiguration.cpp
+└── include/aaudio/
+    └── AAudio.h                        # Public C API
+
+# Audio HAL AIDL (Android 12+)
+hardware/interfaces/audio/aidl/
+├── android/hardware/audio/
+│   ├── IDevice.aidl                    # Device interface
+│   ├── IStreamOut.aidl                 # Output stream
+│   ├── IStreamIn.aidl                  # Input stream
+│   ├── IModule.aidl                    # Module interface
+│   └── core/
+│       ├── IConfig.aidl
+│       └── sounddose/
+└── default/                            # Default implementation
+
+# Audio HAL HIDL (Legacy, Android 8-13)
+hardware/interfaces/audio/
+├── 7.0/                                # HIDL 7.0 (Android 11)
+├── 6.0/                                # HIDL 6.0 (Android 10)
+├── 5.0/                                # HIDL 5.0 (Android 9)
+└── 4.0/                                # HIDL 4.0 (Android 8)
+
+# AAOS Car Audio
+packages/services/Car/service/src/com/android/car/audio/
+├── CarAudioService.java                # Vehicle audio service
+├── CarAudioZone.java                   # Audio zone management
+├── CarVolumeGroup.java                 # Volume group
+└── CarAudioContext.java                # Audio context
+
+# Audio Policy Configuration
+hardware/[vendor]/[device]/audio/
+└── audio_policy_configuration.xml      # Device-specific audio policy</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Key AIDL Interfaces</h3>
+            <div class="code-block">
+                <pre><code>// IDevice.aidl - Audio Device Interface
+package android.hardware.audio;
+
+interface IDevice {
+    // Open stream
+    IStreamOut openOutputStream(
+        int ioHandle,
+        AudioDevice device,
+        AudioConfig config,
+        AudioOutputFlag[] flags
+    );
+
+    IStreamIn openInputStream(
+        int ioHandle,
+        AudioDevice device,
+        AudioConfig config,
+        AudioInputFlag[] flags
+    );
+
+    // Set audio port configuration
+    void setAudioPortConfig(AudioPortConfig config);
+
+    // Set parameters
+    void setParameters(KeyValuePair[] parameters);
+}
+
+// IStreamOut.aidl - Output Stream Interface
+interface IStreamOut {
+    // Write PCM data
+    WriteResult write(byte[] data);
+
+    // Stream state
+    void standby();
+    void pause();
+    void resume();
+    void drain(AudioDrain type);
+
+    // Latency
+    long getLatency();
+
+    // Presentation position
+    PresentationPosition getPresentationPosition();
+}
+
+// IAudioFlinger.aidl - AudioFlinger Binder Interface
+interface IAudioFlinger {
+    // Create Track
+    IAudioTrack createTrack(
+        AudioStreamType streamType,
+        int sampleRate,
+        AudioFormat format,
+        int channelMask,
+        int frameCount,
+        int flags,
+        int sessionId
+    );
+
+    // Open Record
+    IAudioRecord openRecord(...);
+
+    // Master volume
+    void setMasterVolume(float volume);
+    float getMasterVolume();
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">Useful AOSP Links</h3>
+            <div class="code-block">
+                <pre><code># AudioFlinger source
+https://cs.android.com/android/platform/superproject/main/+/main:frameworks/av/services/audioflinger/
+
+# AudioPolicyService source
+https://cs.android.com/android/platform/superproject/main/+/main:frameworks/av/services/audiopolicy/
+
+# Audio HAL AIDL
+https://cs.android.com/android/platform/superproject/main/+/main:hardware/interfaces/audio/aidl/
+
+# AAudio source
+https://cs.android.com/android/platform/superproject/main/+/main:frameworks/av/media/libaaudio/
+
+# CarAudioService source
+https://cs.android.com/android/platform/superproject/main/+/main:packages/services/Car/service/src/com/android/car/audio/
+
+# Audio Framework official documentation
+https://source.android.com/docs/core/audio
+
+# Audio HAL documentation
+https://source.android.com/docs/core/audio/implement
+
+# AAudio guide
+https://developer.android.com/ndk/guides/audio/aaudio/aaudio</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 17: Related Documentation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">17</span>
+                Related Documentation
+            </h2>
+            <p class="section-description">
+                Other important documents and resources related to the Audio Framework.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon"></span>
+                        <a href="mediasession.html" style="color: inherit; text-decoration: none;">
+                            MediaSession
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        MediaSession framework integration with Audio Focus, media control and playback state management
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon"></span>
+                        <a href="carmedia.html" style="color: inherit; text-decoration: none;">
+                            Car Media Service
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        AAOS vehicle media service, CarAudioService integration, Last Media Source
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon"></span>
+                        <a href="media-playback.html" style="color: inherit; text-decoration: none;">
+                            Media Playback Pipeline
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        MediaPlayer, ExoPlayer audio rendering pipeline and AudioTrack integration
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon"></span>
+                        <a href="codec2.html" style="color: inherit; text-decoration: none;">
+                            Codec 2.0
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        Audio codec (AAC, MP3, Opus) decoding and PCM delivery to AudioFlinger
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon"></span>
+                        <a href="aaos.html" style="color: inherit; text-decoration: none;">
+                            Android Automotive OS
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        AAOS overall architecture, vehicle system services, audio/media integration
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon"></span>
+                        <a href="dolby-codecs.html" style="color: inherit; text-decoration: none;">
+                            Dolby Codecs
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        Dolby Atmos, AC-4, Digital Plus audio codec and Audio HAL integration
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>Additional Resources:</strong> Android Official Documentation
+                <a href="https://source.android.com/docs/core/audio" target="_blank"
+                   style="color: var(--accent-primary);">AOSP Audio Framework</a>,
+                <a href="https://developer.android.com/ndk/guides/audio/aaudio" target="_blank"
+                   style="color: var(--accent-primary);">AAudio Developer Guide</a>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

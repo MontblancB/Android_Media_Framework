@@ -1,0 +1,2850 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google CTS Testing Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">✅ Google CTS</h1>
+            <p class="page-subtitle">Android Compatibility Test Suite</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overview: CTS란?
+            </h2>
+            <p class="section-description">
+                CTS (Compatibility Test Suite)는 Android 디바이스가 플랫폼 호환성 요구사항을 충족하는지 검증하는 무료 테스트 도구입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        주요 목적
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>플랫폼 호환성 보장</strong></p>
+                        <ul>
+                            <li>일관된 앱 동작 보장</li>
+                            <li>Android API 정확한 구현 검증</li>
+                            <li>조기 비호환성 발견</li>
+                            <li>GMS 인증 필수 요건</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        호환성 요구사항
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Android 호환 디바이스 조건</strong></p>
+                        <ul>
+                            <li>CDD (Compatibility Definition Document) 준수</li>
+                            <li>모든 CTS 테스트 통과</li>
+                            <li>User Build에서 실행</li>
+                            <li>다중 ABI 지원 시 모든 ABI 테스트</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        테스트 프레임워크
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>자동화된 테스트 하네스</strong></p>
+                        <ul>
+                            <li>Desktop에서 실행되는 Test Harness</li>
+                            <li>디바이스에서 실행되는 Test Cases</li>
+                            <li>JUnit 기반 Java 테스트</li>
+                            <li>APK 형태로 패키징</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        GMS 인증
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Google Mobile Services</strong></p>
+                        <ul>
+                            <li>Play Store, Gmail, YouTube 사전 설치</li>
+                            <li>CTS 통과 필수</li>
+                            <li>상용 디바이스 필수 요건</li>
+                            <li>사용자 경험 일관성</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Test Categories -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                CTS 테스트 카테고리
+            </h2>
+            <p class="section-description">
+                CTS는 Android 플랫폼의 다양한 영역을 포괄하는 광범위한 테스트를 포함합니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    CTS[CTS Test Suite]
+
+                    CTS --> API[API Compatibility<br />Testing]
+                    CTS --> SYSTEM[System Behavior<br />Testing]
+                    CTS --> HW[Hardware Functionality<br />Testing]
+                    CTS --> UI[User Interface<br />Testing]
+                    CTS --> APP[Application Compatibility<br />Testing]
+                    CTS --> NET[Network & Connectivity<br />Testing]
+
+                    API --> API1[Signature Tests]
+                    API --> API2[Platform API Tests]
+                    API --> API3[Core Libraries]
+
+                    SYSTEM --> SYS1[Power Management]
+                    SYSTEM --> SYS2[Memory Management]
+                    SYSTEM --> SYS3[Process Lifecycle]
+
+                    HW --> HW1[Camera]
+                    HW --> HW2[Sensors]
+                    HW --> HW3[Audio/Video]
+
+                    UI --> UI1[Layout & Navigation]
+                    UI --> UI2[Touchscreen]
+                    UI --> UI3[Input Devices]
+
+                    APP --> APP1[Third-party Apps]
+                    APP --> APP2[Screen Sizes]
+                    APP --> APP3[Resolutions]
+
+                    NET --> NET1[Wi-Fi]
+                    NET --> NET2[Bluetooth]
+                    NET --> NET3[Mobile Networks]
+
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 테스트 유형
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔬</span>
+                        Unit Tests
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>원자적 코드 단위 검증</strong></p>
+                        <ul>
+                            <li>단일 클래스 테스트</li>
+                            <li>메서드 동작 검증</li>
+                            <li>에러 처리 확인</li>
+                            <li>격리된 환경에서 실행</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Functional Tests
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>API 조합 테스트</strong></p>
+                        <ul>
+                            <li>상위 레벨 유스케이스</li>
+                            <li>API 간 상호작용</li>
+                            <li>통합 시나리오</li>
+                            <li>실제 사용 패턴</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💪</span>
+                        Robustness Tests
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>시스템 내구성 평가</strong></p>
+                        <ul>
+                            <li>스트레스 테스트</li>
+                            <li>예외 상황 처리</li>
+                            <li>리소스 부족 시나리오</li>
+                            <li>장시간 안정성</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Performance Tests
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>성능 벤치마크</strong></p>
+                        <ul>
+                            <li>FPS 렌더링 측정</li>
+                            <li>응답 시간 검증</li>
+                            <li>처리량 평가</li>
+                            <li>성능 기준 충족</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Media CTS Tests -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                미디어 CTS 테스트
+            </h2>
+            <p class="section-description">
+                MediaCodec, MediaExtractor, MediaPlayer 등 미디어 프레임워크 컴포넌트에 대한 CTS 테스트를 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                🎬 MediaCodec CTS
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        코덱 기능 테스트
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>인코딩/디코딩 검증</strong></p>
+                        <ul>
+                            <li>MediaCodecList의 모든 코덱 테스트</li>
+                            <li>다양한 해상도 (720p, QCIF, QVGA)</li>
+                            <li>프로파일 및 레벨 지원</li>
+                            <li>색상 포맷 처리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        성능 및 Capabilities
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaCodecCapabilities 검증</strong></p>
+                        <ul>
+                            <li>지원 해상도 범위</li>
+                            <li>비트레이트 범위</li>
+                            <li>프레임레이트 범위</li>
+                            <li>성능 클래스 요구사항</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        비동기 모드
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Callback 기반 처리</strong></p>
+                        <ul>
+                            <li>onInputBufferAvailable</li>
+                            <li>onOutputBufferAvailable</li>
+                            <li>onError 처리</li>
+                            <li>onOutputFormatChanged</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📹</span>
+                        테스트 벡터
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>표준 미디어 파일</strong></p>
+                        <ul>
+                            <li>Big Buck Bunny (8-bit)</li>
+                            <li>Cosmos Laundromat (10-bit)</li>
+                            <li>다양한 코덱 및 포맷</li>
+                            <li>자동 다운로드</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📦 MediaExtractor CTS
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📂</span>
+                        데이터 소스 처리
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>파일 경로 (File Path)</li>
+                            <li>HTTP URL</li>
+                            <li>FileDescriptor</li>
+                            <li>MediaDataSource</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        트랙 선택 및 포맷
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>트랙 개수 확인</li>
+                            <li>MediaFormat 정보 검증</li>
+                            <li>MIME 타입 확인</li>
+                            <li>트랙 선택/해제</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        샘플 추출
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>샘플 데이터 읽기</li>
+                            <li>Presentation Time 검증</li>
+                            <li>트랙 인덱스 확인</li>
+                            <li>플래그 (SYNC, ENCRYPTED)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        DRM 지원
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>PSSH 정보 추출</li>
+                            <li>암호화된 샘플 처리</li>
+                            <li>DRM 스킴 확인</li>
+                            <li>보호된 콘텐츠 테스트</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ▶️ MediaPlayer CTS
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        생명주기 관리
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>create() → start() → pause()</li>
+                            <li>stop() → reset() → release()</li>
+                            <li>상태 전환 검증</li>
+                            <li>잘못된 상태 처리</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎮</span>
+                        재생 제어
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>start/pause/stop</li>
+                            <li>seekTo() 정확도</li>
+                            <li>재생 속도 제어</li>
+                            <li>루핑 기능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎭</span>
+                        A/V 동기화
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>오디오-비디오 싱크</li>
+                            <li>립싱크 허용 오차</li>
+                            <li>타임스탬프 정확도</li>
+                            <li>드리프트 보정</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📢</span>
+                        이벤트 처리
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>OnCompletionListener</li>
+                            <li>OnErrorListener</li>
+                            <li>OnSeekCompleteListener</li>
+                            <li>OnInfoListener</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: xTS Comparison -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                xTS 비교: CTS vs VTS vs GTS
+            </h2>
+            <p class="section-description">
+                Android 인증 프로세스에서 사용되는 세 가지 주요 테스트 스위트를 비교합니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph CTS_BOX ["CTS - Compatibility Test Suite"]
+                    CTS_DESC[플랫폼 호환성<br />Framework APIs<br />앱 호환성]
+                    end
+
+                    subgraph VTS_BOX ["VTS - Vendor Test Suite"]
+                    VTS_DESC[HAL 구현<br />커널 테스트<br />하드웨어 호환성]
+                    end
+
+                    subgraph GTS_BOX ["GTS - GMS Test Suite"]
+                    GTS_DESC[GMS 앱 호환성<br />Google Play Services<br />멀티미디어 성능]
+                    end
+
+                    DEVICE[Android Device] --> CTS_BOX
+                    DEVICE --> VTS_BOX
+                    DEVICE --> GTS_BOX
+
+                    CTS_BOX --> CERT[GMS Certification]
+                    VTS_BOX --> CERT
+                    GTS_BOX --> CERT
+
+                    CERT --> GMS[Google Mobile Services<br />Play Store, Gmail, YouTube]
+
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        CTS
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Compatibility Test Suite</strong></p>
+                        <ul>
+                            <li><strong>목적</strong>: Android 플랫폼 호환성</li>
+                            <li><strong>대상</strong>: Framework APIs, 시스템 동작</li>
+                            <li><strong>언어</strong>: Java (JUnit)</li>
+                            <li><strong>실행</strong>: APK 형태로 디바이스에서</li>
+                            <li><strong>범위</strong>: 앱 레벨 호환성</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        VTS
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Vendor Test Suite</strong></p>
+                        <ul>
+                            <li><strong>목적</strong>: 벤더 구현 검증</li>
+                            <li><strong>대상</strong>: HAL, 커널, VNDK</li>
+                            <li><strong>언어</strong>: C++ (GTest), Python</li>
+                            <li><strong>실행</strong>: 디바이스 네이티브</li>
+                            <li><strong>범위</strong>: 하드웨어 레벨 호환성</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        GTS
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>GMS Test Suite</strong></p>
+                        <ul>
+                            <li><strong>목적</strong>: GMS 라이선스 획득</li>
+                            <li><strong>대상</strong>: Google 앱 및 서비스</li>
+                            <li><strong>언어</strong>: Java, 다양</li>
+                            <li><strong>실행</strong>: GMS 앱 테스트</li>
+                            <li><strong>범위</strong>: Google 생태계 통합</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>💡 xTS 통과 필수:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>상용 Android 디바이스는 CTS, VTS, GTS 모두 통과해야 GMS 인증 획득</li>
+                    <li>CTS는 앱 호환성, VTS는 하드웨어 호환성, GTS는 Google 서비스 통합 검증</li>
+                    <li>각 테스트 스위트는 서로 보완적이며 전체 시스템 품질 보장</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 5: Certification Process -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                인증 프로세스
+            </h2>
+            <p class="section-description">
+                Android 디바이스가 GMS 인증을 받기 위한 전체 프로세스를 설명합니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant OEM as OEM/ODM
+                    participant DEV as Device Under Test
+                    participant HARNESS as Test Harness
+                    participant GOOGLE as Google
+
+                    OEM->>DEV: CDD 요구사항 구현
+                    OEM->>DEV: User Build 생성
+
+                    OEM->>HARNESS: CTS 실행 시작
+                    HARNESS->>DEV: APK 푸시
+                    HARNESS->>DEV: 테스트 실행
+                    DEV-->>HARNESS: 테스트 결과
+                    HARNESS->>HARNESS: XML 리포트 생성
+
+                    OEM->>HARNESS: VTS 실행 시작
+                    HARNESS->>DEV: HAL 테스트 실행
+                    DEV-->>HARNESS: 테스트 결과
+
+                    OEM->>HARNESS: GTS 실행 시작
+                    HARNESS->>DEV: GMS 앱 테스트
+                    DEV-->>HARNESS: 테스트 결과
+
+                    alt 모든 테스트 통과
+                    OEM->>GOOGLE: 테스트 리포트 제출
+                    GOOGLE->>GOOGLE: 결과 검토
+                    GOOGLE-->>OEM: GMS 인증 승인
+                    OEM->>DEV: GMS 앱 사전 설치
+                    else 테스트 실패
+                    HARNESS-->>OEM: 실패 리포트
+                    OEM->>DEV: 문제 수정
+                    OEM->>HARNESS: 재테스트
+                    end
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📝 인증 단계
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        CDD 준수
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Compatibility Definition Document</strong></p>
+                        <ul>
+                            <li>소프트웨어 요구사항 구현</li>
+                            <li>하드웨어 기능 구현</li>
+                            <li>성능 기준 충족</li>
+                            <li>보안 요구사항 준수</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        xTS 실행
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>테스트 스위트 실행</strong></p>
+                        <ul>
+                            <li>CTS: 플랫폼 호환성</li>
+                            <li>VTS: 벤더 구현</li>
+                            <li>GTS: GMS 통합</li>
+                            <li>연속적인 자가 테스트</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">3️⃣</span>
+                        결과 제출
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Google에 리포트 제출</strong></p>
+                        <ul>
+                            <li>XML 테스트 리포트</li>
+                            <li>압축된 결과 디렉토리</li>
+                            <li>디바이스 정보</li>
+                            <li>빌드 정보</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">4️⃣</span>
+                        GMS 승인
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>인증 획득</strong></p>
+                        <ul>
+                            <li>Google 검토 및 승인</li>
+                            <li>GMS 라이선스 발급</li>
+                            <li>Google 앱 사전 설치 권한</li>
+                            <li>상용 출시 가능</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ 인증 성공 시 혜택:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Play Store, Gmail, YouTube 등 Google 앱 사전 설치 가능</li>
+                    <li>Google Play Services API 사용 가능</li>
+                    <li>Android 브랜드 및 로고 사용 권한</li>
+                    <li>사용자에게 일관된 Android 경험 제공</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 6: CTS Execution -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                CTS 실행 방법
+            </h2>
+            <p class="section-description">
+                CTS 테스트를 실행하고 결과를 분석하는 방법을 설명합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💻</span>
+                        환경 준비
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>필수 요구사항</strong></p>
+                        <ul>
+                            <li>Desktop (Windows/Ubuntu)</li>
+                            <li>CTS 패키지 다운로드</li>
+                            <li>ADB (Android Debug Bridge)</li>
+                            <li>User Build 디바이스</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">▶️</span>
+                        실행 명령
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>CTS 실행</strong></p>
+                        <ul>
+                            <li><code>./cts-tradefed</code>: 하네스 시작</li>
+                            <li><code>run cts</code>: 전체 테스트</li>
+                            <li><code>run cts --module [name]</code>: 특정 모듈</li>
+                            <li><code>run cts --plan [name]</code>: 테스트 플랜</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        결과 분석
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>리포트 확인</strong></p>
+                        <ul>
+                            <li>XML 리포트 생성</li>
+                            <li>브라우저에서 확인 가능</li>
+                            <li>모듈별 통과/실패 상태</li>
+                            <li>실패 원인 로그</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        재테스트
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>실패 케이스 재실행</strong></p>
+                        <ul>
+                            <li><code>run retry</code>: 실패 케이스만</li>
+                            <li>문제 수정 후 재실행</li>
+                            <li>부분 테스트 가능</li>
+                            <li>연속 통합 지원</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ 주의사항:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>CTS는 User Build에서만 실행 (eng/userdebug 빌드 불가)</li>
+                    <li>테스트 실행 시간이 매우 길 수 있음 (수 시간~수일)</li>
+                    <li>디바이스는 충전 상태 유지 필요</li>
+                    <li>네트워크 연결 필요 (테스트 벡터 다운로드)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 7: CTS Test Code Examples -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                CTS 테스트 코드 예제
+            </h2>
+            <p class="section-description">
+                JUnit 기반 CTS 테스트 케이스를 작성하고 실행하는 방법을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                💻 기본 CTS 테스트 케이스
+            </h3>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">MediaCodecTest.java</span>
+                    <span class="code-lang">Java</span>
+                </div>
+                <pre><code>package android.media.cts;
+
+import android.media.MediaCodec;
+import android.media.MediaCodecInfo;
+import android.media.MediaCodecList;
+import android.media.MediaFormat;
+import android.test.AndroidTestCase;
+import android.util.Log;
+
+public class MediaCodecTest extends AndroidTestCase {
+    private static final String TAG = "MediaCodecTest";
+
+    // H.264 디코더가 존재하는지 테스트
+    public void testH264DecoderExists() {
+        MediaCodecList codecList = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
+        MediaCodecInfo[] infos = codecList.getCodecInfos();
+
+        boolean h264DecoderFound = false;
+        for (MediaCodecInfo info : infos) {
+            if (!info.isEncoder()) {
+                String[] types = info.getSupportedTypes();
+                for (String type : types) {
+                    if (type.equalsIgnoreCase("video/avc")) {
+                        h264DecoderFound = true;
+                        Log.i(TAG, "H.264 decoder found: " + info.getName());
+                        break;
+                    }
+                }
+            }
+        }
+
+        assertTrue("H.264 decoder must be supported", h264DecoderFound);
+    }
+
+    // H.264 디코더 Capabilities 테스트
+    public void testH264DecoderCapabilities() throws Exception {
+        MediaCodec codec = MediaCodec.createDecoderByType("video/avc");
+        MediaCodecInfo codecInfo = codec.getCodecInfo();
+
+        MediaCodecInfo.CodecCapabilities caps =
+            codecInfo.getCapabilitiesForType("video/avc");
+        MediaCodecInfo.VideoCapabilities videoCaps = caps.getVideoCapabilities();
+
+        // 최소 720p 지원 필수
+        assertTrue("Must support at least 1280x720",
+            videoCaps.isSizeSupported(1280, 720));
+
+        codec.release();
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎯 Instrumentation Test
+            </h3>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">MediaPlayerInstrumentationTest.java</span>
+                    <span class="code-lang">Java</span>
+                </div>
+                <pre><code>package android.media.cts;
+
+import android.media.MediaPlayer;
+import android.test.InstrumentationTestCase;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+public class MediaPlayerInstrumentationTest extends InstrumentationTestCase {
+
+    public void testPlayback() throws Exception {
+        MediaPlayer player = new MediaPlayer();
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mp) {
+                mp.start();
+            }
+        });
+
+        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                latch.countDown();
+            }
+        });
+
+        // 테스트 미디어 파일 재생
+        player.setDataSource("/data/local/tmp/test_video.mp4");
+        player.prepareAsync();
+
+        // 재생 완료 대기 (최대 30초)
+        assertTrue("Playback should complete",
+            latch.await(30, TimeUnit.SECONDS));
+
+        player.release();
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        테스트 빌드
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code># Android.mk
+LOCAL_PATH := $(call my-dir)
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := CtsMediaTestCases
+LOCAL_PACKAGE_NAME := CtsMediaTestCases
+LOCAL_MODULE_TAGS := optional
+
+LOCAL_SRC_FILES := $(call all-java-files-under, src)
+LOCAL_STATIC_JAVA_LIBRARIES := \
+    compatibility-device-util-axt \
+    androidx.test.rules \
+    junit
+
+LOCAL_COMPATIBILITY_SUITE := cts
+include $(BUILD_CTS_PACKAGE)</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔨</span>
+                        빌드 명령
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code># CTS 패키지 빌드
+m cts
+
+# 특정 모듈만 빌드
+m CtsMediaTestCases
+
+# CTS 하네스 실행
+cts-tradefed
+
+# 모듈 설치 및 테스트
+adb install -r CtsMediaTestCases.apk
+adb shell am instrument -w \
+  android.media.cts/androidx.test.runner.AndroidJUnitRunner</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: cts-tradefed Detailed Execution -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                cts-tradefed 실행 상세
+            </h2>
+            <p class="section-description">
+                CTS Trade Federation 하네스의 구체적인 사용법과 옵션을 설명합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        기본 실행 명령
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code># CTS 하네스 시작
+./cts-tradefed
+
+# 전체 CTS 실행
+cts-tf > run cts
+
+# 특정 모듈 실행
+cts-tf > run cts --module CtsMediaTestCases
+
+# 특정 테스트 케이스 실행
+cts-tf > run cts -m CtsMediaTestCases \
+  -t android.media.cts.MediaCodecTest#testH264DecoderExists
+
+# 테스트 플랜 실행
+cts-tf > run cts --plan CTS-Media</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        고급 옵션
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code># ABI 지정 (32-bit/64-bit)
+cts-tf > run cts --abi arm64-v8a
+
+# 샤딩 (여러 디바이스 동시 실행)
+cts-tf > run cts --shard-count 4
+
+# 로그 레벨 지정
+cts-tf > run cts --log-level VERBOSE
+
+# 실패한 테스트만 재실행
+cts-tf > run retry --retry 0
+
+# 타임아웃 설정
+cts-tf > run cts --test-timeout 60000</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        실행 로그 샘플
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem;">
+<code>cts-tradefed > run cts --module CtsMediaTestCases
+05-20 10:30:15 I/TestInvocation: Starting invocation for 'cts'
+05-20 10:30:20 I/ModuleDefinition: Running module CtsMediaTestCases
+05-20 10:30:25 I/ModuleDefinition: CtsMediaTestCases: 145 test cases
+05-20 10:32:10 I/InstrumentationTest: PASSED: testH264DecoderExists
+05-20 10:32:15 I/InstrumentationTest: PASSED: testH264DecoderCapabilities
+...
+05-20 10:45:30 I/TestInvocation: Invocation completed
+Results: 145 Passed, 0 Failed, 0 Not Executed</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📁</span>
+                        결과 디렉토리
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code>android-cts/results/
+└── 2024.05.20_10.30.15/
+    ├── test_result.xml          # 메인 결과 XML
+    ├── test_result.html         # HTML 리포트
+    ├── compatibility_result.css
+    ├── logo.png
+    ├── CtsMediaTestCases.reportlog.json
+    └── logs/
+        ├── host_log.txt
+        ├── device_logcat.txt
+        └── invocation_summary.txt</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>💡 실행 팁:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>미디어 모듈만 빠르게 테스트하려면 <code>--module CtsMediaTestCases</code> 사용</li>
+                    <li>실패한 테스트 디버깅 시 <code>--log-level VERBOSE</code>로 상세 로그 확인</li>
+                    <li>여러 디바이스가 있다면 <code>--shard-count</code>로 병렬 실행하여 시간 단축</li>
+                    <li>User Build 필수! eng/userdebug 빌드에서는 일부 테스트 실패</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: Common Failure Cases -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                일반적인 실패 케이스 및 해결법
+            </h2>
+            <p class="section-description">
+                미디어 CTS 테스트에서 자주 발생하는 실패 원인과 해결 방법을 정리했습니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                🔴 MediaCodec 실패 TOP 10
+            </h3>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">#</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">실패 원인</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">증상</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">해결법</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">1</td>
+                            <td style="padding: 15px;"><strong>해상도 미지원</strong></td>
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">isSizeSupported(1920, 1080) 실패</td>
+                            <td style="padding: 15px;">media_codecs.xml에서 max resolution 확인 및 수정</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">2</td>
+                            <td style="padding: 15px;"><strong>프레임레이트 미지원</strong></td>
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">areSizeAndRateSupported(1280, 720, 60) 실패</td>
+                            <td style="padding: 15px;">코덱 드라이버에서 60fps 지원 추가</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">3</td>
+                            <td style="padding: 15px;"><strong>색상 포맷 불일치</strong></td>
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">dequeueOutputBuffer 시 FORMAT_CHANGED</td>
+                            <td style="padding: 15px;">YUV420 Planar/Semi-Planar 포맷 확인</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">4</td>
+                            <td style="padding: 15px;"><strong>DRM 라이선스 실패</strong></td>
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">ERROR_DRM_NO_LICENSE</td>
+                            <td style="padding: 15px;">Widevine L1/L3 인증 및 provisioning 확인</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">5</td>
+                            <td style="padding: 15px;"><strong>코덱 초기화 실패</strong></td>
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">configure() throws IllegalStateException</td>
+                            <td style="padding: 15px;">MediaFormat 파라미터 (width, height, mime) 검증</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">6</td>
+                            <td style="padding: 15px;"><strong>타임스탬프 불일치</strong></td>
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">PTS 순서 역전 (negative delta)</td>
+                            <td style="padding: 15px;">인코더/디코더 타임스탬프 처리 로직 수정</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">7</td>
+                            <td style="padding: 15px;"><strong>버퍼 부족</strong></td>
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">dequeueInputBuffer 타임아웃</td>
+                            <td style="padding: 15px;">코덱 버퍼 수 증가 또는 비동기 모드 사용</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">8</td>
+                            <td style="padding: 15px;"><strong>Performance Class 미달</strong></td>
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">4K@30fps 동시 2세션 실패</td>
+                            <td style="padding: 15px;">하드웨어 성능 향상 또는 Class 등급 하향</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;">9</td>
+                            <td style="padding: 15px;"><strong>HDR 메타데이터 누락</strong></td>
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">HDR10 테스트 실패</td>
+                            <td style="padding: 15px;">MediaFormat에 HDR_STATIC_INFO 설정</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px;">10</td>
+                            <td style="padding: 15px;"><strong>Codec 2.0 HAL 누락</strong></td>
+                            <td style="padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">hardware.google.media.c2 서비스 없음</td>
+                            <td style="padding: 15px;">Codec 2.0 HAL 구현 또는 레거시 OMX 유지</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🛠️ 디버깅 단계
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        로그 확인
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code># 실패한 테스트 로그 필터링
+adb logcat | grep -E "CtsMedia|MediaCodec|ERROR"
+
+# 코덱 capabilities 덤프
+adb shell dumpsys media.codec
+
+# MediaCodecList 확인
+adb shell "dumpsys media.player | grep -A 20 CodecList"</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        설정 파일 검증
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code># media_codecs.xml 확인
+adb pull /vendor/etc/media_codecs.xml
+adb pull /vendor/etc/media_codecs_performance.xml
+
+# XML 문법 검증
+xmllint --noout media_codecs.xml</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">3️⃣</span>
+                        수동 재현
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code># 실패한 테스트만 재실행
+cts-tf > run retry --retry 0
+
+# 특정 테스트 케이스만 실행
+cts-tf > run cts -m CtsMediaTestCases \
+  -t android.media.cts.MediaCodecTest#testH264DecoderCapabilities</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">4️⃣</span>
+                        코드 수정 및 재테스트
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code># 수정 후 시스템 이미지 빌드
+m -j
+
+# 디바이스 플래시
+fastboot flashall -w
+
+# CTS 재실행
+cts-tf > run cts --module CtsMediaTestCases</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ 주의사항:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>media_codecs.xml 수정 시 반드시 문법 검증 후 적용</li>
+                    <li>코덱 성능 오버클레임(실제보다 높게 선언)은 앱 크래시 유발 가능</li>
+                    <li>DRM 테스트는 provisioning 상태 확인 필수 (widevine CDM)</li>
+                    <li>Performance Class는 하드웨어 성능에 따라 선택적 구현 가능</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 10: Performance Class Requirements -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                Performance Class 상세 요구사항
+            </h2>
+            <p class="section-description">
+                Android 12부터 도입된 Media Performance Class의 등급별 요구사항을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📊 Performance Class 비교표
+            </h3>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">항목</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Class 11 (R)</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Class 12 (S)</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Class 13 (T)</th>
+                            <th style="padding: 15px; text-align: center; font-weight: 600;">Class 14 (U)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>RAM</strong></td>
+                            <td style="padding: 15px; text-align: center;">6 GB</td>
+                            <td style="padding: 15px; text-align: center;">8 GB</td>
+                            <td style="padding: 15px; text-align: center;">8 GB</td>
+                            <td style="padding: 15px; text-align: center;">12 GB</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Storage</strong></td>
+                            <td style="padding: 15px; text-align: center;">128 GB</td>
+                            <td style="padding: 15px; text-align: center;">256 GB</td>
+                            <td style="padding: 15px; text-align: center;">256 GB</td>
+                            <td style="padding: 15px; text-align: center;">256 GB (UFS 3.1+)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Display</strong></td>
+                            <td style="padding: 15px; text-align: center;">1080p</td>
+                            <td style="padding: 15px; text-align: center;">1080p</td>
+                            <td style="padding: 15px; text-align: center;">1080p</td>
+                            <td style="padding: 15px; text-align: center;">1080p (HDR10+)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Video Decode</strong></td>
+                            <td style="padding: 15px; text-align: center;">4K@30fps (2 streams)</td>
+                            <td style="padding: 15px; text-align: center;">4K@30fps (3 streams)</td>
+                            <td style="padding: 15px; text-align: center;">4K@60fps (3 streams)</td>
+                            <td style="padding: 15px; text-align: center;">4K@60fps + 8K@30fps</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Video Encode</strong></td>
+                            <td style="padding: 15px; text-align: center;">4K@30fps (1 stream)</td>
+                            <td style="padding: 15px; text-align: center;">4K@30fps + 1080p@30fps</td>
+                            <td style="padding: 15px; text-align: center;">4K@60fps</td>
+                            <td style="padding: 15px; text-align: center;">4K@60fps (AV1)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Camera</strong></td>
+                            <td style="padding: 15px; text-align: center;">12 MP (30fps)</td>
+                            <td style="padding: 15px; text-align: center;">12 MP (30fps)</td>
+                            <td style="padding: 15px; text-align: center;">12 MP (60fps)</td>
+                            <td style="padding: 15px; text-align: center;">200 MP (30fps)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Concurrent Sessions</strong></td>
+                            <td style="padding: 15px; text-align: center;">6 codec sessions</td>
+                            <td style="padding: 15px; text-align: center;">6 codec sessions</td>
+                            <td style="padding: 15px; text-align: center;">8 codec sessions</td>
+                            <td style="padding: 15px; text-align: center;">12 codec sessions</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px;"><strong>Audio Latency</strong></td>
+                            <td style="padding: 15px; text-align: center;">≤ 100 ms</td>
+                            <td style="padding: 15px; text-align: center;">≤ 80 ms</td>
+                            <td style="padding: 15px; text-align: center;">≤ 80 ms</td>
+                            <td style="padding: 15px; text-align: center;">≤ 60 ms</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                💻 런타임 쿼리
+            </h3>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">PerformanceClassQuery.kt</span>
+                    <span class="code-lang">Kotlin</span>
+                </div>
+                <pre><code>import android.os.Build
+
+fun checkPerformanceClass() {
+    // Android 12 (API 31) 이상에서만 사용 가능
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val perfClass = Build.VERSION.MEDIA_PERFORMANCE_CLASS
+
+        when {
+            perfClass >= 14 -> {
+                Log.i(TAG, "Performance Class 14 (Android 14+)")
+                // 8K@30fps 디코딩, AV1 인코딩, 200MP 카메라
+                enableHighEndFeatures()
+            }
+            perfClass >= 13 -> {
+                Log.i(TAG, "Performance Class 13 (Android 13)")
+                // 4K@60fps 디코딩/인코딩, 12MP@60fps 카메라
+                enableMidHighFeatures()
+            }
+            perfClass >= 12 -> {
+                Log.i(TAG, "Performance Class 12 (Android 12L)")
+                // 4K@30fps 3 streams, 8GB RAM
+                enableMidFeatures()
+            }
+            perfClass >= 11 -> {
+                Log.i(TAG, "Performance Class 11 (Android 12)")
+                // 4K@30fps 2 streams, 6GB RAM
+                enableBaselineFeatures()
+            }
+            else -> {
+                Log.w(TAG, "No Performance Class certification")
+                // 기본 미디어 기능만 사용
+                enableBasicFeatures()
+            }
+        }
+    } else {
+        Log.w(TAG, "Performance Class API not available (API < 31)")
+    }
+}
+
+fun enableHighEndFeatures() {
+    // 8K 비디오 재생
+    // AV1 인코딩
+    // Ultra HDR (JPEG_R)
+    // 200MP 사진 촬영
+}
+
+fun enableMidHighFeatures() {
+    // 4K@60fps 비디오 재생/녹화
+    // 12MP@60fps 연속 촬영
+    // HDR10+ 지원
+}
+
+fun enableMidFeatures() {
+    // 4K@30fps 멀티 스트림
+    // 12MP@30fps 연속 촬영
+    // HDR10 지원
+}
+
+fun enableBaselineFeatures() {
+    // 4K@30fps 듀얼 스트림
+    // 12MP 사진
+}
+
+fun enableBasicFeatures() {
+    // 1080p 재생
+    // 기본 카메라 기능
+}</code></pre>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ Performance Class의 장점:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>앱 개발자가 디바이스 성능을 런타임에 정확히 파악 가능</li>
+                    <li>성능 파편화 문제 해결 (고사양 기능 안전하게 활성화)</li>
+                    <li>사용자에게 일관된 프리미엄 경험 제공</li>
+                    <li>Google이 성능 기준을 명확히 정의하여 OEM 가이드라인 제공</li>
+                </ul>
+            </div>
+
+            <div class="highlight-box">
+                <strong>💡 CTS 테스트:</strong>
+                <p style="margin-top: 10px;">
+                    Performance Class를 선언한 디바이스는 <code>CtsMediaPerformanceClassTestCases</code> 모듈의 모든 테스트를 통과해야 합니다.
+                    테스트는 실제 미디어 파일로 동시 디코딩/인코딩을 수행하며, 프레임 드롭, 버퍼링, 레이턴시를 측정합니다.
+                </p>
+            </div>
+        </section>
+
+        <!-- Section 11: CTS Result XML Analysis -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                CTS 결과 XML 리포트 분석
+            </h2>
+            <p class="section-description">
+                CTS 실행 후 생성되는 test_result.xml 파일의 구조와 분석 방법을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📄 test_result.xml 구조
+            </h3>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">test_result.xml</span>
+                    <span class="code-lang">XML</span>
+                </div>
+                <pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;Result start="1621504800000" end="1621520000000"
+        suite_name="CTS" suite_version="14.0_r1"
+        suite_plan="cts" suite_build_number="9876543"&gt;
+
+  &lt;Build build_reference_fingerprint="google/sdk_gphone64_x86_64/..."/&gt;
+
+  &lt;Summary pass="18520" failed="12" modules_done="165" modules_total="165"/&gt;
+
+  &lt;Module name="CtsMediaTestCases" abi="arm64-v8a"
+          runtime="1234567" done="true" pass="145" total_tests="147"&gt;
+
+    &lt;TestCase name="android.media.cts.MediaCodecTest"&gt;
+
+      &lt;Test result="pass" name="testH264DecoderExists"&gt;
+        &lt;Summary&gt;Test passed&lt;/Summary&gt;
+      &lt;/Test&gt;
+
+      &lt;Test result="pass" name="testH264DecoderCapabilities"&gt;
+        &lt;Summary&gt;Test passed&lt;/Summary&gt;
+      &lt;/Test&gt;
+
+      &lt;Test result="fail" name="testHevcDecoderCapabilities"&gt;
+        &lt;Failure message="java.lang.AssertionError: Must support 4K resolution"&gt;
+          &lt;StackTrace&gt;
+            at android.media.cts.MediaCodecTest.testHevcDecoderCapabilities(MediaCodecTest.java:152)
+          &lt;/StackTrace&gt;
+        &lt;/Failure&gt;
+      &lt;/Test&gt;
+
+    &lt;/TestCase&gt;
+
+  &lt;/Module&gt;
+
+&lt;/Result&gt;</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 주요 필드 설명
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📝</span>
+                        Summary
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>pass</code>: 통과한 테스트 수 (18520)</li>
+                            <li><code>failed</code>: 실패한 테스트 수 (12)</li>
+                            <li><code>modules_done</code>: 완료된 모듈 수 (165)</li>
+                            <li><code>modules_total</code>: 전체 모듈 수 (165)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Build Info
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>build_reference_fingerprint</code>: 디바이스 핑거프린트</li>
+                            <li>예: google/sdk_gphone64_x86_64/sdk_gphone64_x86_64:14/UE1A.230829.036/10819315:userdebug/dev-keys</li>
+                            <li>Google 제출 시 검증에 사용</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Module
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>name</code>: 모듈 이름 (CtsMediaTestCases)</li>
+                            <li><code>abi</code>: 아키텍처 (arm64-v8a, armeabi-v7a)</li>
+                            <li><code>runtime</code>: 실행 시간 (ms)</li>
+                            <li><code>done</code>: 완료 여부 (true/false)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">❌</span>
+                        Failure
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>message</code>: 실패 메시지</li>
+                            <li><code>StackTrace</code>: Java 스택 트레이스</li>
+                            <li>디버깅 시 가장 중요한 정보</li>
+                            <li>실패 원인 추적 가능</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔍 XML 파싱 스크립트
+            </h3>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">parse_cts_result.py</span>
+                    <span class="code-lang">Python</span>
+                </div>
+                <pre><code>import xml.etree.ElementTree as ET
+import sys
+
+def parse_cts_result(xml_file):
+    tree = ET.parse(xml_file)
+    root = tree.getroot()
+
+    # Summary 파싱
+    summary = root.find('Summary')
+    pass_count = int(summary.get('pass', 0))
+    fail_count = int(summary.get('failed', 0))
+    total = pass_count + fail_count
+    pass_rate = (pass_count / total * 100) if total > 0 else 0
+
+    print(f"=== CTS Test Summary ===")
+    print(f"Total Tests: {total}")
+    print(f"Passed: {pass_count}")
+    print(f"Failed: {fail_count}")
+    print(f"Pass Rate: {pass_rate:.2f}%\n")
+
+    # 실패한 테스트 추출
+    failures = []
+    for module in root.findall('.//Module'):
+        module_name = module.get('name')
+        for test_case in module.findall('.//TestCase'):
+            case_name = test_case.get('name')
+            for test in test_case.findall('.//Test[@result="fail"]'):
+                test_name = test.get('name')
+                failure = test.find('Failure')
+                if failure is not None:
+                    message = failure.get('message', 'No message')
+                    failures.append({
+                        'module': module_name,
+                        'case': case_name,
+                        'test': test_name,
+                        'message': message
+                    })
+
+    if failures:
+        print(f"=== Failed Tests ({len(failures)}) ===")
+        for i, f in enumerate(failures, 1):
+            print(f"{i}. {f['module']} > {f['case']} > {f['test']}")
+            print(f"   Error: {f['message']}\n")
+    else:
+        print("✅ All tests passed!")
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python parse_cts_result.py test_result.xml")
+        sys.exit(1)
+
+    parse_cts_result(sys.argv[1])</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ✅ Google 제출 전 체크리스트
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        User Build 확인
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code># Build fingerprint에 "userdebug" 없어야 함
+adb shell getprop ro.build.fingerprint
+
+# 올바른 예:
+# google/product/device:14/.../user/release-keys
+
+# 잘못된 예:
+# google/product/device:14/.../userdebug/dev-keys</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        모든 ABI 테스트
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>64-bit: arm64-v8a 필수</li>
+                            <li>32-bit: armeabi-v7a (선택)</li>
+                            <li>두 ABI 모두 지원하면 각각 테스트</li>
+                            <li>XML에 양쪽 ABI 결과 포함</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">3️⃣</span>
+                        Pass Rate 100%
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>모든 테스트 통과 필수</li>
+                            <li>실패 1개라도 있으면 제출 불가</li>
+                            <li>Not Executed는 허용 (해당 HW 없음)</li>
+                            <li>Waiver 승인받은 경우만 예외</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">4️⃣</span>
+                        리포트 압축
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code># 결과 디렉토리 압축
+cd android-cts/results/
+zip -r cts_result_2024.05.20.zip 2024.05.20_10.30.15/
+
+# Google Partner Console에 업로드
+# https://www.google.com/android/partner/</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ 인증 성공 팁:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>첫 제출 전에 내부적으로 수차례 CTS 실행하여 안정성 확보</li>
+                    <li>실패 케이스는 철저히 분석하고 근본 원인 해결 (workaround 금지)</li>
+                    <li>Google과 사전에 기술 논의 (특수한 하드웨어 구성 시)</li>
+                    <li>CDD 문서와 CTS 결과를 함께 검토하여 요구사항 누락 방지</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 12: CI/CD Automation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                CI/CD 자동화
+            </h2>
+            <p class="section-description">
+                CTS 테스트를 Jenkins, GitLab CI/CD에 통합하여 자동화하는 방법을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                🔧 Jenkins Pipeline
+            </h3>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Jenkinsfile</span>
+                    <span class="code-lang">Groovy</span>
+                </div>
+                <pre><code>pipeline {
+    agent any
+
+    environment {
+        ANDROID_HOME = '/opt/android-sdk'
+        CTS_PATH = '/home/jenkins/android-cts'
+        DEVICE_SERIAL = '1A2B3C4D5E6F'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/company/android-device.git'
+            }
+        }
+
+        stage('Build System Image') {
+            steps {
+                sh '''
+                    source build/envsetup.sh
+                    lunch product-user
+                    m -j$(nproc)
+                '''
+            }
+        }
+
+        stage('Flash Device') {
+            steps {
+                sh '''
+                    adb -s ${DEVICE_SERIAL} reboot bootloader
+                    fastboot -s ${DEVICE_SERIAL} flashall -w
+                    fastboot -s ${DEVICE_SERIAL} reboot
+                    adb -s ${DEVICE_SERIAL} wait-for-device
+                '''
+            }
+        }
+
+        stage('Run CTS - Media Module') {
+            steps {
+                sh '''
+                    cd ${CTS_PATH}
+                    ./cts-tradefed run cts \
+                        --module CtsMediaTestCases \
+                        --serial ${DEVICE_SERIAL} \
+                        --logcat-on-failure
+                '''
+            }
+        }
+
+        stage('Parse Results') {
+            steps {
+                script {
+                    def resultXml = sh(
+                        script: "find ${CTS_PATH}/results -name 'test_result.xml' | head -1",
+                        returnStdout: true
+                    ).trim()
+
+                    sh "python3 scripts/parse_cts_result.py ${resultXml}"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'android-cts/results/**/*', fingerprint: true
+            junit 'android-cts/results/**/test_result.xml'
+        }
+        success {
+            emailext (
+                subject: "CTS PASSED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "CTS test completed successfully. Check ${env.BUILD_URL}",
+                to: 'team@company.com'
+            )
+        }
+        failure {
+            emailext (
+                subject: "CTS FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "CTS test failed. Check ${env.BUILD_URL}console",
+                to: 'team@company.com'
+            )
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🦊 GitLab CI/CD
+            </h3>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">.gitlab-ci.yml</span>
+                    <span class="code-lang">YAML</span>
+                </div>
+                <pre><code>stages:
+  - build
+  - test
+  - report
+
+variables:
+  ANDROID_SDK: "/opt/android-sdk"
+  CTS_PATH: "/opt/android-cts"
+  DEVICE_SERIAL: "1A2B3C4D5E6F"
+
+build_system:
+  stage: build
+  tags:
+    - android-build-server
+  script:
+    - source build/envsetup.sh
+    - lunch product-user
+    - m -j$(nproc)
+  artifacts:
+    paths:
+      - out/target/product/*/system.img
+      - out/target/product/*/vendor.img
+    expire_in: 1 week
+
+flash_device:
+  stage: build
+  dependencies:
+    - build_system
+  tags:
+    - device-farm
+  script:
+    - adb -s $DEVICE_SERIAL reboot bootloader
+    - fastboot -s $DEVICE_SERIAL flashall -w
+    - fastboot -s $DEVICE_SERIAL reboot
+    - adb -s $DEVICE_SERIAL wait-for-device
+    - sleep 60  # 부팅 대기
+
+run_cts_media:
+  stage: test
+  dependencies:
+    - flash_device
+  tags:
+    - device-farm
+  script:
+    - cd $CTS_PATH
+    - |
+      ./cts-tradefed run cts \
+        --module CtsMediaTestCases \
+        --serial $DEVICE_SERIAL \
+        --logcat-on-failure \
+        --skip-device-info \
+        --disable-reboot
+  artifacts:
+    paths:
+      - $CTS_PATH/results/
+    expire_in: 1 month
+  allow_failure: false
+
+parse_results:
+  stage: report
+  dependencies:
+    - run_cts_media
+  script:
+    - |
+      RESULT_XML=$(find $CTS_PATH/results -name 'test_result.xml' | head -1)
+      python3 scripts/parse_cts_result.py $RESULT_XML > cts_summary.txt
+      cat cts_summary.txt
+  artifacts:
+    reports:
+      junit: $CTS_PATH/results/*/test_result.xml
+    paths:
+      - cts_summary.txt
+
+nightly_full_cts:
+  stage: test
+  only:
+    - schedules
+  script:
+    - cd $CTS_PATH
+    - ./cts-tradefed run cts --serial $DEVICE_SERIAL
+  timeout: 24h</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 자동화 모범 사례
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌙</span>
+                        Nightly Builds
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>매일 밤 자동으로 최신 코드 빌드</li>
+                            <li>CTS Media 모듈 실행 (1~2시간)</li>
+                            <li>결과를 Slack/Email로 통보</li>
+                            <li>회귀 버그 조기 발견</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Pre-submit Testing
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>코드 리뷰 전 자동 테스트 실행</li>
+                            <li>핵심 테스트만 빠르게 검증 (30분)</li>
+                            <li>통과한 경우만 merge 허용</li>
+                            <li>품질 게이트 역할</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📅</span>
+                        Weekly Full CTS
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>주말에 전체 CTS 실행 (10~20시간)</li>
+                            <li>모든 모듈 커버리지 확보</li>
+                            <li>릴리스 전 최종 검증</li>
+                            <li>트렌드 분석 (pass rate 추이)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📈</span>
+                        Metrics & Reporting
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>대시보드로 결과 시각화 (Grafana)</li>
+                            <li>실패율 트렌드 모니터링</li>
+                            <li>모듈별 pass rate 비교</li>
+                            <li>히스토리 추적 (Git commit 연동)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ 자동화 효과:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>수동 테스트 대비 10배 이상 효율 향상</li>
+                    <li>회귀 버그 조기 발견으로 수정 비용 절감</li>
+                    <li>개발자가 테스트 결과를 즉시 확인 가능</li>
+                    <li>릴리스 품질 향상 및 인증 실패율 감소</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 13: Debugging Guide -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                디버깅 가이드
+            </h2>
+            <p class="section-description">
+                CTS 테스트 실패 시 체계적인 디버깅 방법을 설명합니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        logcat 필터링
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code># CTS 관련 로그만 보기
+adb logcat | grep -E "CtsMedia|TestRunner"
+
+# MediaCodec 에러만 필터링
+adb logcat | grep -E "MediaCodec.*ERROR"
+
+# 특정 테스트 케이스 로그
+adb logcat | grep "testH264DecoderCapabilities"
+
+# 실시간 로그를 파일로 저장
+adb logcat > cts_debug.log &
+
+# 버퍼 크기 증가 (로그 누락 방지)
+adb logcat -G 16M</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        adb 명령어
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code># 테스트 APK 수동 설치
+adb install -r CtsMediaTestCases.apk
+
+# 테스트 실행
+adb shell am instrument -w \
+  -e class android.media.cts.MediaCodecTest#testH264DecoderExists \
+  android.media.cts/androidx.test.runner.AndroidJUnitRunner
+
+# 테스트 결과 Pull
+adb pull /sdcard/cts_result/ ./
+
+# dumpsys로 코덱 정보 확인
+adb shell dumpsys media.codec
+
+# 시스템 속성 확인
+adb shell getprop | grep media</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🐛</span>
+                        테스트 재현
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code># 실패한 테스트만 재실행
+cts-tf > run retry --retry 0
+
+# 특정 테스트 케이스만 반복 실행 (10회)
+for i in {1..10}; do
+  cts-tf > run cts -m CtsMediaTestCases \
+    -t android.media.cts.MediaCodecTest#testH264DecoderCapabilities
+  echo "Run $i completed"
+done
+
+# 로그 레벨을 VERBOSE로 설정
+cts-tf > run cts --log-level VERBOSE \
+  --module CtsMediaTestCases</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Systrace 분석
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto;">
+<code># Systrace 캡처 (미디어 코덱 트레이싱)
+python systrace.py -t 10 \
+  -o trace.html \
+  gfx view sched freq idle load \
+  dalvik camera hal input res
+
+# Perfetto로 상세 트레이싱
+adb shell perfetto \
+  -c - --txt \
+  -o /data/misc/perfetto-traces/trace \
+  &lt; config.pbtxt
+
+adb pull /data/misc/perfetto-traces/trace .
+# https://ui.perfetto.dev 에서 분석</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 단계별 디버깅 프로세스
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TD
+                    START[CTS 테스트 실패] --> CHECK_LOG[test_result.xml 확인]
+                    CHECK_LOG --> IDENTIFY[실패 테스트 식별]
+                    IDENTIFY --> LOGCAT[logcat 필터링]
+                    LOGCAT --> REPRODUCE[수동 재현 시도]
+
+                    REPRODUCE --> |재현 성공| ANALYZE[코드 분석]
+                    REPRODUCE --> |재현 실패| INTERMITTENT[간헐적 실패]
+
+                    ANALYZE --> CHECK_CONFIG[설정 파일 확인]
+                    CHECK_CONFIG --> |media_codecs.xml| FIX_CONFIG[설정 수정]
+                    CHECK_CONFIG --> |코드 버그| FIX_CODE[코드 수정]
+
+                    INTERMITTENT --> REPEAT[반복 테스트 10회]
+                    REPEAT --> TRACE[Systrace 캡처]
+                    TRACE --> TIMING[타이밍 이슈 분석]
+
+                    FIX_CONFIG --> BUILD[빌드 & 플래시]
+                    FIX_CODE --> BUILD
+                    TIMING --> BUILD
+
+                    BUILD --> RETEST[CTS 재실행]
+                    RETEST --> |통과| DONE[완료]
+                    RETEST --> |실패| LOGCAT
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ 디버깅 주의사항:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>User Build에서만 재현되는 버그가 있으므로 userdebug에서만 테스트 금지</li>
+                    <li>간헐적 실패는 반드시 10회 이상 반복 테스트로 재현율 확인</li>
+                    <li>설정 파일 수정 후 반드시 XML 문법 검증 (xmllint)</li>
+                    <li>Workaround 대신 근본 원인 해결이 장기적으로 유리</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 14: VTS Architecture Details -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                VTS 아키텍처 상세
+            </h2>
+            <p class="section-description">
+                Vendor Test Suite (VTS)의 구조와 HAL 테스트 방법을 설명합니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    VTS[VTS Test Suite]
+
+                    VTS --> CORE[VTS-Core]
+                    VTS --> KERNEL[VTS-Kernel]
+
+                    CORE --> HIDL[HIDL HAL Tests]
+                    CORE --> AIDL[AIDL HAL Tests]
+                    CORE --> VNDK[VNDK Tests]
+
+                    HIDL --> MEDIA_HIDL[media.c2@1.0<br />media.omx@1.0]
+                    AIDL --> MEDIA_AIDL[hardware.media.c2<br />AIDL interface]
+
+                    KERNEL --> KCONFIG[Kernel Config]
+                    KERNEL --> KSELFTEST[Kernel Selftests]
+                    KERNEL --> LTP[Linux Test Project]
+
+                    MEDIA_HIDL --> CODEC_HAL[IComponentStore<br />IComponent]
+                    MEDIA_AIDL --> CODEC_HAL_AIDL[IComponentStore.aidl<br />IComponent.aidl]
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 VTS-Core: HAL 테스트
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📡</span>
+                        HIDL HAL (레거시)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>인터페이스</strong>: hardware.google.media.c2@1.0</li>
+                            <li><strong>테스트</strong>: IComponentStore, IComponent</li>
+                            <li><strong>실행</strong>: adb shell /data/nativetest64/VtsHalMediaC2V1_0TargetTest</li>
+                            <li>Android 11 이하에서 사용</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        AIDL HAL (최신)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>인터페이스</strong>: android.hardware.media.c2</li>
+                            <li><strong>테스트</strong>: IComponentStore.aidl</li>
+                            <li><strong>실행</strong>: atest VtsHalMediaC2TargetTest</li>
+                            <li>Android 12 이상 권장</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔗</span>
+                        VNDK 테스트
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Vendor NDK 라이브러리 호환성</li>
+                            <li>libbinder, libui, libgui 등</li>
+                            <li>ABI 안정성 검증</li>
+                            <li>버전 간 호환성 보장</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧪</span>
+                        테스트 예제
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem;">
+<code># VTS 실행
+vts-tradefed
+
+# Media C2 HAL 테스트
+vts-tf > run vts --module VtsHalMediaC2V1_0Target
+
+# 특정 HAL 인터페이스 테스트
+vts-tf > run vts -m VtsHalMediaC2V1_0Target \
+  -t ComponentStoreTest#testQueryComponents</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                💻 Media HAL 테스트 예제
+            </h3>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">VtsHalMediaC2Test.cpp</span>
+                    <span class="code-lang">C++</span>
+                </div>
+                <pre><code>#include <android/hardware/media/c2/1.0/IComponentStore.h>
+#include <gtest/gtest.h>
+
+using android::sp;
+using android::hardware::media::c2::V1_0::IComponentStore;
+using android::hardware::media::c2::V1_0::IComponent;
+
+class MediaC2HalTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // C2 ComponentStore 획득
+        store = IComponentStore::getService("default");
+        ASSERT_NE(store, nullptr);
+    }
+
+    sp<IComponentStore> store;
+};
+
+TEST_F(MediaC2HalTest, TestListComponents) {
+    // 사용 가능한 모든 컴포넌트 나열
+    store->listComponents([](const auto& traits) {
+        for (const auto& trait : traits) {
+            ALOGD("Component: %s, domain=%d, kind=%d",
+                  trait.name.c_str(), trait.domain, trait.kind);
+
+            // H.264 디코더가 존재하는지 확인
+            if (trait.name.find("c2.android.avc.decoder") != std::string::npos) {
+                ASSERT_EQ(trait.domain, C2Component::DOMAIN_VIDEO);
+                ASSERT_EQ(trait.kind, C2Component::KIND_DECODER);
+            }
+        }
+    });
+}
+
+TEST_F(MediaC2HalTest, TestCreateComponent) {
+    sp<IComponent> component;
+
+    // H.264 디코더 컴포넌트 생성
+    auto status = store->createComponent(
+        "c2.android.avc.decoder",
+        nullptr,
+        nullptr,
+        [&component](Status s, const sp<IComponent>& c) {
+            ASSERT_EQ(s, Status::OK);
+            component = c;
+        });
+
+    ASSERT_TRUE(status.isOk());
+    ASSERT_NE(component, nullptr);
+}</code></pre>
+            </div>
+
+            <div class="highlight-box">
+                <strong>💡 VTS vs CTS:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>CTS</strong>: Framework API 레벨 테스트 (Java, JUnit)</li>
+                    <li><strong>VTS</strong>: HAL 인터페이스 레벨 테스트 (C++, GTest)</li>
+                    <li><strong>관계</strong>: CTS가 VTS보다 상위 레벨, 둘 다 통과 필수</li>
+                    <li><strong>디버깅</strong>: VTS 실패 시 HAL 구현 확인, CTS 실패 시 Framework 또는 HAL 모두 확인</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 15: Android Version CTS Changes -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">15</span>
+                Android 버전별 CTS 변경사항
+            </h2>
+            <p class="section-description">
+                Android 버전이 올라가면서 추가되거나 변경된 CTS 테스트를 정리했습니다.
+            </p>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">Android 버전</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">주요 CTS 변경사항</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">새 테스트 모듈</th>
+                            <th style="padding: 15px; text-align: left; font-weight: 600;">Deprecated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Android 14 (U)</strong></td>
+                            <td style="padding: 15px;">
+                                • AV1 인코더 필수화<br>
+                                • Ultra HDR (JPEG_R) 지원<br>
+                                • Performance Class 14<br>
+                                • OpenJDK 17 기반
+                            </td>
+                            <td style="padding: 15px;">
+                                CtsMediaUltraHdrTestCases<br>
+                                CtsPerformanceClass14TestCases
+                            </td>
+                            <td style="padding: 15px;">
+                                Android 10 이하 API 제거
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Android 13 (T)</strong></td>
+                            <td style="padding: 15px;">
+                                • Photo Picker API<br>
+                                • Themed Icons 지원<br>
+                                • Performance Class 13<br>
+                                • Predictive Back Gesture
+                            </td>
+                            <td style="padding: 15px;">
+                                CtsPhotoPickerTestCases<br>
+                                CtsPerformanceClass13TestCases
+                            </td>
+                            <td style="padding: 15px;">
+                                ScopedStorage 예외 제거
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Android 12 (S)</strong></td>
+                            <td style="padding: 15px;">
+                                • Performance Class 도입<br>
+                                • Codec 2.0 필수<br>
+                                • AIDL HAL 지원<br>
+                                • MediaMetrics 강화
+                            </td>
+                            <td style="padding: 15px;">
+                                CtsMediaPerformanceClassTestCases<br>
+                                CtsCodec2TestCases
+                            </td>
+                            <td style="padding: 15px;">
+                                OMX 코덱 Deprecated
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Android 11 (R)</strong></td>
+                            <td style="padding: 15px;">
+                                • Scoped Storage 필수<br>
+                                • HEIF 이미지 지원<br>
+                                • Low-latency 디코딩<br>
+                                • MediaParser API
+                            </td>
+                            <td style="padding: 15px;">
+                                CtsMediaParserTestCases<br>
+                                CtsScopedStorageTestCases
+                            </td>
+                            <td style="padding: 15px;">
+                                Legacy Storage 제거
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 15px;"><strong>Android 10 (Q)</strong></td>
+                            <td style="padding: 15px;">
+                                • AV1 디코더 권장<br>
+                                • MediaCodec 저지연 모드<br>
+                                • APEX 모듈 도입<br>
+                                • Dynamic Color
+                            </td>
+                            <td style="padding: 15px;">
+                                CtsAv1TestCases<br>
+                                CtsApexTestCases
+                            </td>
+                            <td style="padding: 15px;">
+                                Android 8 이하 API 제거
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px;"><strong>Android 9 (P)</strong></td>
+                            <td style="padding: 15px;">
+                                • HDR VP9 Profile 2 필수<br>
+                                • ImageDecoder API<br>
+                                • Neural Networks API<br>
+                                • 다중 카메라 지원
+                            </td>
+                            <td style="padding: 15px;">
+                                CtsNNAPITestCases<br>
+                                CtsImageDecoderTestCases
+                            </td>
+                            <td style="padding: 15px;">
+                                Apache HTTP Client 제거
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📈 CTS 모듈 수 변화 추이
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">Android 9 (P)</h3>
+                    <div class="card-description">
+                        <p style="font-size: 2rem; font-weight: 700; color: var(--accent-primary); text-align: center;">~120개</p>
+                        <p style="text-align: center; margin-top: 10px;">모듈</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">Android 10 (Q)</h3>
+                    <div class="card-description">
+                        <p style="font-size: 2rem; font-weight: 700; color: var(--accent-primary); text-align: center;">~135개</p>
+                        <p style="text-align: center; margin-top: 10px;">모듈</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">Android 12 (S)</h3>
+                    <div class="card-description">
+                        <p style="font-size: 2rem; font-weight: 700; color: var(--accent-primary); text-align: center;">~155개</p>
+                        <p style="text-align: center; margin-top: 10px;">모듈</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">Android 14 (U)</h3>
+                    <div class="card-description">
+                        <p style="font-size: 2rem; font-weight: 700; color: var(--accent-primary); text-align: center;">~170개</p>
+                        <p style="text-align: center; margin-top: 10px;">모듈</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ 버전 업그레이드 시 주의사항:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>새 버전의 CDD 문서를 먼저 검토하여 추가된 필수 요구사항 파악</li>
+                    <li>Deprecated API 사용 중단 및 대체 API로 마이그레이션</li>
+                    <li>Performance Class는 선택사항이지만, 선언 시 모든 요구사항 충족 필수</li>
+                    <li>AIDL HAL로의 전환 계획 수립 (Android 12+)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 16: AOSP Source Code & Custom Tests -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">16</span>
+                AOSP 소스코드 및 커스텀 테스트
+            </h2>
+            <p class="section-description">
+                CTS 소스코드 위치와 커스텀 테스트 케이스 작성 방법을 설명합니다.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📂 AOSP CTS 소스 경로
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Media CTS
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem;">
+<code># 미디어 테스트 케이스
+cts/tests/tests/media/
+
+# 주요 파일
+├── src/android/media/cts/
+│   ├── MediaCodecTest.java
+│   ├── MediaExtractorTest.java
+│   ├── MediaPlayerTest.java
+│   ├── MediaRecorderTest.java
+│   └── ...
+├── res/raw/               # 테스트 미디어 파일
+└── AndroidManifest.xml</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Codec 2.0 CTS
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem;">
+<code># Codec 2.0 특화 테스트
+cts/tests/tests/media/codec/
+
+# 주요 파일
+├── src/android/media/codec/cts/
+│   ├── MediaCodecBlockModelTest.java
+│   ├── EncodeDecodeTest.java
+│   ├── VideoEncoderDecoderTest.java
+│   └── ...
+└── res/               # 테스트 벡터</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        CTS 하네스
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem;">
+<code># Trade Federation 프레임워크
+tools/tradefederation/core/
+
+# CTS 특화 설정
+cts/tools/cts-tradefed/
+
+# 테스트 플랜 XML
+cts/tools/cts-tradefed/res/config/
+└── cts.xml
+└── cts-media.xml</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        빌드 설정
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem;">
+<code># Android.bp (Soong)
+cts/tests/tests/media/Android.bp
+
+# 레거시 Android.mk
+cts/tests/tests/media/Android.mk
+
+# 테스트 설정
+cts/tests/tests/media/AndroidTest.xml</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🛠️ 커스텀 테스트 케이스 추가
+            </h3>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">CustomMediaCodecTest.java</span>
+                    <span class="code-lang">Java</span>
+                </div>
+                <pre><code>package android.media.cts;
+
+import android.media.MediaCodec;
+import android.media.MediaFormat;
+import android.test.AndroidTestCase;
+import android.util.Log;
+
+/**
+ * 커스텀 미디어 코덱 테스트
+ * 특정 벤더 확장 기능을 검증
+ */
+public class CustomMediaCodecTest extends AndroidTestCase {
+    private static final String TAG = "CustomMediaCodecTest";
+
+    // 커스텀 코덱이 존재하는지 테스트
+    public void testCustomH265EncoderExists() {
+        String codecName = "OMX.qcom.video.encoder.hevc";  // Qualcomm 예시
+
+        try {
+            MediaCodec codec = MediaCodec.createByCodecName(codecName);
+            assertNotNull("Custom HEVC encoder must exist", codec);
+            codec.release();
+        } catch (Exception e) {
+            fail("Failed to create custom codec: " + e.getMessage());
+        }
+    }
+
+    // 커스텀 파라미터 테스트
+    public void testCustomEncodingParameters() throws Exception {
+        MediaCodec encoder = MediaCodec.createEncoderByType("video/hevc");
+
+        MediaFormat format = MediaFormat.createVideoFormat("video/hevc", 1920, 1080);
+        format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
+            MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible);
+        format.setInteger(MediaFormat.KEY_BIT_RATE, 10000000);
+        format.setInteger(MediaFormat.KEY_FRAME_RATE, 30);
+        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
+
+        // 벤더 특화 파라미터 (Qualcomm QP 범위 예시)
+        format.setInteger("vendor.qti-ext-enc-qp-range.qp-i-min", 10);
+        format.setInteger("vendor.qti-ext-enc-qp-range.qp-i-max", 40);
+
+        try {
+            encoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            encoder.start();
+
+            // 설정이 적용되었는지 확인
+            MediaFormat outputFormat = encoder.getOutputFormat();
+            Log.i(TAG, "Output format: " + outputFormat);
+
+            encoder.stop();
+            encoder.release();
+        } catch (Exception e) {
+            fail("Custom parameters not supported: " + e.getMessage());
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔨 빌드 및 실행
+            </h3>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Build and Run Custom CTS</span>
+                    <span class="code-lang">Bash</span>
+                </div>
+                <pre><code># 1. 소스 코드 추가
+cd $ANDROID_BUILD_TOP/cts/tests/tests/media/src/android/media/cts/
+vi CustomMediaCodecTest.java
+
+# 2. Android.bp에 추가 (선택사항, 기존 모듈에 포함되면 불필요)
+# cts/tests/tests/media/Android.bp
+# srcs: ["src/**/*.java"]  # 이미 모든 .java 포함
+
+# 3. CTS 빌드
+cd $ANDROID_BUILD_TOP
+source build/envsetup.sh
+lunch aosp_arm64-user
+m cts
+
+# 4. 특정 모듈만 빌드
+m CtsMediaTestCases
+
+# 5. 디바이스에 설치 및 실행
+adb install -r out/host/linux-x86/cts/android-cts/testcases/CtsMediaTestCases.apk
+
+adb shell am instrument -w \
+  -e class android.media.cts.CustomMediaCodecTest \
+  android.media.cts/androidx.test.runner.AndroidJUnitRunner
+
+# 6. CTS 하네스로 실행
+cts-tradefed
+cts-tf > run cts -m CtsMediaTestCases \
+  -t android.media.cts.CustomMediaCodecTest#testCustomH265EncoderExists</code></pre>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ 커스텀 테스트의 장점:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>벤더 특화 기능 검증 (Qualcomm, MediaTek 확장 파라미터 등)</li>
+                    <li>내부 회귀 테스트로 품질 관리</li>
+                    <li>CTS 제출 전 사전 검증</li>
+                    <li>AOSP CTS 소스를 참고하여 테스트 작성 학습</li>
+                </ul>
+            </div>
+
+            <div class="highlight-box">
+                <strong>💡 GitHub 미러:</strong>
+                <p style="margin-top: 10px;">
+                    AOSP CTS 소스코드는 <a href="https://android.googlesource.com/platform/cts/" target="_blank" style="color: var(--accent-primary);">android.googlesource.com/platform/cts/</a>에서 확인할 수 있습니다.
+                    GitHub 미러는 <a href="https://github.com/aosp-mirror/platform_cts" target="_blank" style="color: var(--accent-primary);">github.com/aosp-mirror/platform_cts</a>에서도 제공됩니다.
+                </p>
+            </div>
+        </section>
+
+        <!-- Section 17: Related Documents -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">17</span>
+                관련 상세 문서
+            </h2>
+            <p class="section-description">
+                CTS 테스팅과 관련된 다른 문서들의 링크입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📜</span>
+                        CDD Policy
+                    </h3>
+                    <div class="card-description">
+                        <p>Android Compatibility Definition Document - CTS가 검증하는 요구사항 정의</p>
+                        <a href="cdd.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            CDD 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Codec 2.0
+                    </h3>
+                    <div class="card-description">
+                        <p>차세대 미디어 코덱 프레임워크 - CTS 테스트 대상</p>
+                        <a href="codec2.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            Codec 2.0 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Media Extractor
+                    </h3>
+                    <div class="card-description">
+                        <p>미디어 컨테이너 파싱 - MediaExtractor CTS 테스트</p>
+                        <a href="media-extractor.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            Media Extractor 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">▶️</span>
+                        Media Playback
+                    </h3>
+                    <div class="card-description">
+                        <p>미디어 재생 파이프라인 - MediaPlayer CTS 테스트</p>
+                        <a href="media-playback.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            Media Playback 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        Widevine DRM
+                    </h3>
+                    <div class="card-description">
+                        <p>DRM 보안 프레임워크 - DRM CTS 테스트</p>
+                        <a href="widevine.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            Widevine DRM 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>오디오 시스템 아키텍처 - Audio CTS 테스트</p>
+                        <a href="audio-framework.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            Audio Framework 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        AAOS
+                    </h3>
+                    <div class="card-description">
+                        <p>Android Automotive OS - Automotive CTS 특화 테스트</p>
+                        <a href="aaos.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            AAOS 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        AOSP Architecture
+                    </h3>
+                    <div class="card-description">
+                        <p>Android 전체 시스템 아키텍처 - CTS가 검증하는 전체 스택</p>
+                        <a href="aosp.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                            AOSP 문서 보기 →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 40px;">
+                <strong>🔗 외부 참조 링크:</strong>
+                <ul style="margin-top: 15px; padding-left: 20px;">
+                    <li>
+                        <a href="https://source.android.com/docs/compatibility/cts" target="_blank" style="color: var(--accent-primary);">
+                            Android CTS 공식 문서
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://source.android.com/docs/compatibility/cdd" target="_blank" style="color: var(--accent-primary);">
+                            Android CDD 공식 문서
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://android.googlesource.com/platform/cts/" target="_blank" style="color: var(--accent-primary);">
+                            CTS AOSP 소스코드
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://developer.android.com/topic/performance/performance-class" target="_blank" style="color: var(--accent-primary);">
+                            Performance Class 개발자 가이드
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Google CTS Testing Framework</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                Android Compatibility Test Suite
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-primary); text-decoration: none;">
+                    ← AOSP Media Framework로 돌아가기
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script>
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

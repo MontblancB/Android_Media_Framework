@@ -1,0 +1,2375 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediaExtractor Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">📦 MediaExtractor</h1>
+            <p class="page-subtitle">Media Container Parsing and Demuxing Architecture</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overview: Role of MediaExtractor
+            </h2>
+            <p class="section-description">
+                MediaExtractor is a demuxer that parses media container files and separates them into individual tracks (audio, video, subtitles).
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Key Features
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Container Parsing and Demuxing</strong></p>
+                        <ul>
+                            <li>Container format parsing (MP4, MKV, WebM, etc.)</li>
+                            <li>Track information extraction (count, format, metadata)</li>
+                            <li>Encoded sample data extraction</li>
+                            <li>Timestamp and flags provision</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Collaboration with MediaCodec
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Demuxing + Decoding Pipeline</strong></p>
+                        <ul>
+                            <li>MediaExtractor: Container parsing and sample extraction</li>
+                            <li>MediaCodec: Decoding encoded samples</li>
+                            <li>Flexible processing with separated concerns</li>
+                            <li>Custom media processing possible</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📁</span>
+                        Supported Containers
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Various Format Support</strong></p>
+                        <ul>
+                            <li>MP4 (MPEG-4 Part 14)</li>
+                            <li>MKV (Matroska)</li>
+                            <li>WebM</li>
+                            <li>3GP, TS, FLV, etc.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        Extensibility
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Custom Extractor</strong></p>
+                        <ul>
+                            <li>Android 10+: Individual .so files</li>
+                            <li>Custom format support possible</li>
+                            <li>Plugin architecture</li>
+                            <li>ExoPlayer integration</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Overall Architecture
+            </h2>
+            <p class="section-description">
+                Visualizes the internal structure of MediaExtractor and the Parser layer.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP ["Application Layer"]
+                    MEDIA_APP[Media App]
+                    end
+
+                    subgraph FRAMEWORK ["MediaExtractor API"]
+                    ME_API[MediaExtractor<br />Public API]
+                    ME_IMPL[MediaExtractor<br />Implementation]
+                    end
+
+                    subgraph NATIVE ["Native Layer - libstagefright"]
+                    DATA_SRC[DataSource<br />File/URI/FD]
+                    EXTRACTOR_FACTORY[MediaExtractorFactory<br />Extractor Selection]
+
+                    subgraph PARSERS ["Container Parsers"]
+                    MP4_PARSER[MPEG4Extractor<br />MP4 Parser]
+                    MKV_PARSER[MatroskaExtractor<br />MKV Parser]
+                    WEBM_PARSER[WebM Parser]
+                    OTHER_PARSER[Other Parsers<br />3GP, TS, FLV...]
+                    end
+
+                    SAMPLE_READER[Sample Reader<br />Track Data]
+                    META_DATA[MetaData<br />Track Info]
+                    end
+
+                    subgraph STORAGE ["Data Source"]
+                    FILE[Local File]
+                    URI[Content URI]
+                    FD[File Descriptor]
+                    STREAM[Network Stream]
+                    end
+
+                    MEDIA_APP --> ME_API
+                    ME_API --> ME_IMPL
+                    ME_IMPL --> DATA_SRC
+                    ME_IMPL --> EXTRACTOR_FACTORY
+
+                    DATA_SRC --> FILE
+                    DATA_SRC --> URI
+                    DATA_SRC --> FD
+                    DATA_SRC --> STREAM
+
+                    EXTRACTOR_FACTORY --> MP4_PARSER
+                    EXTRACTOR_FACTORY --> MKV_PARSER
+                    EXTRACTOR_FACTORY --> WEBM_PARSER
+                    EXTRACTOR_FACTORY --> OTHER_PARSER
+
+                    MP4_PARSER --> SAMPLE_READER
+                    MKV_PARSER --> SAMPLE_READER
+                    WEBM_PARSER --> SAMPLE_READER
+                    OTHER_PARSER --> SAMPLE_READER
+
+                    MP4_PARSER --> META_DATA
+                    MKV_PARSER --> META_DATA
+                    WEBM_PARSER --> META_DATA
+                    OTHER_PARSER --> META_DATA
+
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>Core Components:</strong>
+                <ul>
+                    <li><strong>MediaExtractor API</strong>: Public API used by apps</li>
+                    <li><strong>DataSource</strong>: Supports various sources like file, URI, FD, stream</li>
+                    <li><strong>MediaExtractorFactory</strong>: Selects appropriate Parser for container format</li>
+                    <li><strong>Container Parsers</strong>: Format-specific parsers for MP4, MKV, WebM, etc.</li>
+                    <li><strong>Sample Reader</strong>: Reads sample data per track</li>
+                    <li><strong>MetaData</strong>: Track information and metadata</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 3: Workflow -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                MediaExtractor Usage Flow
+            </h2>
+            <p class="section-description">
+                The complete process of extracting sample data from a media file using MediaExtractor.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App
+                    participant ME as MediaExtractor
+                    participant DS as DataSource
+                    participant Parser as Container Parser
+                    participant Track as Track Reader
+
+                    App->>ME: new MediaExtractor()
+                    App->>ME: setDataSource(path/uri/fd)
+                    ME->>DS: Create DataSource
+                    DS->>DS: Open file/stream
+                    DS-->>ME: Return DataSource
+
+                    ME->>Parser: Select appropriate Parser<br />via MediaExtractorFactory
+                    Parser->>DS: Read container header
+                    DS-->>Parser: Header data
+                    Parser->>Parser: Parse format<br />(MP4/MKV/WebM, etc.)
+                    Parser->>Parser: Extract track info
+                    Parser-->>ME: Track count and metadata
+
+                    App->>ME: getTrackCount()
+                    ME-->>App: Return track count
+
+                    loop Iterate each track
+                    App->>ME: getTrackFormat(i)
+                    ME->>Parser: Request track i metadata
+                    Parser-->>ME: Return MediaFormat
+                    ME-->>App: MediaFormat (MIME, resolution, etc.)
+                    end
+
+                    App->>ME: selectTrack(i)
+                    ME->>Track: Activate track i
+
+                    loop Read samples
+                    App->>ME: readSampleData(buffer)
+                    ME->>Track: Read current sample
+                    Track->>DS: Seek to sample data position
+                    DS-->>Track: Encoded sample data
+                    Track-->>ME: Sample data
+                    ME-->>App: Return sample size
+
+                    App->>ME: getSampleTime()
+                    ME->>Track: Query timestamp
+                    Track-->>ME: PTS (microseconds)
+                    ME-->>App: Timestamp
+
+                    App->>ME: getSampleFlags()
+                    ME->>Track: Query flags
+                    Track-->>ME: SYNC/ENCRYPTED, etc.
+                    ME-->>App: Flags
+
+                    App->>ME: advance()
+                    ME->>Track: Move to next sample
+                    end
+
+                    App->>ME: release()
+                    ME->>DS: Release resources
+                    ME->>Parser: Release resources
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📝 Key API Methods
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        Initialization
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>new MediaExtractor()</code>: Create instance</li>
+                            <li><code>setDataSource(path)</code>: File path</li>
+                            <li><code>setDataSource(context, uri)</code>: Content URI</li>
+                            <li><code>setDataSource(fd)</code>: File Descriptor</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Track Information
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>getTrackCount()</code>: Track count</li>
+                            <li><code>getTrackFormat(i)</code>: Track format</li>
+                            <li><code>selectTrack(i)</code>: Select track</li>
+                            <li><code>unselectTrack(i)</code>: Deselect track</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Sample Reading
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>readSampleData(buffer, offset)</code>: Sample data</li>
+                            <li><code>getSampleTime()</code>: PTS (microseconds)</li>
+                            <li><code>getSampleFlags()</code>: Flags</li>
+                            <li><code>getSampleTrackIndex()</code>: Track index</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏩</span>
+                        Seeking and Control
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>advance()</code>: Next sample</li>
+                            <li><code>seekTo(timeUs, mode)</code>: Time seek</li>
+                            <li><code>getCachedDuration()</code>: Cache status</li>
+                            <li><code>release()</code>: Release resources</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Container Parsers -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Container Parser Details
+            </h2>
+            <p class="section-description">
+                Explains the structure and operation of parsers for major container formats.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📦 MP4 (MPEG4Extractor)
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TB
+                    START[MP4 File] --> FTYP[ftyp Box<br />File Type Identification]
+                    FTYP --> MOOV[moov Box<br />Metadata Container]
+
+                    MOOV --> MVHD[mvhd Box<br />Movie Header<br />Duration, Timescale]
+                    MOOV --> TRAK[trak Box<br />Track Info]
+
+                    TRAK --> TKHD[tkhd Box<br />Track Header<br />Track ID, Resolution]
+                    TRAK --> MDIA[mdia Box<br />Media Info]
+
+                    MDIA --> MDHD[mdhd Box<br />Media Header<br />Timescale, Duration]
+                    MDIA --> HDLR[hdlr Box<br />Handler<br />vide/soun/subt]
+                    MDIA --> MINF[minf Box<br />Media Info]
+
+                    MINF --> STBL[stbl Box<br />Sample Table]
+
+                    STBL --> STSD[stsd Box<br />Sample Description<br />Codec Info]
+                    STBL --> STTS[stts Box<br />Time-to-Sample<br />Sample Duration]
+                    STBL --> STSC[stsc Box<br />Sample-to-Chunk<br />Chunk Mapping]
+                    STBL --> STSZ[stsz Box<br />Sample Size<br />Sample Sizes]
+                    STBL --> STCO[stco Box<br />Chunk Offset<br />Data Position]
+
+                    START --> MDAT[mdat Box<br />Actual Media Data]
+
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📦 MKV (MatroskaExtractor)
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        EBML Structure
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Extensible Binary Meta Language</strong></p>
+                        <ul>
+                            <li>EBML Header: Document type (Matroska)</li>
+                            <li>Segment: Top-level container</li>
+                            <li>Element ID + Size + Data structure</li>
+                            <li>Variable-length encoding</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        Key Elements
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Inside Segment</strong></p>
+                        <ul>
+                            <li><strong>SeekHead</strong>: Index to other element positions</li>
+                            <li><strong>Info</strong>: Segment info (duration, timecode scale)</li>
+                            <li><strong>Tracks</strong>: Track info (codec, resolution)</li>
+                            <li><strong>Cluster</strong>: Actual media data blocks</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎞️</span>
+                        Cluster Structure
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Media Data Organization</strong></p>
+                        <ul>
+                            <li>Timecode: Cluster start timestamp</li>
+                            <li>SimpleBlock: Single frame data</li>
+                            <li>BlockGroup: Complex frames (B-frame, etc.)</li>
+                            <li>Includes keyframe flag</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        MKV Advantages
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Flexibility and Extensibility</strong></p>
+                        <ul>
+                            <li>Various codec support</li>
+                            <li>Multiple audio/subtitle tracks</li>
+                            <li>Chapter and menu support</li>
+                            <li>Rich metadata</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📦 WebM (WebM Parser)
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        WebM Overview
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Web-Optimized Format</strong></p>
+                        <ul>
+                            <li>Based on Matroska (same EBML structure)</li>
+                            <li>HTML5 &lt;video&gt; standard format</li>
+                            <li>Royalty-free open format</li>
+                            <li>Google-led development</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Supported Codecs
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Video & Audio</strong></p>
+                        <ul>
+                            <li><strong>Video</strong>: VP8, VP9, AV1</li>
+                            <li><strong>Audio</strong>: Vorbis, Opus</li>
+                            <li>All royalty-free codecs</li>
+                            <li>4K/8K UHD support (VP9/AV1)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        WebM Advantages
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Optimized for Web Streaming</strong></p>
+                        <ul>
+                            <li>Small file size</li>
+                            <li>Fast startup time</li>
+                            <li>Adaptive streaming support</li>
+                            <li>Native browser support</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        MKV vs WebM
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Key Differences</strong></p>
+                        <ul>
+                            <li><strong>MKV</strong>: All codecs, local storage</li>
+                            <li><strong>WebM</strong>: VP8/VP9/AV1 only, web streaming</li>
+                            <li>WebM is a subset of MKV</li>
+                            <li>Same Parser (MatroskaExtractor)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>📊 MKV vs WebM Comparison:</strong>
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Item</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">MKV (Matroska)</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">WebM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Container Structure</strong></td>
+                            <td style="padding: 10px;">EBML (Extensible Binary Meta Language)</td>
+                            <td style="padding: 10px;">EBML (Same)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Video Codecs</strong></td>
+                            <td style="padding: 10px;">H.264, H.265, VP8, VP9, AV1, and all codecs</td>
+                            <td style="padding: 10px;">VP8, VP9, AV1 only</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Audio Codecs</strong></td>
+                            <td style="padding: 10px;">AAC, MP3, Vorbis, Opus, Dolby, etc.</td>
+                            <td style="padding: 10px;">Vorbis, Opus only</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>File Extensions</strong></td>
+                            <td style="padding: 10px;">.mkv, .mka, .mks</td>
+                            <td style="padding: 10px;">.webm</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>License</strong></td>
+                            <td style="padding: 10px;">Open spec (codec licenses separate)</td>
+                            <td style="padding: 10px;">Completely royalty-free</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Primary Use</strong></td>
+                            <td style="padding: 10px;">Local media storage, high-quality archive</td>
+                            <td style="padding: 10px;">Web streaming, HTML5 video</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px;"><strong>Browser Support</strong></td>
+                            <td style="padding: 10px;">Plugin required</td>
+                            <td style="padding: 10px;">Chrome, Firefox, Edge native</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 5: Sample Extraction -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Sample Extraction Mechanism
+            </h2>
+            <p class="section-description">
+                Details the process of extracting actual sample data from containers by parsers.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TB
+                    START[readSampleData called] --> TRACK_CHECK{Selected track<br />exists?}
+
+                    TRACK_CHECK -->|No| ERROR[Return error]
+                    TRACK_CHECK -->|Yes| GET_SAMPLE[Query current sample info]
+
+                    GET_SAMPLE --> SAMPLE_TABLE[Reference Sample Table<br />MP4: stbl<br />MKV: Cluster]
+
+                    SAMPLE_TABLE --> CALC_OFFSET[Calculate sample offset]
+                    CALC_OFFSET --> CALC_SIZE[Calculate sample size]
+
+                    CALC_SIZE --> SEEK[DataSource seek<br />Move to offset position]
+                    SEEK --> READ[Read sample data]
+
+                    READ --> BUFFER[Copy to ByteBuffer]
+                    BUFFER --> METADATA[Set metadata]
+
+                    METADATA --> PTS[Calculate and store<br />Presentation Timestamp]
+                    METADATA --> FLAGS[Set flags<br />SYNC/ENCRYPTED]
+
+                    PTS --> RETURN[Return sample size]
+                    FLAGS --> RETURN
+
+                    RETURN --> ADVANCE{advance called?}
+                    ADVANCE -->|Yes| NEXT[Move pointer to next sample]
+                    ADVANCE -->|No| WAIT[Wait]
+
+                    NEXT --> END[Complete]
+                    WAIT --> END
+
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔍 Sample Metadata
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏱️</span>
+                        Timestamp
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Presentation Time Stamp (PTS)</strong></p>
+                        <ul>
+                            <li>Microsecond (microseconds) unit</li>
+                            <li>Sample display time</li>
+                            <li>Essential for synchronization</li>
+                            <li>Query with <code>getSampleTime()</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚩</span>
+                        Sample Flags
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Sample Property Flags</strong></p>
+                        <ul>
+                            <li><code>SAMPLE_FLAG_SYNC</code>: Keyframe (I-frame)</li>
+                            <li><code>SAMPLE_FLAG_ENCRYPTED</code>: Encrypted sample</li>
+                            <li><code>SAMPLE_FLAG_PARTIAL_FRAME</code>: Partial frame</li>
+                            <li>Query with <code>getSampleFlags()</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📏</span>
+                        Sample Size
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Sample Data Size</strong></p>
+                        <ul>
+                            <li>Size in bytes</li>
+                            <li>Used for buffer allocation</li>
+                            <li><code>readSampleData()</code> return value</li>
+                            <li>-1: No more samples</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Track Index
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Sample's Track</strong></p>
+                        <ul>
+                            <li>Useful when multiple tracks selected</li>
+                            <li>Track-specific processing branch</li>
+                            <li>Query with <code>getSampleTrackIndex()</code></li>
+                            <li>0-based index</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Seeking -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Seeking Mechanism
+            </h2>
+            <p class="section-description">
+                Explains MediaExtractor's time-based seeking functionality and various seek modes.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App
+                    participant ME as MediaExtractor
+                    participant Parser
+                    participant Index as Sample Index
+
+                    App->>ME: seekTo(timeUs, mode)
+                    ME->>Parser: Seek request
+
+                    alt SEEK_TO_PREVIOUS_SYNC
+                    Parser->>Index: Search keyframe before timeUs
+                    Index-->>Parser: Previous Sync sample position
+                    else SEEK_TO_NEXT_SYNC
+                    Parser->>Index: Search keyframe after timeUs
+                    Index-->>Parser: Next Sync sample position
+                    else SEEK_TO_CLOSEST_SYNC
+                    Parser->>Index: Find closest keyframe to timeUs
+                    Index-->>Parser: Closest Sync sample
+                    end
+
+                    Parser->>Parser: Move sample pointer
+                    Parser-->>ME: Seek complete
+                    ME-->>App: Return success
+
+                    App->>ME: getSampleTime()
+                    ME-->>App: Actual seeked time
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎯 Seek Modes
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏮️</span>
+                        PREVIOUS_SYNC
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Move to Previous Keyframe</strong></p>
+                        <ul>
+                            <li>Closest keyframe before specified time</li>
+                            <li>Guarantees accurate decoding</li>
+                            <li>Useful for reverse playback</li>
+                            <li>Moves to slightly earlier time</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏭️</span>
+                        NEXT_SYNC
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Move to Next Keyframe</strong></p>
+                        <ul>
+                            <li>Closest keyframe after specified time</li>
+                            <li>Fast seeking possible</li>
+                            <li>Useful for forward skip</li>
+                            <li>Moves to slightly later time</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        CLOSEST_SYNC
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Closest Keyframe</strong></p>
+                        <ul>
+                            <li>Keyframe closest to specified time</li>
+                            <li>Balance between accuracy and performance</li>
+                            <li>Recommended for general seeking</li>
+                            <li>Optimizes user experience</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        Considerations
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Seek Considerations</strong></p>
+                        <ul>
+                            <li>Can only seek to keyframes (I-frame)</li>
+                            <li>B/P-frames have decoding dependencies</li>
+                            <li>Exact time not guaranteed</li>
+                            <li>Check actual position with <code>getSampleTime()</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Code Examples -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Practical Code Examples
+            </h2>
+            <p class="section-description">
+                Learn API usage through practical code examples using MediaExtractor.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📝 Basic Usage Example
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// 1. Initialize MediaExtractor with File Path
+val extractor = MediaExtractor()
+extractor.setDataSource("/storage/emulated/0/Movies/video.mp4")
+
+// 2. Initialize with URI (Content Provider)
+val uri = Uri.parse("content://media/external/video/media/123")
+extractor.setDataSource(context, uri, null)
+
+// 3. Initialize with FileDescriptor
+val fd = assets.openFd("sample.mp4")
+extractor.setDataSource(fd.fileDescriptor, fd.startOffset, fd.length)
+fd.close()
+
+// 4. Query Track Information
+val trackCount = extractor.trackCount
+for (i in 0 until trackCount) {
+    val format = extractor.getTrackFormat(i)
+    val mime = format.getString(MediaFormat.KEY_MIME)
+    Log.d("Extractor", "Track $i: $mime")
+
+    if (mime?.startsWith("video/") == true) {
+        val width = format.getInteger(MediaFormat.KEY_WIDTH)
+        val height = format.getInteger(MediaFormat.KEY_HEIGHT)
+        Log.d("Extractor", "Resolution: ${width}x${height}")
+    }
+}
+
+// 5. Release Resources
+extractor.release()</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎬 MediaExtractor + MediaCodec Pipeline
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Video Track Extraction and Decoding
+val extractor = MediaExtractor()
+extractor.setDataSource(videoPath)
+
+// Find and Select Video Track
+var videoTrackIndex = -1
+for (i in 0 until extractor.trackCount) {
+    val format = extractor.getTrackFormat(i)
+    val mime = format.getString(MediaFormat.KEY_MIME)
+    if (mime?.startsWith("video/") == true) {
+        videoTrackIndex = i
+        extractor.selectTrack(i)
+        break
+    }
+}
+
+if (videoTrackIndex == -1) {
+    throw IllegalStateException("No video track found")
+}
+
+// Create and Configure MediaCodec Decoder
+val format = extractor.getTrackFormat(videoTrackIndex)
+val mime = format.getString(MediaFormat.KEY_MIME)!!
+val decoder = MediaCodec.createDecoderByType(mime)
+decoder.configure(format, surface, null, 0)
+decoder.start()
+
+// Decoding Loop
+val bufferInfo = MediaCodec.BufferInfo()
+val inputBuffer = ByteBuffer.allocate(1024 * 1024) // 1MB
+var isEOS = false
+
+while (!isEOS) {
+    // 1. Input: Extractor → Decoder
+    val inputIndex = decoder.dequeueInputBuffer(10000)
+    if (inputIndex >= 0) {
+        val buffer = decoder.getInputBuffer(inputIndex)!!
+        val sampleSize = extractor.readSampleData(buffer, 0)
+
+        if (sampleSize < 0) {
+            // EOS
+            decoder.queueInputBuffer(inputIndex, 0, 0, 0,
+                MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+            isEOS = true
+        } else {
+            val presentationTimeUs = extractor.sampleTime
+            decoder.queueInputBuffer(inputIndex, 0, sampleSize,
+                presentationTimeUs, 0)
+            extractor.advance()
+        }
+    }
+
+    // 2. Output: Decoder → Surface/Buffer
+    val outputIndex = decoder.dequeueOutputBuffer(bufferInfo, 10000)
+    when {
+        outputIndex >= 0 -> {
+            // Render decoded frame (when using Surface)
+            decoder.releaseOutputBuffer(outputIndex, true)
+
+            if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                break
+            }
+        }
+        outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+            val newFormat = decoder.outputFormat
+            Log.d("Decoder", "Output format changed: $newFormat")
+        }
+    }
+}
+
+// Release Resources
+decoder.stop()
+decoder.release()
+extractor.release()</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔐 DRM Content Processing (MediaDrm + MediaCrypto)
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Widevine DRM Content Processing
+val WIDEVINE_UUID = UUID(0xEDEF8BA979D64ACEL, 0xA3C827DCD51D21EDL)
+
+// 1. Initialize MediaDrm
+val mediaDrm = MediaDrm(WIDEVINE_UUID)
+
+// 2. Create Session
+val sessionId = mediaDrm.openSession()
+
+// 3. License Request (omitted - server communication)
+// ... provisioning, key request/response ...
+
+// 4. Create MediaCrypto
+val mediaCrypto = MediaCrypto(WIDEVINE_UUID, sessionId)
+
+// 5. Configure MediaExtractor
+val extractor = MediaExtractor()
+extractor.setDataSource(drmVideoPath)
+
+// Select Video Track
+var videoTrackIndex = -1
+for (i in 0 until extractor.trackCount) {
+    val format = extractor.getTrackFormat(i)
+    val mime = format.getString(MediaFormat.KEY_MIME)
+    if (mime?.startsWith("video/") == true) {
+        videoTrackIndex = i
+        extractor.selectTrack(i)
+        break
+    }
+}
+
+// 6. Pass MediaCrypto to MediaCodec
+val format = extractor.getTrackFormat(videoTrackIndex)
+val mime = format.getString(MediaFormat.KEY_MIME)!!
+val decoder = MediaCodec.createDecoderByType(mime)
+decoder.configure(format, surface, mediaCrypto, 0)  // Pass MediaCrypto
+decoder.start()
+
+// 7. Process Encrypted Samples
+val bufferInfo = MediaCodec.BufferInfo()
+val cryptoInfo = MediaCodec.CryptoInfo()
+
+while (true) {
+    val inputIndex = decoder.dequeueInputBuffer(10000)
+    if (inputIndex >= 0) {
+        val buffer = decoder.getInputBuffer(inputIndex)!!
+        val sampleSize = extractor.readSampleData(buffer, 0)
+
+        if (sampleSize < 0) {
+            decoder.queueInputBuffer(inputIndex, 0, 0, 0,
+                MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+            break
+        }
+
+        val presentationTimeUs = extractor.sampleTime
+        val flags = extractor.sampleFlags
+
+        // Check ENCRYPTED flag
+        if ((flags and MediaExtractor.SAMPLE_FLAG_ENCRYPTED) != 0) {
+            // Set CryptoInfo (IV, Key ID, etc.)
+            extractor.getSampleCryptoInfo(cryptoInfo)
+            decoder.queueSecureInputBuffer(inputIndex, 0, cryptoInfo,
+                presentationTimeUs, 0)
+        } else {
+            decoder.queueInputBuffer(inputIndex, 0, sampleSize,
+                presentationTimeUs, 0)
+        }
+
+        extractor.advance()
+    }
+
+    // Output Processing (same as normal pipeline)
+    val outputIndex = decoder.dequeueOutputBuffer(bufferInfo, 10000)
+    if (outputIndex >= 0) {
+        decoder.releaseOutputBuffer(outputIndex, true)
+        if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+            break
+        }
+    }
+}
+
+// Release Resources
+decoder.stop()
+decoder.release()
+extractor.release()
+mediaCrypto.release()
+mediaDrm.closeSession(sessionId)
+mediaDrm.release()</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Code Example Key Points:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Basic Usage</strong>: 3 ways of setDataSource() (Path, URI, FD), track info query, resource release</li>
+                    <li><strong>MediaCodec Integration</strong>: selectTrack() → readSampleData() → queueInputBuffer() → dequeueOutputBuffer() loop</li>
+                    <li><strong>DRM Processing</strong>: MediaDrm + MediaCrypto creation, SAMPLE_FLAG_ENCRYPTED check, use queueSecureInputBuffer()</li>
+                    <li><strong>Considerations</strong>: Must run on Worker Thread, reuse ByteBuffer, release() call mandatory</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 8: Custom Extractor Development -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Custom Extractor Development
+            </h2>
+            <p class="section-description">
+                Explains how to develop Extractor plugins for supporting custom container formats in Android 10 and above.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TB
+                    START[Need custom format support] --> NATIVE[Implement Native Extractor<br />C/C++]
+
+                    NATIVE --> INTERFACE[Implement MediaExtractorPluginHelper<br />interface]
+
+                    INTERFACE --> METHODS[Implement required methods]
+                    METHODS --> SNIFF[sniff: Format detection]
+                    METHODS --> CREATE[create: Extractor creation]
+                    METHODS --> TRACK[getTrackCount, getTrackFormat]
+                    METHODS --> READ[readSampleData, advance]
+
+                    READ --> BUILD[Android.bp build configuration]
+                    BUILD --> SO[Generate libcustomextractor.so]
+
+                    SO --> REGISTER[Register Extractor]
+                    REGISTER --> MANIFEST[media_codecs_performance.xml]
+                    REGISTER --> PLUGIN[MediaExtractorFactory plugin]
+
+                    PLUGIN --> TEST[Test and verify]
+                    TEST --> DEPLOY[Deploy to system]
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 Native Interface Implementation
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// CustomExtractor.h
+#include &lt;media/stagefright/MediaExtractorPluginApi.h&gt;
+#include &lt;media/stagefright/MediaExtractorPluginHelper.h&gt;
+
+namespace android {
+
+class CustomExtractor : public MediaExtractorPluginHelper {
+public:
+    explicit CustomExtractor(DataSourceHelper *source);
+    virtual ~CustomExtractor();
+
+    // Required method implementations
+    virtual size_t countTracks() override;
+    virtual MediaTrackHelper *getTrack(size_t index) override;
+    virtual media_status_t getTrackMetaData(AMediaFormat *meta, size_t index) override;
+    virtual media_status_t getMetaData(AMediaFormat *meta) override;
+    virtual uint32_t flags() const override;
+
+private:
+    DataSourceHelper *mDataSource;
+    // Track info, parser state, etc.
+};
+
+// sniff function: Format detection
+extern "C" {
+    CreatorFunc sniff(
+        DataSourceHelper *source,
+        float *confidence,
+        void **,
+        FreeMetaFunc *) {
+
+        // Check magic number or header
+        uint8_t header[16];
+        if (source->readAt(0, header, 16) != 16) {
+            return nullptr;
+        }
+
+        // Identify custom format (e.g., "CSTM" magic number)
+        if (memcmp(header, "CSTM", 4) == 0) {
+            *confidence = 0.8f;  // High confidence
+            return [](DataSourceHelper *src, void *) -> CMediaExtractor* {
+                return wrap(new CustomExtractor(src));
+            };
+        }
+
+        return nullptr;
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📦 Android.bp Build Configuration
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Android.bp
+cc_library_shared {
+    name: "libcustomextractor",
+
+    srcs: [
+        "CustomExtractor.cpp",
+    ],
+
+    shared_libs: [
+        "liblog",
+        "libmediandk",
+    ],
+
+    static_libs: [
+        "libstagefright_foundation",
+        "libstagefright_metadatautils",
+    ],
+
+    include_dirs: [
+        "frameworks/av/media/libstagefright/include",
+        "frameworks/av/media/ndk/include",
+    ],
+
+    cflags: [
+        "-Werror",
+        "-Wall",
+    ],
+
+    relative_install_path: "extractors",  // /system/lib64/extractors/
+
+    compile_multilib: "both",
+
+    vendor: true,  // Install to vendor partition
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔌 Extractor Registration
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📝</span>
+                        Auto Loading
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaExtractorFactory Scan</strong></p>
+                        <ul>
+                            <li>Scans /system/lib64/extractors/ directory</li>
+                            <li>Auto-loads .so files</li>
+                            <li>Calls sniff() function</li>
+                            <li>Selects Extractor with highest confidence</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Manual Registration
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>media_codecs.xml</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.8rem; margin-top: 10px;"><code>&lt;MediaExtractors&gt;
+  &lt;MediaExtractor name="custom"
+    library="libcustomextractor.so" /&gt;
+&lt;/MediaExtractors&gt;</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧪</span>
+                        Testing
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Verification Methods</strong></p>
+                        <ul>
+                            <li><code>adb shell dumpsys media.extractor</code>: Verify registration</li>
+                            <li>Open file with MediaExtractor API</li>
+                            <li>Run CTS Extractor tests</li>
+                            <li>Validate with various sample files</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        Considerations
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Development Considerations</strong></p>
+                        <ul>
+                            <li>Thread-safe implementation required</li>
+                            <li>Prevent memory leaks</li>
+                            <li>Optimize sniff() performance (quick decisions)</li>
+                            <li>Thorough error handling</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ Custom Extractor Development Constraints:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Plugin architecture only supported on Android 10 (API 29) and above</li>
+                    <li>Requires System or Vendor partition permissions (not possible for regular apps)</li>
+                    <li>C/C++ Native development required, cannot implement in Java/Kotlin</li>
+                    <li>Must pass CTS/VTS tests (for OEM/ODM distribution)</li>
+                    <li>In most cases, ExoPlayer custom Extractor is more practical</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: Streaming Processing -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                Streaming Processing Guide
+            </h2>
+            <p class="section-description">
+                Explains how to use MediaExtractor with network streams and buffering strategies.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App
+                    participant ME as MediaExtractor
+                    participant DS as HTTPDataSource
+                    participant Server as HTTP Server
+                    participant Buffer as Buffer Manager
+
+                    App->>ME: setDataSource(url)
+                    ME->>DS: Create HTTPDataSource
+                    DS->>Server: HTTP GET request
+                    Server-->>DS: HTTP 200 + headers
+                    DS->>DS: Check Content-Length
+                    DS-->>ME: DataSource ready
+
+                    ME->>DS: Read header (initial seek)
+                    DS->>Server: Range: bytes=0-8191
+                    Server-->>DS: Initial 8KB data
+                    DS->>Buffer: Store in buffer
+                    Buffer-->>DS: Buffer data
+                    DS-->>ME: Header data
+
+                    ME->>ME: Parse container format
+                    ME->>ME: Extract track info
+
+                    loop Read samples
+                    App->>ME: readSampleData()
+                    ME->>DS: Request sample offset position
+
+                    alt In buffer
+                    DS->>Buffer: Cache hit
+                    Buffer-->>DS: Buffer data
+                    else Not in buffer
+                    DS->>Server: Range: bytes=X-Y
+                    Server-->>DS: Requested range data
+                    DS->>Buffer: Buffer new data
+                    Buffer-->>DS: Buffer data
+                    end
+
+                    DS-->>ME: Sample data
+                    ME-->>App: Return sample size
+
+                    App->>ME: getCachedDuration()
+                    ME->>DS: Query buffered time
+                    DS->>Buffer: Check buffer status
+                    Buffer-->>DS: Cached range
+                    DS-->>ME: Cached time (microseconds)
+                    ME-->>App: Playable duration
+                    end
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🌐 Using Network DataSource
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Streaming via HTTP URL
+val extractor = MediaExtractor()
+val url = "https://example.com/video.mp4"
+
+try {
+    // HTTP(S) URL support
+    extractor.setDataSource(url)
+
+    // Or with headers
+    val headers = mapOf(
+        "User-Agent" to "MyApp/1.0",
+        "Authorization" to "Bearer token123"
+    )
+    extractor.setDataSource(url, headers)
+
+    // Check buffer status
+    val cachedDurationUs = extractor.cachedDuration
+    val cachedDurationMs = cachedDurationUs / 1000
+    Log.d("Streaming", "Buffered: ${cachedDurationMs}ms")
+
+    // Select track and play
+    for (i in 0 until extractor.trackCount) {
+        val format = extractor.getTrackFormat(i)
+        val mime = format.getString(MediaFormat.KEY_MIME)
+        if (mime?.startsWith("video/") == true) {
+            extractor.selectTrack(i)
+            break
+        }
+    }
+
+    // Read samples (same as local file)
+    val buffer = ByteBuffer.allocate(1024 * 1024)
+    while (true) {
+        val sampleSize = extractor.readSampleData(buffer, 0)
+        if (sampleSize < 0) break
+
+        // Re-check buffer status
+        val remainingCached = extractor.cachedDuration
+        if (remainingCached < 2_000_000) {  // Less than 2 seconds
+            Log.w("Streaming", "Low buffer: ${remainingCached / 1000}ms")
+            // Wait for buffering or pause playback
+        }
+
+        // Pass to decoder...
+        extractor.advance()
+    }
+
+} catch (e: IOException) {
+    Log.e("Streaming", "Network error", e)
+} finally {
+    extractor.release()
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 Buffering Strategies
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏸️</span>
+                        Threshold-based Buffering
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Threshold-based Buffering</strong></p>
+                        <ul>
+                            <li><strong>Low Threshold</strong>: Pause when less than 2 seconds</li>
+                            <li><strong>High Threshold</strong>: Resume when over 10 seconds</li>
+                            <li>Monitor with <code>getCachedDuration()</code></li>
+                            <li>Show buffering UI to user</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Prefetch Strategy
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Read-ahead Strategy</strong></p>
+                        <ul>
+                            <li>Read samples ahead of playback position</li>
+                            <li>Prefetch in separate Worker Thread</li>
+                            <li>Store samples in Queue</li>
+                            <li>Cancel and restart Prefetch on Seek</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📡</span>
+                        Network Monitoring
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Network State Detection</strong></p>
+                        <ul>
+                            <li>Check connection with ConnectivityManager</li>
+                            <li>Detect WiFi to Cellular switch</li>
+                            <li>Handle network disconnection errors</li>
+                            <li>Auto-reconnect logic</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Adaptive Buffering
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Adaptive Buffering</strong></p>
+                        <ul>
+                            <li>Adjust thresholds based on network speed</li>
+                            <li>Fast network: Small buffer</li>
+                            <li>Slow network: Large buffer</li>
+                            <li>Consider battery and data usage</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎬 HLS/DASH Fragment Processing
+            </h3>
+
+            <div class="highlight-box">
+                <strong>⚠️ MediaExtractor HLS/DASH Limitations:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>MediaExtractor is designed for <strong>single file-based</strong> processing - no manifest parsing support</li>
+                    <li>HLS(.m3u8), DASH(.mpd) consist of multiple fragments → Cannot use MediaExtractor directly</li>
+                    <li><strong>Recommended</strong>: Use ExoPlayer (built-in HlsMediaSource, DashMediaSource)</li>
+                    <li><strong>Alternative</strong>: Manually download individual .ts/.m4s fragments and process sequentially</li>
+                </ul>
+            </div>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary); margin-top: 20px;"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Manual HLS Fragment Processing (NOT recommended)
+// Use ExoPlayer in production
+
+// 1. Parse .m3u8 manifest (manual implementation required)
+val m3u8Url = "https://example.com/playlist.m3u8"
+val fragmentUrls = parseM3U8(m3u8Url)  // Need to implement yourself
+
+// 2. Process each fragment sequentially
+for (fragmentUrl in fragmentUrls) {
+    val extractor = MediaExtractor()
+    extractor.setDataSource(fragmentUrl)
+
+    // Select track
+    extractor.selectTrack(0)
+
+    // Read samples
+    val buffer = ByteBuffer.allocate(1024 * 1024)
+    while (true) {
+        val size = extractor.readSampleData(buffer, 0)
+        if (size < 0) break
+
+        // Pass to decoder...
+        extractor.advance()
+    }
+
+    extractor.release()
+}
+
+// ⚠️ Problems with above approach:
+// - Interruptions during fragment transitions
+// - No ABR (Adaptive Bitrate) support
+// - Complex manifest parsing to implement yourself
+// - DRM handling complexity
+
+// ✅ Recommended: Use ExoPlayer
+val player = ExoPlayer.Builder(context).build()
+val mediaItem = MediaItem.fromUri("https://example.com/playlist.m3u8")
+player.setMediaItem(mediaItem)
+player.prepare()
+player.play()</code></pre>
+        </section>
+
+        <!-- Section 10: Decoder Selection -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                Decoder Selection Process
+            </h2>
+            <p class="section-description">
+                Explains the process of selecting an appropriate MediaCodec decoder to decode sample data extracted by MediaExtractor.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App
+                    participant ME as MediaExtractor
+                    participant MCL as MediaCodecList
+                    participant MCI as MediaCodecInfo
+                    participant MC as MediaCodec
+
+                    App->>ME: getTrackFormat(i)
+                    ME-->>App: MediaFormat<br />MIME, resolution, profile, etc.
+
+                    App->>MCL: new MediaCodecList<br />(REGULAR_CODECS)
+                    MCL-->>App: CodecList instance
+
+                    App->>MCL: findDecoderForFormat(format)
+
+                    loop Iterate all codecs
+                    MCL->>MCI: getCodecInfos()
+                    MCI-->>MCL: CodecInfo array
+
+                    MCL->>MCI: isEncoder()?
+                    MCI-->>MCL: false (decoders only)
+
+                    MCL->>MCI: getSupportedTypes()
+                    MCI-->>MCL: MIME type array
+
+                    alt MIME type matches
+                    MCL->>MCI: getCapabilitiesForType(mime)
+                    MCI-->>MCL: CodecCapabilities
+
+                    MCL->>MCI: isFormatSupported(format)?
+
+                    alt Format supported
+                    MCI-->>MCL: true
+                    MCL-->>App: Return codec name
+                    else Format not supported
+                    MCI-->>MCL: false
+                    end
+                    end
+                    end
+
+                    App->>MC: createByCodecName(name)
+                    MC-->>App: MediaCodec instance
+
+                    App->>MC: configure(format)
+                    App->>MC: start()
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔍 Decoder Selection Criteria
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        MIME Type Matching
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Basic Filtering</strong></p>
+                        <ul>
+                            <li>video/avc (H.264)</li>
+                            <li>video/hevc (H.265)</li>
+                            <li>video/vp9, video/av1</li>
+                            <li>audio/mp4a-latm (AAC)</li>
+                            <li>audio/opus, audio/vorbis</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📐</span>
+                        Resolution and Profile
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>CodecCapabilities Check</strong></p>
+                        <ul>
+                            <li><code>getVideoCapabilities()</code>: Resolution range</li>
+                            <li><code>profileLevels</code>: Supported profiles/levels</li>
+                            <li><code>colorFormats</code>: Color formats</li>
+                            <li><code>isFormatSupported()</code>: Full validation</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Hardware vs Software
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Priority</strong></p>
+                        <ul>
+                            <li><strong>Hardware codec</strong>: Fast and power-efficient</li>
+                            <li>Vendor prefixes (OMX.Exynos, OMX.qcom, etc.)</li>
+                            <li><strong>Software codec</strong>: Better compatibility</li>
+                            <li>OMX.google.* prefix</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        Creation Methods
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaCodec Instantiation</strong></p>
+                        <ul>
+                            <li><code>createDecoderByType(mime)</code>: Auto selection</li>
+                            <li><code>createByCodecName(name)</code>: Explicit selection</li>
+                            <li><code>createEncoderByType(mime)</code>: Encoder</li>
+                            <li>Hardware codec preferred</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 MediaCodecList Usage Example
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TB
+                    START[Get MediaFormat] --> CREATE_LIST[Create MediaCodecList<br />REGULAR_CODECS]
+
+                    CREATE_LIST --> METHOD{Selection method}
+
+                    METHOD -->|Auto| AUTO[createDecoderByType<br />mime]
+                    METHOD -->|Manual| MANUAL[findDecoderForFormat<br />format]
+
+                    AUTO --> HW_FIRST{Hardware codec<br />available?}
+                    HW_FIRST -->|Yes| HW_CODEC[Select hardware decoder]
+                    HW_FIRST -->|No| SW_CODEC[Select software decoder]
+
+                    MANUAL --> ITERATE[Iterate codec list]
+                    ITERATE --> CHECK_TYPE{MIME type<br />match?}
+
+                    CHECK_TYPE -->|No| NEXT[Next codec]
+                    NEXT --> ITERATE
+
+                    CHECK_TYPE -->|Yes| GET_CAP[Get CodecCapabilities]
+                    GET_CAP --> CHECK_FORMAT{Format supported?<br />Resolution, profile}
+
+                    CHECK_FORMAT -->|No| NEXT
+                    CHECK_FORMAT -->|Yes| FOUND[Save codec name]
+
+                    HW_CODEC --> CREATE[createByCodecName]
+                    SW_CODEC --> CREATE
+                    FOUND --> CREATE
+
+                    CREATE --> CONFIGURE[configure and start]
+                    CONFIGURE --> END[Ready for decoding]
+
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>💡 Decoder Selection Best Practices:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Using <code>createDecoderByType()</code> lets the system automatically select the optimal codec</li>
+                    <li>Only use <code>MediaCodecList</code> for manual selection when a specific codec is needed</li>
+                    <li>Hardware codecs perform well but support varies by device</li>
+                    <li>Pre-validate with <code>isFormatSupported()</code> to prevent runtime errors</li>
+                    <li>Software codecs are useful as fallback options</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 11: Performance Profiling & Debugging -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                Performance Profiling and Debugging
+            </h2>
+            <p class="section-description">
+                Introduces tools and methods for MediaExtractor performance analysis and troubleshooting.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📊 adb logcat Filtering
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># View only MediaExtractor related logs
+adb logcat -s MediaExtractor MediaExtractorFactory
+
+# Parser logs (MP4, MKV, etc.)
+adb logcat -s MPEG4Extractor MatroskaExtractor
+
+# DataSource logs (network, file)
+adb logcat -s NuCachedSource2 HTTPDataSource
+
+# Sample reading related logs
+adb logcat | grep -iE "sample|track|seek"
+
+# Filter errors only
+adb logcat *:E | grep -i extractor
+
+# Performance related logs (time measurement)
+adb logcat | grep -iE "took|duration|latency"</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 dumpsys Commands
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># MediaExtractor service info
+adb shell dumpsys media.extractor
+
+# List registered Extractor plugins
+adb shell dumpsys media.extractor plugins
+
+# Active Extractor sessions
+adb shell dumpsys media.extractor sessions
+
+# MediaCodecList (decoder info)
+adb shell dumpsys media.codec_list
+
+# Full media service status
+adb shell dumpsys media.player</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📈 Systrace Profiling
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># Capture Systrace (10 seconds, media category)
+adb shell atrace -z -t 10 gfx audio video media -o /data/local/tmp/trace.html
+adb pull /data/local/tmp/trace.html
+
+# Open trace.html in Chrome for analysis
+# - MediaExtractor::readSampleData call time
+# - DataSource::readAt I/O latency
+# - Parser parsing overhead
+# - Seek operation time
+
+# Using Perfetto (Android 10+)
+adb shell perfetto \
+  -c - --txt \
+  -o /data/misc/perfetto-traces/trace \
+  <<EOF
+duration_ms: 10000
+buffers {
+  size_kb: 32768
+}
+data_sources {
+  config {
+    name: "linux.ftrace"
+    ftrace_config {
+      ftrace_events: "sched/sched_switch"
+      ftrace_events: "power/suspend_resume"
+      atrace_categories: "media"
+    }
+  }
+}
+EOF
+
+adb pull /data/misc/perfetto-traces/trace
+# Analyze at https://ui.perfetto.dev/</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🐛 Troubleshooting Guide
+            </h3>
+
+            <div class="highlight-box">
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Symptom</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Cause</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Solution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>setDataSource() fails</strong></td>
+                            <td style="padding: 10px;">Unsupported container format</td>
+                            <td style="padding: 10px;">1. Check file magic number (hexdump)<br>2. Verify MediaExtractor supported formats<br>3. Use ExoPlayer instead</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>getTrackCount() = 0</strong></td>
+                            <td style="padding: 10px;">Corrupted file or missing metadata</td>
+                            <td style="padding: 10px;">1. Check file integrity<br>2. Analyze file with FFprobe<br>3. Re-create with different encoder</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>readSampleData() = -1</strong></td>
+                            <td style="padding: 10px;">selectTrack() not called or EOS</td>
+                            <td style="padding: 10px;">1. Verify selectTrack() call<br>2. Check EOS with getSampleTime()<br>3. seekTo(0) to restart from beginning</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Buffer overflow</strong></td>
+                            <td style="padding: 10px;">ByteBuffer size too small</td>
+                            <td style="padding: 10px;">1. Check KEY_MAX_INPUT_SIZE in MediaFormat<br>2. Allocate sufficient buffer (recommended: 1-2MB)<br>3. Check readSampleData() return value</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Seek not accurate</strong></td>
+                            <td style="padding: 10px;">Large keyframe interval (GOP size)</td>
+                            <td style="padding: 10px;">1. Use CLOSEST_SYNC mode<br>2. Verify actual position with getSampleTime()<br>3. Adjust encoding GOP size if needed</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Network stream buffering</strong></td>
+                            <td style="padding: 10px;">Slow network or server response</td>
+                            <td style="padding: 10px;">1. Monitor getCachedDuration()<br>2. Implement Prefetch strategy<br>3. Fallback to lower resolution</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>DRM content playback fails</strong></td>
+                            <td style="padding: 10px;">MediaCrypto not set or license error</td>
+                            <td style="padding: 10px;">1. Check SAMPLE_FLAG_ENCRYPTED<br>2. Verify MediaDrm session state<br>3. Check license server response logs</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px;"><strong>Memory leak</strong></td>
+                            <td style="padding: 10px;">release() not called</td>
+                            <td style="padding: 10px;">1. release() in try-finally block<br>2. Detect leaks with LeakCanary<br>3. Check Native memory in Profiler</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📏 Performance Metrics
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏱️</span>
+                        Sample Read Latency
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Sample Read Time</strong></p>
+                        <ul>
+                            <li><strong>Local file</strong>: &lt;1ms (SSD)</li>
+                            <li><strong>Network</strong>: 10-100ms</li>
+                            <li>Check readSampleData section in Systrace</li>
+                            <li>Identify I/O bottlenecks</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        Seek Performance
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Seek Performance</strong></p>
+                        <ul>
+                            <li><strong>MP4</strong>: &lt;10ms (index-based)</li>
+                            <li><strong>MKV</strong>: ~50ms (Cluster search)</li>
+                            <li>Check getSampleTime() after seekTo()</li>
+                            <li>Keyframe index optimization</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💾</span>
+                        Memory Usage
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Memory Usage</strong></p>
+                        <ul>
+                            <li><strong>MediaExtractor</strong>: ~1MB</li>
+                            <li><strong>Parser</strong>: ~2-5MB (metadata)</li>
+                            <li><strong>Buffer</strong>: User-allocated size</li>
+                            <li>Monitor Native Heap in Profiler</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Throughput
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Throughput</strong></p>
+                        <ul>
+                            <li><strong>Local</strong>: 100+ MB/s (SSD)</li>
+                            <li><strong>Network</strong>: Bandwidth dependent</li>
+                            <li>Measure readSampleData() call frequency</li>
+                            <li>Optimize with batch processing</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>💡 Debugging Best Practices:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Capture both logcat and Systrace simultaneously when reproducing issues to get the full picture</li>
+                    <li>Analyze input files with FFprobe/MediaInfo and compare with MediaExtractor behavior</li>
+                    <li>For performance issues, separately measure which stage is slow: I/O (DataSource), parsing (Parser), or buffer copy</li>
+                    <li>ExoPlayer source code is a treasure trove of advanced MediaExtractor usage examples</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 12: AOSP Source Code Reference -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                AOSP Source Code Reference
+            </h2>
+            <p class="section-description">
+                Introduces AOSP source code locations and core logic for understanding MediaExtractor implementation.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📂 Key Source File Locations
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Framework (Java/Kotlin)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Public API</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>frameworks/base/media/java/android/media/
+├── MediaExtractor.java
+├── MediaFormat.java
+├── MediaCodec.java
+└── MediaDrm.java</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Native Core
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>libstagefright</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>frameworks/av/media/libstagefright/
+├── MediaExtractor.cpp
+├── MediaExtractorFactory.cpp
+├── DataSource.cpp
+└── foundation/</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Container Parsers
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Extractor Implementations</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>frameworks/av/media/extractors/
+├── mp4/MPEG4Extractor.cpp
+├── mkv/MatroskaExtractor.cpp
+├── wav/WAVExtractor.cpp
+└── mpeg2/MPEG2PSExtractor.cpp</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        Plugin Interface
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Android 10+ Plugin</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>frameworks/av/media/libstagefright/include/
+├── MediaExtractorPluginApi.h
+└── MediaExtractorPluginHelper.h</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                💻 Core Code Snippets
+            </h3>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                1. MediaExtractor.cpp (Framework Native)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// frameworks/av/media/libstagefright/MediaExtractor.cpp
+
+sp&lt;MediaExtractor&gt; MediaExtractor::Create(
+        const sp&lt;DataSource&gt; &source,
+        const char *mime) {
+
+    // Select appropriate Extractor via MediaExtractorFactory
+    sp&lt;MediaExtractorFactory&gt; factory = new MediaExtractorFactory();
+    return factory-&gt;CreateFromDataSource(source, mime);
+}
+
+status_t MediaExtractor::getTrackMetaData(
+        sp&lt;MetaData&gt; &meta,
+        size_t index,
+        uint32_t flags) {
+
+    // Return per-track metadata
+    meta = mImpl-&gt;getTrackMetaData(index, flags);
+    return meta != NULL ? OK : UNKNOWN_ERROR;
+}
+
+status_t MediaExtractor::readSampleData(
+        const sp&lt;ABuffer&gt; &buffer,
+        size_t trackIndex,
+        int64_t *sampleTimeUs) {
+
+    // Actual implementation delegated to each Parser
+    return mTracks[trackIndex]-&gt;read(buffer, sampleTimeUs);
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                2. MPEG4Extractor.cpp (MP4 Parser)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// frameworks/av/media/extractors/mp4/MPEG4Extractor.cpp
+
+status_t MPEG4Extractor::parseChunk(off64_t *offset) {
+    uint32_t hdr[2];
+    if (mDataSource-&gt;readAt(*offset, hdr, 8) &lt; 8) {
+        return ERROR_IO;
+    }
+
+    uint64_t chunk_size = ntohl(hdr[0]);
+    uint32_t chunk_type = ntohl(hdr[1]);
+
+    // Process by Box type
+    switch (chunk_type) {
+        case FOURCC('m', 'o', 'o', 'v'):
+            return parseMoov(*offset);  // Movie Box
+        case FOURCC('m', 'd', 'a', 't'):
+            return parseMdat(*offset);  // Media Data
+        case FOURCC('t', 'r', 'a', 'k'):
+            return parseTrak(*offset);  // Track
+        // ...
+    }
+
+    *offset += chunk_size;
+    return OK;
+}
+
+// Sample Table parsing
+status_t MPEG4Extractor::Track::getSample(
+        off64_t *offset,
+        size_t *size,
+        int64_t *timeUs) {
+
+    // Calculate PTS from stts (Time-to-Sample)
+    *timeUs = mSampleIterator-&gt;getSampleTime();
+
+    // Get size from stsz (Sample Size)
+    *size = mSampleIterator-&gt;getSampleSize();
+
+    // Calculate position from stco (Chunk Offset)
+    *offset = mSampleIterator-&gt;getSampleOffset();
+
+    return OK;
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                3. MatroskaExtractor.cpp (MKV Parser)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// frameworks/av/media/extractors/mkv/MatroskaExtractor.cpp
+
+status_t MatroskaExtractor::readMetaData() {
+    // Parse EBML with libwebm
+    mkvparser::Segment *segment;
+    long long pos = 0;
+
+    long long ret = mkvparser::Segment::CreateInstance(
+        mReader, pos, segment);
+
+    if (ret) {
+        return ERROR_MALFORMED;
+    }
+
+    // Parse Tracks Element
+    const mkvparser::Tracks *tracks = segment-&gt;GetTracks();
+    for (size_t i = 0; i &lt; tracks-&gt;GetTracksCount(); ++i) {
+        const mkvparser::Track *track = tracks-&gt;GetTrackByIndex(i);
+        addTrack(track);
+    }
+
+    return OK;
+}
+
+status_t MatroskaExtractor::MatroskaSource::readBlock() {
+    const mkvparser::Block *block;
+    int64_t timeUs;
+
+    // Read Block from Cluster
+    status_t err = mExtractor-&gt;advance();
+    if (err != OK) return err;
+
+    block = mExtractor-&gt;block();
+    timeUs = mExtractor-&gt;blockTimeUs();
+
+    // Process SimpleBlock or BlockGroup
+    const mkvparser::Block::Frame &frame = block-&gt;GetFrame(0);
+    *buffer = new ABuffer(frame.len);
+    frame.Read(mExtractor-&gt;mReader, buffer-&gt;data());
+
+    return OK;
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔗 AOSP Source Code Navigation Links:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/av/media/libstagefright/" target="_blank" style="color: var(--accent-primary);">libstagefright (Core)</a></li>
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/av/media/extractors/" target="_blank" style="color: var(--accent-primary);">Extractor Plugins</a></li>
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/base/media/java/android/media/MediaExtractor.java" target="_blank" style="color: var(--accent-primary);">MediaExtractor.java (Framework)</a></li>
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/av/media/ndk/" target="_blank" style="color: var(--accent-primary);">Media NDK</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 13: Best Practices -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                Best Practices
+            </h2>
+            <p class="section-description">
+                Recommendations and considerations for using MediaExtractor efficiently.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        Recommendations
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Track Selection</strong>: Select only needed tracks for performance</li>
+                            <li><strong>Buffer Reuse</strong>: Reuse ByteBuffer to reduce GC overhead</li>
+                            <li><strong>Async Processing</strong>: Read samples on Worker Thread</li>
+                            <li><strong>Resource Release</strong>: Always call <code>release()</code> after use</li>
+                            <li><strong>Error Handling</strong>: Check <code>readSampleData()</code> return value</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">❌</span>
+                        Things to Avoid
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>UI Thread Blocking</strong>: Never read samples on main thread</li>
+                            <li><strong>Excessive Seeking</strong>: Frequent seeking degrades performance</li>
+                            <li><strong>Insufficient Buffer</strong>: Using buffer smaller than sample size</li>
+                            <li><strong>Missing Track Selection</strong>: Trying to read without selectTrack()</li>
+                            <li><strong>Resource Leaks</strong>: Not calling release()</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Performance Optimization
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Direct ByteBuffer</strong>: Use allocateDirect()</li>
+                            <li><strong>Batch Processing</strong>: Process multiple samples at once</li>
+                            <li><strong>Caching</strong>: Cache MediaFormat information</li>
+                            <li><strong>Prefetch</strong>: Read next samples ahead</li>
+                            <li><strong>Pool</strong>: Use ByteBuffer Pool</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        Debugging Tips
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Check MediaFormat</strong>: MIME type and codec info</li>
+                            <li><strong>Verify Timestamps</strong>: Check PTS order and intervals</li>
+                            <li><strong>Check Flags</strong>: Identify keyframe positions</li>
+                            <li><strong>Logging</strong>: Monitor sample size and read speed</li>
+                            <li><strong>ExoPlayer</strong>: Consider ExoPlayer for complex cases</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ Important Notes:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>MediaExtractor only provides encoded data - MediaCodec required for decoding</li>
+                    <li>Not all container formats are supported - verify beforehand</li>
+                    <li>DRM content must be used with MediaDrm</li>
+                    <li>Network streams require buffering consideration</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 14: Related Documentation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                Related Documentation
+            </h2>
+            <p class="section-description">
+                Navigate to other detailed documentation pages related to MediaExtractor.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        <p>Explains the overall architecture and layer structure of Android media framework.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>Framework → Native layer interaction</li>
+                            <li>MediaPlayer, MediaRecorder API</li>
+                            <li>Binder IPC communication</li>
+                        </ul>
+                        <a href="media-framework-core.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Codec 2.0 & HAL
+                    </h3>
+                    <div class="card-description">
+                        <p>Covers MediaCodec and Codec 2.0 architecture, HAL interfaces in detail.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>MediaCodec API usage</li>
+                            <li>C2Component structure</li>
+                            <li>Vendor Codec implementation</li>
+                        </ul>
+                        <a href="codec2.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        Media Playback Pipeline
+                    </h3>
+                    <div class="card-description">
+                        <p>Explains media playback pipeline, NuPlayer, buffer management, A/V synchronization.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>NuPlayer architecture</li>
+                            <li>Buffer management and Zero-Copy</li>
+                            <li>PTS-based A/V Sync</li>
+                        </ul>
+                        <a href="media-playback.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>Covers the audio stack including AudioFlinger, AudioPolicyService, and HAL.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>AudioTrack/AudioRecord API</li>
+                            <li>AudioFlinger mixing pipeline</li>
+                            <li>Audio routing policy</li>
+                        </ul>
+                        <a href="audio-framework.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📁</span>
+                        MediaProvider
+                    </h3>
+                    <div class="card-description">
+                        <p>Explains media storage access, Scoped Storage, and FUSE.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>MediaStore API</li>
+                            <li>Scoped Storage mechanism</li>
+                            <li>FUSE Passthrough</li>
+                        </ul>
+                        <a href="mediaprovider.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Widevine DRM
+                    </h3>
+                    <div class="card-description">
+                        <p>Covers Widevine DRM architecture, security levels, and license management.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>L1/L2/L3 security levels</li>
+                            <li>MediaDrm API usage</li>
+                            <li>Provisioning & licensing</li>
+                        </ul>
+                        <a href="widevine.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 40px;">
+                <h3 style="color: var(--accent-primary); font-size: 1.2rem; margin-bottom: 15px;">
+                    📚 Additional Learning Resources
+                </h3>
+                <ul style="padding-left: 20px;">
+                    <li><strong>AOSP Official Documentation</strong>: <a href="https://source.android.com/docs/core/media" target="_blank" style="color: var(--accent-primary);">source.android.com/docs/core/media</a></li>
+                    <li><strong>Android Developer Guide</strong>: <a href="https://developer.android.com/guide/topics/media" target="_blank" style="color: var(--accent-primary);">developer.android.com/guide/topics/media</a></li>
+                    <li><strong>ExoPlayer Documentation</strong>: <a href="https://exoplayer.dev/" target="_blank" style="color: var(--accent-primary);">exoplayer.dev</a></li>
+                    <li><strong>Media3 Library</strong>: <a href="https://developer.android.com/jetpack/androidx/releases/media3" target="_blank" style="color: var(--accent-primary);">androidx.media3</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>MediaExtractor & Parser Architecture</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                Container Parsing & Demuxing Framework
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-primary); text-decoration: none;">
+                    ← Back to AOSP Media Framework
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script>
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

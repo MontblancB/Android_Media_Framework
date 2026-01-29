@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Production Debugging - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">← Android Media Framework</a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Advanced Production Debugging</h1>
+            <p class="page-subtitle">Advanced techniques for analyzing and resolving media issues in the field</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>Characteristics of Production Environment</h2>
+            <p>Media issues in production environments are <strong>difficult to reproduce and have limited information</strong>. Unlike development environments, debugger connections and real-time log viewing are often not possible.</p>
+
+            <h3>1.1 Production vs Development Environment</h3>
+            <table>
+                <thead>
+                    <tr><th>Item</th><th>Development Environment</th><th>Production Environment</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Log Access</td><td>Real-time logcat</td><td>Bugreport/Crash reports</td></tr>
+                    <tr><td>Reproducibility</td><td>Controlled conditions</td><td>Various devices/networks</td></tr>
+                    <tr><td>Debugger</td><td>Can connect</td><td>Not possible</td></tr>
+                    <tr><td>Build</td><td>Debug build</td><td>Release/User build</td></tr>
+                </tbody>
+            </table>
+
+            <h3>1.2 Debugging Workflow</h3>
+            <div class="mermaid">
+flowchart TD
+    A[Receive Issue Report] --> B[Analyze Bugreport]
+    B --> C{Reproducible?}
+    C -->|Yes| D[Local Reproduction & Debug]
+    C -->|No| E[Log Pattern Analysis]
+    E --> F[Enhanced Remote Log Collection]
+    F --> G[Statistical Analysis]
+    D --> H[Fix & Verify]
+    G --> H
+    H --> I[Deploy Hotfix]
+            </div>
+        </section>
+
+        <!-- Section 2: Bugreport Analysis -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>In-Depth Bugreport Analysis</h2>
+
+            <h3>2.1 Bugreport Structure</h3>
+            <pre><code>bugreport-device-2024-01-28.zip
+├── bugreport-device-2024-01-28.txt    # Main report
+├── dumpstate_board.txt                 # Board-specific info
+├── FS/                                 # Filesystem snapshot
+│   ├── data/misc/logd/                 # Log daemon
+│   └── data/tombstones/                # Native crashes
+├── proto/                              # Protocol buffer data
+└── lshal-debug/                        # HAL status</code></pre>
+
+            <h3>2.2 Extracting Media-Related Sections</h3>
+            <pre><code># Extract media-related logs
+grep -A 500 "DUMP OF SERVICE media.codec" bugreport.txt > media_codec.txt
+grep -A 500 "DUMP OF SERVICE media.player" bugreport.txt > media_player.txt
+grep -A 200 "DUMP OF SERVICE audio" bugreport.txt > audio.txt
+
+# Extract crash logs
+grep -B 5 -A 50 "FATAL EXCEPTION" bugreport.txt > crashes.txt
+grep -B 5 -A 100 "backtrace:" bugreport.txt > native_crashes.txt
+
+# ANR analysis
+grep -A 100 "ANR in" bugreport.txt > anr.txt</code></pre>
+
+            <h3>2.3 Key Analysis Points</h3>
+            <div class="info-box">
+                <strong>Bugreport Analysis Checklist</strong>
+                <ul>
+                    <li><strong>media.codec</strong>: Codec state, buffer queue, error counters</li>
+                    <li><strong>media.player</strong>: Player state, playback position</li>
+                    <li><strong>AudioFlinger</strong>: Audio track state, underrun counters</li>
+                    <li><strong>SurfaceFlinger</strong>: Frame drops, composition state</li>
+                    <li><strong>tombstones</strong>: Native crash backtraces</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 3: Non-Reproducible Bugs -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>Tracking Non-Reproducible Bugs</h2>
+
+            <h3>3.1 Statistical Approach</h3>
+            <pre><code># Pattern analysis from Firebase Crashlytics, etc.
+# Find common conditions:
+# - Device model
+# - Android version
+# - App version
+# - Network state
+# - Memory state
+# - Battery level</code></pre>
+
+            <h3>3.2 Enhanced Remote Log Collection</h3>
+            <pre><code>// Conditional detailed logging
+class MediaDebugLogger {
+    companion object {
+        private var isDebugMode = false
+
+        fun enableDebugMode(userId: String) {
+            // Enable detailed logging for specific users only
+            isDebugMode = RemoteConfig.isDebugUser(userId)
+        }
+
+        fun logMediaEvent(event: String, details: Map&lt;String, Any&gt;) {
+            if (isDebugMode) {
+                // Detailed log (send to server)
+                Analytics.logDetailed("media_debug", event, details)
+            } else {
+                // Basic log
+                Log.d("Media", event)
+            }
+        }
+    }
+}</code></pre>
+
+            <h3>3.3 Breadcrumb Pattern</h3>
+            <pre><code>// Record event history
+object MediaBreadcrumb {
+    private val events = ArrayDeque&lt;Event&gt;(100)
+
+    fun record(action: String, state: String) {
+        events.addLast(Event(System.currentTimeMillis(), action, state))
+        if (events.size > 100) events.removeFirst()
+    }
+
+    fun getHistory(): List&lt;Event&gt; = events.toList()
+
+    // Attach history to crash report
+    fun attachToCrashReport() {
+        Crashlytics.setCustomKey("media_history",
+            events.takeLast(20).joinToString("\n"))
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 4: Crash Dump Analysis -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>Native Crash Analysis</h2>
+
+            <h3>4.1 Tombstone Analysis</h3>
+            <pre><code># /data/tombstones/tombstone_00 example
+*** *** *** *** *** *** *** *** *** *** *** *** ***
+Build fingerprint: 'vendor/device/...'
+pid: 1234, tid: 1234, name: mediacodec  >>> /system/bin/mediacodec &lt;&lt;&lt;
+signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x0
+    r0 00000000  r1 00000001  r2 00000002  r3 00000000
+
+backtrace:
+    #00 pc 0001234c  /vendor/lib/libvendor_codec.so (DecodeFrame+124)
+    #01 pc 00045678  /system/lib/libstagefright.so (NuPlayer::onDecode+456)
+    #02 pc 00078abc  /system/lib/libbinder.so (BBinder::transact+123)</code></pre>
+
+            <h3>4.2 Symbol Restoration</h3>
+            <pre><code># Restore symbols with addr2line
+$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-addr2line \
+    -e out/target/product/device/symbols/vendor/lib/libvendor_codec.so \
+    0001234c
+
+# Use ndk-stack
+adb logcat | ndk-stack -sym out/target/product/device/symbols</code></pre>
+
+            <h3>4.3 Common Crash Causes</h3>
+            <table>
+                <thead>
+                    <tr><th>Signal</th><th>Cause</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>SIGSEGV</td><td>NULL pointer, invalid memory access</td><td>Validate pointers, check buffer boundaries</td></tr>
+                    <tr><td>SIGABRT</td><td>assert failure, abort() called</td><td>Review conditions, exception handling</td></tr>
+                    <tr><td>SIGBUS</td><td>Unaligned memory access</td><td>Check memory alignment</td></tr>
+                    <tr><td>SIGFPE</td><td>Division by zero</td><td>Validate before operations</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 5: Useful Scripts -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>Debugging Script Collection</h2>
+
+            <h3>5.1 Automatic Bugreport Analysis</h3>
+            <pre><code>#!/bin/bash
+# analyze_bugreport.sh
+
+BUGREPORT=$1
+
+echo "=== Media Codec Status ==="
+grep -A 100 "DUMP OF SERVICE media.codec" "$BUGREPORT" | head -50
+
+echo -e "\n=== Audio Underruns ==="
+grep -i "underrun" "$BUGREPORT" | head -20
+
+echo -e "\n=== Media Errors ==="
+grep -E "MediaCodec|ExoPlayer|AudioTrack" "$BUGREPORT" | grep -i "error" | head -20
+
+echo -e "\n=== ANR Events ==="
+grep -B 2 -A 10 "ANR in" "$BUGREPORT"
+
+echo -e "\n=== Native Crashes ==="
+grep -B 2 -A 20 "backtrace:" "$BUGREPORT" | head -50</code></pre>
+
+            <h3>5.2 Real-time Media Monitoring</h3>
+            <pre><code>#!/bin/bash
+# media_monitor.sh
+
+while true; do
+    clear
+    echo "=== $(date) ==="
+
+    echo -e "\n[Codec Status]"
+    adb shell dumpsys media.codec | grep -E "state|buffer|error" | head -10
+
+    echo -e "\n[Audio Status]"
+    adb shell dumpsys media.audio_flinger | grep -E "underrun|state" | head -5
+
+    echo -e "\n[Memory]"
+    adb shell dumpsys meminfo $(adb shell pidof mediaserver) | grep -E "TOTAL|Native"
+
+    sleep 2
+done</code></pre>
+        </section>
+
+        <!-- Section 6: ANR Deep Analysis -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>ANR Deep Analysis</h2>
+
+            <h3>6.1 ANR Classification by Type</h3>
+            <table>
+                <thead>
+                    <tr><th>Type</th><th>Timeout</th><th>Cause</th><th>Media-Related Examples</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Input Dispatch</strong></td>
+                        <td>5 seconds</td>
+                        <td>UI thread blocking</td>
+                        <td>Synchronous decoding on main thread</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Broadcast</strong></td>
+                        <td>10s (FG), 60s (BG)</td>
+                        <td>Broadcast processing delay</td>
+                        <td>Scanning during MEDIA_MOUNTED handling</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Service</strong></td>
+                        <td>20s (FG), 200s (BG)</td>
+                        <td>Service start/bind delay</td>
+                        <td>MediaBrowserService initialization</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ContentProvider</strong></td>
+                        <td>10 seconds</td>
+                        <td>Provider query delay</td>
+                        <td>MediaStore bulk query</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>6.2 traces.txt Analysis</h3>
+            <pre><code># Location of traces.txt generated during ANR
+/data/anr/traces.txt
+/data/anr/anr_*.txt  (Android 11+)
+
+# Extract from Bugreport
+grep -A 200 "ANR in" bugreport.txt > anr_section.txt
+
+# Example traces.txt analysis
+----- pid 1234 at 2024-01-28 10:30:00 -----
+Cmd line: com.example.mediaplayer
+...
+"main" prio=5 tid=1 Blocked
+  | group="main" sCount=1 dsCount=0 flags=1 obj=0x... self=0x...
+  | sysTid=1234 nice=-10 cgrp=default sched=0/0 handle=0x...
+  | state=S schedstat=( 0 0 0 ) utm=100 stm=50 core=2 HZ=100
+  | stack=0x... stackSize=8192KB
+  | held mutexes=
+  at android.media.MediaCodec.native_dequeueOutputBuffer(Native method)
+  - waiting to lock &lt;0x0a1b2c3d&gt; (android.media.MediaCodec)
+  - held by thread 15
+  at android.media.MediaCodec.dequeueOutputBuffer(MediaCodec.java:...)
+  at com.example.mediaplayer.VideoDecoder.decode(VideoDecoder.kt:45)
+  at com.example.mediaplayer.MainActivity.onResume(MainActivity.kt:120)</code></pre>
+
+            <h3>6.3 ANR Analysis Checklist</h3>
+            <div class="info-box">
+                <strong>Key Points to Check in traces.txt</strong>
+                <ul>
+                    <li><strong>Main thread state</strong>: Check Blocked, Waiting, Sleeping</li>
+                    <li><strong>Lock waiting</strong>: Trace "waiting to lock" / "held by thread X"</li>
+                    <li><strong>Native calls</strong>: Check if blocking in JNI/Native methods</li>
+                    <li><strong>Binder transactions</strong>: Check Binder call wait time</li>
+                    <li><strong>I/O waiting</strong>: Check file/network I/O blocking</li>
+                </ul>
+            </div>
+
+            <h3>6.4 Media ANR Prevention Patterns</h3>
+            <pre><code>// Bad: Synchronous work on main thread
+class MainActivity : Activity() {
+    override fun onResume() {
+        super.onResume()
+        val metadata = mediaRetriever.extractMetadata(...)  // ANR risk!
+    }
+}
+
+// Good: Asynchronous processing
+class MainActivity : Activity() {
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+    override fun onResume() {
+        super.onResume()
+        scope.launch {
+            val metadata = withContext(Dispatchers.IO) {
+                mediaRetriever.extractMetadata(...)
+            }
+            updateUI(metadata)
+        }
+    }
+}
+
+// Good: Set timeout for MediaMetadataRetriever
+mediaRetriever.setDataSource(context, uri)
+// Use timeout settings when available on Android 10+</code></pre>
+        </section>
+
+        <!-- Section 7: Memory Leak Detection -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>Memory Leak Detection</h2>
+
+            <h3>7.1 Common Media-Related Memory Leaks</h3>
+            <table>
+                <thead>
+                    <tr><th>Leak Type</th><th>Cause</th><th>Symptom</th><th>Solution</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>MediaPlayer not released</strong></td>
+                        <td>release() not called</td>
+                        <td>Native memory increase</td>
+                        <td>Call release() in onDestroy()</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ExoPlayer not released</strong></td>
+                        <td>release() not called</td>
+                        <td>Buffer memory accumulation</td>
+                        <td>Lifecycle integration</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Bitmap not released</strong></td>
+                        <td>Album art caching</td>
+                        <td>Java Heap OOM</td>
+                        <td>LRU cache + recycle()</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Surface not released</strong></td>
+                        <td>SurfaceTexture not cleaned up</td>
+                        <td>Graphics memory leak</td>
+                        <td>Call release()</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Callback not released</strong></td>
+                        <td>Listener registered but not removed</td>
+                        <td>Activity leak</td>
+                        <td>removeListener()</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>7.2 LeakCanary Setup</h3>
+            <pre><code>// build.gradle (include only in debug build)
+dependencies {
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.12'
+}
+
+// Add media object monitoring
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+
+        // Custom object monitoring
+        val watcherInstaller = AppWatcher.manualInstall(this)
+
+        // Add manual watch targets like MediaPlayer
+        // AppWatcher.objectWatcher.watch(mediaPlayer, "Suspected MediaPlayer leak")
+    }
+}</code></pre>
+
+            <h3>7.3 Production Memory Monitoring</h3>
+            <pre><code>// Track memory status in production
+object MediaMemoryMonitor {
+    private const val THRESHOLD_MB = 50
+
+    fun checkMemoryStatus(): MemoryStatus {
+        val runtime = Runtime.getRuntime()
+        val usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+        val maxMemory = runtime.maxMemory() / 1024 / 1024
+
+        val nativeHeap = Debug.getNativeHeapAllocatedSize() / 1024 / 1024
+
+        return MemoryStatus(
+            javaHeapMB = usedMemory,
+            maxHeapMB = maxMemory,
+            nativeHeapMB = nativeHeap,
+            isLow = (maxMemory - usedMemory) < THRESHOLD_MB
+        )
+    }
+
+    // Periodic logging (production)
+    fun logMemoryPeriodically() {
+        val status = checkMemoryStatus()
+        if (status.isLow) {
+            Analytics.log("memory_warning", mapOf(
+                "java_heap" to status.javaHeapMB,
+                "native_heap" to status.nativeHeapMB
+            ))
+        }
+    }
+}
+
+data class MemoryStatus(
+    val javaHeapMB: Long,
+    val maxHeapMB: Long,
+    val nativeHeapMB: Long,
+    val isLow: Boolean
+)</code></pre>
+
+            <h3>7.4 dumpsys meminfo Analysis</h3>
+            <pre><code># Check media process memory
+adb shell dumpsys meminfo com.example.mediaplayer
+
+# Output example interpretation
+Applications Memory Usage (in Kilobytes):
+Uptime: 123456 Realtime: 123456
+
+** MEMINFO in pid 1234 [com.example.mediaplayer] **
+                   Pss  Private  Private  SwapPss  Rss
+                 Total    Dirty    Clean    Dirty  Total
+                ------   ------   ------   ------  ------
+  Native Heap    15360    15340       0       0    15360  ← HW codec buffers
+  Dalvik Heap     8192     8100       0       0     8192  ← Java objects
+        Stack      512      512       0       0      512
+       Ashmem     4096        0    4096       0     4096  ← Shared memory
+    GL mtrack    20480    20480       0       0    20480  ← Graphics buffers
+        TOTAL    48640    44432    4096       0    48640
+
+# Warning points:
+# - Continuous Native Heap increase: MediaCodec/Player leak
+# - GL mtrack increase: Surface/Texture leak
+# - Ashmem increase: Shared buffer leak</code></pre>
+        </section>
+
+        <!-- Section 8: Case Studies -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>Real Case Studies</h2>
+
+            <h3>Case 1: Intermittent Video Freeze (Specific Device)</h3>
+            <div class="info-box">
+                <strong>Symptoms</strong>
+                <p>Random freezes during 4K video playback only on Galaxy S21. Not reproducible on other devices.</p>
+
+                <strong>Analysis Process</strong>
+                <ol>
+                    <li>Checked media.codec dump in Bugreport → Buffer queue full</li>
+                    <li>Found frame drop pattern in SurfaceFlinger logs</li>
+                    <li>dumpsys display → Only occurs in 120Hz mode</li>
+                </ol>
+
+                <strong>Root Cause</strong>
+                <p>Timestamp interpolation issue with 4K@60fps video on 120Hz display. Decoder failed to sync with display vsync.</p>
+
+                <strong>Solution</strong>
+                <pre><code>// Force 60Hz when playing 4K
+if (videoWidth >= 3840 && videoHeight >= 2160) {
+    window.attributes = window.attributes.apply {
+        preferredDisplayModeId = get60HzModeId()
+    }
+}</code></pre>
+            </div>
+
+            <h3>Case 2: Crash During Background Playback</h3>
+            <div class="info-box">
+                <strong>Symptoms</strong>
+                <p>Music app crashes after 30 minutes to 1 hour of background playback. Difficult to reproduce.</p>
+
+                <strong>Analysis Process</strong>
+                <ol>
+                    <li>Pattern analysis in Crashlytics → Occurs in low memory state</li>
+                    <li>Breadcrumb before crash → onTrimMemory(CRITICAL) was called</li>
+                    <li>Tombstone analysis → AudioTrack buffer allocation failure</li>
+                </ol>
+
+                <strong>Root Cause</strong>
+                <p>Audio buffers were released in onTrimMemory(), causing crash during playback.</p>
+
+                <strong>Solution</strong>
+                <pre><code>override fun onTrimMemory(level: Int) {
+    when (level) {
+        TRIM_MEMORY_RUNNING_CRITICAL,
+        TRIM_MEMORY_COMPLETE -> {
+            // Keep essential buffers if playing
+            if (!isPlaying) {
+                releaseNonEssentialBuffers()
+            }
+            // Only clear album art cache
+            albumArtCache.evictAll()
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3>Case 3: DRM Content Playback Failure (Specific Network)</h3>
+            <div class="info-box">
+                <strong>Symptoms</strong>
+                <p>Netflix/YouTube Premium DRM content playback fails only on certain company Wi-Fi.</p>
+
+                <strong>Analysis Process</strong>
+                <ol>
+                    <li>Regular content works fine → Suspected DRM license issue</li>
+                    <li>Network logs → License server request timeout</li>
+                    <li>Checked company firewall policy → SSL inspection enabled</li>
+                </ol>
+
+                <strong>Root Cause</strong>
+                <p>Company security policy's SSL inspection altered DRM license server certificate chain, causing authentication failure.</p>
+
+                <strong>Solution</strong>
+                <p>Cannot fix in app → Provide user guidance message about network environment</p>
+                <pre><code>// User guidance on DRM license failure
+when (error.errorCode) {
+    MediaDrm.ErrorCodes.ERROR_PROVISIONING_DENIED,
+    MediaDrm.ErrorCodes.ERROR_LICENSE_DENIED -> {
+        showNetworkTroubleshootingDialog()
+    }
+}</code></pre>
+            </div>
+
+            <h3>Case 4: App Crash on Specific Files</h3>
+            <div class="info-box">
+                <strong>Symptoms</strong>
+                <p>Crash immediately after starting playback for some user-uploaded files.</p>
+
+                <strong>Analysis Process</strong>
+                <ol>
+                    <li>Crash log → Occurs at MediaExtractor.setDataSource()</li>
+                    <li>Obtained problem file → Successfully reproduced locally</li>
+                    <li>ffprobe analysis → Corrupted moov atom</li>
+                </ol>
+
+                <strong>Root Cause</strong>
+                <p>Codec crash when parsing moov atom of incomplete MP4 files (e.g., interrupted recording).</p>
+
+                <strong>Solution</strong>
+                <pre><code>// Safe file validation
+suspend fun validateMediaFile(uri: Uri): ValidationResult {
+    return withContext(Dispatchers.IO) {
+        try {
+            MediaMetadataRetriever().use { retriever ->
+                retriever.setDataSource(context, uri)
+                val duration = retriever.extractMetadata(
+                    MediaMetadataRetriever.METADATA_KEY_DURATION
+                )
+                if (duration == null || duration.toLong() <= 0) {
+                    ValidationResult.Invalid("Duration not found")
+                } else {
+                    ValidationResult.Valid
+                }
+            }
+        } catch (e: Exception) {
+            ValidationResult.Invalid(e.message ?: "Unknown error")
+        }
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Related Documents -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>Related Documents</h2>
+            <ul>
+                <li><a href="debugging-tools.html">Debugging & Profiling Tools</a> - Basic debugging tools</li>
+                <li><a href="common-media-issues.html">Common Media Issues</a> - Common issue resolution</li>
+                <li><a href="performance-optimization.html">Performance Optimization</a> - Performance analysis</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+</html>

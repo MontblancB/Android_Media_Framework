@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android MediaSession Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">MediaSession</h1>
+            <p class="page-subtitle">Android Media Playback Control Framework</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                MediaSession Overview
+            </h2>
+            <p class="section-description">
+                MediaSession is a core framework in Android that controls media playback and makes it accessible from external sources.
+            </p>
+
+            <div class="highlight-box">
+                <strong>What is MediaSession?</strong> A framework that advertises your app's media player to the system and external apps,
+                receives playback commands from various sources (notifications, Android Auto, Google Assistant, etc.) to provide unified media playback control.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Main Purposes
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Advertise media playback state to the system</li>
+                            <li>Enable external media control</li>
+                            <li>Provide consistent media experience</li>
+                            <li>Support background playback</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        Control Sources
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Notification</strong>: Notification media controls</li>
+                            <li><strong>Android Auto</strong>: Vehicle display</li>
+                            <li><strong>Wear OS</strong>: Smartwatch</li>
+                            <li><strong>Google Assistant</strong>: Voice commands</li>
+                            <li><strong>Media Buttons</strong>: Headphone buttons</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Core Features
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Play/Pause/Stop/Skip</li>
+                            <li>Playback state and metadata transmission</li>
+                            <li>Queue management</li>
+                            <li>Media button event handling</li>
+                            <li>Communication with external controllers</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📚</span>
+                        Media3 vs Legacy
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Legacy</strong>: MediaSessionCompat</li>
+                            <li><strong>Media3</strong>: androidx.media3.session</li>
+                            <li>Media3 has unified Player interface</li>
+                            <li>ExoPlayer built-in integration</li>
+                            <li>Simpler architecture</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                MediaSession Architecture
+            </h2>
+            <p class="section-description">
+                The MediaSession framework manages communication between media apps and external controllers using a Client-Server architecture.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    UI["📱 UI Activity<br />(MediaBrowser + MediaController)"]
+
+                    SERVICE["🎵 MediaBrowserService / MediaSessionService<br />(Background Service)"]
+
+                    SESSION["MediaSession<br />(Hub / Middleware)"]
+
+                    PLAYER["🎶 Player<br />(ExoPlayer / MediaPlayer)"]
+
+                    EXTERNAL["External Controllers"]
+                    NOTIF["📢 Notification<br />MediaStyle"]
+                    AUTO["🚗 Android Auto"]
+                    WEAR["⌚ Wear OS"]
+                    ASSISTANT["🎤 Google Assistant"]
+                    BUTTON["🎧 Media Buttons"]
+
+                    UI -->|Browse Media| SERVICE
+                    UI -->|Control Commands| SESSION
+                    SERVICE -->|Contains| SESSION
+                    SESSION -->|Delegates| PLAYER
+
+                    NOTIF -->|Commands| SESSION
+                    AUTO -->|Commands| SESSION
+                    WEAR -->|Commands| SESSION
+                    ASSISTANT -->|Commands| SESSION
+                    BUTTON -->|Commands| SESSION
+
+                    SESSION -->|State/Metadata Updates| UI
+                    SESSION -->|State/Metadata Updates| EXTERNAL
+
+                    EXTERNAL -.->|Group| NOTIF
+                    EXTERNAL -.->|Group| AUTO
+                    EXTERNAL -.->|Group| WEAR
+                    EXTERNAL -.->|Group| ASSISTANT
+                    EXTERNAL -.->|Group| BUTTON
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Components -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Key Components
+            </h2>
+            <p class="section-description">
+                Explains the core components and roles of the MediaSession framework.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        MediaSession
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Media Playback Hub</strong></p>
+                        <ul>
+                            <li>Advertises player to the system</li>
+                            <li>Forwards external commands to player</li>
+                            <li>Transmits playback state and metadata</li>
+                            <li>Identified by SessionToken</li>
+                            <li>Receives commands via Callback</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎮</span>
+                        MediaController
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Media Control Interface</strong></p>
+                        <ul>
+                            <li>Connects to MediaSession</li>
+                            <li>Sends playback commands (play, pause, skip)</li>
+                            <li>Receives state updates</li>
+                            <li>Implements Player interface (Media3)</li>
+                            <li>Separates UI from player</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        MediaBrowser
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Media Library Browser</strong></p>
+                        <ul>
+                            <li>Connects to MediaBrowserService</li>
+                            <li>Browses media content hierarchy</li>
+                            <li>Creates MediaController</li>
+                            <li>Android Auto/Wear integration</li>
+                            <li>Background service access</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        MediaBrowserService
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Background Media Service</strong></p>
+                        <ul>
+                            <li>Hosts MediaSession</li>
+                            <li>Exposes media library</li>
+                            <li>Manages background playback</li>
+                            <li>Allows external app connections</li>
+                            <li>Automatic lifecycle management</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎶</span>
+                        Player
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Actual Media Player</strong></p>
+                        <ul>
+                            <li>Audio/Video playback</li>
+                            <li>Decoding and buffering</li>
+                            <li>MediaPlayer (default)</li>
+                            <li>ExoPlayer (recommended, Media3)</li>
+                            <li>Implements Player interface</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📢</span>
+                        MediaStyle Notification
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Media Notification</strong></p>
+                        <ul>
+                            <li>NotificationCompat.MediaStyle</li>
+                            <li>MediaSession integration</li>
+                            <li>Display playback controls</li>
+                            <li>Show album art</li>
+                            <li>Auto/Wear automatic bridging</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Playback Control Flow -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Playback Control Flow
+            </h2>
+            <p class="section-description">
+                The complete flow of how user commands are delivered to the Player through MediaSession.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant User as 👤 User
+                    participant Notif as 📢 Notification
+                    participant Controller as 🎮 MediaController
+                    participant Session as 🎵 MediaSession
+                    participant Player as 🎶 Player
+
+                    User->>Notif: Click Play button
+                    Notif->>Controller: play() command
+                    Controller->>Session: onPlay() callback
+                    Session->>Player: player.play()
+                    Player->>Player: Start playback
+
+                    Player->>Session: State change (PLAYING)
+                    Session->>Controller: onPlaybackStateChanged()
+                    Controller->>Notif: UI update (Playing)
+                    Notif->>User: Play icon → Pause icon
+
+                    Note over Session,Player: Metadata transmission
+                    Player->>Session: Track info
+                    Session->>Controller: onMetadataChanged()
+                    Controller->>Notif: Display album art, title, artist
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>Core Process:</strong>
+                <ol style="margin-top: 10px; padding-left: 20px;">
+                    <li>User clicks play button from Notification, Auto, Wear, etc.</li>
+                    <li>The controller sends play() command to MediaSession</li>
+                    <li>MediaSession's Callback calls onPlay()</li>
+                    <li>Actual playback command is forwarded to Player</li>
+                    <li>Player starts playback and changes state</li>
+                    <li>MediaSession updates state to all connected controllers</li>
+                    <li>UI automatically refreshes (Notification, Auto, Wear updated simultaneously)</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- Section 5: Integration -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Auto & Wear Integration
+            </h2>
+            <p class="section-description">
+                Using MediaSession automatically enables Android Auto and Wear OS integration.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    APP["📱 Media App<br />(Phone)"]
+                    SESSION["🎵 MediaSession"]
+                    NOTIF["📢 MediaStyle<br />Notification"]
+
+                    AUTO_SYS["🚗 Android Auto<br />System"]
+                    WEAR_SYS["⌚ Wear OS<br />System"]
+
+                    AUTO_UI["Car Display<br />Media Controls"]
+                    WEAR_UI["Watch Display<br />Media Controls"]
+
+                    APP --> SESSION
+                    SESSION --> NOTIF
+                    NOTIF -.->|Auto Bridge| AUTO_SYS
+                    NOTIF -.->|Auto Bridge| WEAR_SYS
+
+                    AUTO_SYS --> AUTO_UI
+                    WEAR_SYS --> WEAR_UI
+
+                    AUTO_UI -->|Commands| SESSION
+                    WEAR_UI -->|Commands| SESSION
+
+                </div>
+            </div>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Android Auto Integration
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Auto Bridging</strong>: MediaStyle notifications auto-transmitted</li>
+                            <li><strong>MediaBrowserService</strong>: Expose content library</li>
+                            <li><strong>Vehicle Display</strong>: Native media UI</li>
+                            <li><strong>Voice Commands</strong>: Google Assistant integration</li>
+                            <li>No separate Auto-specific code needed</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⌚</span>
+                        Wear OS Integration
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Auto Bridging</strong>: Notifications sent to Watch</li>
+                            <li><strong>Ongoing Activity</strong>: Watch Face display during playback</li>
+                            <li><strong>Media Controls</strong>: Album art, playback buttons</li>
+                            <li><strong>Media3 Auto Support</strong>: No additional implementation needed</li>
+                            <li>Automatic sync with paired devices</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💡</span>
+                        Implementation Tips
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Must create MediaSession</li>
+                            <li>Set up Notification with MediaStyle</li>
+                            <li>Call setMediaSession(token)</li>
+                            <li>Implement MediaBrowserService (for content browsing)</li>
+                            <li>Update metadata and state accurately</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Implementation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Implementation Examples
+            </h2>
+            <p class="section-description">
+                Basic media app implementation structure using MediaSession.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        Create MediaSession
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Create in Service</strong></p>
+                        <ul>
+                            <li><code>MediaSession(context, TAG)</code></li>
+                            <li>Set up Callback</li>
+                            <li>Connect Player</li>
+                            <li>Obtain SessionToken</li>
+                            <li>Set Active state</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        Implement Callback
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaSession.Callback</strong></p>
+                        <ul>
+                            <li><code>onPlay()</code>: Start playback</li>
+                            <li><code>onPause()</code>: Pause</li>
+                            <li><code>onStop()</code>: Stop</li>
+                            <li><code>onSkipToNext()</code>: Next track</li>
+                            <li><code>onSeekTo()</code>: Seek</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">3️⃣</span>
+                        Set Up Notification
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaStyle Notification</strong></p>
+                        <ul>
+                            <li><code>NotificationCompat.MediaStyle()</code></li>
+                            <li><code>setMediaSession(token)</code></li>
+                            <li>Add Actions (play, pause, skip)</li>
+                            <li>Set album art</li>
+                            <li>Ongoing notification</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">4️⃣</span>
+                        Connect UI
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaController in Activity</strong></p>
+                        <ul>
+                            <li>Connect Service via MediaBrowser</li>
+                            <li>Create Controller with SessionToken</li>
+                            <li>Call transport controls</li>
+                            <li>Update UI via Callback</li>
+                            <li>Manage connection release</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">5️⃣</span>
+                        Update State
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>PlaybackState and Metadata</strong></p>
+                        <ul>
+                            <li><code>setPlaybackState()</code></li>
+                            <li>STATE_PLAYING, STATE_PAUSED, etc.</li>
+                            <li><code>setMetadata()</code></li>
+                            <li>Title, artist, album art</li>
+                            <li>Duration, Position info</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">6️⃣</span>
+                        Lifecycle Management
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Service Lifecycle</strong></p>
+                        <ul>
+                            <li>onCreate(): Create MediaSession</li>
+                            <li>onStartCommand(): Start playback</li>
+                            <li>startForeground(): Notification</li>
+                            <li>onDestroy(): Cleanup and release()</li>
+                            <li>MediaBrowser connection management</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Code Examples -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Actual Code Examples
+            </h2>
+            <p class="section-description">
+                Provides actual implementation code using MediaSession in both Legacy and Media3 approaches.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📱 Legacy: MediaSessionCompat + MediaBrowserServiceCompat
+            </h3>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                1. MediaBrowserServiceCompat Implementation
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// MusicService.kt (Legacy)
+class MusicService : MediaBrowserServiceCompat() {
+    private var mediaSession: MediaSessionCompat? = null
+    private lateinit var stateBuilder: PlaybackStateCompat.Builder
+    private lateinit var player: MediaPlayer
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // Create MediaSession
+        mediaSession = MediaSessionCompat(baseContext, "MusicService").apply {
+            // Set Callback
+            setCallback(MediaSessionCallback())
+
+            // Set Flags
+            setFlags(
+                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+            )
+
+            // Initialize PlaybackState
+            stateBuilder = PlaybackStateCompat.Builder()
+                .setActions(
+                    PlaybackStateCompat.ACTION_PLAY or
+                    PlaybackStateCompat.ACTION_PAUSE or
+                    PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                    PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                )
+            setPlaybackState(stateBuilder.build())
+
+            // Activate Session
+            isActive = true
+        }
+
+        // Set SessionToken
+        sessionToken = mediaSession?.sessionToken
+
+        // Initialize Player
+        player = MediaPlayer()
+    }
+
+    override fun onGetRoot(
+        clientPackageName: String,
+        clientUid: Int,
+        rootHints: Bundle?
+    ): BrowserRoot? {
+        // Allow Android Auto/Wear OS access
+        return BrowserRoot("root", null)
+    }
+
+    override fun onLoadChildren(
+        parentId: String,
+        result: Result<MutableList<MediaBrowserCompat.MediaItem>>
+    ) {
+        val mediaItems = mutableListOf<MediaBrowserCompat.MediaItem>()
+
+        when (parentId) {
+            "root" -> {
+                // Top-level menu
+                mediaItems.add(
+                    MediaBrowserCompat.MediaItem(
+                        MediaDescriptionCompat.Builder()
+                            .setMediaId("albums")
+                            .setTitle("Albums")
+                            .setSubtitle("Browse by album")
+                            .build(),
+                        MediaBrowserCompat.MediaItem.FLAG_BROWSABLE
+                    )
+                )
+            }
+        }
+
+        result.sendResult(mediaItems)
+    }
+
+    inner class MediaSessionCallback : MediaSessionCompat.Callback() {
+        override fun onPlay() {
+            player.start()
+            updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+            showNotification()
+        }
+
+        override fun onPause() {
+            player.pause()
+            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED)
+        }
+
+        override fun onStop() {
+            player.stop()
+            updatePlaybackState(PlaybackStateCompat.STATE_STOPPED)
+            stopForeground(true)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaSession?.release()
+        player.release()
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🚀 Media3: MediaSessionService + MediaSession
+            </h3>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                1. MediaSessionService Implementation
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// MusicService.kt (Media3)
+class MusicService : MediaSessionService() {
+    private var mediaSession: MediaSession? = null
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // Create ExoPlayer
+        val player = ExoPlayer.Builder(this).build()
+
+        // Create MediaSession
+        mediaSession = MediaSession.Builder(this, player)
+            .setCallback(MediaSessionCallback())
+            .build()
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
+        return mediaSession
+    }
+
+    private inner class MediaSessionCallback : MediaSession.Callback {
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): MediaSession.ConnectionResult {
+            val connectionResult = super.onConnect(session, controller)
+
+            // Set Session Commands
+            val sessionCommands = connectionResult.availableSessionCommands.buildUpon()
+                .add(SessionCommand("CUSTOM_COMMAND", Bundle()))
+                .build()
+
+            return MediaSession.ConnectionResult.accept(
+                sessionCommands,
+                connectionResult.availablePlayerCommands
+            )
+        }
+    }
+
+    override fun onDestroy() {
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
+        }
+        super.onDestroy()
+    }
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Key Differences in Code Examples:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Legacy</strong>: MediaBrowserServiceCompat, MediaSessionCompat.Callback, manual PlaybackState management</li>
+                    <li><strong>Media3</strong>: MediaSessionService, ExoPlayer integration, automatic state sync, Player.Listener</li>
+                    <li><strong>Code Simplicity</strong>: Media3 is about 40% shorter and more concise</li>
+                    <li><strong>Maintenance</strong>: Media3 integrates with ExoPlayer for automated buffering and error handling</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 8: Media3 vs Legacy Comparison -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Media3 vs Legacy Comparison
+            </h2>
+            <p class="section-description">
+                A detailed comparison of Media3 and Legacy MediaSession APIs.
+            </p>
+
+            <div class="highlight-box">
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Item</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Legacy (MediaSessionCompat)</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Media3 (androidx.media3)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Package</strong></td>
+                            <td style="padding: 10px;">android.support.v4.media<br />androidx.media</td>
+                            <td style="padding: 10px;">androidx.media3.session<br />androidx.media3.exoplayer</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Service Class</strong></td>
+                            <td style="padding: 10px;">MediaBrowserServiceCompat</td>
+                            <td style="padding: 10px;">MediaSessionService (simplified)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Player Integration</strong></td>
+                            <td style="padding: 10px;">Manual MediaPlayer or ExoPlayer integration</td>
+                            <td style="padding: 10px;">Native ExoPlayer integration</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>State Management</strong></td>
+                            <td style="padding: 10px;">PlaybackStateCompat.Builder<br />Manual setState() calls</td>
+                            <td style="padding: 10px;">Player.Listener<br />Automatic state propagation</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Notification</strong></td>
+                            <td style="padding: 10px;">NotificationCompat.MediaStyle<br />Manual build</td>
+                            <td style="padding: 10px;">MediaNotification<br />Auto-generated</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Maintenance Status</strong></td>
+                            <td style="padding: 10px;">⚠️ Maintenance mode (bug fixes only)</td>
+                            <td style="padding: 10px;">✅ Active development and updates</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px;"><strong>Recommendation</strong></td>
+                            <td style="padding: 10px;">⚠️ Not recommended for new projects</td>
+                            <td style="padding: 10px;">✅ Recommended for all new projects</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 Migration Guide
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        Dependency Change
+                    </h3>
+                    <div class="card-description">
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.8rem; margin-top: 10px;"><code>// build.gradle.kts
+// Remove Legacy
+// implementation("androidx.media:media:1.x.x")
+
+// Add Media3
+implementation("androidx.media3:media3-session:1.2.0")
+implementation("androidx.media3:media3-exoplayer:1.2.0")</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        Service Migration
+                    </h3>
+                    <div class="card-description">
+                        <ul style="margin-top: 10px;">
+                            <li><code>MediaBrowserServiceCompat</code> → <code>MediaSessionService</code></li>
+                            <li>Remove <code>onGetRoot()</code>, <code>onLoadChildren()</code></li>
+                            <li>Implement <code>onGetSession()</code></li>
+                            <li>Create and connect ExoPlayer</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">3️⃣</span>
+                        Callback Simplification
+                    </h3>
+                    <div class="card-description">
+                        <ul style="margin-top: 10px;">
+                            <li>Can remove <code>onPlay()</code>, <code>onPause()</code></li>
+                            <li>Player automatically handles commands</li>
+                            <li>Override only custom logic</li>
+                            <li>Remove manual <code>PlaybackStateCompat</code> updates</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">4️⃣</span>
+                        Controller Change
+                    </h3>
+                    <div class="card-description">
+                        <ul style="margin-top: 10px;">
+                            <li><code>MediaBrowserCompat</code> → <code>ListenableFuture&lt;MediaController&gt;</code></li>
+                            <li><code>transportControls.play()</code> → <code>controller.play()</code></li>
+                            <li><code>MediaControllerCompat.Callback</code> → <code>Player.Listener</code></li>
+                            <li>Apply async connection pattern</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>🚀 Recommended Migration Timing:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>New Projects</strong>: Must use Media3</li>
+                    <li><strong>Existing Projects</strong>: Consider migration during major refactoring</li>
+                    <li><strong>Using ExoPlayer</strong>: Significant integration benefits when migrating to Media3</li>
+                    <li><strong>Using MediaPlayer</strong>: Can maintain Legacy but Media3 + ExoPlayer recommended</li>
+                    <li>Google designated Media3 as the official recommended library starting 2024</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: Audio Focus & Session Management -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                Audio Focus & Session Management
+            </h2>
+            <p class="section-description">
+                Explains multi-app audio playback coordination via AudioFocus and session priority management.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App as Music App
+                    participant AM as AudioManager
+                    participant Phone as Phone Call
+                    participant Nav as Navigation
+
+                    App->>AM: requestAudioFocus()<br />AUDIOFOCUS_GAIN
+                    AM-->>App: AUDIOFOCUS_REQUEST_GRANTED
+                    App->>App: player.play()
+
+                    Note over Phone: Incoming call
+                    Phone->>AM: requestAudioFocus()<br />AUDIOFOCUS_GAIN_TRANSIENT
+                    AM->>App: onAudioFocusChange()<br />AUDIOFOCUS_LOSS_TRANSIENT
+                    App->>App: player.pause()
+                    AM-->>Phone: AUDIOFOCUS_REQUEST_GRANTED
+
+                    Note over Phone: Call ended
+                    Phone->>AM: abandonAudioFocus()
+                    AM->>App: onAudioFocusChange()<br />AUDIOFOCUS_GAIN
+                    App->>App: player.play() (resume)
+
+                    Note over Nav: Navigation guidance
+                    Nav->>AM: requestAudioFocus()<br />AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+                    AM->>App: onAudioFocusChange()<br />AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK
+                    App->>App: player.setVolume(0.2f) (Ducking)
+                    AM-->>Nav: AUDIOFOCUS_REQUEST_GRANTED
+
+                    Nav->>AM: abandonAudioFocus()
+                    AM->>App: onAudioFocusChange()<br />AUDIOFOCUS_GAIN
+                    App->>App: player.setVolume(1.0f) (Volume restored)
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎧 AudioFocus Request and Handling
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// AudioFocus Management
+class MusicService : MediaBrowserServiceCompat() {
+    private lateinit var audioManager: AudioManager
+    private lateinit var audioFocusRequest: AudioFocusRequest
+
+    private val afChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                // Focus gained: Resume playback and restore volume
+                player.volume = 1.0f
+                if (shouldResumeOnFocusGain) {
+                    player.play()
+                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                // Permanent focus loss: Stop playback
+                player.pause()
+                shouldResumeOnFocusGain = false
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                // Transient focus loss (call, etc.): Pause, resume later
+                if (player.isPlaying) {
+                    player.pause()
+                    shouldResumeOnFocusGain = true
+                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                // Transient focus loss (ducking allowed, navigation, etc.): Lower volume
+                player.volume = 0.2f
+            }
+        }
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 AudioFocus Type Comparison
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        AUDIOFOCUS_GAIN
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Permanent Focus Acquisition</strong></p>
+                        <ul>
+                            <li><strong>Use Case</strong>: Music playback, podcasts</li>
+                            <li><strong>Impact on Other Apps</strong>: Stop or duck playback</li>
+                            <li><strong>On Loss</strong>: Stop playback</li>
+                            <li><strong>On Regain</strong>: Resume playback</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📞</span>
+                        AUDIOFOCUS_GAIN_TRANSIENT
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Transient Focus (Cannot Duck)</strong></p>
+                        <ul>
+                            <li><strong>Use Case</strong>: Phone calls, alarms</li>
+                            <li><strong>Impact on Other Apps</strong>: Force pause</li>
+                            <li><strong>On Loss</strong>: Pause</li>
+                            <li><strong>On Regain</strong>: Auto resume</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🗺️</span>
+                        AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Transient Focus (Ducking Allowed)</strong></p>
+                        <ul>
+                            <li><strong>Use Case</strong>: Navigation guidance, notifications</li>
+                            <li><strong>Impact on Other Apps</strong>: Lower volume (20%)</li>
+                            <li><strong>On Loss</strong>: Ducking (continue playing)</li>
+                            <li><strong>On Regain</strong>: Restore volume</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ AudioFocus Best Practices:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Required</strong>: Must request AudioFocus before media playback</li>
+                    <li><strong>Proper Type Selection</strong>: Set USAGE_MEDIA, CONTENT_TYPE_MUSIC, etc. accurately</li>
+                    <li><strong>Distinguish LOSS vs LOSS_TRANSIENT</strong>: LOSS doesn't resume, LOSS_TRANSIENT resumes</li>
+                    <li><strong>Ducking Handling</strong>: Lower volume instead of pausing for LOSS_TRANSIENT_CAN_DUCK (better UX)</li>
+                    <li><strong>Focus Release</strong>: Must call abandonAudioFocus() when playback completes/stops</li>
+                    <li><strong>Media3 Auto Handling</strong>: Media3 + ExoPlayer automatically manages AudioFocus (no manual implementation needed)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 10: Media Buttons & Custom Commands -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                Media Buttons & Custom Commands
+            </h2>
+            <p class="section-description">
+                Explains handling headphone buttons, Bluetooth controls, and adding custom commands.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                🎧 MediaButtonReceiver Setup
+            </h3>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                1. AndroidManifest.xml Configuration
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">&lt;!-- AndroidManifest.xml --&gt;
+&lt;manifest&gt;
+    &lt;application&gt;
+        &lt;!-- MediaBrowserService declaration --&gt;
+        &lt;service
+            android:name=".MusicService"
+            android:exported="true"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.media.browse.MediaBrowserService" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/service&gt;
+
+        &lt;!-- MediaButtonReceiver declaration --&gt;
+        &lt;receiver
+            android:name="androidx.media.session.MediaButtonReceiver"
+            android:exported="true"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.MEDIA_BUTTON" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/receiver&gt;
+    &lt;/application&gt;
+
+    &lt;!-- Required permissions --&gt;
+    &lt;uses-permission android:name="android.permission.FOREGROUND_SERVICE" /&gt;
+    &lt;uses-permission android:name="android.permission.WAKE_LOCK" /&gt;
+&lt;/manifest&gt;</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Media Button and Custom Command Key Points:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>MediaButtonReceiver</strong>: Must register in AndroidManifest.xml, process with handleIntent()</li>
+                    <li><strong>Headset Button</strong>: Use KEYCODE_HEADSETHOOK to distinguish single/double/triple clicks</li>
+                    <li><strong>Custom Actions</strong>: Auto-displayed in Notification and Auto/Wear, max 5 recommended</li>
+                    <li><strong>Queue Management</strong>: Expose playlist with setQueue(), browsable from Auto/Wear</li>
+                    <li><strong>Media3 Automation</strong>: Media3 automatically handles media buttons and Queue</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 11: Performance Profiling & Debugging -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                Performance Profiling & Debugging
+            </h2>
+            <p class="section-description">
+                Introduces tools and methods for MediaSession performance analysis and troubleshooting.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📊 dumpsys Commands
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># Query all MediaSession information
+adb shell dumpsys media.session
+
+# View only active MediaSessions
+adb shell dumpsys media.session | grep -A 20 "Active sessions"
+
+# Specific app's MediaSession
+adb shell dumpsys media.session | grep -A 30 "com.example.musicapp"
+
+# MediaController information
+adb shell cmd media_session list-sessions
+
+# Volume and AudioFocus status
+adb shell dumpsys audio | grep -i "focus"</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 adb Media Control Commands
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># List MediaSessions
+adb shell cmd media_session list-sessions
+
+# Play/Pause toggle
+adb shell cmd media_session dispatch play
+adb shell cmd media_session dispatch pause
+
+# Next/Previous track
+adb shell cmd media_session dispatch next
+adb shell cmd media_session dispatch previous
+
+# Volume control
+adb shell cmd media_session volume --show
+adb shell cmd media_session volume --set 10
+
+# Simulate media button
+adb shell input keyevent KEYCODE_MEDIA_PLAY_PAUSE
+adb shell input keyevent KEYCODE_MEDIA_NEXT
+adb shell input keyevent KEYCODE_HEADSETHOOK</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🐛 Troubleshooting Guide
+            </h3>
+
+            <div class="highlight-box">
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Symptom</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Cause</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Solution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Playback controls not showing in Notification</strong></td>
+                            <td style="padding: 10px;">MediaStyle not set or setMediaSession() missing</td>
+                            <td style="padding: 10px;">1. Use NotificationCompat.MediaStyle()<br>2. Call setMediaSession(token)<br>3. Add buttons with addAction()</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>App not appearing in Android Auto</strong></td>
+                            <td style="padding: 10px;">MediaBrowserService not implemented or onGetRoot() returning null</td>
+                            <td style="padding: 10px;">1. Extend MediaBrowserServiceCompat<br>2. Return BrowserRoot in onGetRoot()<br>3. Add intent-filter in AndroidManifest.xml</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Headphone buttons not working</strong></td>
+                            <td style="padding: 10px;">MediaButtonReceiver not registered or FLAG missing</td>
+                            <td style="padding: 10px;">1. Register receiver in AndroidManifest.xml<br>2. Set FLAG_HANDLES_MEDIA_BUTTONS<br>3. Call setMediaButtonReceiver()</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Playback stops in background</strong></td>
+                            <td style="padding: 10px;">Foreground Service not used</td>
+                            <td style="padding: 10px;">1. Call startForeground(id, notification)<br>2. Add FOREGROUND_SERVICE permission<br>3. Set FOREGROUND_SERVICE_MEDIA_PLAYBACK type for Android 12+</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Audio overlaps with other apps</strong></td>
+                            <td style="padding: 10px;">AudioFocus not requested</td>
+                            <td style="padding: 10px;">1. Call requestAudioFocus()<br>2. Implement OnAudioFocusChangeListener<br>3. Stop playback on AUDIOFOCUS_LOSS</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>💡 Debugging Best Practices:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Check active session state in real-time with dumpsys media.session</li>
+                    <li>Test commands with adb cmd media_session (debug without UI)</li>
+                    <li>Simulate Auto environment with Android Auto Desktop Head Unit (DHU)</li>
+                    <li>Logcat filter: <code>adb logcat -s MediaSession MediaController</code></li>
+                    <li>Media3 provides detailed logs, check ExoPlayer logs together</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 12: AOSP Source Code Reference -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                AOSP Source Code Reference
+            </h2>
+            <p class="section-description">
+                Introduces AOSP source code locations and core logic for understanding MediaSession implementation.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📂 Key Source File Locations
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Framework (Java)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Public API</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>frameworks/base/media/java/android/media/session/
+├── MediaSession.java
+├── MediaController.java
+├── MediaSessionManager.java
+├── PlaybackState.java
+└── MediaMetadata.java</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        System Service (Java)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaSessionService</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>frameworks/base/services/core/java/com/android/server/media/
+├── MediaSessionService.java
+├── MediaSessionRecord.java
+└── MediaSessionStack.java</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📚</span>
+                        AndroidX (Legacy)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>MediaSessionCompat</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>androidx/media/media/src/main/java/androidx/media/
+├── MediaSessionCompat.java
+├── MediaControllerCompat.java
+└── MediaBrowserServiceCompat.java</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        Media3
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>androidx.media3.session</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>androidx/media3/libraries/session/src/main/java/
+├── MediaSession.kt
+├── MediaController.kt
+└── MediaSessionService.kt</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔗 AOSP Source Code Exploration Links:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/base/media/java/android/media/session/" target="_blank" style="color: var(--accent-primary);">MediaSession Framework (Java)</a></li>
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/android/server/media/" target="_blank" style="color: var(--accent-primary);">MediaSessionService (System Server)</a></li>
+                    <li><a href="https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:media/media/src/main/java/androidx/media/" target="_blank" style="color: var(--accent-primary);">MediaSessionCompat (AndroidX Legacy)</a></li>
+                    <li><a href="https://github.com/androidx/media/tree/release/libraries/session/src/main/java/androidx/media3/session" target="_blank" style="color: var(--accent-primary);">Media3 Session (GitHub)</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 13: Related Documentation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                Related Documentation
+            </h2>
+            <p class="section-description">
+                Navigate to other detailed documentation pages related to MediaSession.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        <p>Explains the overall architecture and layer structure of Android media framework.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>Framework → Native layer interaction</li>
+                            <li>MediaPlayer, MediaRecorder API</li>
+                            <li>Binder IPC communication</li>
+                        </ul>
+                        <a href="media-framework-core.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        Media Playback Pipeline
+                    </h3>
+                    <div class="card-description">
+                        <p>Explains media playback pipeline, NuPlayer, and buffer management.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>NuPlayer architecture</li>
+                            <li>Buffer management and Zero-Copy</li>
+                            <li>PTS-based A/V Sync</li>
+                        </ul>
+                        <a href="media-playback.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>Covers the audio stack including AudioFlinger and AudioPolicyService.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>AudioTrack/AudioRecord API</li>
+                            <li>AudioFlinger mixing pipeline</li>
+                            <li>Audio routing policy</li>
+                        </ul>
+                        <a href="audio-framework.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Car Media Service
+                    </h3>
+                    <div class="card-description">
+                        <p>Explains Android Automotive's Car Media Service and MediaSession integration.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>CarMediaService architecture</li>
+                            <li>MediaSession priority</li>
+                            <li>Last Media & Autoplay</li>
+                        </ul>
+                        <a href="carmedia.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📁</span>
+                        MediaProvider
+                    </h3>
+                    <div class="card-description">
+                        <p>Explains media storage access, MediaStore, and Scoped Storage.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>MediaStore API</li>
+                            <li>Scoped Storage mechanism</li>
+                            <li>FUSE Passthrough</li>
+                        </ul>
+                        <a href="mediaprovider.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Media App Layer
+                    </h3>
+                    <div class="card-description">
+                        <p>Compares app layer APIs like MediaPlayer, ExoPlayer, and Media3.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>MediaPlayer vs ExoPlayer</li>
+                            <li>Media3 integrated library</li>
+                            <li>Best Practices</li>
+                        </ul>
+                        <a href="media-app-layer.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 40px;">
+                <h3 style="color: var(--accent-primary); font-size: 1.2rem; margin-bottom: 15px;">
+                    📚 Additional Learning Resources
+                </h3>
+                <ul style="padding-left: 20px;">
+                    <li><strong>Android Developer - MediaSession</strong>: <a href="https://developer.android.com/guide/topics/media-apps/working-with-a-media-session" target="_blank" style="color: var(--accent-primary);">developer.android.com/guide/topics/media-apps</a></li>
+                    <li><strong>Media3 Official Documentation</strong>: <a href="https://developer.android.com/jetpack/androidx/releases/media3" target="_blank" style="color: var(--accent-primary);">androidx.media3</a></li>
+                    <li><strong>Android Auto Developer Guide</strong>: <a href="https://developer.android.com/training/cars/media" target="_blank" style="color: var(--accent-primary);">developer.android.com/training/cars/media</a></li>
+                    <li><strong>Universal Android Music Player (UAMP) Sample</strong>: <a href="https://github.com/android/uamp" target="_blank" style="color: var(--accent-primary);">github.com/android/uamp</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Android MediaSession Framework</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                Unified Media Playback Control Framework
+            </p>
+            <div style="margin-top: 25px; display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                <a href="mediasession-api.html"
+                    style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(0, 212, 255, 0.2)); border: 2px solid #f97316; border-radius: 12px; color: #f97316; text-decoration: none; font-weight: 600; font-size: 1rem; transition: all 0.3s ease;">
+                    MediaSession API Flow →
+                </a>
+                <a href="index.html"
+                    style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: rgba(26, 31, 53, 0.5); border: 2px solid var(--border-color); border-radius: 12px; color: var(--text-primary); text-decoration: none; font-weight: 600; font-size: 1rem; transition: all 0.3s ease;">
+                    ← AOSP Media Framework
+                </a>
+            </div>
+        </footer>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script>
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

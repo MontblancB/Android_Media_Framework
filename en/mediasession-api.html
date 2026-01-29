@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediaSession API Flow</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="../mediasession.html" class="nav-button">
+            ← MediaSession Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">MediaSession API</h1>
+            <p class="page-subtitle">Detailed flows and processing logic for each use case</p>
+        </header>
+
+        <!-- Section 1: Audio Focus Management -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Audio Focus Management
+            </h2>
+            <p class="section-description">
+                Audio Focus handling flow that prevents simultaneous playback from multiple apps and adjusts audio output.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App as Media App
+                    participant Session as MediaSession
+                    participant AudioMgr as AudioManager
+                    participant System as Android System
+                    participant OtherApp as Other App
+
+                    Note over App,System: When starting playback
+                    App->>Session: onPlay() callback
+                    Session->>AudioMgr: requestAudioFocus(AudioFocusRequest)
+                    AudioMgr->>System: Focus request
+                    System-->>AudioMgr: AUDIOFOCUS_REQUEST_GRANTED
+                    AudioMgr-->>Session: Focus acquired
+                    Session->>App: player.play()
+                    App->>App: Start playback
+
+                    Note over App,OtherApp: Another app requests Focus
+                    OtherApp->>System: requestAudioFocus()
+                    System->>AudioMgr: Focus change
+                    AudioMgr->>Session: onAudioFocusChange(AUDIOFOCUS_LOSS)
+                    Session->>App: player.pause()
+                    App->>App: Pause playback
+
+                    Note over App,System: When playback ends
+                    App->>Session: onStop()
+                    Session->>AudioMgr: abandonAudioFocusRequest()
+                    AudioMgr->>System: Return focus
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Target</span>
+                        Focus Request
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Request Focus when starting playback</strong></p>
+                        <ul>
+                            <li><code>requestAudioFocus(AudioFocusRequest)</code></li>
+                            <li>Call in onPlay() callback</li>
+                            <li>Check AUDIOFOCUS_REQUEST_GRANTED</li>
+                            <li>Start playback only after acquisition</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Broadcast</span>
+                        Focus Change
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Handle Focus changes</strong></p>
+                        <ul>
+                            <li><code>onAudioFocusChange()</code> listener</li>
+                            <li><strong>LOSS</strong>: Stop playback</li>
+                            <li><strong>LOSS_TRANSIENT</strong>: Pause</li>
+                            <li><strong>LOSS_TRANSIENT_CAN_DUCK</strong>: Reduce volume</li>
+                            <li><strong>GAIN</strong>: Resume playback</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Check</span>
+                        Focus Abandon
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Return focus when playback completes</strong></p>
+                        <ul>
+                            <li><code>abandonAudioFocusRequest()</code></li>
+                            <li>Call in onStop()</li>
+                            <li>Keep on pause</li>
+                            <li>Return only on complete stop</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Volume Control -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Volume Control Handling
+            </h2>
+            <p class="section-description">
+                Remote volume control and adjustment flow through VolumeProvider.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant User as User
+                    participant Controller as MediaController
+                    participant Session as MediaSession
+                    participant Provider as VolumeProvider
+                    participant Player as Player
+
+                    Note over User,Player: Volume increase request
+                    User->>Controller: Volume up button
+                    Controller->>Session: adjustVolume(ADJUST_RAISE)
+                    Session->>Provider: onAdjustVolume(ADJUST_RAISE)
+                    Provider->>Provider: currentVolume++
+                    Provider->>Session: setCurrentVolume(newVolume)
+                    Session->>Controller: onVolumeChanged()
+                    Controller->>User: UI update
+
+                    Note over User,Player: Absolute volume setting
+                    User->>Controller: Volume slider adjustment
+                    Controller->>Session: setVolumeTo(50)
+                    Session->>Provider: onSetVolumeTo(50)
+                    Provider->>Provider: currentVolume = 50
+                    Provider->>Session: setCurrentVolume(50)
+                    Session->>Player: setVolume(0.5f)
+                    Player->>Player: Volume change
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Speaker</span>
+                        VolumeProvider Setup
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Enable remote volume control</strong></p>
+                        <ul>
+                            <li><code>setPlaybackToRemote(VolumeProvider)</code></li>
+                            <li><strong>VOLUME_CONTROL_FIXED</strong>: Cannot change</li>
+                            <li><strong>VOLUME_CONTROL_RELATIVE</strong>: Relative adjustment</li>
+                            <li><strong>VOLUME_CONTROL_ABSOLUTE</strong>: Absolute value setting</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Up</span>
+                        adjustVolume
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Relative volume adjustment</strong></p>
+                        <ul>
+                            <li><code>onAdjustVolume(direction)</code></li>
+                            <li>ADJUST_RAISE: Increase</li>
+                            <li>ADJUST_LOWER: Decrease</li>
+                            <li>ADJUST_SAME: Maintain</li>
+                            <li>Update with setCurrentVolume()</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Slider</span>
+                        setVolumeTo
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Absolute volume setting</strong></p>
+                        <ul>
+                            <li><code>onSetVolumeTo(value)</code></li>
+                            <li>Range: 0 ~ maxVolume</li>
+                            <li>Requires VOLUME_CONTROL_ABSOLUTE</li>
+                            <li>Immediate volume change</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Media Button Events -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Media Button Events
+            </h2>
+            <p class="section-description">
+                Media button KeyEvent handling flow from Bluetooth headsets, car controls, etc.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant Device as BT Headset
+                    participant System as Android System
+                    participant Session as MediaSession
+                    participant Callback as Session.Callback
+                    participant Player as Player
+
+                    Note over Device,Player: Play/Pause button
+                    Device->>System: KEYCODE_MEDIA_PLAY_PAUSE
+                    System->>Session: onMediaButtonEvent(Intent)
+                    Session->>Session: Extract KeyEvent
+                    Session->>Callback: Default behavior
+
+                    alt Playing State
+                    Callback->>Player: onPause()
+                    Player->>Player: Pause
+                    else Paused State
+                    Callback->>Player: onPlay()
+                    Player->>Player: Play
+                    end
+
+                    Note over Device,Player: Next track button
+                    Device->>System: KEYCODE_MEDIA_NEXT
+                    System->>Session: onMediaButtonEvent(Intent)
+                    Session->>Callback: onSkipToNext()
+                    Callback->>Player: skipToNext()
+                    Player->>Player: Play next track
+
+                    Note over Device,Player: Custom handling
+                    Device->>System: KEYCODE_MEDIA_STOP
+                    System->>Session: onMediaButtonEvent(Intent)
+                    Session->>Callback: Custom onMediaButtonEvent()
+                    Callback->>Callback: Handle custom logic
+                    Callback-->>Session: return true (consumed)
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Keyboard</span>
+                        KeyEvent Types
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Media button KeyCodes</strong></p>
+                        <ul>
+                            <li><code>KEYCODE_MEDIA_PLAY_PAUSE</code></li>
+                            <li><code>KEYCODE_MEDIA_PLAY</code></li>
+                            <li><code>KEYCODE_MEDIA_PAUSE</code></li>
+                            <li><code>KEYCODE_MEDIA_NEXT</code></li>
+                            <li><code>KEYCODE_MEDIA_PREVIOUS</code></li>
+                            <li><code>KEYCODE_MEDIA_STOP</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Refresh</span>
+                        Default Behavior
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Automatic Callback mapping</strong></p>
+                        <ul>
+                            <li>PLAY_PAUSE maps to onPlay() / onPause()</li>
+                            <li>NEXT maps to onSkipToNext()</li>
+                            <li>PREVIOUS maps to onSkipToPrevious()</li>
+                            <li>STOP maps to onStop()</li>
+                            <li>Automatic state-based decisions</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Settings</span>
+                        Custom Handling
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Custom event handling</strong></p>
+                        <ul>
+                            <li>Override <code>onMediaButtonEvent(Intent)</code></li>
+                            <li>Extract KeyEvent from Intent</li>
+                            <li>Implement custom logic</li>
+                            <li>Return true to indicate consumed</li>
+                            <li>Set FLAG_HANDLES_MEDIA_BUTTONS</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Queue Management -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Queue Management
+            </h2>
+            <p class="section-description">
+                Playback queue management and track navigation flow through MediaSession.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant UI as UI / Controller
+                    participant Session as MediaSession
+                    participant Callback as Session.Callback
+                    participant Player as Player
+                    participant Queue as Queue Manager
+
+                    Note over UI,Queue: Set queue
+                    UI->>Session: setQueue(queueItems)
+                    Session->>Queue: Store queue
+                    Session->>UI: onQueueChanged()
+
+                    Note over UI,Queue: Select track
+                    UI->>Session: skipToQueueItem(id)
+                    Session->>Callback: onSkipToQueueItem(id)
+                    Callback->>Queue: getItemById(id)
+                    Queue-->>Callback: MediaItem
+                    Callback->>Player: prepare(mediaItem)
+                    Player->>Player: Load & Play
+
+                    Note over UI,Queue: Next/Previous track
+                    UI->>Session: skipToNext()
+                    Session->>Callback: onSkipToNext()
+                    Callback->>Queue: getNextItem()
+                    Queue-->>Callback: Next MediaItem
+                    Callback->>Player: prepare(nextItem)
+                    Player->>Player: Play next track
+
+                    Session->>Session: setMetadata(nextTrackInfo)
+                    Session->>UI: onMetadataChanged()
+                    UI->>UI: UI update
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">List</span>
+                        Queue Setup
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Set playlist</strong></p>
+                        <ul>
+                            <li><code>setQueue(List&lt;QueueItem&gt;)</code></li>
+                            <li>Each QueueItem has unique ID</li>
+                            <li>Contains MediaDescription</li>
+                            <li>Set title with setQueueTitle()</li>
+                            <li>Auto-displayed on Auto/Wear</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Skip</span>
+                        Skip Callbacks
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Track navigation</strong></p>
+                        <ul>
+                            <li><code>onSkipToNext()</code>: Next track</li>
+                            <li><code>onSkipToPrevious()</code>: Previous track</li>
+                            <li><code>onSkipToQueueItem(id)</code>: Specific track</li>
+                            <li>Look up MediaItem from Queue</li>
+                            <li>Prepare and play on Player</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Refresh</span>
+                        Active Queue Item
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Show currently playing track</strong></p>
+                        <ul>
+                            <li><code>setActiveQueueItemId(id)</code></li>
+                            <li>Identifies current playing item</li>
+                            <li>Highlights in UI</li>
+                            <li>Syncs with Auto/Wear</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Error Handling -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Error Handling and State Management
+            </h2>
+            <p class="section-description">
+                Error handling and state transition flow in MediaSession.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    NONE["STATE_NONE<br />(Initial state)"]
+                    BUFFERING["STATE_BUFFERING<br />(Buffering)"]
+                    PLAYING["STATE_PLAYING<br />(Playing)"]
+                    PAUSED["STATE_PAUSED<br />(Paused)"]
+                    STOPPED["STATE_STOPPED<br />(Stopped)"]
+                    ERROR["STATE_ERROR<br />(Error)"]
+
+                    NONE --> BUFFERING
+                    BUFFERING --> PAUSED
+                    BUFFERING --> PLAYING
+                    NONE -->|prepare| BUFFERING
+                    BUFFERING -->|Ready| PAUSED
+                    BUFFERING -->|play| PLAYING
+                    BUFFERING -->|Error| ERROR
+
+                    PLAYING -->|pause| PAUSED
+                    PLAYING -->|stop| STOPPED
+                    PLAYING -->|Error| ERROR
+                    PLAYING -->|Buffering| BUFFERING
+
+                    PAUSED -->|play| PLAYING
+                    PAUSED -->|stop| STOPPED
+
+                    STOPPED -->|prepare| BUFFERING
+
+                    ERROR -->|reset| NONE
+                    ERROR -->|retry| BUFFERING
+
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Warning</span>
+                        Error State Setup
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Deliver error information</strong></p>
+                        <ul>
+                            <li><code>setState(STATE_ERROR)</code></li>
+                            <li>setErrorMessage() for error message</li>
+                            <li>PlaybackStateCompat.ERROR_CODE_* codes</li>
+                            <li>Auto-delivered to Controller</li>
+                            <li>Display error in UI</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Refresh</span>
+                        Retry Logic
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Error recovery</strong></p>
+                        <ul>
+                            <li>Network error: Retry</li>
+                            <li>Audio Focus failure: Wait and re-request</li>
+                            <li>Player error: reset() and re-prepare</li>
+                            <li>Max retry count limit</li>
+                            <li>Apply backoff strategy</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Chart</span>
+                        State Transitions
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>PlaybackState management</strong></p>
+                        <ul>
+                            <li>setState() on all state changes</li>
+                            <li>Update Position, Speed</li>
+                            <li>Set Available Actions</li>
+                            <li>Add Custom Actions</li>
+                            <li>Immediately reflected in Controller</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">Shield</span>
+                        Defensive Programming
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Ensure stability</strong></p>
+                        <ul>
+                            <li>Thorough null checks</li>
+                            <li>Verify lifecycle state</li>
+                            <li>Handle exceptions with Try-Catch</li>
+                            <li>Guarantee resource release</li>
+                            <li>Prevent crashes</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>MediaSession API Detailed Flows</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                Case-by-case processing logic and Best Practices
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="../mediasession.html" style="color: var(--accent-media); text-decoration: none;">
+                    ← Back to MediaSession Framework
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

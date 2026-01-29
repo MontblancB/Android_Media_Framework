@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Media Glossary</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="../index.html" class="nav-button">
+            ← Android Media Framework
+        </a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Android Media Glossary</h1>
+            <p class="page-subtitle">Media Framework Terminology Dictionary (Alphabetical)</p>
+        </header>
+
+
+
+        <!-- Alphabet Navigation -->
+        <div class="alphabet-nav">
+            <a href="#A">A</a>
+            <a href="#B">B</a>
+            <a href="#C">C</a>
+            <a href="#D">D</a>
+            <a href="#E">E</a>
+            <a href="#F">F</a>
+            <a href="#G">G</a>
+            <a href="#H">H</a>
+            <a href="#I">I</a>
+            <a href="#L">L</a>
+            <a href="#M">M</a>
+            <a href="#N">N</a>
+            <a href="#O">O</a>
+            <a href="#P">P</a>
+            <a href="#R">R</a>
+            <a href="#S">S</a>
+            <a href="#T">T</a>
+            <a href="#U">U</a>
+            <a href="#V">V</a>
+            <a href="#W">W</a>
+        </div>
+
+        <!-- Section A -->
+        <section id="A" class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>A</h2>
+
+            <div class="term-card">
+                <div class="term-title">AAC (Advanced Audio Coding)</div>
+                <div class="term-definition">
+                    A successor audio codec to MP3, providing better sound quality at the same bitrate. MIME type: <code>audio/mp4a-latm</code>. The most widely used audio codec on Android.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Codec</span>
+                    <span class="tag">Audio</span>
+                    <span class="tag">MPEG-4</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">ABR (Adaptive Bitrate Streaming)</div>
+                <div class="term-definition">
+                    A streaming technology that dynamically adjusts video quality based on network bandwidth. HLS, DASH, and SmoothStreaming are representative examples. ExoPlayer's <code>DefaultTrackSelector</code> handles ABR automatically.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Streaming</span>
+                    <span class="tag">ExoPlayer</span>
+                    <span class="tag">HLS</span>
+                    <span class="tag">DASH</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">ACodec</div>
+                <div class="term-definition">
+                    Android's Native-level codec wrapper that abstracts OMX (OpenMAX) codecs. Replaced by <code>CCodec</code> in Codec 2.0. Part of the <code>stagefright</code> library.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Native</span>
+                    <span class="tag">OMX</span>
+                    <span class="tag">Codec</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">AIDL (Android Interface Definition Language)</div>
+                <div class="term-definition">
+                    An interface definition language for inter-process communication (IPC). Replaces HIDL in HAL 3.0+, and is used by MediaCodec, AudioFlinger, and others.
+                </div>
+                <div class="term-related">
+                    <span class="tag">IPC</span>
+                    <span class="tag">HAL</span>
+                    <span class="tag">Binder</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Audio Focus</div>
+                <div class="term-definition">
+                    An Android system that manages priority when multiple apps play audio simultaneously. Request with <code>AudioManager.requestAudioFocus()</code>, and receive <code>AUDIOFOCUS_LOSS</code> callback when another app acquires focus.
+                </div>
+                <div class="term-related">
+                    <span class="tag">AudioManager</span>
+                    <span class="tag">Ducking</span>
+                    <span class="tag">Policy</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">AudioFlinger</div>
+                <div class="term-definition">
+                    Android's Native audio server that mixes all audio streams and delivers them to the HAL. Backend for <code>AudioTrack</code> and <code>AudioRecord</code>. Check status with <code>dumpsys media.audio_flinger</code>.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Native</span>
+                    <span class="tag">Audio HAL</span>
+                    <span class="tag">Mixing</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">AVC (Advanced Video Coding)</div>
+                <div class="term-definition">
+                    The official name for H.264. MIME type: <code>video/avc</code>. The most widely used video codec, supported by all Android devices.
+                </div>
+                <div class="term-related">
+                    <span class="tag">H.264</span>
+                    <span class="tag">Codec</span>
+                    <span class="tag">Video</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section B -->
+        <section id="B" class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>B</h2>
+
+            <div class="term-card">
+                <div class="term-title">Binder</div>
+                <div class="term-definition">
+                    Android's inter-process communication (IPC) mechanism. Used for communication between Framework and Native Services. Check Binder services with <code>dumpsys</code> and <code>service list</code> commands.
+                </div>
+                <div class="term-related">
+                    <span class="tag">IPC</span>
+                    <span class="tag">Kernel</span>
+                    <span class="tag">AIDL</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Buffer</div>
+                <div class="term-definition">
+                    A memory area for temporarily storing media data. MediaCodec's <code>ByteBuffer</code> and ExoPlayer's <code>LoadControl</code> manage buffers. Buffering is the process of preloading sufficient data before playback.
+                </div>
+                <div class="term-related">
+                    <span class="tag">MediaCodec</span>
+                    <span class="tag">ExoPlayer</span>
+                    <span class="tag">Memory</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section C -->
+        <section id="C" class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>C</h2>
+
+            <div class="term-card">
+                <div class="term-title">CCodec</div>
+                <div class="term-definition">
+                    The client wrapper for Codec 2.0. Replaces ACodec (OMX) and communicates with Codec 2.0 HAL through <code>IComponentStore</code>. Default codec on Android 10+.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Codec 2.0</span>
+                    <span class="tag">HAL</span>
+                    <span class="tag">Native</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">CDD (Compatibility Definition Document)</div>
+                <div class="term-definition">
+                    A document defining policy requirements that Android devices must comply with. Basis for CTS testing, using Requirement IDs in [C-X-Y] format. Example: [C-1-1] = Handheld MUST support H.264 1080p@30fps.
+                </div>
+                <div class="term-related">
+                    <span class="tag">CTS</span>
+                    <span class="tag">Compatibility</span>
+                    <span class="tag">Policy</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Codec</div>
+                <div class="term-definition">
+                    Short for Coder-Decoder, software or hardware that encodes/decodes media data. Includes H.264, H.265 (video), AAC, Opus (audio), and others.
+                </div>
+                <div class="term-related">
+                    <span class="tag">H.264</span>
+                    <span class="tag">AAC</span>
+                    <span class="tag">MediaCodec</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Codec 2.0</div>
+                <div class="term-definition">
+                    The next-generation codec HAL for Android 9+. Replaces OMX and provides a modern C++17-based API. Uses <code>C2Component</code> and <code>C2Work</code> structures.
+                </div>
+                <div class="term-related">
+                    <span class="tag">HAL</span>
+                    <span class="tag">CCodec</span>
+                    <span class="tag">Native</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">CTS (Compatibility Test Suite)</div>
+                <div class="term-definition">
+                    The Android compatibility verification test suite. <code>CtsMediaTestCases</code> tests MediaCodec, MediaPlayer, DRM, and more. Run with the <code>cts-tradefed</code> harness.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Testing</span>
+                    <span class="tag">CDD</span>
+                    <span class="tag">VTS</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section D -->
+        <section id="D" class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>D</h2>
+
+            <div class="term-card">
+                <div class="term-title">DASH (Dynamic Adaptive Streaming over HTTP)</div>
+                <div class="term-definition">
+                    An ABR streaming protocol standardized by MPEG. Provides segment information through manifest files (.mpd). Play with ExoPlayer's <code>DashMediaSource</code>.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Streaming</span>
+                    <span class="tag">ABR</span>
+                    <span class="tag">ExoPlayer</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Demuxer</div>
+                <div class="term-definition">
+                    A component that separates (demultiplexes) video/audio streams from container files (MP4, MKV). Android's <code>MediaExtractor</code> serves as the demuxer.
+                </div>
+                <div class="term-related">
+                    <span class="tag">MediaExtractor</span>
+                    <span class="tag">Container</span>
+                    <span class="tag">Muxer</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">DRM (Digital Rights Management)</div>
+                <div class="term-definition">
+                    Technology to prevent illegal copying of digital content. Android supports Widevine, PlayReady, and ClearKey. Manage licenses with the <code>MediaDrm</code> API.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Widevine</span>
+                    <span class="tag">MediaDrm</span>
+                    <span class="tag">Security</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Ducking</div>
+                <div class="term-definition">
+                    The behavior of reducing (ducking) volume instead of stopping playback when audio focus is lost. Reduce volume to 20% on <code>AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK</code> events. Navigation TTS is a typical example.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Audio Focus</span>
+                    <span class="tag">AudioManager</span>
+                    <span class="tag">AAOS</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section E -->
+        <section id="E" class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>E</h2>
+
+            <div class="term-card">
+                <div class="term-title">ExoPlayer</div>
+                <div class="term-definition">
+                    An open-source media player library developed by Google. More flexible than MediaPlayer and supports DASH/HLS, DRM, and ABR. Now migrated to <code>androidx.media3</code>.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Media3</span>
+                    <span class="tag">Player</span>
+                    <span class="tag">AndroidX</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section F -->
+        <section id="F" class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>F</h2>
+
+            <div class="term-card">
+                <div class="term-title">Frame Drop</div>
+                <div class="term-definition">
+                    The phenomenon of skipping certain frames during video playback. Caused by CPU/GPU overload, insufficient buffer, or decoding delays. Monitor with <code>dumpsys SurfaceFlinger</code>.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Performance</span>
+                    <span class="tag">SurfaceFlinger</span>
+                    <span class="tag">Rendering</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">ftrace</div>
+                <div class="term-definition">
+                    Linux kernel event tracing tool. Backend for perfetto and systrace. Can be directly controlled at <code>/sys/kernel/debug/tracing</code>.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Kernel</span>
+                    <span class="tag">perfetto</span>
+                    <span class="tag">Debugging</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section H -->
+        <section id="H" class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>H</h2>
+
+            <div class="term-card">
+                <div class="term-title">H.264 (AVC)</div>
+                <div class="term-definition">
+                    The most widely used video codec. MIME type: <code>video/avc</code>. Supports Baseline/Main/High Profile and is a required codec for all devices per Android CDD.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Codec</span>
+                    <span class="tag">AVC</span>
+                    <span class="tag">MPEG-4</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">H.265 (HEVC)</div>
+                <div class="term-definition">
+                    Successor to H.264, using 50% less bitrate for the same quality. MIME type: <code>video/hevc</code>. Primarily used for 4K/8K video.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Codec</span>
+                    <span class="tag">HEVC</span>
+                    <span class="tag">4K</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">HAL (Hardware Abstraction Layer)</div>
+                <div class="term-definition">
+                    The interface layer between Android Framework and hardware drivers. Includes Audio HAL, Codec HAL, and others, defined using HIDL/AIDL.
+                </div>
+                <div class="term-related">
+                    <span class="tag">HIDL</span>
+                    <span class="tag">AIDL</span>
+                    <span class="tag">Vendor</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">HDCP (High-bandwidth Digital Content Protection)</div>
+                <div class="term-definition">
+                    Content protection technology for HDMI/DisplayPort. Widevine L1 content requires HDCP 2.2 or higher for external display output.
+                </div>
+                <div class="term-related">
+                    <span class="tag">DRM</span>
+                    <span class="tag">HDMI</span>
+                    <span class="tag">Widevine</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">HIDL (Hardware Interface Definition Language)</div>
+                <div class="term-definition">
+                    HAL interface definition language for Android 8.0+. Used by Codec 2.0, Audio HAL 6.0, and others. Being replaced by AIDL in Android 11+.
+                </div>
+                <div class="term-related">
+                    <span class="tag">HAL</span>
+                    <span class="tag">AIDL</span>
+                    <span class="tag">Treble</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">HLS (HTTP Live Streaming)</div>
+                <div class="term-definition">
+                    An ABR streaming protocol developed by Apple. Provides segments through manifest files (.m3u8). Play with ExoPlayer's <code>HlsMediaSource</code>.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Streaming</span>
+                    <span class="tag">ABR</span>
+                    <span class="tag">Apple</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section I -->
+        <section id="I" class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>I</h2>
+
+            <div class="term-card">
+                <div class="term-title">I-Frame (Intra-coded Frame)</div>
+                <div class="term-definition">
+                    A frame in video that can be decoded independently. Seek operations move to the nearest I-Frame. The starting frame of a GOP (Group of Pictures).
+                </div>
+                <div class="term-related">
+                    <span class="tag">Codec</span>
+                    <span class="tag">Seek</span>
+                    <span class="tag">GOP</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">IPC (Inter-Process Communication)</div>
+                <div class="term-definition">
+                    Mechanism for exchanging data between different processes in Android. Includes Binder, Socket, Pipe, and others. The media framework primarily uses Binder.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Binder</span>
+                    <span class="tag">AIDL</span>
+                    <span class="tag">HIDL</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section L -->
+        <section id="L" class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>L</h2>
+
+            <div class="term-card">
+                <div class="term-title">Latency</div>
+                <div class="term-definition">
+                    Time delay from audio input to output. Android CDD requires less than or equal to 100ms for Automotive devices and less than or equal to 80ms for Handheld. Enable low-latency mode with <code>AudioTrack.PERFORMANCE_MODE_LOW_LATENCY</code>.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Audio</span>
+                    <span class="tag">Performance</span>
+                    <span class="tag">CDD</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section M -->
+        <section id="M" class="content-section section">
+            <h2 class="section-title"><span class="section-number">10</span>M</h2>
+
+            <div class="term-card">
+                <div class="term-title">Media3</div>
+                <div class="term-definition">
+                    The AndroidX migration version of ExoPlayer 2.x. Package name changed to <code>androidx.media3.*</code>, with new features like MediaSession integration added.
+                </div>
+                <div class="term-related">
+                    <span class="tag">ExoPlayer</span>
+                    <span class="tag">AndroidX</span>
+                    <span class="tag">Migration</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">MediaCodec</div>
+                <div class="term-definition">
+                    Android's low-level codec API. Directly control encoding/decoding with <code>configure()</code>, <code>start()</code>, <code>queueInputBuffer()</code>, and <code>dequeueOutputBuffer()</code>.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Codec</span>
+                    <span class="tag">Framework</span>
+                    <span class="tag">Native</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">MediaExtractor</div>
+                <div class="term-definition">
+                    An Android API that extracts audio/video tracks from container files (MP4, MKV). Read frame data with <code>readSampleData()</code>.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Demuxer</span>
+                    <span class="tag">Container</span>
+                    <span class="tag">Framework</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">MediaPlayer</div>
+                <div class="term-definition">
+                    Android's high-level media playback API. Easy to play with <code>setDataSource()</code>, <code>prepare()</code>, and <code>start()</code>, but customization is limited.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Player</span>
+                    <span class="tag">Framework</span>
+                    <span class="tag">Legacy</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">MediaSession</div>
+                <div class="term-definition">
+                    API for sharing playback state and metadata with the system. Enables playback control from lock screen, Android Auto, and Wear OS.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Framework</span>
+                    <span class="tag">Notification</span>
+                    <span class="tag">AAOS</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">MIME Type</div>
+                <div class="term-definition">
+                    Standard string representing media format. Examples: <code>video/avc</code> (H.264), <code>audio/mp4a-latm</code> (AAC). Used in <code>MediaCodec.createDecoderByType()</code>.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Codec</span>
+                    <span class="tag">Format</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Muxer</div>
+                <div class="term-definition">
+                    A component that combines (multiplexes) multiple streams into a single container file. Android's <code>MediaMuxer</code> serves as the muxer.
+                </div>
+                <div class="term-related">
+                    <span class="tag">MediaMuxer</span>
+                    <span class="tag">Container</span>
+                    <span class="tag">Demuxer</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section O -->
+        <section id="O" class="content-section section">
+            <h2 class="section-title"><span class="section-number">11</span>O</h2>
+
+            <div class="term-card">
+                <div class="term-title">OMX (OpenMAX)</div>
+                <div class="term-definition">
+                    Standard interface for multimedia codecs. Used as codec HAL on Android 8 and below, replaced by Codec 2.0 on Android 9+.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Legacy</span>
+                    <span class="tag">Codec 2.0</span>
+                    <span class="tag">HAL</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section P -->
+        <section id="P" class="content-section section">
+            <h2 class="section-title"><span class="section-number">12</span>P</h2>
+
+            <div class="term-card">
+                <div class="term-title">perfetto</div>
+                <div class="term-definition">
+                    System tracing tool for Android 10+. Traces CPU, GPU, Memory, and Binder IPC. Analyze with the <code>ui.perfetto.dev</code> web UI.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Debugging</span>
+                    <span class="tag">Profiling</span>
+                    <span class="tag">ftrace</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">Performance Class</div>
+                <div class="term-definition">
+                    Media performance grades introduced in Android 12+. Divided into Class 11/12/13/14, each with different codec performance, RAM, and display requirements. Check with <code>Build.VERSION.MEDIA_PERFORMANCE_CLASS</code>.
+                </div>
+                <div class="term-related">
+                    <span class="tag">CDD</span>
+                    <span class="tag">Performance</span>
+                    <span class="tag">Android 12+</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section R -->
+        <section id="R" class="content-section section">
+            <h2 class="section-title"><span class="section-number">13</span>R</h2>
+
+            <div class="term-card">
+                <div class="term-title">Renderer</div>
+                <div class="term-definition">
+                    Component that renders media in ExoPlayer. Includes <code>MediaCodecVideoRenderer</code>, <code>MediaCodecAudioRenderer</code>, and custom renderers can be implemented.
+                </div>
+                <div class="term-related">
+                    <span class="tag">ExoPlayer</span>
+                    <span class="tag">Rendering</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section S -->
+        <section id="S" class="content-section section">
+            <h2 class="section-title"><span class="section-number">14</span>S</h2>
+
+            <div class="term-card">
+                <div class="term-title">SPS/PPS (Sequence/Picture Parameter Set)</div>
+                <div class="term-definition">
+                    Configuration data for H.264/H.265 video streams. Includes resolution, profile, color format, etc. Passed to MediaCodec via <code>MediaFormat.KEY_CSD_0</code>.
+                </div>
+                <div class="term-related">
+                    <span class="tag">H.264</span>
+                    <span class="tag">Codec</span>
+                    <span class="tag">Configuration</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">SurfaceFlinger</div>
+                <div class="term-definition">
+                    Android's screen compositing service. Combines all Surfaces and sends them to the display. Check frame drops, Vsync, etc. with <code>dumpsys SurfaceFlinger</code>.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Graphics</span>
+                    <span class="tag">Native</span>
+                    <span class="tag">Rendering</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section T -->
+        <section id="T" class="content-section section">
+            <h2 class="section-title"><span class="section-number">15</span>T</h2>
+
+            <div class="term-card">
+                <div class="term-title">Track</div>
+                <div class="term-definition">
+                    Individual stream within a media container. Includes video track, audio track, subtitle track, etc. Select with <code>MediaExtractor.selectTrack()</code>.
+                </div>
+                <div class="term-related">
+                    <span class="tag">MediaExtractor</span>
+                    <span class="tag">Container</span>
+                    <span class="tag">Stream</span>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-title">TrackSelector</div>
+                <div class="term-definition">
+                    Component that selects tracks to play in ExoPlayer. <code>DefaultTrackSelector</code> automatically manages ABR, language, and quality priorities.
+                </div>
+                <div class="term-related">
+                    <span class="tag">ExoPlayer</span>
+                    <span class="tag">ABR</span>
+                    <span class="tag">Track</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section U -->
+        <section id="U" class="content-section section">
+            <h2 class="section-title"><span class="section-number">16</span>U</h2>
+
+            <div class="term-card">
+                <div class="term-title">Underrun</div>
+                <div class="term-definition">
+                    Phenomenon where playback is interrupted due to empty audio buffer. Check with <code>underruns</code> counter in <code>dumpsys media.audio_flinger</code>. Caused by insufficient CPU or buffer size.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Audio</span>
+                    <span class="tag">AudioFlinger</span>
+                    <span class="tag">Performance</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section V -->
+        <section id="V" class="content-section section">
+            <h2 class="section-title"><span class="section-number">17</span>V</h2>
+
+            <div class="term-card">
+                <div class="term-title">VTS (Vendor Test Suite)</div>
+                <div class="term-definition">
+                    Test suite for verifying HAL implementations. Tests Codec HAL, Audio HAL, and others. Run with the <code>vts-tradefed</code> harness.
+                </div>
+                <div class="term-related">
+                    <span class="tag">Testing</span>
+                    <span class="tag">HAL</span>
+                    <span class="tag">CTS</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section W -->
+        <section id="W" class="content-section section">
+            <h2 class="section-title"><span class="section-number">18</span>W</h2>
+
+            <div class="term-card">
+                <div class="term-title">Widevine</div>
+                <div class="term-definition">
+                    Google's DRM solution. Has two security levels: L1 (hardware TEE) and L3 (software). Request licenses with the <code>MediaDrm</code> API.
+                </div>
+                <div class="term-related">
+                    <span class="tag">DRM</span>
+                    <span class="tag">Security</span>
+                    <span class="tag">Google</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Back to Home -->
+        <section style="text-align: center; padding: 3rem;" class="content-section section">
+            <a href="../index.html" style="display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; transition: transform 0.3s ease;">
+                ← Back to Main Page
+            </a>
+        </section>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+</html>

@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Ready Mobile Apps (CarMa)</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">Car Ready Mobile Apps (CarMa)</h1>
+            <p class="page-subtitle">Google's new program for extending existing mobile apps to automotive</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Program Overview
+            </h2>
+            <p class="section-description">
+                The 'Car Ready Mobile Apps' program announced at Google I/O 2024 is an initiative that allows existing mobile apps to run on automotive infotainment systems (AAOS) with minimal modifications.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Core Goal:</strong> Enable developers to offer their existing tablet/large-screen mobile apps to automotive users without developing a separate vehicle-specific app from scratch.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Target Categories
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Video Apps</strong>: YouTube, Netflix, and other streaming services</li>
+                            <li><strong>Games</strong>: Touch-based casual games</li>
+                            <li><strong>Browsers</strong>: Web browsing apps</li>
+                            <li><strong>Weather/IoT</strong>: (Future expansion potential)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🅿️</span>
+                        Execution Conditions
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Parked state only</strong> - Can only run when parked</li>
+                            <li>Blocked or audio-only playback while driving</li>
+                            <li>Must comply with driver distraction prevention guidelines</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✨</span>
+                        Key Benefits
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Reduced Development Cost</strong>: Reuse existing code</li>
+                            <li><strong>Fast Deployment</strong>: Automatic compatibility review</li>
+                            <li><strong>Google Play</strong>: Register in automotive Play Store</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture & Flow -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Operating Principles and Architecture
+            </h2>
+            <p class="section-description">
+                Car Ready Mobile Apps operate on top of AAOS's 'Compatibility Mode'.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Mobile_App["📱 Existing Mobile App"]
+                    UI[Phone/Tablet UI Layout]
+                    Logic[App Logic]
+                    end
+
+                    subgraph AAOS["🚗 Android Automotive OS"]
+                    Compat[Compatibility Mode Container]
+                    Window[Window Manager]
+                    Input[Input Manager]
+                    end
+
+                    subgraph Safety["🛡️ Safety Layer"]
+                    Driving[Driving State Monitor]
+                    Block[UX Restriction Engine]
+                    end
+
+                    UI -->|Rendered in| Compat
+                    Compat -->|Managed by| Window
+                    Input -->|Touch/Key Events| Compat
+
+                    Driving -->|Check State| Block
+                    Block -->|If Driving| Compat
+
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Compatibility Mode
+                    </h3>
+                    <div class="card-description">
+                        <p>A system container that helps apps render properly on vehicle displays.</p>
+                        <ul>
+                            <li><strong>Aspect Ratio Adjustment</strong>: Letterbox/pillarbox handling for various vehicle displays</li>
+                            <li><strong>Input Translation</strong>: Convert or restrict inputs like rotary knobs to touch events</li>
+                            <li><strong>System Bar Handling</strong>: Coordination with status bar and navigation bar</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        Safety Mechanisms
+                    </h3>
+                    <div class="card-description">
+                        <p>Controls behavior with driver safety as the top priority.</p>
+                        <ul>
+                            <li><strong>Driving Detection</strong>: Block app screen when gear is in D/R or speed is non-zero</li>
+                            <li><strong>Media Handling</strong>: For video apps, turn off video while driving and play audio only (Background Play)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Requirements -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Development and Deployment Requirements
+            </h2>
+            <p class="section-description">
+                Key technical requirements for participating in the Car Ready Mobile Apps program.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Large Screen Support Required
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Layout supporting tablet and foldable devices</li>
+                            <li>Landscape mode support required</li>
+                            <li>Responsive Design</li>
+                            <li><code>resizableActivity="true"</code> setting</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        Quality Guidelines
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Touch Target</strong>: Minimum 48dp (not usable while driving, but convenient when parked)</li>
+                            <li><strong>Text Size</strong>: Appropriate size for readability</li>
+                            <li><strong>Permission Requests</strong>: Handle unnecessary permissions (camera, location, etc.) gracefully in vehicles</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧪</span>
+                        Testing and Verification
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Android Studio Emulator</strong>: Use Automotive with Play Store image</li>
+                            <li><strong>System Image</strong>: API Level 33+ (Tiramisu or later) recommended</li>
+                            <li><strong>Desktop Head Unit (DHU)</strong>: Use developer head unit simulator</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Code Examples and Configuration -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Code Examples and Configuration
+            </h2>
+            <p class="section-description">
+                Actual code examples and configuration methods for converting existing mobile apps to CarMa compatible.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📄 AndroidManifest.xml Configuration
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.videoapp"&gt;
+
+    &lt;!-- Automotive support declaration --&gt;
+    &lt;uses-feature
+        android:name="android.hardware.type.automotive"
+        android:required="false" /&gt;
+
+    &lt;!-- Parked-only app declaration --&gt;
+    &lt;uses-feature
+        android:name="android.software.car.templates_host"
+        android:required="false" /&gt;
+
+    &lt;application
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"&gt;
+
+        &lt;!-- CarMa Compatible Activity --&gt;
+        &lt;activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
+            android:screenOrientation="userLandscape"&gt;
+
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.MAIN" /&gt;
+                &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
+
+                &lt;!-- Display in Automotive launcher --&gt;
+                &lt;category android:name="android.intent.category.APP_VIDEOS" /&gt;
+            &lt;/intent-filter&gt;
+
+            &lt;!-- CarMa metadata --&gt;
+            &lt;meta-data
+                android:name="distractionOptimized"
+                android:value="false" /&gt;
+        &lt;/activity&gt;
+
+        &lt;!-- Media service (for background playback) --&gt;
+        &lt;service
+            android:name=".MediaPlaybackService"
+            android:exported="true"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="androidx.media3.session.MediaSessionService" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/service&gt;
+    &lt;/application&gt;
+&lt;/manifest&gt;</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎨 Large Screen Layout (res/layout-w600dp)
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- res/layout-w600dp/activity_main.xml --&gt;
+&lt;androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"&gt;
+
+    &lt;!-- Left: Video Player --&gt;
+    &lt;com.google.android.exoplayer2.ui.PlayerView
+        android:id="@+id/player_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/controls_panel"
+        app:layout_constraintWidth_percent="0.7" /&gt;
+
+    &lt;!-- Right: Control Panel --&gt;
+    &lt;LinearLayout
+        android:id="@+id/controls_panel"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:padding="24dp"
+        app:layout_constraintStart_toEndOf="@id/player_view"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintWidth_percent="0.3"&gt;
+
+        &lt;TextView
+            android:id="@+id/video_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="24sp"
+            android:textStyle="bold" /&gt;
+
+        &lt;!-- Playback control buttons (minimum 48dp touch target) --&gt;
+        &lt;Button
+            android:id="@+id/btn_play_pause"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="16dp"
+            android:text="Play/Pause" /&gt;
+
+        &lt;Button
+            android:id="@+id/btn_next"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:text="Next" /&gt;
+    &lt;/LinearLayout&gt;
+&lt;/androidx.constraintlayout.widget.ConstraintLayout&gt;</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Key Configuration Items
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>resizeableActivity="true"</code>: Support various screen sizes</li>
+                            <li><code>screenOrientation="userLandscape"</code>: Landscape mode priority</li>
+                            <li><code>configChanges</code>: Prevent recreation on rotation</li>
+                            <li><code>distractionOptimized="false"</code>: Run only when parked</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📐</span>
+                        Layout Breakpoints
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>layout-w600dp</code>: Tablet/vehicle (7"+)</li>
+                            <li><code>layout-w840dp</code>: Large vehicle display (10"+)</li>
+                            <li><code>layout-land</code>: Landscape mode only layout</li>
+                            <li>Implement responsive with ConstraintLayout or Compose</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Driving State Detection API -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Driving State Detection API
+            </h2>
+            <p class="section-description">
+                Explains how to detect the vehicle's driving state to restrict UI or switch to background playback.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🚗 Using CarUxRestrictionsManager
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// build.gradle
+dependencies {
+    implementation 'androidx.car.app:app:1.4.0'
+}
+
+// MainActivity.kt
+class MainActivity : ComponentActivity() {
+    private lateinit var carUxRestrictionsManager: CarUxRestrictionsManager
+    private var isParked = true
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Initialize Car UX Restrictions Manager
+        val car = Car.createCar(this)
+        carUxRestrictionsManager = car.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE)
+            as CarUxRestrictionsManager
+
+        // Register driving state change listener
+        carUxRestrictionsManager.registerListener { restrictions ->
+            handleUxRestrictions(restrictions)
+        }
+    }
+
+    private fun handleUxRestrictions(restrictions: CarUxRestrictions) {
+        isParked = !restrictions.isRequiresDistractionOptimization
+
+        if (isParked) {
+            // Parked state: Show full UI
+            showFullUI()
+        } else {
+            // Driving: Block screen or play audio only
+            switchToAudioOnlyMode()
+        }
+    }
+
+    private fun showFullUI() {
+        // Show video player
+        findViewById<PlayerView>(R.id.player_view).visibility = View.VISIBLE
+
+        // Enable control panel
+        findViewById<View>(R.id.controls_panel).isEnabled = true
+    }
+
+    private fun switchToAudioOnlyMode() {
+        // Hide video player
+        findViewById<PlayerView>(R.id.player_view).visibility = View.GONE
+
+        // Audio continues playing (via MediaSession)
+        // Display "Not available while driving" message on screen
+        showDrivingBlockedMessage()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        carUxRestrictionsManager.unregisterListener()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 Driving State Transition Flow
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant User as User
+                    participant App as CarMa App
+                    participant UXR as CarUxRestrictionsManager
+                    participant Vehicle as Vehicle System
+
+                    User->>Vehicle: Start engine & gear to D
+                    Vehicle->>UXR: Driving State Change
+                    UXR->>App: onUxRestrictionsChanged(driving=true)
+
+                    App->>App: switchToAudioOnlyMode()
+                    App->>User: Display screen blocked message
+
+                    Note over App: Hide video, play audio only
+
+                    User->>Vehicle: Park & gear to P
+                    Vehicle->>UXR: Driving State Change
+                    UXR->>App: onUxRestrictionsChanged(parked=true)
+
+                    App->>App: showFullUI()
+                    App->>User: Display full UI
+
+                    Note over App: Resume video playback
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        UX Restriction Types
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>NO_SETUP</code>: Block settings screen</li>
+                            <li><code>NO_VIDEO</code>: Block video playback</li>
+                            <li><code>LIMIT_STRING_LENGTH</code>: Limit text length</li>
+                            <li><code>NO_KEYBOARD</code>: Block keyboard input</li>
+                            <li><code>LIMIT_CONTENT</code>: Limit content list</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        Important Notes
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Ignoring UX Restrictions may result in Play Store rejection</li>
+                            <li>Displaying video while driving may be legally prohibited</li>
+                            <li>Emulator is always in parked state</li>
+                            <li>Must test on actual vehicle</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Compatibility Mode Details -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Compatibility Mode Details
+            </h2>
+            <p class="section-description">
+                Explains the mechanism by which AAOS's Compatibility Mode renders mobile apps on vehicle displays.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📐 Aspect Ratio Adjustment
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Mobile App Ratios
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Typical ratios:</strong> 9:16 (portrait), 16:9 (landscape)</li>
+                            <li><strong>Foldables:</strong> 5:4, 4:3, etc.</li>
+                            <li><strong>Tablets:</strong> 16:10, 3:2</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Vehicle Display Ratios
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Standard IVI:</strong> 16:9, 16:10</li>
+                            <li><strong>Wide:</strong> 21:9, 32:9 (Ultra Wide)</li>
+                            <li><strong>Portrait:</strong> 9:16 (Tesla Model S/X)</li>
+                            <li><strong>Custom:</strong> OEM-specific ratios</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Vehicle Display</th>
+                        <th>Resolution</th>
+                        <th>Ratio</th>
+                        <th>Handling Method</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Standard IVI</td>
+                        <td>1920x1080</td>
+                        <td>16:9</td>
+                        <td>Full screen rendering</td>
+                    </tr>
+                    <tr>
+                        <td>Ultra Wide</td>
+                        <td>3840x1080</td>
+                        <td>32:9</td>
+                        <td>Left/right letterbox (black bars)</td>
+                    </tr>
+                    <tr>
+                        <td>Tesla Portrait</td>
+                        <td>1200x1920</td>
+                        <td>9:16</td>
+                        <td>Display mobile app as-is</td>
+                    </tr>
+                    <tr>
+                        <td>Dual Screen</td>
+                        <td>1920x720 each</td>
+                        <td>Variable</td>
+                        <td>Use only one screen</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎮 Input Translation
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🖱️</span>
+                        Supported Input Methods
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Touchscreen:</strong> Supported by most vehicles</li>
+                            <li><strong>Rotary Knob:</strong> Rotation → scroll event conversion</li>
+                            <li><strong>D-Pad:</strong> Directional keys → focus movement</li>
+                            <li><strong>Voice:</strong> Google Assistant integration</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Input Handling Recommendations
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Maintain minimum 48dp touch target</li>
+                            <li>Support rotary knob (scrollable UI)</li>
+                            <li>Clear keyboard focus order</li>
+                            <li>Voice command support (optional)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Background Playback -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Background Playback (Video Apps)
+            </h2>
+            <p class="section-description">
+                Explains MediaSession integration for hiding video and playing audio only while driving.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎵 MediaSession API Implementation
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// build.gradle
+dependencies {
+    implementation 'androidx.media3:media3-session:1.2.0'
+    implementation 'androidx.media3:media3-exoplayer:1.2.0'
+}
+
+// MediaPlaybackService.kt
+class MediaPlaybackService : MediaSessionService() {
+    private var mediaSession: MediaSession? = null
+    private lateinit var player: ExoPlayer
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // Initialize ExoPlayer
+        player = ExoPlayer.Builder(this).build()
+
+        // Create MediaSession
+        mediaSession = MediaSession.Builder(this, player)
+            .setCallback(MediaSessionCallback())
+            .build()
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
+        return mediaSession
+    }
+
+    override fun onDestroy() {
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
+        }
+        super.onDestroy()
+    }
+
+    // MediaSession Callback
+    private inner class MediaSessionCallback : MediaSession.Callback {
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): MediaSession.ConnectionResult {
+            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                .setAvailableSessionCommands(
+                    MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS
+                )
+                .build()
+        }
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        Background Playback Recommendations
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>MediaSession implementation required</li>
+                            <li>Set MediaMetadata (title, artist, album art)</li>
+                            <li>Display Notification media controls</li>
+                            <li>Audio focus management</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚫</span>
+                        PiP Restrictions
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>CarMa apps do not support PiP</li>
+                            <li>Video must be completely hidden while driving</li>
+                            <li>Small video windows not allowed</li>
+                            <li>Must switch to audio-only UI</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Play Store Submission -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Play Store Submission Process
+            </h2>
+            <p class="section-description">
+                Guide to submitting CarMa apps to Google Play Store's Automotive category.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📝 Submission Procedure
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                    A[Prepare App] --> B[Register on Play Console]
+                    B --> C[Add Automotive Metadata]
+                    C --> D[Upload Screenshots]
+                    D --> E[Submit for Review]
+                    E --> F{Google Review}
+                    F -->|Approved| G[Play Store Distribution]
+                    F -->|Rejected| H[Fix Feedback]
+                    H --> E
+
+                    style A fill:#1a1f35,stroke:#3b82f6,stroke-width:2px
+                    style G fill:#1a1f35,stroke:#10b981,stroke-width:2px
+                    style H fill:#1a1f35,stroke:#ef4444,stroke-width:2px
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ✅ Review Checklist
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Requirement</th>
+                        <th>Verification Method</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Large Screen Support</td>
+                        <td><code>resizeableActivity="true"</code></td>
+                        <td>Test various screen sizes in emulator</td>
+                    </tr>
+                    <tr>
+                        <td>Landscape Mode</td>
+                        <td>Landscape layout required</td>
+                        <td>Verify UI after rotation</td>
+                    </tr>
+                    <tr>
+                        <td>UX Restrictions</td>
+                        <td>Block video while driving</td>
+                        <td>Verify CarUxRestrictionsManager implementation</td>
+                    </tr>
+                    <tr>
+                        <td>Background Playback</td>
+                        <td>MediaSession implementation</td>
+                        <td>Check audio focus and Notification</td>
+                    </tr>
+                    <tr>
+                        <td>Touch Target</td>
+                        <td>Minimum 48dp</td>
+                        <td>Measure all button sizes</td>
+                    </tr>
+                    <tr>
+                        <td>Permission Handling</td>
+                        <td>Handle unnecessary permissions gracefully in vehicles</td>
+                        <td>Check behavior when camera, location permissions denied</td>
+                    </tr>
+                    <tr>
+                        <td>Stability</td>
+                        <td>Stable operation without crashes</td>
+                        <td>Extended testing (repeated parked↔driving transitions)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>⏱️ Review Period:</strong> Typically takes 2-5 days, and
+                Google may test the app in actual vehicle environments.
+            </div>
+        </section>
+
+        <!-- Section 9: Testing Methods -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                Testing Methods
+            </h2>
+            <p class="section-description">
+                Various methods for testing CarMa apps during development.
+            </p>
+
+            <h3 style="color: var(--accent-automotive); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🖥️ Android Studio Automotive Emulator
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-bash"># Download Automotive image from AVD Manager
+
+# 1. Android Studio → Tools → AVD Manager
+# 2. Create Virtual Device → Automotive tab
+# 3. Select "Automotive (1024p landscape)"
+# 4. System Image: Select API 33+ (Tiramisu)
+# 5. Download "Android Automotive with Play Store" image
+
+# Run emulator from command line
+emulator -avd Automotive_API_33 -gpu host
+
+# Simulate driving state (adb commands)
+# Parked → Driving
+adb shell cmd car_service set-driving-state driving
+
+# Driving → Parked
+adb shell cmd car_service set-driving-state parked
+
+# Check current driving state
+adb shell dumpsys car_service | grep "driving"</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        Test Checklist
+                    </h3>
+                    <div class="card-description">
+                        <ol>
+                            <li>After app launch, transition parked→driving</li>
+                            <li>Start driving during video playback (verify screen hidden)</li>
+                            <li>Verify audio continues playing while driving</li>
+                            <li>Transition driving→parked (video screen restored)</li>
+                            <li>Check layout on various screen sizes</li>
+                            <li>Layout maintained during rotation</li>
+                            <li>Background→foreground restoration</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚨</span>
+                        Real Vehicle Testing
+                    </h3>
+                    <div class="card-description">
+                        <p>After emulator testing, must test on actual vehicle:</p>
+                        <ul>
+                            <li>Request test vehicle from OEM partners</li>
+                            <li>Use demo vehicles at events like Google I/O</li>
+                            <li>Verify actual UX Restrictions behavior while driving</li>
+                            <li>Test actual rotary knob/D-Pad input</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 10: CarMa vs Dedicated Vehicle App Comparison -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                CarMa vs Dedicated Vehicle App Comparison
+            </h2>
+            <p class="section-description">
+                Compares the CarMa program with dedicated vehicle apps using Android for Cars App Library.
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Car Ready Mobile Apps (CarMa)</th>
+                        <th>Dedicated Vehicle App (Car App Library)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Development Approach</strong></td>
+                        <td>Reuse existing mobile app</td>
+                        <td>Develop for vehicles from scratch</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Code Reuse</strong></td>
+                        <td>90%+ reusable</td>
+                        <td>New code required</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Development Time</strong></td>
+                        <td>1-3 weeks</td>
+                        <td>2-6 months</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Execution Conditions</strong></td>
+                        <td>Parked state only</td>
+                        <td>Usable while driving</td>
+                    </tr>
+                    <tr>
+                        <td><strong>UI Flexibility</strong></td>
+                        <td>High (mobile app as-is)</td>
+                        <td>Limited (template-based)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Input Methods</strong></td>
+                        <td>Primarily touch</td>
+                        <td>Touch, rotary knob, voice</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Target Apps</strong></td>
+                        <td>Video, games, browsers</td>
+                        <td>Navigation, media, messaging, parking</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Android Auto Support</strong></td>
+                        <td>None (AAOS only)</td>
+                        <td>Yes (same code supports both)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Review Difficulty</strong></td>
+                        <td>Low</td>
+                        <td>High (driving safety verification)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="content-grid" style="margin-top: 40px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        When to Choose CarMa
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Apps used only when parked</li>
+                            <li>Need fast time-to-market</li>
+                            <li>Leverage existing mobile app</li>
+                            <li>Video streaming, games, browsers</li>
+                            <li>Limited development resources</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        When to Choose Dedicated Vehicle App
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Apps that must be used while driving</li>
+                            <li>Provide optimal vehicle UX</li>
+                            <li>Navigation, media players</li>
+                            <li>Need Android Auto support too</li>
+                            <li>Voice/rotary knob input important</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Recommendation:</strong> Use CarMa for video, games, and browsers;
+                develop dedicated apps using Car App Library for navigation, music players, and messaging.
+            </div>
+        </section>
+
+        <!-- Section 11: Related Documents -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                Related Documents
+            </h2>
+            <p class="section-description">
+                Links to other AAOS and media framework documents related to CarMa.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Android Automotive OS
+                    </h3>
+                    <div class="card-description">
+                        Detailed explanation of AAOS architecture, Vehicle HAL, and Car Service.
+                    </div>
+                    <a href="aaos.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        Learn more →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Car Media Service
+                    </h3>
+                    <div class="card-description">
+                        Covers AAOS media management service and MediaSession integration.
+                    </div>
+                    <a href="carmedia.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        Learn more →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Google Automotive Services (GAS)
+                    </h3>
+                    <div class="card-description">
+                        Explains GAS platform and Google Play Services API integration.
+                    </div>
+                    <a href="gas.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        Learn more →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        Explains the core architecture of Android media framework (MediaPlayer, MediaSession).
+                    </div>
+                    <a href="media-framework-core.html" style="color: var(--accent-automotive); text-decoration: none;">
+                        Learn more →
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <footer
+            style="text-align: center; margin-top: 60px; padding: 40px; color: var(--text-muted); border-top: 1px solid var(--border-color);">
+            <p>© Android Media Framework Documentation</p>
+        </footer>
+    </div>
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

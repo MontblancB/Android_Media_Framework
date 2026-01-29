@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media API Quick Reference</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="../index.html" class="nav-button">
+            ← Android Media Framework
+        </a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Media API Quick Reference</h1>
+            <p class="page-subtitle">Android Media API Cheatsheet - Key Methods and Code Examples</p>
+        </header>
+
+
+
+        <!-- TOC -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>Table of Contents</h2>
+            <ol>
+                <li><a href="#mediaplayer">MediaPlayer API</a></li>
+                <li><a href="#exoplayer">ExoPlayer / Media3 API</a></li>
+                <li><a href="#mediacodec">MediaCodec API</a></li>
+                <li><a href="#audiomanager">AudioManager API</a></li>
+                <li><a href="#mediasession">MediaSession API</a></li>
+                <li><a href="#carmedia">Car Media API (AAOS)</a></li>
+                <li><a href="#drm">DRM (Widevine) API</a></li>
+                <li><a href="#constants">Key Constants</a></li>
+            </ol>
+        </section>
+
+        <!-- Section 1: MediaPlayer -->
+        <section id="mediaplayer" class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>1. MediaPlayer API</h2>
+            <p><code>android.media.MediaPlayer</code> is Android's high-level media playback API.</p>
+
+            <div class="api-card">
+                <h4>create()</h4>
+                <div class="api-signature">
+fun create(context: Context, uri: Uri): MediaPlayer?
+fun create(context: Context, @RawRes resId: Int): MediaPlayer?
+                </div>
+                <p><strong>Purpose:</strong> Create and auto-initialize MediaPlayer instance (no prepare needed)</p>
+                <pre><code class="language-kotlin">// Create from URI
+val player = MediaPlayer.create(context, Uri.parse("http://example.com/audio.mp3"))
+player?.start()
+
+// Create from raw resource
+val player = MediaPlayer.create(context, R.raw.music)
+player?.start()</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>setDataSource()</h4>
+                <div class="api-signature">
+fun setDataSource(context: Context, uri: Uri)
+fun setDataSource(path: String)
+fun setDataSource(fd: FileDescriptor)
+                </div>
+                <p><strong>Purpose:</strong> Specify media source to play (for manual initialization)</p>
+                <pre><code class="language-kotlin">val player = MediaPlayer()
+player.setDataSource(context, uri)
+player.prepare()  // or prepareAsync()
+player.start()</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>prepare() vs prepareAsync()</h4>
+                <div class="api-signature">
+fun prepare()        // Synchronous (may block UI thread)
+fun prepareAsync()   // Asynchronous (recommended)
+                </div>
+                <pre><code class="language-kotlin">// Async preparation (recommended)
+player.setOnPreparedListener { mp ->
+    mp.start()
+}
+player.prepareAsync()  // Non-blocking
+
+// Sync preparation (local files only)
+player.prepare()
+player.start()</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>start() / pause() / stop()</h4>
+                <div class="api-signature">
+fun start()
+fun pause()
+fun stop()
+fun reset()
+fun release()
+                </div>
+                <pre><code class="language-kotlin">// Play/Pause
+player.start()
+player.pause()
+
+// Stop (resets playback position)
+player.stop()
+player.reset()  // Reset state (setDataSource required again)
+
+// Release resources
+player.release()</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>seekTo()</h4>
+                <div class="api-signature">
+fun seekTo(msec: Int)
+fun seekTo(msec: Long, mode: Int)  // API 26+
+                </div>
+                <dl class="param-list">
+                    <dt>mode</dt>
+                    <dd>
+                        <code>SEEK_PREVIOUS_SYNC</code>: Previous keyframe<br>
+                        <code>SEEK_NEXT_SYNC</code>: Next keyframe<br>
+                        <code>SEEK_CLOSEST_SYNC</code>: Closest keyframe (default)<br>
+                        <code>SEEK_CLOSEST</code>: Exact position (slower)
+                    </dd>
+                </dl>
+                <pre><code class="language-kotlin">// Seek to 30 second position
+player.seekTo(30000)
+
+// API 26+: Seek to exact position
+player.seekTo(30000, MediaPlayer.SEEK_CLOSEST)</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>setVolume()</h4>
+                <div class="api-signature">
+fun setVolume(leftVolume: Float, rightVolume: Float)  // 0.0 ~ 1.0
+                </div>
+                <pre><code class="language-kotlin">// 50% volume
+player.setVolume(0.5f, 0.5f)
+
+// Left channel only
+player.setVolume(1.0f, 0.0f)</code></pre>
+            </div>
+
+            <h3>1.1 Listeners</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Listener</th>
+                        <th>Purpose</th>
+                        <th>Callback</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>OnPreparedListener</code></td>
+                        <td>Preparation complete</td>
+                        <td><code>onPrepared(MediaPlayer)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>OnCompletionListener</code></td>
+                        <td>Playback complete</td>
+                        <td><code>onCompletion(MediaPlayer)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>OnErrorListener</code></td>
+                        <td>Error occurred</td>
+                        <td><code>onError(MediaPlayer, Int, Int): Boolean</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>OnSeekCompleteListener</code></td>
+                        <td>Seek complete</td>
+                        <td><code>onSeekComplete(MediaPlayer)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>OnBufferingUpdateListener</code></td>
+                        <td>Buffering progress</td>
+                        <td><code>onBufferingUpdate(MediaPlayer, Int)</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <pre><code class="language-kotlin">player.setOnErrorListener { mp, what, extra ->
+    when (what) {
+        MediaPlayer.MEDIA_ERROR_SERVER_DIED -> Log.e(TAG, "Server died")
+        MediaPlayer.MEDIA_ERROR_UNKNOWN -> Log.e(TAG, "Unknown error")
+    }
+    true  // true = handled, false = trigger OnCompletionListener
+}
+
+player.setOnBufferingUpdateListener { mp, percent ->
+    Log.d(TAG, "Buffering: $percent%")
+}</code></pre>
+
+            <h3>1.2 State Diagram</h3>
+            <div class="mermaid">
+stateDiagram-v2
+    [*] --> Idle: new MediaPlayer()
+    Idle --> Initialized: setDataSource()
+    Initialized --> Preparing: prepareAsync()
+    Preparing --> Prepared: onPrepared()
+    Initialized --> Prepared: prepare()
+
+    Prepared --> Started: start()
+    Started --> Paused: pause()
+    Paused --> Started: start()
+    Started --> Stopped: stop()
+
+    Started --> PlaybackCompleted: onCompletion()
+    PlaybackCompleted --> Prepared: seekTo()
+    PlaybackCompleted --> Started: start()
+
+    Prepared --> End: release()
+    Started --> End: release()
+    Stopped --> End: release()
+    End --> [*]
+
+    Prepared --> Error: onError()
+    Started --> Error: onError()
+    Error --> End: release()
+            </div>
+
+            <div class="warning-box">
+                <strong>Warning: Invalid State Transitions</strong>
+                <p>MediaPlayer follows a strict state machine. Calling methods in wrong order causes <code>IllegalStateException</code>:</p>
+                <pre><code>// Wrong example
+val player = MediaPlayer()
+player.start()  // IllegalStateException! (before setDataSource)
+
+// Correct example
+val player = MediaPlayer()
+player.setDataSource(uri)
+player.prepare()
+player.start()</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 2: ExoPlayer / Media3 -->
+        <section id="exoplayer" class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>2. ExoPlayer / Media3 API</h2>
+            <p><code>androidx.media3.exoplayer</code> is the modern alternative to MediaPlayer with excellent flexibility and extensibility.</p>
+
+            <div class="info-box">
+                <strong>ExoPlayer vs Media3</strong>
+                <ul>
+                    <li><strong>ExoPlayer 2.x</strong>: <code>com.google.android.exoplayer2.*</code> (legacy)</li>
+                    <li><strong>Media3</strong>: <code>androidx.media3.*</code> (latest, recommended)</li>
+                </ul>
+                <p>Media3 is the AndroidX migration of ExoPlayer 2.x, with nearly identical APIs.</p>
+            </div>
+
+            <div class="api-card">
+                <h4>ExoPlayer.Builder()</h4>
+                <div class="api-signature">
+class ExoPlayer.Builder(context: Context)
+fun build(): ExoPlayer
+                </div>
+                <pre><code class="language-kotlin">import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.common.MediaItem
+
+val player = ExoPlayer.Builder(context)
+    .build()
+
+// Add media item
+val mediaItem = MediaItem.fromUri("https://example.com/video.mp4")
+player.setMediaItem(mediaItem)
+player.prepare()
+player.play()</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>setMediaItem() / addMediaItem()</h4>
+                <div class="api-signature">
+fun setMediaItem(mediaItem: MediaItem)
+fun addMediaItem(mediaItem: MediaItem)
+fun setMediaItems(mediaItems: List&lt;MediaItem&gt;)
+                </div>
+                <pre><code class="language-kotlin">// Single item
+player.setMediaItem(MediaItem.fromUri(uri))
+
+// Playlist
+val playlist = listOf(
+    MediaItem.fromUri("song1.mp3"),
+    MediaItem.fromUri("song2.mp3"),
+    MediaItem.fromUri("song3.mp3")
+)
+player.setMediaItems(playlist)</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>prepare() / play() / pause()</h4>
+                <div class="api-signature">
+fun prepare()
+fun play()
+fun pause()
+fun stop()
+fun release()
+                </div>
+                <pre><code class="language-kotlin">// Playback flow
+player.setMediaItem(mediaItem)
+player.prepare()  // Async preparation (automatic)
+player.play()     // Start playback
+
+// Pause
+player.pause()
+
+// Stop and release resources
+player.stop()
+player.release()</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>seekTo()</h4>
+                <div class="api-signature">
+fun seekTo(positionMs: Long)
+fun seekTo(mediaItemIndex: Int, positionMs: Long)
+fun seekToNext()
+fun seekToPrevious()
+                </div>
+                <pre><code class="language-kotlin">// Seek to 30 second position
+player.seekTo(30_000)
+
+// Playlist: seek to 10 seconds of 2nd track
+player.seekTo(1, 10_000)
+
+// Next/Previous track
+player.seekToNext()
+player.seekToPrevious()</code></pre>
+            </div>
+
+            <h3>2.1 Player.Listener</h3>
+            <pre><code class="language-kotlin">import androidx.media3.common.Player
+
+player.addListener(object : Player.Listener {
+    override fun onPlaybackStateChanged(state: Int) {
+        when (state) {
+            Player.STATE_IDLE -> Log.d(TAG, "Idle")
+            Player.STATE_BUFFERING -> Log.d(TAG, "Buffering...")
+            Player.STATE_READY -> Log.d(TAG, "Ready to play")
+            Player.STATE_ENDED -> Log.d(TAG, "Playback ended")
+        }
+    }
+
+    override fun onPlayerError(error: PlaybackException) {
+        Log.e(TAG, "Error: ${error.errorCode}", error)
+    }
+
+    override fun onIsPlayingChanged(isPlaying: Boolean) {
+        Log.d(TAG, "Playing: $isPlaying")
+    }
+})</code></pre>
+
+            <h3>2.2 Advanced Configuration</h3>
+
+            <h4>LoadControl (Buffer Size)</h4>
+            <pre><code class="language-kotlin">import androidx.media3.exoplayer.DefaultLoadControl
+
+val loadControl = DefaultLoadControl.Builder()
+    .setBufferDurationsMs(
+        50_000,  // minBufferMs (minimum buffer)
+        120_000, // maxBufferMs (maximum buffer)
+        2_500,   // bufferForPlaybackMs (buffer for playback start)
+        5_000    // bufferForPlaybackAfterRebufferMs (after rebuffer)
+    )
+    .build()
+
+val player = ExoPlayer.Builder(context)
+    .setLoadControl(loadControl)
+    .build()</code></pre>
+
+            <h4>TrackSelector (Quality Selection)</h4>
+            <pre><code class="language-kotlin">import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+
+val trackSelector = DefaultTrackSelector(context).apply {
+    parameters = buildUponParameters()
+        .setMaxVideoSizeSd()  // Limit to SD quality
+        .setPreferredAudioLanguage("en")  // English preferred
+        .build()
+}
+
+val player = ExoPlayer.Builder(context)
+    .setTrackSelector(trackSelector)
+    .build()</code></pre>
+
+            <h4>DRM Configuration</h4>
+            <pre><code class="language-kotlin">import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
+import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
+import androidx.media3.common.C
+
+val drmCallback = HttpMediaDrmCallback(
+    "https://license.example.com/widevine",
+    DefaultHttpDataSource.Factory()
+)
+
+val drmSessionManager = DefaultDrmSessionManager.Builder()
+    .setUuidAndExoMediaDrmProvider(C.WIDEVINE_UUID, FrameworkMediaDrm.DEFAULT_PROVIDER)
+    .build(drmCallback)
+
+val mediaSource = DashMediaSource.Factory(dataSourceFactory)
+    .setDrmSessionManagerProvider { drmSessionManager }
+    .createMediaSource(MediaItem.fromUri(uri))</code></pre>
+
+            <h3>2.3 PlayerView (UI)</h3>
+            <pre><code class="language-xml">&lt;!-- layout.xml --&gt;
+&lt;androidx.media3.ui.PlayerView
+    android:id="@+id/player_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:show_buffering="when_playing"
+    app:controller_layout_id="@layout/custom_player_control" /&gt;</code></pre>
+
+            <pre><code class="language-kotlin">// Activity
+val playerView = findViewById&lt;PlayerView&gt;(R.id.player_view)
+playerView.player = player</code></pre>
+        </section>
+
+        <!-- Section 3: MediaCodec -->
+        <section id="mediacodec" class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>3. MediaCodec API</h2>
+            <p><code>android.media.MediaCodec</code> is the low-level codec API for direct video/audio encoding/decoding control.</p>
+
+            <div class="api-card">
+                <h4>createDecoderByType() / createEncoderByType()</h4>
+                <div class="api-signature">
+fun createDecoderByType(type: String): MediaCodec
+fun createEncoderByType(type: String): MediaCodec
+                </div>
+                <dl class="param-list">
+                    <dt>type (MIME)</dt>
+                    <dd>
+                        <code>video/avc</code> (H.264)<br>
+                        <code>video/hevc</code> (H.265)<br>
+                        <code>audio/mp4a-latm</code> (AAC)<br>
+                        <code>audio/opus</code> (Opus)
+                    </dd>
+                </dl>
+                <pre><code class="language-kotlin">// Create H.264 decoder
+val decoder = MediaCodec.createDecoderByType("video/avc")
+
+// Create AAC encoder
+val encoder = MediaCodec.createEncoderByType("audio/mp4a-latm")</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>configure()</h4>
+                <div class="api-signature">
+fun configure(
+    format: MediaFormat,
+    surface: Surface?,
+    crypto: MediaCrypto?,
+    flags: Int
+)
+                </div>
+                <dl class="param-list">
+                    <dt>flags</dt>
+                    <dd>
+                        <code>0</code>: Decoder<br>
+                        <code>CONFIGURE_FLAG_ENCODE</code>: Encoder
+                    </dd>
+                </dl>
+                <pre><code class="language-kotlin">// Decoder configuration
+val format = MediaFormat.createVideoFormat("video/avc", 1920, 1080).apply {
+    setInteger(MediaFormat.KEY_FRAME_RATE, 30)
+    setInteger(MediaFormat.KEY_BIT_RATE, 5_000_000)
+}
+
+decoder.configure(format, surface, null, 0)</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>start() / stop() / release()</h4>
+                <div class="api-signature">
+fun start()
+fun stop()
+fun release()
+                </div>
+                <pre><code class="language-kotlin">// Start codec
+decoder.start()
+
+// After use
+decoder.stop()
+decoder.release()</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>dequeueInputBuffer() / queueInputBuffer()</h4>
+                <div class="api-signature">
+fun dequeueInputBuffer(timeoutUs: Long): Int
+fun queueInputBuffer(
+    index: Int,
+    offset: Int,
+    size: Int,
+    presentationTimeUs: Long,
+    flags: Int
+)
+                </div>
+                <pre><code class="language-kotlin">// Queue input buffer
+val inputBufferId = decoder.dequeueInputBuffer(10_000)  // 10ms timeout
+if (inputBufferId >= 0) {
+    val inputBuffer = decoder.getInputBuffer(inputBufferId)
+    inputBuffer?.clear()
+
+    // Write data
+    val sampleSize = extractor.readSampleData(inputBuffer, 0)
+    val presentationTimeUs = extractor.sampleTime
+
+    decoder.queueInputBuffer(inputBufferId, 0, sampleSize, presentationTimeUs, 0)
+    extractor.advance()
+}</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>dequeueOutputBuffer() / releaseOutputBuffer()</h4>
+                <div class="api-signature">
+fun dequeueOutputBuffer(info: BufferInfo, timeoutUs: Long): Int
+fun releaseOutputBuffer(index: Int, render: Boolean)
+                </div>
+                <pre><code class="language-kotlin">val bufferInfo = MediaCodec.BufferInfo()
+val outputBufferId = decoder.dequeueOutputBuffer(bufferInfo, 10_000)
+
+when {
+    outputBufferId >= 0 -> {
+        // Process decoded data
+        val outputBuffer = decoder.getOutputBuffer(outputBufferId)
+        // ...
+
+        // Release buffer (render=true renders to Surface)
+        decoder.releaseOutputBuffer(outputBufferId, true)
+    }
+    outputBufferId == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+        val newFormat = decoder.outputFormat
+        Log.d(TAG, "Output format changed: $newFormat")
+    }
+    outputBufferId == MediaCodec.INFO_TRY_AGAIN_LATER -> {
+        // No data yet
+    }
+}</code></pre>
+            </div>
+
+            <h3>3.1 Full Decoding Loop</h3>
+            <pre><code class="language-kotlin">val decoder = MediaCodec.createDecoderByType("video/avc")
+decoder.configure(format, surface, null, 0)
+decoder.start()
+
+var isInputDone = false
+var isOutputDone = false
+
+while (!isOutputDone) {
+    // Input
+    if (!isInputDone) {
+        val inputBufferId = decoder.dequeueInputBuffer(10_000)
+        if (inputBufferId >= 0) {
+            val inputBuffer = decoder.getInputBuffer(inputBufferId)!!
+            val sampleSize = extractor.readSampleData(inputBuffer, 0)
+
+            if (sampleSize < 0) {
+                // EOS (End of Stream)
+                decoder.queueInputBuffer(inputBufferId, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                isInputDone = true
+            } else {
+                decoder.queueInputBuffer(inputBufferId, 0, sampleSize, extractor.sampleTime, 0)
+                extractor.advance()
+            }
+        }
+    }
+
+    // Output
+    val bufferInfo = MediaCodec.BufferInfo()
+    val outputBufferId = decoder.dequeueOutputBuffer(bufferInfo, 10_000)
+
+    if (outputBufferId >= 0) {
+        if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
+            isOutputDone = true
+        }
+
+        decoder.releaseOutputBuffer(outputBufferId, true)
+    }
+}
+
+decoder.stop()
+decoder.release()</code></pre>
+
+            <h3>3.2 Async Mode (API 21+)</h3>
+            <pre><code class="language-kotlin">decoder.setCallback(object : MediaCodec.Callback() {
+    override fun onInputBufferAvailable(codec: MediaCodec, index: Int) {
+        val inputBuffer = codec.getInputBuffer(index)!!
+        // Write data
+        codec.queueInputBuffer(index, 0, size, presentationTimeUs, 0)
+    }
+
+    override fun onOutputBufferAvailable(codec: MediaCodec, index: Int, info: BufferInfo) {
+        // Process decoded data
+        codec.releaseOutputBuffer(index, true)
+    }
+
+    override fun onError(codec: MediaCodec, e: CodecException) {
+        Log.e(TAG, "Codec error", e)
+    }
+
+    override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
+        Log.d(TAG, "Format changed: $format")
+    }
+})
+
+decoder.configure(format, surface, null, 0)
+decoder.start()</code></pre>
+        </section>
+
+        <!-- Section 4: AudioManager -->
+        <section id="audiomanager" class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>4. AudioManager API</h2>
+            <p><code>android.media.AudioManager</code> manages system audio policies and routing.</p>
+
+            <div class="api-card">
+                <h4>requestAudioFocus()</h4>
+                <div class="api-signature">
+// API 26+ (recommended)
+fun requestAudioFocus(focusRequest: AudioFocusRequest): Int
+
+// Legacy
+fun requestAudioFocus(
+    listener: OnAudioFocusChangeListener,
+    streamType: Int,
+    durationHint: Int
+): Int
+                </div>
+                <dl class="param-list">
+                    <dt>durationHint</dt>
+                    <dd>
+                        <code>AUDIOFOCUS_GAIN</code>: Long-term playback (music)<br>
+                        <code>AUDIOFOCUS_GAIN_TRANSIENT</code>: Short-term playback (notification)<br>
+                        <code>AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK</code>: Allow ducking (navigation)
+                    </dd>
+                </dl>
+                <pre><code class="language-kotlin">val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+val audioAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_MEDIA)
+    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+    .build()
+
+val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+    .setAudioAttributes(audioAttributes)
+    .setOnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> player.play()
+            AudioManager.AUDIOFOCUS_LOSS -> player.pause()
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> player.pause()
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> player.setVolume(0.2f)
+        }
+    }
+    .build()
+
+val result = audioManager.requestAudioFocus(focusRequest)
+if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+    player.play()
+}</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>abandonAudioFocus()</h4>
+                <div class="api-signature">
+fun abandonAudioFocus(focusRequest: AudioFocusRequest): Int
+                </div>
+                <pre><code class="language-kotlin">// Must call when playback completes
+audioManager.abandonAudioFocus(focusRequest)</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>setStreamVolume()</h4>
+                <div class="api-signature">
+fun setStreamVolume(streamType: Int, index: Int, flags: Int)
+fun getStreamVolume(streamType: Int): Int
+fun getStreamMaxVolume(streamType: Int): Int
+                </div>
+                <dl class="param-list">
+                    <dt>streamType</dt>
+                    <dd>
+                        <code>STREAM_MUSIC</code>: Media<br>
+                        <code>STREAM_RING</code>: Ringtone<br>
+                        <code>STREAM_ALARM</code>: Alarm<br>
+                        <code>STREAM_NOTIFICATION</code>: Notification
+                    </dd>
+                </dl>
+                <pre><code class="language-kotlin">// Set media volume to 50% of max
+val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume / 2, 0)
+
+// Get current volume
+val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>isMusicActive()</h4>
+                <div class="api-signature">
+fun isMusicActive(): Boolean
+                </div>
+                <pre><code class="language-kotlin">if (audioManager.isMusicActive()) {
+    Log.d(TAG, "Another app is playing music")
+}</code></pre>
+            </div>
+
+            <h3>4.1 AudioAttributes (API 21+)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Usage</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>USAGE_MEDIA</code></td>
+                        <td>Music, Video</td>
+                    </tr>
+                    <tr>
+                        <td><code>USAGE_GAME</code></td>
+                        <td>Game sounds</td>
+                    </tr>
+                    <tr>
+                        <td><code>USAGE_ALARM</code></td>
+                        <td>Alarm</td>
+                    </tr>
+                    <tr>
+                        <td><code>USAGE_NOTIFICATION</code></td>
+                        <td>Notification</td>
+                    </tr>
+                    <tr>
+                        <td><code>USAGE_ASSISTANCE_NAVIGATION_GUIDANCE</code></td>
+                        <td>Navigation TTS</td>
+                    </tr>
+                    <tr>
+                        <td><code>USAGE_VOICE_COMMUNICATION</code></td>
+                        <td>Voice call</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <pre><code class="language-kotlin">val audioAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+    .build()
+
+// Apply to MediaPlayer
+mediaPlayer.setAudioAttributes(audioAttributes)</code></pre>
+        </section>
+
+        <!-- Section 5: MediaSession -->
+        <section id="mediasession" class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>5. MediaSession API</h2>
+            <p><code>android.media.session.MediaSession</code> shares playback control and metadata with the system.</p>
+
+            <div class="api-card">
+                <h4>MediaSession Creation</h4>
+                <div class="api-signature">
+class MediaSession(context: Context, tag: String)
+                </div>
+                <pre><code class="language-kotlin">val mediaSession = MediaSession(context, "MyMediaSession")
+mediaSession.isActive = true</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>setMetadata()</h4>
+                <div class="api-signature">
+fun setMetadata(metadata: MediaMetadata?)
+                </div>
+                <pre><code class="language-kotlin">val metadata = MediaMetadata.Builder()
+    .putString(MediaMetadata.METADATA_KEY_TITLE, "Song Title")
+    .putString(MediaMetadata.METADATA_KEY_ARTIST, "Artist Name")
+    .putString(MediaMetadata.METADATA_KEY_ALBUM, "Album Name")
+    .putLong(MediaMetadata.METADATA_KEY_DURATION, 180_000)  // 3 minutes
+    .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, albumArtBitmap)
+    .build()
+
+mediaSession.setMetadata(metadata)</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>setPlaybackState()</h4>
+                <div class="api-signature">
+fun setPlaybackState(state: PlaybackState?)
+                </div>
+                <pre><code class="language-kotlin">val playbackState = PlaybackState.Builder()
+    .setState(
+        PlaybackState.STATE_PLAYING,
+        player.currentPosition,
+        1.0f  // playback speed
+    )
+    .setActions(
+        PlaybackState.ACTION_PLAY or
+        PlaybackState.ACTION_PAUSE or
+        PlaybackState.ACTION_SKIP_TO_NEXT or
+        PlaybackState.ACTION_SKIP_TO_PREVIOUS
+    )
+    .build()
+
+mediaSession.setPlaybackState(playbackState)</code></pre>
+            </div>
+
+            <h3>5.1 MediaSession.Callback</h3>
+            <pre><code class="language-kotlin">mediaSession.setCallback(object : MediaSession.Callback() {
+    override fun onPlay() {
+        player.play()
+    }
+
+    override fun onPause() {
+        player.pause()
+    }
+
+    override fun onSkipToNext() {
+        player.seekToNext()
+    }
+
+    override fun onSkipToPrevious() {
+        player.seekToPrevious()
+    }
+
+    override fun onSeekTo(pos: Long) {
+        player.seekTo(pos)
+    }
+
+    override fun onStop() {
+        player.stop()
+    }
+})</code></pre>
+
+            <h3>5.2 Notification Integration</h3>
+            <pre><code class="language-kotlin">import androidx.media.app.NotificationCompat.MediaStyle
+
+val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+    .setContentTitle("Song Title")
+    .setContentText("Artist Name")
+    .setLargeIcon(albumArtBitmap)
+    .setSmallIcon(R.drawable.ic_music_note)
+    .setStyle(MediaStyle().setMediaSession(mediaSession.sessionToken))
+    .addAction(R.drawable.ic_skip_previous, "Previous", previousPendingIntent)
+    .addAction(R.drawable.ic_pause, "Pause", pausePendingIntent)
+    .addAction(R.drawable.ic_skip_next, "Next", nextPendingIntent)
+    .build()
+
+startForeground(NOTIFICATION_ID, notification)</code></pre>
+
+            <h3>5.3 MediaBrowserService (Car Media Integration)</h3>
+            <pre><code class="language-kotlin">class MyMusicService : MediaBrowserServiceCompat() {
+    private lateinit var mediaSession: MediaSessionCompat
+
+    override fun onCreate() {
+        super.onCreate()
+        mediaSession = MediaSessionCompat(this, "MyMusicService")
+        sessionToken = mediaSession.sessionToken
+    }
+
+    override fun onGetRoot(
+        clientPackageName: String,
+        clientUid: Int,
+        rootHints: Bundle?
+    ): BrowserRoot? {
+        return BrowserRoot("root", null)
+    }
+
+    override fun onLoadChildren(
+        parentId: String,
+        result: Result&lt;List&lt;MediaBrowserCompat.MediaItem&gt;&gt;
+    ) {
+        val mediaItems = listOf(
+            MediaBrowserCompat.MediaItem(
+                MediaDescriptionCompat.Builder()
+                    .setMediaId("song_1")
+                    .setTitle("Song 1")
+                    .build(),
+                MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
+            )
+        )
+        result.sendResult(mediaItems)
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 6: Car Media API -->
+        <section id="carmedia" class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>6. Car Media API (AAOS)</h2>
+            <p>Android Automotive OS specific media APIs.</p>
+
+            <div class="api-card">
+                <h4>CarAudioManager</h4>
+                <div class="api-signature">
+class CarAudioManager : CarManagerBase
+                </div>
+                <pre><code class="language-kotlin">val car = Car.createCar(context)
+val carAudioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+
+// Zone-based volume control
+val primaryZone = CarAudioManager.PRIMARY_AUDIO_ZONE
+val volumeGroupCount = carAudioManager.getVolumeGroupCount(primaryZone)
+
+for (groupId in 0 until volumeGroupCount) {
+    val currentVolume = carAudioManager.getGroupVolume(primaryZone, groupId)
+    val maxVolume = carAudioManager.getGroupMaxVolume(primaryZone, groupId)
+    Log.d(TAG, "Group $groupId: $currentVolume / $maxVolume")
+}
+
+// Set volume
+carAudioManager.setGroupVolume(primaryZone, groupId, newVolume, flags)</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>CarUxRestrictionsManager</h4>
+                <div class="api-signature">
+class CarUxRestrictionsManager : CarManagerBase
+                </div>
+                <pre><code class="language-kotlin">val carUxRestrictionsManager = car.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE) as CarUxRestrictionsManager
+
+carUxRestrictionsManager.registerListener { restrictions ->
+    if (restrictions.isRequiresDistractionOptimization) {
+        // Driving: disable video
+        playerView.visibility = View.GONE
+        trackSelector.parameters = trackSelector.buildUponParameters()
+            .setMaxVideoSize(0, 0)
+            .build()
+    } else {
+        // Parked: enable video
+        playerView.visibility = View.VISIBLE
+        trackSelector.parameters = trackSelector.buildUponParameters()
+            .clearVideoSizeConstraints()
+            .build()
+    }
+}</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>Vehicle Properties</h4>
+                <pre><code class="language-kotlin">import android.hardware.automotive.vehicle.V2_0.VehicleProperty
+
+val vehicleHal = ...
+val speed = vehicleHal.get(VehicleProperty.PERF_VEHICLE_SPEED)
+val gear = vehicleHal.get(VehicleProperty.GEAR_SELECTION)
+val parkingBrake = vehicleHal.get(VehicleProperty.PARKING_BRAKE_ON)
+
+if (speed.value.int32Values[0] > 0) {
+    // Driving: block video
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 7: DRM API -->
+        <section id="drm" class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>7. DRM (Widevine) API</h2>
+            <p><code>android.media.MediaDrm</code> communicates with DRM systems like Widevine.</p>
+
+            <div class="api-card">
+                <h4>MediaDrm Initialization</h4>
+                <div class="api-signature">
+class MediaDrm(uuid: UUID)
+                </div>
+                <pre><code class="language-kotlin">import androidx.media3.common.C
+
+val mediaDrm = MediaDrm(C.WIDEVINE_UUID)  // edef8ba9-79d6-4ace-a3c8-27dcd51d21ed
+
+// Check security level
+val securityLevel = mediaDrm.getPropertyString(MediaDrm.PROPERTY_SECURITY_LEVEL)
+Log.d(TAG, "Widevine Level: $securityLevel")  // "L1" or "L3"
+
+mediaDrm.release()</code></pre>
+            </div>
+
+            <div class="api-card">
+                <h4>ExoPlayer DRM Configuration</h4>
+                <pre><code class="language-kotlin">import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
+import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
+
+val licenseUrl = "https://license.example.com/widevine"
+val drmCallback = HttpMediaDrmCallback(licenseUrl, DefaultHttpDataSource.Factory())
+
+val drmSessionManager = DefaultDrmSessionManager.Builder()
+    .setUuidAndExoMediaDrmProvider(C.WIDEVINE_UUID, FrameworkMediaDrm.DEFAULT_PROVIDER)
+    .build(drmCallback)
+
+val mediaItem = MediaItem.Builder()
+    .setUri(videoUri)
+    .setDrmConfiguration(
+        MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
+            .setLicenseUri(licenseUrl)
+            .build()
+    )
+    .build()
+
+player.setMediaItem(mediaItem)</code></pre>
+            </div>
+
+            <h3>7.1 License Request/Response</h3>
+            <pre><code class="language-kotlin">class MyDrmCallback : MediaDrmCallback {
+    override fun executeKeyRequest(uuid: UUID, request: KeyRequest): ByteArray {
+        val url = request.licenseServerUrl
+        val requestData = request.data
+
+        Log.d(TAG, "License request to: $url")
+        Log.d(TAG, "Request size: ${requestData.size} bytes")
+
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.requestMethod = "POST"
+        connection.doOutput = true
+        connection.outputStream.write(requestData)
+
+        val responseCode = connection.responseCode
+        if (responseCode == 200) {
+            val response = connection.inputStream.readBytes()
+            Log.d(TAG, "License response size: ${response.size} bytes")
+            return response
+        } else {
+            throw IOException("License server returned: $responseCode")
+        }
+    }
+
+    override fun executeProvisionRequest(uuid: UUID, request: ProvisionRequest): ByteArray {
+        // Handle provisioning
+        return ByteArray(0)
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 8: Constants -->
+        <section id="constants" class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>8. Key Constants</h2>
+
+            <h3>8.1 MediaPlayer States</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Constant</th>
+                        <th>Value</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>MEDIA_ERROR_UNKNOWN</code></td>
+                        <td>1</td>
+                        <td>Unknown error</td>
+                    </tr>
+                    <tr>
+                        <td><code>MEDIA_ERROR_SERVER_DIED</code></td>
+                        <td>100</td>
+                        <td>MediaServer process died</td>
+                    </tr>
+                    <tr>
+                        <td><code>MEDIA_ERROR_IO</code></td>
+                        <td>-1004</td>
+                        <td>File/Network I/O error</td>
+                    </tr>
+                    <tr>
+                        <td><code>MEDIA_ERROR_MALFORMED</code></td>
+                        <td>-1007</td>
+                        <td>Invalid file format</td>
+                    </tr>
+                    <tr>
+                        <td><code>MEDIA_ERROR_UNSUPPORTED</code></td>
+                        <td>-1010</td>
+                        <td>Unsupported format</td>
+                    </tr>
+                    <tr>
+                        <td><code>MEDIA_ERROR_TIMED_OUT</code></td>
+                        <td>-110</td>
+                        <td>Timeout</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>8.2 ExoPlayer States</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Constant</th>
+                        <th>Value</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>Player.STATE_IDLE</code></td>
+                        <td>1</td>
+                        <td>Initial state</td>
+                    </tr>
+                    <tr>
+                        <td><code>Player.STATE_BUFFERING</code></td>
+                        <td>2</td>
+                        <td>Buffering</td>
+                    </tr>
+                    <tr>
+                        <td><code>Player.STATE_READY</code></td>
+                        <td>3</td>
+                        <td>Ready to play</td>
+                    </tr>
+                    <tr>
+                        <td><code>Player.STATE_ENDED</code></td>
+                        <td>4</td>
+                        <td>Playback ended</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>8.3 MediaCodec Buffer Flags</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Constant</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>BUFFER_FLAG_KEY_FRAME</code></td>
+                        <td>Keyframe (IDR)</td>
+                    </tr>
+                    <tr>
+                        <td><code>BUFFER_FLAG_CODEC_CONFIG</code></td>
+                        <td>SPS/PPS configuration data</td>
+                    </tr>
+                    <tr>
+                        <td><code>BUFFER_FLAG_END_OF_STREAM</code></td>
+                        <td>End of stream</td>
+                    </tr>
+                    <tr>
+                        <td><code>BUFFER_FLAG_PARTIAL_FRAME</code></td>
+                        <td>Partial frame</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>8.4 MIME Types</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>MIME Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>video/avc</code></td>
+                        <td>H.264 / AVC</td>
+                    </tr>
+                    <tr>
+                        <td><code>video/hevc</code></td>
+                        <td>H.265 / HEVC</td>
+                    </tr>
+                    <tr>
+                        <td><code>video/mp4v-es</code></td>
+                        <td>MPEG-4 Part 2</td>
+                    </tr>
+                    <tr>
+                        <td><code>video/3gpp</code></td>
+                        <td>H.263</td>
+                    </tr>
+                    <tr>
+                        <td><code>video/x-vnd.on2.vp8</code></td>
+                        <td>VP8</td>
+                    </tr>
+                    <tr>
+                        <td><code>video/x-vnd.on2.vp9</code></td>
+                        <td>VP9</td>
+                    </tr>
+                    <tr>
+                        <td><code>audio/mp4a-latm</code></td>
+                        <td>AAC</td>
+                    </tr>
+                    <tr>
+                        <td><code>audio/mpeg</code></td>
+                        <td>MP3</td>
+                    </tr>
+                    <tr>
+                        <td><code>audio/opus</code></td>
+                        <td>Opus</td>
+                    </tr>
+                    <tr>
+                        <td><code>audio/vorbis</code></td>
+                        <td>Vorbis</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>8.5 KeyEvent (Media Keys)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Constant</th>
+                        <th>Value</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>KEYCODE_MEDIA_PLAY</code></td>
+                        <td>126</td>
+                        <td>Play</td>
+                    </tr>
+                    <tr>
+                        <td><code>KEYCODE_MEDIA_PAUSE</code></td>
+                        <td>127</td>
+                        <td>Pause</td>
+                    </tr>
+                    <tr>
+                        <td><code>KEYCODE_MEDIA_PLAY_PAUSE</code></td>
+                        <td>85</td>
+                        <td>Play/Pause toggle</td>
+                    </tr>
+                    <tr>
+                        <td><code>KEYCODE_MEDIA_STOP</code></td>
+                        <td>86</td>
+                        <td>Stop</td>
+                    </tr>
+                    <tr>
+                        <td><code>KEYCODE_MEDIA_NEXT</code></td>
+                        <td>87</td>
+                        <td>Next track</td>
+                    </tr>
+                    <tr>
+                        <td><code>KEYCODE_MEDIA_PREVIOUS</code></td>
+                        <td>88</td>
+                        <td>Previous track</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Back to Home -->
+        <section style="text-align: center; padding: 3rem;" class="content-section section">
+            <a href="../index.html" style="display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; transition: transform 0.3s ease;">
+                ← Back to Main Page
+            </a>
+        </section>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+</html>

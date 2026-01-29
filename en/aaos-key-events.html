@@ -1,0 +1,2154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAOS Key Event Handling | Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">AAOS Key Event Handling</h1>
+            <p class="page-subtitle">Architecture and flow of key events in Android Automotive OS, from hardware input to
+                app-level handling.</p>
+        </header>
+
+        <!-- Section 1: Input Framework (AOSP) -->
+        <section class="section sec-input">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Input Framework (AOSP)
+            </h2>
+            <p class="section-description">
+                AAOS is based on the standard Android Input Framework, but has an additional structure where
+                <strong>Vehicle HAL (VHAL)</strong> is added to handle vehicle hardware (steering wheel controls, rotary knobs, etc.).
+            </p>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TD
+                    HW[Vehicle Hardware<br />Steering Wheel / Buttons] --> VHAL[Vehicle
+                    HAL<br />android.hardware.automotive.vehicle]
+                    VHAL -- "VEHICLE_PROPERTY_HW_KEY_INPUT" --> CarService[Car Service]
+                    CarService --> InputMgr[InputManagerService]
+                    InputMgr --> App[Application]
+
+                </div>
+            </div>
+            <p style="margin-top: 20px; color: var(--text-secondary);">
+                Basic key events are delivered to <code>InputReader</code> through the Linux Kernel Driver (evdev),
+                but vehicle-specific keys (Custom Input) are delivered to <code>CarService</code> through VHAL for separate processing.
+            </p>
+        </section>
+
+        <!-- Section 2: Car Service (AAOS Specific) -->
+        <section class="section sec-car">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Car Service (AAOS Specific)
+            </h2>
+            <p class="section-description">
+                <strong>CarInputService</strong> is the core component that centrally manages input events in AAOS.
+                It analyzes events received from VHAL and routes them to appropriate targets (Cluster, Main Display, Voice Assistant, etc.).
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🚗</span> CarInputService</h3>
+                    <div class="card-description">Monitors and filters input events.
+                        Intercepts special keys (Voice, Call) or converts rotary events to standard key events.</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎹</span> InstrumentClusterRenderingService</h3>
+                    <div class="card-description">Handles key events targeted at the instrument cluster display.
+                        (e.g., when the 'next track' button on the steering wheel controls the cluster UI)</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔄</span> RotaryController</h3>
+                    <div class="card-description">Converts rotary knob input into focus navigation events,
+                        enabling app control from non-touchscreen input devices.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Car Input / UX Restriction -->
+        <section class="section sec-ux">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Car Input & UX Restriction
+            </h2>
+            <p class="section-description">
+                For driver safety, input and UX are restricted based on Driving State.
+                <strong>CarUxRestrictionsManager</strong> controls app UI interaction based on the vehicle's gear state (Parked, Moving).
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                    Sensor[Gear / Speed Sensor] --> CarInfo[CarInfoManager]
+                    CarInfo -- "Update State" --> UXR[CarUxRestrictionsManager]
+                    UXR -- "onUxRestrictionsChanged()" --> App
+
+                    subgraph App Logic
+                    State{Is Moving?}
+                    State -- Yes --> Block[Block Input / Hide Video]
+                    State -- No --> Allow[Allow Full Interaction]
+                    end
+
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🛑</span> Moving State</h3>
+                    <div class="card-description">Blocks keyboard input, stops video playback, restricts list scrolling, and limits access to settings menu.</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">✅</span> Distraction Optimized</h3>
+                    <div class="card-description">Apps must be tagged as <code>Distraction Optimized</code> to run with limited UI while driving.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Framework Deep Dive: Media & Volume Key Flow -->
+        <section class="section sec-car">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Framework Deep Dive: Media & Volume Key Flow
+            </h2>
+            <p class="section-description">
+                In AAOS, media keys (Play/Pause) and volume keys are processed through different paths.
+                Media keys are delivered to the active session through <strong>MediaSessionService</strong>,
+                while volume keys directly control the hardware amplifier through <strong>CarAudioService</strong>.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">1. Media
+                Key Dispatching Flow</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Media key events (<code>KEYCODE_MEDIA_PLAY</code>, etc.) pass through <code>CarInputService</code>
+                and are delivered to the Android framework's <code>MediaSessionService</code>.
+                They are then delivered to the most appropriate MediaSession based on priority.
+            </p>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant HW as Vehicle HW
+                    participant VHAL as Vehicle HAL
+                    participant CIS as CarInputService
+                    participant IMS as InputManagerService
+                    participant MSS as MediaSessionService
+                    participant App as Active Media App
+
+                    HW->>VHAL: Press Play Button
+                    VHAL->>CIS: VEHICLE_PROPERTY_HW_KEY_INPUT
+                    CIS->>CIS: Filter & Process
+                    CIS->>IMS: injectKeyEvent(KEYCODE_MEDIA_PLAY)
+                    IMS->>MSS: dispatchMediaKeyEvent()
+                    MSS->>MSS: Find Priority Session<br />(Active & PlaybackState)
+                    MSS->>App: MediaSession.Callback.onPlay()
+                    App->>App: Handle Playback
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎯</span> Dispatch Priority Logic</h3>
+                    <div class="card-description">
+                        <ol>
+                            <li><strong>Active UI:</strong> App currently visible on screen has highest priority.</li>
+                            <li><strong>Active Session:</strong> <code>MediaSession</code> that is playing (Active) even without UI.</li>
+                            <li><strong>Last Active:</strong> Most recently played session (when Resumption is supported).</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">2.
+                Volume Key Handling Flow</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Volume control in AAOS follows the <strong>Fixed Volume</strong> policy.
+                Instead of reducing volume at the software mixer, <strong>CarAudioService</strong> directly delivers gain values
+                to the hardware amplifier (Audio Control HAL).
+            </p>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TD
+                    HW[Volume Knob / Button] --> VHAL[Vehicle HAL]
+                    VHAL -- "HW_KEY_INPUT" --> CIS[CarInputService]
+                    CIS -- "KEYCODE_VOLUME_UP/DOWN" --> CAS[CarAudioService]
+
+                    subgraph Volume Logic
+                    CAS --> Group{Identify Volume Group}
+                    Group -- "Music Group" --> Current[Get Current Context]
+                    Group -- "Navi Group" --> Priority[Check Priority]
+                    end
+
+                    CAS -- "setGroupVolume(zone, group, index)" --> HAL[Audio Control HAL]
+                    HAL -- "Apply Hardware Gain" --> Amp[Hardware Amplifier]
+
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔊</span> Volume Groups & Audio Context</h3>
+                    <div class="card-description">
+                        <p>
+                            <code>CarAudioService</code> manages <strong>Volume Groups</strong> based on audio attributes (Usage).
+                            For example, when adjusting media volume, navigation guidance volume is not affected as each group can be controlled independently.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: App Level Handling -->
+        <section class="section sec-input">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                App Level Handling
+            </h2>
+            <p class="section-description">
+                App developers use standard Android APIs to handle key events, but must consider AAOS-specific characteristics.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">Best
+                Practices</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">✅</span> Checklist</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Implement MediaSession Callback:</strong> Implement <code>onPlay()</code>,
+                                <code>onPause()</code>,
+                                <code>onSkipToNext()</code>, etc. to respond to media keys.
+                            </li>
+                            <li><strong>Manage Audio Focus:</strong> Always request focus before starting playback,
+                                and respond to focus loss in <code>onAudioFocusChange()</code>.
+                            </li>
+                            <li><strong>Comply with UX Restrictions:</strong> Subscribe to <code>CarUxRestrictionsManager</code> to
+                                simplify UI or block input while driving.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant HW as HW Button
+                    participant CS as CarService
+                    participant MS as MediaSession
+                    participant App as Media App
+
+                    HW->>CS: Key Event (KEYCODE_MEDIA_PLAY)
+                    CS->>MS: Dispatch Media Button
+                    MS->>App: onPlay() Callback
+                    App->>App: requestAudioFocus()
+                    App->>App: Start Playback
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Code Examples -->
+        <section class="section sec-input">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Code Examples
+            </h2>
+            <p class="section-description">
+                Actual Kotlin/Java code examples for handling key events in AAOS environment.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">📱 MediaSession Callback Implementation</h3>
+            <div class="code-block">
+                <pre><code>// Handle media keys with MediaSession Callback
+class CarMediaPlayer(private val context: Context) {
+    private lateinit var mediaSession: MediaSessionCompat
+    private lateinit var player: MediaPlayer
+
+    fun initialize() {
+        mediaSession = MediaSessionCompat(context, "CarMediaPlayer").apply {
+            setFlags(
+                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+            )
+
+            setCallback(mediaSessionCallback)
+
+            // Initialize PlaybackState
+            setPlaybackState(
+                PlaybackStateCompat.Builder()
+                    .setActions(
+                        PlaybackStateCompat.ACTION_PLAY or
+                        PlaybackStateCompat.ACTION_PAUSE or
+                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                    )
+                    .setState(PlaybackStateCompat.STATE_NONE, 0, 1.0f)
+                    .build()
+            )
+
+            isActive = true
+        }
+    }
+
+    private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
+        override fun onPlay() {
+            Log.d("CarMedia", "Hardware Play button pressed")
+
+            // Request Audio Focus
+            if (requestAudioFocus()) {
+                player.start()
+                updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+            }
+        }
+
+        override fun onPause() {
+            Log.d("CarMedia", "Hardware Pause button pressed")
+            player.pause()
+            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED)
+        }
+
+        override fun onSkipToNext() {
+            Log.d("CarMedia", "Hardware Next button pressed")
+            playNextTrack()
+        }
+
+        override fun onSkipToPrevious() {
+            Log.d("CarMedia", "Hardware Previous button pressed")
+            playPreviousTrack()
+        }
+
+        override fun onStop() {
+            Log.d("CarMedia", "Hardware Stop button pressed")
+            player.stop()
+            abandonAudioFocus()
+            updatePlaybackState(PlaybackStateCompat.STATE_STOPPED)
+        }
+
+        override fun onSeekTo(pos: Long) {
+            Log.d("CarMedia", "Seek to: $pos")
+            player.seekTo(pos.toInt())
+        }
+
+        override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
+            Log.d("CarMedia", "Media button event: $mediaButtonEvent")
+            return super.onMediaButtonEvent(mediaButtonEvent)
+        }
+    }
+
+    private fun updatePlaybackState(state: Int) {
+        val position = if (::player.isInitialized) player.currentPosition.toLong() else 0
+
+        mediaSession.setPlaybackState(
+            PlaybackStateCompat.Builder()
+                .setState(state, position, 1.0f)
+                .setActions(
+                    PlaybackStateCompat.ACTION_PLAY or
+                    PlaybackStateCompat.ACTION_PAUSE or
+                    PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                    PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                )
+                .build()
+        )
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">⌨️ Handling Key Events in Activity</h3>
+            <div class="code-block">
+                <pre><code>// Handle key events directly in Activity
+class CarMediaActivity : AppCompatActivity() {
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                Log.d("CarMedia", "Play key pressed")
+                handlePlayAction()
+                true
+            }
+
+            KeyEvent.KEYCODE_MEDIA_PAUSE -> {
+                Log.d("CarMedia", "Pause key pressed")
+                handlePauseAction()
+                true
+            }
+
+            KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                Log.d("CarMedia", "Next key pressed")
+                handleNextAction()
+                true
+            }
+
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                Log.d("CarMedia", "Previous key pressed")
+                handlePreviousAction()
+                true
+            }
+
+            KeyEvent.KEYCODE_VOLUME_UP -> {
+                Log.d("CarMedia", "Volume Up")
+                // CarAudioService handles this automatically
+                // Usually calling super is sufficient
+                super.onKeyDown(keyCode, event)
+            }
+
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                Log.d("CarMedia", "Volume Down")
+                super.onKeyDown(keyCode, event)
+            }
+
+            // Rotary knob rotation (AAOS specific)
+            KeyEvent.KEYCODE_DPAD_CENTER -> {
+                Log.d("CarMedia", "Rotary Center (Select)")
+                handleSelectAction()
+                true
+            }
+
+            else -> super.onKeyDown(keyCode, event)
+        }
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        // Handle Key Up events (if needed)
+        return super.onKeyUp(keyCode, event)
+    }
+
+    // Intercept key events before dispatch
+    override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
+        Log.d("CarMedia", "Key event: ${event?.keyCode}, action: ${event?.action}")
+        return super.dispatchKeyEvent(event)
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">🎯 Integrating Audio Focus with Key Events</h3>
+            <div class="code-block">
+                <pre><code>// Handle media keys with Audio Focus consideration
+class MediaKeyHandler(private val context: Context) {
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private var audioFocusRequest: AudioFocusRequest? = null
+    private var shouldResumeOnFocusGain = false
+
+    fun handlePlayKey() {
+        if (requestAudioFocus()) {
+            // Focus acquired successfully -> play
+            startPlayback()
+        } else {
+            // Focus acquisition failed -> delayed playback (Delayed Focus Gain)
+            shouldResumeOnFocusGain = true
+            Log.w("MediaKey", "Audio focus request delayed")
+        }
+    }
+
+    fun handlePauseKey() {
+        pausePlayback()
+        // Keep focus (even in paused state)
+    }
+
+    private fun requestAudioFocus(): Boolean {
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .build()
+
+        audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(audioAttributes)
+            .setOnAudioFocusChangeListener(focusChangeListener)
+            .setAcceptsDelayedFocusGain(true)  // Important in AAOS
+            .build()
+
+        val result = audioManager.requestAudioFocus(audioFocusRequest!!)
+        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    }
+
+    private val focusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                Log.d("MediaKey", "Audio focus gained")
+                if (shouldResumeOnFocusGain) {
+                    startPlayback()
+                    shouldResumeOnFocusGain = false
+                }
+            }
+
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                Log.d("MediaKey", "Audio focus lost permanently")
+                pausePlayback()
+                shouldResumeOnFocusGain = false
+            }
+
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                Log.d("MediaKey", "Audio focus lost temporarily")
+                pausePlayback()
+                shouldResumeOnFocusGain = true
+            }
+
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                Log.d("MediaKey", "Ducking (volume down)")
+                // Reduce volume (20%)
+            }
+        }
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 7: Rotary Controller Details -->
+        <section class="section sec-car">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Rotary Controller Details
+            </h2>
+            <p class="section-description">
+                AAOS Rotary Controller converts rotary knob input into focus navigation and scroll events.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔄</span> RotaryService</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Role</strong>: Rotary input -> Focus Navigation</li>
+                            <li><strong>Direction</strong>: CW (clockwise), CCW (counter-clockwise)</li>
+                            <li><strong>Nudge</strong>: Move one step at a time</li>
+                            <li><strong>Inertia</strong>: Inertia scroll on fast rotation</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎯</span> Focus Navigation</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Search focusable items in View hierarchy</li>
+                            <li>Directional Focus (Up, Down, Left, Right)</li>
+                            <li>RecyclerView scroll support</li>
+                            <li>Custom FocusFinder implementation possible</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚙️</span> Configuration</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>rotary_nudge_direction.xml settings</li>
+                            <li>Per-app Rotary behavior customization</li>
+                            <li>Speed and acceleration tuning</li>
+                            <li>Direct Manipulation mode</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                    HW[Rotary Knob] --> VHAL[Vehicle HAL<br />VEHICLE_PROPERTY_HW_ROTARY_INPUT]
+                    VHAL --> RS[RotaryService]
+
+                    RS --> NM{Nudge Mode?}
+
+                    NM -->|Yes| FC[FocusController<br />requestFocus()]
+                    NM -->|No| SC[ScrollController<br />scrollBy()]
+
+                    FC --> VIEW1[Focusable View 1]
+                    FC --> VIEW2[Focusable View 2]
+
+                    SC --> RV[RecyclerView.smoothScrollBy()]
+
+                    style NM fill:#f9f
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">🔧 Rotary Event Handling</h3>
+            <div class="code-block">
+                <pre><code>// Handle Rotary events in View
+class RotaryAwareView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null
+) : View(context, attrs) {
+
+    override fun onGenericMotionEvent(event: MotionEvent?): Boolean {
+        if (event?.source == InputDevice.SOURCE_ROTARY_ENCODER) {
+            // Detect Rotary rotation
+            val scroll = event.getAxisValue(MotionEvent.AXIS_SCROLL)
+
+            when {
+                scroll > 0 -> {
+                    // Clockwise rotation
+                    Log.d("Rotary", "Clockwise: $scroll")
+                    handleClockwiseRotation(scroll)
+                    return true
+                }
+                scroll < 0 -> {
+                    // Counter-clockwise rotation
+                    Log.d("Rotary", "Counter-clockwise: $scroll")
+                    handleCounterClockwiseRotation(scroll)
+                    return true
+                }
+            }
+        }
+
+        return super.onGenericMotionEvent(event)
+    }
+
+    private fun handleClockwiseRotation(amount: Float) {
+        // Move focus to next item
+        val nextView = focusSearch(View.FOCUS_DOWN)
+        nextView?.requestFocus()
+    }
+
+    private fun handleCounterClockwiseRotation(amount: Float) {
+        // Move focus to previous item
+        val prevView = focusSearch(View.FOCUS_UP)
+        prevView?.requestFocus()
+    }
+}
+
+// Rotary scroll in RecyclerView
+class RotaryRecyclerView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null
+) : RecyclerView(context, attrs) {
+
+    override fun onGenericMotionEvent(event: MotionEvent?): Boolean {
+        if (event?.source == InputDevice.SOURCE_ROTARY_ENCODER) {
+            val scroll = event.getAxisValue(MotionEvent.AXIS_SCROLL)
+
+            if (scroll != 0f) {
+                // Calculate scroll amount (one step = 100px)
+                val scrollAmount = (scroll * 100).toInt()
+                smoothScrollBy(0, -scrollAmount)
+                return true
+            }
+        }
+
+        return super.onGenericMotionEvent(event)
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">📊 Rotary Nudge Direction</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rotation Direction</th>
+                            <th>Focus Movement</th>
+                            <th>Scroll Direction</th>
+                            <th>Usage Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Clockwise (CW)</td>
+                            <td>FOCUS_DOWN / FOCUS_FORWARD</td>
+                            <td>Scroll Down</td>
+                            <td>Next item in list</td>
+                        </tr>
+                        <tr>
+                            <td>Counter-clockwise (CCW)</td>
+                            <td>FOCUS_UP / FOCUS_BACKWARD</td>
+                            <td>Scroll Up</td>
+                            <td>Previous item in list</td>
+                        </tr>
+                        <tr>
+                            <td>Center Button Click</td>
+                            <td>KEYCODE_DPAD_CENTER</td>
+                            <td>-</td>
+                            <td>Select item / Confirm</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 8: Vehicle HAL Properties -->
+        <section class="section sec-input">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Vehicle HAL Properties
+            </h2>
+            <p class="section-description">
+                Vehicle HAL Property structure for delivering vehicle hardware input to Android.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔑</span> HW_KEY_INPUT</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Property ID</strong>: 0x0A10 (289415184)</li>
+                            <li><strong>Type</strong>: VehiclePropValue (int32 array)</li>
+                            <li><strong>Data</strong>: [action, keyCode, displayType]</li>
+                            <li><strong>Usage</strong>: Steering wheel buttons and general keys</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔄</span> HW_ROTARY_INPUT</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Property ID</strong>: 0x0A20 (289415200)</li>
+                            <li><strong>Type</strong>: VehiclePropValue (int32 array)</li>
+                            <li><strong>Data</strong>: [rotaryInputType, detents, targetDisplay]</li>
+                            <li><strong>Usage</strong>: Rotary Knob rotation</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📺</span> Display Type</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>0</strong>: MAIN (Center display)</li>
+                            <li><strong>1</strong>: CLUSTER (Instrument cluster)</li>
+                            <li><strong>2</strong>: HUD (Head-up display)</li>
+                            <li><strong>-1</strong>: UNKNOWN (System determines)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">📋 VehiclePropValue Structure</h3>
+            <div class="code-block">
+                <pre><code>// Data structure delivered from Vehicle HAL to Android
+message VehiclePropValue {
+    int32 prop;           // Property ID (e.g., 0x0A10 for HW_KEY_INPUT)
+    int32 timestamp;      // Timestamp (ms)
+    int32 areaId;         // Zone ID (for multi-zone support)
+
+    // HW_KEY_INPUT data (int32Values)
+    repeated int32 int32Values = [
+        action,           // 0: DOWN, 1: UP
+        keyCode,          // Android KeyCode (e.g., 126 = KEYCODE_MEDIA_PLAY)
+        displayType,      // 0: MAIN, 1: CLUSTER
+        repeatCount       // Repeat count for long press
+    ];
+}
+
+// HW_ROTARY_INPUT data
+repeated int32 int32Values = [
+    rotaryInputType,      // 0: ROTARY_INPUT_TYPE_SYSTEM_NAVIGATION
+    detents,              // Rotation amount (click count, positive=CW, negative=CCW)
+    targetDisplay,        // Target display (0: MAIN, 1: CLUSTER)
+    velocityInMillisPerDetent  // Rotation speed (ms/detent)
+];</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">📊 Key Action & Display Type</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Value</th>
+                            <th>Meaning</th>
+                            <th>Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td rowspan="2">Action</td>
+                            <td>0</td>
+                            <td>KEY_DOWN</td>
+                            <td>Button pressed</td>
+                        </tr>
+                        <tr>
+                            <td>1</td>
+                            <td>KEY_UP</td>
+                            <td>Button released</td>
+                        </tr>
+                        <tr>
+                            <td rowspan="4">Display Type</td>
+                            <td>0</td>
+                            <td>MAIN</td>
+                            <td>Center display</td>
+                        </tr>
+                        <tr>
+                            <td>1</td>
+                            <td>CLUSTER</td>
+                            <td>Instrument cluster display</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>HUD</td>
+                            <td>Head-up display</td>
+                        </tr>
+                        <tr>
+                            <td>-1</td>
+                            <td>UNKNOWN</td>
+                            <td>System auto-determines</td>
+                        </tr>
+                        <tr>
+                            <td rowspan="2">Rotary Type</td>
+                            <td>0</td>
+                            <td>SYSTEM_NAVIGATION</td>
+                            <td>Focus movement (Nudge)</td>
+                        </tr>
+                        <tr>
+                            <td>1</td>
+                            <td>VOLUME</td>
+                            <td>Volume control only</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">🔧 Vehicle HAL Implementation Example (C++)</h3>
+            <div class="code-block">
+                <pre><code>// Send key event from Vehicle HAL (C++)
+void VehicleHalImpl::onButtonPress(int keyCode, int displayType) {
+    VehiclePropValue value;
+    value.prop = toInt(VehicleProperty::HW_KEY_INPUT);
+    value.timestamp = elapsedRealtimeNano();
+    value.areaId = 0;
+
+    // int32Values: [action, keyCode, displayType, repeatCount]
+    value.value.int32Values = {
+        0,              // 0 = KEY_DOWN
+        keyCode,        // Android KeyCode (e.g., 126 = MEDIA_PLAY)
+        displayType,    // 0 = MAIN, 1 = CLUSTER
+        0               // repeatCount
+    };
+
+    // Send to CarService
+    mCallback->onPropertyEvent({value});
+}
+
+// Send Rotary event
+void VehicleHalImpl::onRotaryInput(int detents) {
+    VehiclePropValue value;
+    value.prop = toInt(VehicleProperty::HW_ROTARY_INPUT);
+    value.timestamp = elapsedRealtimeNano();
+    value.areaId = 0;
+
+    // int32Values: [rotaryInputType, detents, targetDisplay, velocity]
+    value.value.int32Values = {
+        0,              // 0 = SYSTEM_NAVIGATION
+        detents,        // positive = CW, negative = CCW
+        0,              // 0 = MAIN display
+        100             // 100ms per detent
+    };
+
+    mCallback->onPropertyEvent({value});
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 9: Key Code Mapping -->
+        <section class="section sec-car">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                Key Code Mapping
+            </h2>
+            <p class="section-description">
+                Mapping from Linux Input Event Code to Android KeyCode and vehicle-specific key codes.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">📊 Media Key Mapping</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Linux Event Code</th>
+                            <th>Android KeyCode</th>
+                            <th>Value</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>KEY_PLAYPAUSE (164)</td>
+                            <td>KEYCODE_MEDIA_PLAY_PAUSE</td>
+                            <td>85</td>
+                            <td>Toggle Play/Pause</td>
+                        </tr>
+                        <tr>
+                            <td>KEY_PLAY (207)</td>
+                            <td>KEYCODE_MEDIA_PLAY</td>
+                            <td>126</td>
+                            <td>Play</td>
+                        </tr>
+                        <tr>
+                            <td>KEY_PAUSE (119)</td>
+                            <td>KEYCODE_MEDIA_PAUSE</td>
+                            <td>127</td>
+                            <td>Pause</td>
+                        </tr>
+                        <tr>
+                            <td>KEY_NEXTSONG (163)</td>
+                            <td>KEYCODE_MEDIA_NEXT</td>
+                            <td>87</td>
+                            <td>Next Track</td>
+                        </tr>
+                        <tr>
+                            <td>KEY_PREVIOUSSONG (165)</td>
+                            <td>KEYCODE_MEDIA_PREVIOUS</td>
+                            <td>88</td>
+                            <td>Previous Track</td>
+                        </tr>
+                        <tr>
+                            <td>KEY_STOP (128)</td>
+                            <td>KEYCODE_MEDIA_STOP</td>
+                            <td>86</td>
+                            <td>Stop</td>
+                        </tr>
+                        <tr>
+                            <td>KEY_FASTFORWARD (208)</td>
+                            <td>KEYCODE_MEDIA_FAST_FORWARD</td>
+                            <td>90</td>
+                            <td>Fast Forward</td>
+                        </tr>
+                        <tr>
+                            <td>KEY_REWIND (168)</td>
+                            <td>KEYCODE_MEDIA_REWIND</td>
+                            <td>89</td>
+                            <td>Rewind</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">📊 Vehicle-Specific Key Codes (AAOS)</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>KeyCode</th>
+                            <th>Value</th>
+                            <th>Description</th>
+                            <th>Usage Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>KEYCODE_STEM_PRIMARY</td>
+                            <td>264</td>
+                            <td>Steering Wheel Primary Button</td>
+                            <td>Start Voice Recognition</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_STEM_1</td>
+                            <td>265</td>
+                            <td>Steering Wheel Button 1</td>
+                            <td>Answer/End Call</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_STEM_2</td>
+                            <td>266</td>
+                            <td>Steering Wheel Button 2</td>
+                            <td>Custom Function</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_STEM_3</td>
+                            <td>267</td>
+                            <td>Steering Wheel Button 3</td>
+                            <td>Custom Function</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_CALL</td>
+                            <td>5</td>
+                            <td>Call Button</td>
+                            <td>Make Call</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_ENDCALL</td>
+                            <td>6</td>
+                            <td>End Call Button</td>
+                            <td>End Call</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_VOICE_ASSIST</td>
+                            <td>231</td>
+                            <td>Voice Recognition Button</td>
+                            <td>Google Assistant</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_NAVIGATE_PREVIOUS</td>
+                            <td>260</td>
+                            <td>Navigate Previous</td>
+                            <td>Browser Back</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_NAVIGATE_NEXT</td>
+                            <td>261</td>
+                            <td>Navigate Next</td>
+                            <td>Browser Forward</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">📋 Generic.kl Key Mapping File</h3>
+            <div class="code-block">
+                <pre><code># Generic.kl - Key Layout file
+# Location: frameworks/base/data/keyboards/Generic.kl
+
+# Media key mapping
+key 164   MEDIA_PLAY_PAUSE
+key 207   MEDIA_PLAY
+key 119   MEDIA_PAUSE
+key 163   MEDIA_NEXT
+key 165   MEDIA_PREVIOUS
+key 128   MEDIA_STOP
+key 208   MEDIA_FAST_FORWARD
+key 168   MEDIA_REWIND
+
+# Volume keys
+key 115   VOLUME_UP
+key 114   VOLUME_DOWN
+key 113   VOLUME_MUTE
+
+# Navigation keys
+key 103   DPAD_UP
+key 108   DPAD_DOWN
+key 105   DPAD_LEFT
+key 106   DPAD_RIGHT
+key 352   DPAD_CENTER
+
+# Call keys
+key 231   CALL
+key 107   ENDCALL
+
+# Voice recognition
+key 582   VOICE_ASSIST</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">🔧 Custom Key Definition (Vendor Overlay)</h3>
+            <div class="code-block">
+                <pre><code>// Define custom keys with Vendor Overlay
+// hardware/[vendor]/[device]/overlay/frameworks/base/core/res/res/values/config.xml
+
+&lt;resources&gt;
+    &lt;!-- Custom key behavior for STEM_PRIMARY --&gt;
+    &lt;integer name="config_longPressOnStemPrimaryBehavior"&gt;2&lt;/integer&gt;
+    &lt;!-- 0: Nothing, 1: Voice Assist, 2: Custom Action --&gt;
+
+    &lt;!-- Custom key mapping --&gt;
+    &lt;string-array name="config_custom_hardware_keys"&gt;
+        &lt;item&gt;264:VOICE_ASSIST&lt;/item&gt;    &lt;!-- STEM_PRIMARY --&gt;
+        &lt;item&gt;265:CALL&lt;/item&gt;            &lt;!-- STEM_1 --&gt;
+        &lt;item&gt;266:MEDIA_PLAY_PAUSE&lt;/item&gt; &lt;!-- STEM_2 --&gt;
+    &lt;/string-array&gt;
+&lt;/resources&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 10: CarInputService Details -->
+        <section class="section sec-input">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                CarInputService Details
+            </h2>
+            <p class="section-description">
+                CarInputService is the core service that injects key events received from VHAL into the Android Input Framework.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">💉</span> Key Injection</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>InputManager.injectInputEvent()</strong></li>
+                            <li>VHAL -> KeyEvent object creation</li>
+                            <li>Deliver to InputDispatcher</li>
+                            <li>System permission required (INJECT_EVENTS)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎯</span> Display Routing</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Determine target based on displayType</li>
+                            <li>MAIN: ActivityTaskManager</li>
+                            <li>CLUSTER: ClusterHomeService</li>
+                            <li>UNKNOWN: Focused display</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔍</span> Key Filtering</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Intercept special keys (Voice, Call)</li>
+                            <li>Apply UX Restrictions</li>
+                            <li>Block certain keys while driving</li>
+                            <li>Priority-based delivery</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant VHAL as Vehicle HAL
+                    participant CIS as CarInputService
+                    participant IM as InputManager
+                    participant ID as InputDispatcher
+                    participant APP as Application
+
+                    VHAL->>CIS: onHalEvents(HW_KEY_INPUT)
+                    CIS->>CIS: Parse VehiclePropValue
+                    CIS->>CIS: Create KeyEvent object
+                    CIS->>CIS: Determine target display
+
+                    alt Special Key (Voice/Call)
+                        CIS->>CIS: Handle internally
+                        CIS->>APP: Direct Intent
+                    else Normal Key
+                        CIS->>IM: injectInputEvent(KeyEvent)
+                        IM->>ID: notifyKey()
+                        ID->>APP: dispatchKeyEvent()
+                    end
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">📋 CarInputService Key Methods</h3>
+            <div class="code-block">
+                <pre><code>// CarInputService.java core logic (pseudo code)
+public class CarInputService extends ICarInput.Stub {
+
+    // Receive key event from VHAL
+    @Override
+    public void onHalEvents(List&lt;VehiclePropValue&gt; values) {
+        for (VehiclePropValue value : values) {
+            if (value.prop == VehicleProperty.HW_KEY_INPUT) {
+                handleKeyEvent(value);
+            } else if (value.prop == VehicleProperty.HW_ROTARY_INPUT) {
+                handleRotaryEvent(value);
+            }
+        }
+    }
+
+    private void handleKeyEvent(VehiclePropValue value) {
+        int[] data = value.value.int32Values;
+        int action = data[0];        // 0: DOWN, 1: UP
+        int keyCode = data[1];       // Android KeyCode
+        int displayType = data[2];   // 0: MAIN, 1: CLUSTER
+        int repeatCount = data.length > 3 ? data[3] : 0;
+
+        // Create KeyEvent object
+        KeyEvent event = new KeyEvent(
+            SystemClock.uptimeMillis(),
+            SystemClock.uptimeMillis(),
+            action == 0 ? KeyEvent.ACTION_DOWN : KeyEvent.ACTION_UP,
+            keyCode,
+            repeatCount
+        );
+
+        // Handle special keys
+        if (isSpecialKey(keyCode)) {
+            handleSpecialKey(keyCode, action);
+            return;
+        }
+
+        // Determine target display
+        int targetDisplayId = getTargetDisplay(displayType);
+
+        // Inject key through InputManager
+        mInputManager.injectInputEvent(
+            event,
+            InputManager.INJECT_INPUT_EVENT_MODE_ASYNC,
+            targetDisplayId
+        );
+    }
+
+    private boolean isSpecialKey(int keyCode) {
+        return keyCode == KeyEvent.KEYCODE_VOICE_ASSIST ||
+               keyCode == KeyEvent.KEYCODE_CALL ||
+               keyCode == KeyEvent.KEYCODE_ENDCALL;
+    }
+
+    private void handleSpecialKey(int keyCode, int action) {
+        if (action != KeyEvent.ACTION_DOWN) {
+            return;  // Only handle key down
+        }
+
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_VOICE_ASSIST:
+                // Start voice recognition
+                startVoiceAssist();
+                break;
+
+            case KeyEvent.KEYCODE_CALL:
+                // Start/answer call
+                handleCallButton();
+                break;
+
+            case KeyEvent.KEYCODE_ENDCALL:
+                // End call
+                endCall();
+                break;
+        }
+    }
+
+    private int getTargetDisplay(int displayType) {
+        switch (displayType) {
+            case 0:  // MAIN
+                return Display.DEFAULT_DISPLAY;
+
+            case 1:  // CLUSTER
+                return getClusterDisplayId();
+
+            default:  // UNKNOWN
+                return getFocusedDisplayId();
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">📊 Key Filtering Rules</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Key Type</th>
+                            <th>While Driving (Moving)</th>
+                            <th>While Parked</th>
+                            <th>Processing Method</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Media Keys (Play/Pause/Next)</td>
+                            <td>✅ Allowed</td>
+                            <td>✅ Allowed</td>
+                            <td>Deliver to MediaSessionService</td>
+                        </tr>
+                        <tr>
+                            <td>Volume Keys (Up/Down)</td>
+                            <td>✅ Allowed</td>
+                            <td>✅ Allowed</td>
+                            <td>Deliver to CarAudioService</td>
+                        </tr>
+                        <tr>
+                            <td>Voice Recognition (Voice Assist)</td>
+                            <td>✅ Allowed</td>
+                            <td>✅ Allowed</td>
+                            <td>Handle internally in CarInputService</td>
+                        </tr>
+                        <tr>
+                            <td>Call Keys (Call/Endcall)</td>
+                            <td>✅ Allowed</td>
+                            <td>✅ Allowed</td>
+                            <td>Deliver to Telecom Service</td>
+                        </tr>
+                        <tr>
+                            <td>Rotary Nudge</td>
+                            <td>✅ Allowed (limited)</td>
+                            <td>✅ Allowed</td>
+                            <td>Deliver to RotaryService</td>
+                        </tr>
+                        <tr>
+                            <td>Back/Home Keys</td>
+                            <td>✅ Allowed</td>
+                            <td>✅ Allowed</td>
+                            <td>ActivityTaskManager</td>
+                        </tr>
+                        <tr>
+                            <td>Text Input Keys</td>
+                            <td>❌ Blocked</td>
+                            <td>✅ Allowed</td>
+                            <td>Apply UX Restrictions</td>
+                        </tr>
+                        <tr>
+                            <td>Settings Entry Keys</td>
+                            <td>❌ Blocked</td>
+                            <td>✅ Allowed</td>
+                            <td>Apply UX Restrictions</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 11: Cluster Display Key Handling -->
+        <section class="section sec-car">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                Cluster Display Key Handling
+            </h2>
+            <p class="section-description">
+                Key event handling routed to the Instrument Cluster display.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📊</span> Cluster Display</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Independent Display</strong>: Separate instrument cluster screen</li>
+                            <li><strong>Limited UI</strong>: Simplified for safety</li>
+                            <li><strong>Media Info</strong>: Currently playing song info</li>
+                            <li><strong>Navigation</strong>: Simple route guidance</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎯</span> Routing Rules</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Only process events with displayType=1</li>
+                            <li>Deliver to ClusterHomeService</li>
+                            <li>Cluster-specific key mapping</li>
+                            <li>Operates independently from Main Display</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔄</span> ClusterHomeService</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Manage Cluster UI</li>
+                            <li>Distribute key events</li>
+                            <li>Switch between Media/Navigation</li>
+                            <li>Host ActivityView</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    HW[Steering Wheel Button] --> VHAL[Vehicle HAL]
+                    VHAL --> CIS[CarInputService]
+
+                    CIS --> DT{Display Type?}
+
+                    DT -->|0: MAIN| MAIN_DISP[Main Display<br />ActivityTaskManager]
+                    DT -->|1: CLUSTER| CLUSTER_DISP[Cluster Display<br />ClusterHomeService]
+
+                    MAIN_DISP --> MEDIA_APP[Media App<br />Main Screen]
+                    CLUSTER_DISP --> CLUSTER_UI[Cluster UI<br />Media Info]
+
+                    style DT fill:#f9f
+                    style CLUSTER_DISP fill:#e3f2fd
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">📋 Cluster-Specific Key Mapping</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Key Code</th>
+                            <th>Cluster Action</th>
+                            <th>Main Display Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>KEYCODE_MEDIA_PLAY_PAUSE</td>
+                            <td>Update Cluster media info</td>
+                            <td>Call MediaSession onPlay()</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_MEDIA_NEXT</td>
+                            <td>Show next track info on Cluster</td>
+                            <td>MediaSession onSkipToNext()</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_DPAD_UP/DOWN</td>
+                            <td>Navigate Cluster menu</td>
+                            <td>Move focus within app</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_DPAD_CENTER</td>
+                            <td>Select Cluster item</td>
+                            <td>Rotary center click</td>
+                        </tr>
+                        <tr>
+                            <td>KEYCODE_STEM_PRIMARY</td>
+                            <td>Toggle Cluster mode (Media <-> Nav)</td>
+                            <td>Start voice recognition</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">🔧 ClusterHomeService Implementation Example</h3>
+            <div class="code-block">
+                <pre><code>// Handle key events in ClusterHomeService
+class ClusterHomeService : Service() {
+    private var currentMode = ClusterMode.MEDIA
+
+    // Receive key event
+    fun onKeyEvent(keyCode: Int, action: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
+                if (action == KeyEvent.ACTION_DOWN) {
+                    handleMediaPlayPause()
+                }
+            }
+
+            KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                if (action == KeyEvent.ACTION_DOWN) {
+                    handleMediaNext()
+                }
+            }
+
+            KeyEvent.KEYCODE_DPAD_UP -> {
+                if (action == KeyEvent.ACTION_DOWN) {
+                    navigateClusterMenu(Direction.UP)
+                }
+            }
+
+            KeyEvent.KEYCODE_DPAD_DOWN -> {
+                if (action == KeyEvent.ACTION_DOWN) {
+                    navigateClusterMenu(Direction.DOWN)
+                }
+            }
+
+            KeyEvent.KEYCODE_STEM_PRIMARY -> {
+                if (action == KeyEvent.ACTION_DOWN) {
+                    toggleClusterMode()
+                }
+            }
+        }
+    }
+
+    private fun handleMediaPlayPause() {
+        // Play/Pause through MediaController
+        val controller = getActiveMediaController()
+        val state = controller?.playbackState?.state
+
+        if (state == PlaybackStateCompat.STATE_PLAYING) {
+            controller.transportControls.pause()
+        } else {
+            controller.transportControls.play()
+        }
+
+        // Update Cluster UI
+        updateClusterMediaInfo()
+    }
+
+    private fun toggleClusterMode() {
+        currentMode = when (currentMode) {
+            ClusterMode.MEDIA -> ClusterMode.NAVIGATION
+            ClusterMode.NAVIGATION -> ClusterMode.MEDIA
+        }
+
+        updateClusterDisplay(currentMode)
+    }
+
+    enum class ClusterMode {
+        MEDIA,
+        NAVIGATION
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 12: Android Version Changes -->
+        <section class="section sec-input">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                Android Version Changes
+            </h2>
+            <p class="section-description">
+                Changes in Input Framework and key event handling across Android versions.
+            </p>
+
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>Major Changes</th>
+                            <th>New Features</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Android 14</strong><br />(API 34)</td>
+                            <td>
+                                - Rotary Controller improvements<br />
+                                - Cluster Display multi-window<br />
+                                - Enhanced key filtering
+                            </td>
+                            <td>
+                                - Per-display Input routing<br />
+                                - Enhanced UX Restrictions<br />
+                                - Multi-user input isolation
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android 13</strong><br />(API 33)</td>
+                            <td>
+                                - Input Method improvements<br />
+                                - Vehicle-specific IME<br />
+                                - Enhanced Stylus support
+                            </td>
+                            <td>
+                                - CarInputManager API<br />
+                                - Custom input device support<br />
+                                - Haptic feedback customization
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android 12</strong><br />(API 31)</td>
+                            <td>
+                                - InputFlinger refactoring<br />
+                                - MotionEvent optimization<br />
+                                - Touch latency improvement
+                            </td>
+                            <td>
+                                - Input transfer API<br />
+                                - Per-window input features<br />
+                                - Enhanced gesture support
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android 11</strong><br />(API 30)</td>
+                            <td>
+                                - Rotary Input official support<br />
+                                - CarInputService stabilization<br />
+                                - VHAL 2.0 integration
+                            </td>
+                            <td>
+                                - RotaryService<br />
+                                - Direct Manipulation mode<br />
+                                - Hardware button customization
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android 10</strong><br />(API 29)</td>
+                            <td>
+                                - AAOS vehicle Input introduction<br />
+                                - Vehicle HAL integration<br />
+                                - Cluster Display support
+                            </td>
+                            <td>
+                                - CarInputService<br />
+                                - HW_KEY_INPUT property<br />
+                                - Display-specific routing
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">🔄 API Changes and Migration</h3>
+            <div class="code-block">
+                <pre><code>// Before Android 10 (Standard Android)
+// No vehicle-specific input, only standard InputDevice
+@Override
+public boolean onKeyDown(int keyCode, KeyEvent event) {
+    // Handle general key events
+    return super.onKeyDown(keyCode, event);
+}
+
+// ========================================
+
+// Android 10+ (AAOS)
+// CarInputService introduced, VHAL integration
+override fun onCreate() {
+    super.onCreate()
+
+    // Use Car API
+    val car = Car.createCar(this)
+    // CarInputService automatically handles VHAL events
+}
+
+// ========================================
+
+// Android 11+ (Official Rotary support)
+override fun onGenericMotionEvent(event: MotionEvent?): Boolean {
+    if (event?.source == InputDevice.SOURCE_ROTARY_ENCODER) {
+        // Handle Rotary events
+        val scroll = event.getAxisValue(MotionEvent.AXIS_SCROLL)
+        handleRotaryScroll(scroll)
+        return true
+    }
+    return super.onGenericMotionEvent(event)
+}
+
+// ========================================
+
+// Android 13+ (CarInputManager API)
+val carInputManager = car.getCarManager(Car.CAR_INPUT_SERVICE) as CarInputManager
+
+// Register custom input device
+carInputManager.requestInputEventCapture(
+    CarInputManager.INPUT_TYPE_ALL_INPUTS,
+    CarInputManager.CAPTURE_REQ_FLAGS_ALLOW_DELAYED_GRANT
+) { event ->
+    // Capture all input events
+    handleCapturedEvent(event)
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 13: Debugging & Troubleshooting -->
+        <section class="section sec-car">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                Debugging & Troubleshooting
+            </h2>
+            <p class="section-description">
+                Tools and methodologies for diagnosing and resolving key event issues.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔍</span> Main Debugging Tools</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>getevent</code>: Raw input events</li>
+                            <li><code>dumpsys input</code>: Input system state</li>
+                            <li><code>dumpsys car_service</code>: CarInputService</li>
+                            <li><code>logcat -s CarInputService:V</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚠️</span> Common Issues</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Key events not delivered</li>
+                            <li>Incorrect display routing</li>
+                            <li>Rotary input not working</li>
+                            <li>MediaSession not responding</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🛠️</span> Log Analysis</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>VHAL Property logs</li>
+                            <li>KeyEvent dispatch tracing</li>
+                            <li>MediaSession priority check</li>
+                            <li>Display routing verification</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">🔧 Main Debugging Commands</h3>
+            <div class="code-block">
+                <pre><code># getevent - Monitor raw input events
+adb shell getevent -lt
+
+# Example output:
+# [    123.456789] EV_KEY       KEY_PLAYPAUSE        DOWN
+# [    123.567890] EV_KEY       KEY_PLAYPAUSE        UP
+
+# dumpsys input - Input system state
+adb shell dumpsys input
+
+# Example output:
+# INPUT MANAGER (dumpsys input)
+#
+# Event Hub State:
+#   Built-in Keyboard: device 1
+#   Vehicle Hardware Keys: device 5
+#
+# Input Dispatcher State:
+#   Focused application: com.spotify.music
+#   Focused window: com.spotify.music/MainActivity
+
+# dumpsys car_service - CarInputService state
+adb shell dumpsys car_service --services CarInputService
+
+# Example output:
+# CarInputService:
+#   Captured events: 1234
+#   Last key: KEYCODE_MEDIA_PLAY (126)
+#   Display routing: MAIN (0)
+#   Rotary events: 567
+
+# Check MediaSession state
+adb shell dumpsys media_session
+
+# Example output:
+# Active sessions:
+#   com.spotify.music (priority: 100, state: PLAYING)
+#   com.google.android.apps.maps (priority: 50, state: PAUSED)</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">📋 logcat Filtering</h3>
+            <div class="code-block">
+                <pre><code># CarInputService logs
+adb logcat -s CarInputService:V
+
+# All Input-related logs
+adb logcat -s CarInputService:V InputDispatcher:V InputReader:V
+
+# Trace key events
+adb logcat | grep -i "key event"
+
+# Trace MediaSession dispatch
+adb logcat -s MediaSessionService:V | grep -i "dispatch"
+
+# Trace Rotary events
+adb logcat -s RotaryService:V
+
+# VHAL Property logs
+adb logcat -s VehicleHal:V | grep -i "HW_KEY"</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">⚠️ Troubleshooting Guide</h3>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Symptom</th>
+                            <th>Possible Cause</th>
+                            <th>Solution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>No response when pressing media key</td>
+                            <td>
+                                - MediaSession not created<br />
+                                - isActive = false<br />
+                                - Callback not implemented
+                            </td>
+                            <td>
+                                - Set MediaSession.isActive = true<br />
+                                - Verify setCallback()<br />
+                                - Check dumpsys media_session
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Key event not reaching app</td>
+                            <td>
+                                - VHAL not sending<br />
+                                - CarInputService filtering<br />
+                                - Display routing error
+                            </td>
+                            <td>
+                                - Check hardware with getevent<br />
+                                - Check dumpsys car_service log<br />
+                                - Verify displayType
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Key not reaching Cluster</td>
+                            <td>
+                                - displayType != 1<br />
+                                - ClusterHomeService not running<br />
+                                - Cluster Display not registered
+                            </td>
+                            <td>
+                                - Verify VHAL displayType<br />
+                                - Check Cluster with dumpsys display<br />
+                                - Check ClusterHomeService logs
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Rotary not rotating</td>
+                            <td>
+                                - HW_ROTARY_INPUT not sent<br />
+                                - RotaryService disabled<br />
+                                - View not focusable
+                            </td>
+                            <td>
+                                - Check Rotary events with getevent<br />
+                                - Set View.focusable = true<br />
+                                - Implement onGenericMotionEvent()
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Volume key not working</td>
+                            <td>
+                                - CarAudioService error<br />
+                                - Volume Group not set<br />
+                                - Fixed Volume not enabled
+                            </td>
+                            <td>
+                                - dumpsys car_service --services CarAudioService<br />
+                                - Check car_audio_configuration.xml<br />
+                                - Check Audio HAL logs
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Voice recognition button not working</td>
+                            <td>
+                                - KEYCODE_VOICE_ASSIST not mapped<br />
+                                - Google App not installed<br />
+                                - Insufficient permissions
+                            </td>
+                            <td>
+                                - Check Generic.kl key mapping<br />
+                                - Verify Google App installation<br />
+                                - Check RECORD_AUDIO permission
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Certain keys blocked while driving</td>
+                            <td>
+                                - UX Restrictions applied<br />
+                                - Intended safety feature<br />
+                                - Key filtering rules
+                            </td>
+                            <td>
+                                - dumpsys car_service --services CarUxRestrictionsManagerService<br />
+                                - Check Driving State<br />
+                                - Retry while parked
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Custom Key not recognized</td>
+                            <td>
+                                - Key Layout file missing<br />
+                                - KeyCode mapping error<br />
+                                - Vendor Overlay not applied
+                            </td>
+                            <td>
+                                - Create .kl file<br />
+                                - Check Linux code with getevent<br />
+                                - Verify Overlay build
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">🔍 Tracing Complete Key Event Path</h3>
+            <div class="code-block">
+                <pre><code># 1. Check hardware level
+adb shell getevent -lt | grep "KEY_PLAYPAUSE"
+
+# 2. Check VHAL Property
+adb logcat -s VehicleHal:V | grep "HW_KEY_INPUT"
+
+# 3. Check CarInputService reception
+adb logcat -s CarInputService:V | grep "onHalEvents"
+
+# 4. Check InputManager injection
+adb logcat -s InputManager:V | grep "injectInputEvent"
+
+# 5. Check InputDispatcher delivery
+adb logcat -s InputDispatcher:V | grep "notifyKey"
+
+# 6. Check MediaSessionService dispatch
+adb logcat -s MediaSessionService:V | grep "dispatchMediaKeyEvent"
+
+# 7. Check app reception
+adb logcat -s YourApp:V | grep "onPlay"
+
+# All at once
+adb logcat -s VehicleHal:V CarInputService:V InputDispatcher:V MediaSessionService:V | grep -E "KEY|MEDIA"</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 14: AOSP Source Reference -->
+        <section class="section sec-input">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                AOSP Source Code Reference
+            </h2>
+            <p class="section-description">
+                Core source code locations and key files for AAOS key event handling.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🚗</span> CarInputService</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>CarInputService.java</strong></li>
+                            <li>packages/services/Car/service/src/com/android/car/input/</li>
+                            <li>VHAL event reception and key injection</li>
+                            <li>Display Routing, key filtering</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⌨️</span> InputReader/Dispatcher</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>InputReader.cpp</strong></li>
+                            <li>frameworks/native/services/inputflinger/reader/</li>
+                            <li>Linux evdev -> Android KeyEvent</li>
+                            <li>Key Layout file parsing</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔄</span> RotaryService</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>RotaryService.java</strong></li>
+                            <li>packages/apps/Car/RotaryController/</li>
+                            <li>Rotary input -> Focus Navigation</li>
+                            <li>Nudge, Inertia handling</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">📂 Main Directory Structure</h3>
+            <div class="code-block">
+                <pre><code># CarInputService source
+packages/services/Car/service/src/com/android/car/input/
+├── CarInputService.java            # Main service
+├── InputHalService.java            # VHAL communication
+└── CarInputManager.java            # Public API
+
+# RotaryService source
+packages/apps/Car/RotaryController/
+├── src/com/android/car/rotary/
+│   ├── RotaryService.java          # Main service
+│   ├── Navigator.java              # Focus navigation
+│   └── RotaryCache.java            # Caching
+
+# InputReader (Native)
+frameworks/native/services/inputflinger/
+├── reader/
+│   ├── InputReader.cpp             # Input reading
+│   ├── EventHub.cpp                # evdev events
+│   └── mapper/
+│       ├── KeyboardInputMapper.cpp # Keyboard mapping
+│       └── RotaryEncoderInputMapper.cpp  # Rotary mapping
+├── dispatcher/
+│   └── InputDispatcher.cpp         # Event distribution
+
+# InputManager (Framework)
+frameworks/base/services/core/java/com/android/server/input/
+├── InputManagerService.java        # Input system management
+└── InputFilter.java                # Input filtering
+
+# MediaSession (Framework)
+frameworks/base/media/java/android/media/session/
+├── MediaSessionManager.java        # Session management
+├── MediaSession.java               # Session API
+└── MediaController.java            # Controller API
+
+# Vehicle HAL
+hardware/interfaces/automotive/vehicle/
+└── 2.0/
+    ├── IVehicle.hal                # Vehicle interface
+    └── types.hal                   # VehicleProperty definitions
+
+# Key Layout files
+frameworks/base/data/keyboards/
+├── Generic.kl                      # Default key mapping
+└── Vendor_[xxxx]_Product_[yyyy].kl # Device-specific mapping</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">🔍 Key Class Details</h3>
+            <div class="code-block">
+                <pre><code>// CarInputService.java - Core methods
+public class CarInputService extends ICarInput.Stub {
+    // VHAL event handler
+    private final VehicleHal.VehicleHalEventListener mVehicleHalListener =
+        new VehicleHal.VehicleHalEventListener() {
+            @Override
+            public void onHalEvents(List&lt;VehiclePropValue&gt; values) {
+                for (VehiclePropValue v : values) {
+                    handleKeyEvent(v);
+                }
+            }
+        };
+
+    // Key injection
+    private void injectKeyEvent(KeyEvent event, int targetDisplay) {
+        mInputManager.injectInputEvent(
+            event,
+            InputManager.INJECT_INPUT_EVENT_MODE_ASYNC,
+            targetDisplay
+        );
+    }
+}
+
+// InputReader.cpp - Key reading
+void EventHub::scanDevicesLocked() {
+    // Scan /dev/input/event* devices
+    for (int i = 0; i < INPUT_MAX_DEVICES; i++) {
+        char devname[PATH_MAX];
+        snprintf(devname, sizeof(devname), "/dev/input/event%d", i);
+
+        int fd = open(devname, O_RDONLY | O_CLOEXEC);
+        if (fd >= 0) {
+            // Read device info
+            struct input_id id;
+            ioctl(fd, EVIOCGID, &id);
+        }
+    }
+}
+
+// MediaSessionService.java - Key dispatch
+boolean dispatchMediaKeyEvent(KeyEvent keyEvent, boolean asSystemService) {
+    // Select target based on priority
+    MediaSessionRecord target = findMediaSession();
+
+    if (target != null) {
+        target.getCallback().onMediaButton(keyEvent);
+        return true;
+    }
+    return false;
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">🌐 Useful AOSP Links</h3>
+            <div class="code-block">
+                <pre><code># CarInputService source
+https://cs.android.com/android/platform/superproject/main/+/main:packages/services/Car/service/src/com/android/car/input/
+
+# RotaryService source
+https://cs.android.com/android/platform/superproject/main/+/main:packages/apps/Car/RotaryController/
+
+# InputReader source
+https://cs.android.com/android/platform/superproject/main/+/main:frameworks/native/services/inputflinger/reader/
+
+# MediaSessionService source
+https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/media/java/android/media/session/
+
+# Vehicle HAL source
+https://cs.android.com/android/platform/superproject/main/+/main:hardware/interfaces/automotive/vehicle/
+
+# AAOS Input official documentation
+https://source.android.com/docs/automotive/hmi/input
+
+# Key Layout documentation
+https://source.android.com/docs/core/interaction/input/key-layout-files</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 15: Related Documentation -->
+        <section class="section sec-car">
+            <h2 class="section-title">
+                <span class="section-number">15</span>
+                Related Documentation
+            </h2>
+            <p class="section-description">
+                Other major documentation and resources related to AAOS Key Events.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        <a href="carmedia.html" style="color: inherit; text-decoration: none;">
+                            Car Media Service
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        Integration of media key events with CarMediaService and MediaSession
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        <a href="mediasession.html" style="color: inherit; text-decoration: none;">
+                            MediaSession
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        MediaSession Callback and media key dispatching, priority-based delivery
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        <a href="audio-framework.html" style="color: inherit; text-decoration: none;">
+                            Audio Framework
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        Volume key handling and CarAudioService, Volume Groups integration
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚙</span>
+                        <a href="aaos.html" style="color: inherit; text-decoration: none;">
+                            Android Automotive OS
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        AAOS overall architecture, Vehicle HAL, CarService integration
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        <a href="aaos-last-media.html" style="color: inherit; text-decoration: none;">
+                            Last Media Source & Autoplay
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        Auto-play on ignition start and media key integration
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔋</span>
+                        <a href="power-policy-suspend.html" style="color: inherit; text-decoration: none;">
+                            Power Policy & Suspend
+                        </a>
+                    </h3>
+                    <div class="card-description">
+                        Key event handling based on vehicle power state and Wake-up
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Additional Resources:</strong> Android Official Documentation
+                <a href="https://source.android.com/docs/automotive/hmi/input" target="_blank"
+                   style="color: var(--accent-primary);">AAOS Input System</a>,
+                <a href="https://source.android.com/docs/core/interaction/input" target="_blank"
+                   style="color: var(--accent-primary);">Input Framework</a>
+            </div>
+        </section>
+
+        <a href="index.html" class="nav-button">← Back to Dashboard</a>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

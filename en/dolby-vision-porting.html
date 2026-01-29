@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dolby Vision Porting Guide | Android Media Framework</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Dolby Vision Porting Guide</h1>
+            <p class="page-subtitle">Detailed guide for integrating Dolby Vision HDR support into Android Codec2, MediaCodec,
+                and Display HAL.</p>
+        </header>
+
+        <!-- 1. Prerequisites -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="step-number">1</span>
+                Prerequisites & Hardware
+            </h2>
+            <p>
+                Dolby Vision은 전체 비디오 파이프라인(디코더 → 디스플레이)에 걸친 통합이 필요합니다.
+                <strong>Android 15</strong>부터는 <strong>HDR Headroom Control</strong> API가 추가되어, SDR/HDR 혼합 콘텐츠의 밝기 밸런스를
+                제어할 수 있습니다.
+            </p>
+            <div class="alert">
+                <div class="alert-title">⚠️ Hardware Requirements</div>
+                <p>Dolby Vision은 소프트웨어만으로는 구현할 수 없습니다.
+                    <strong>Dolby Vision Certified SoC</strong>와 <strong>HDR 지원 디스플레이 패널</strong>이 필수적입니다.
+                </p>
+            </div>
+            <ul>
+                <li><strong>Android Version:</strong> Android 7.0+ (Playback), Android 13+ (Capture), Android 15+ (HDR
+                    Headroom).</li>
+                <li><strong>Video Decoder:</strong> HEVC Main 10 프로파일 및 Dolby Vision 확장 지원 하드웨어 디코더.</li>
+                <li><strong>Display Pipeline:</strong> 10-bit/12-bit 색심도 처리 및 동적 메타데이터(Dynamic Metadata) 전송 지원.</li>
+            </ul>
+        </section>
+
+        <!-- 2. Integration Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="step-number">2</span>
+                Integration Architecture
+            </h2>
+            <p>
+                Dolby Vision 통합은 <strong>Codec2</strong> 컴포넌트 구현과 <strong>Display HAL</strong>의 메타데이터 처리로 나뉩니다.
+            </p>
+            <div class="mermaid">
+                graph TD
+                App[ExoPlayer / Media3] --> MC[MediaCodec API]
+                MC --> C2[Codec2 Framework]
+
+                subgraph Vendor [Vendor Implementation]
+                C2Comp[C2 Component<br />c2.vendor.dv.decoder] --> HW[HW Decoder]
+                HW -- "YUV P010 + RPU Data" --> Buffer[Graphic Buffer]
+                Buffer --> DisplayHAL[Display HAL / HWC]
+                DisplayHAL -- "Tone Mapping" --> Panel[HDR Display Panel]
+                end
+
+            </div>
+        </section>
+
+        <!-- 3. Codec2 & MediaCodec Integration -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="step-number">3</span>
+                Codec2 & MediaCodec Integration
+            </h2>
+
+            <h3>3.1 Codec Registration</h3>
+            <p><code>media_codecs.xml</code>에 Dolby Vision 디코더를 등록하고 지원하는 프로파일을 명시해야 합니다.</p>
+            <pre><code class="language-xml">&lt;MediaCodec name="c2.vendor.dv.decoder" type="video/dolby-vision"&gt;
+    &lt;Limit name="size" min="176x144" max="3840x2160" /&gt;
+    &lt;Limit name="alignment" value="2x2" /&gt;
+    &lt;Limit name="block-size" value="16x16" /&gt;
+    &lt;Feature name="adaptive-playback" /&gt;
+    &lt;Feature name="secure-playback" required="true" /&gt;
+    &lt;!-- Dolby Vision Profiles --&gt;
+    &lt;Limit name="concurrent-instances" max="16" /&gt;
+&lt;/MediaCodec&gt;</code></pre>
+
+            <h3>3.2 Extractor Support</h3>
+            <p>
+                Dolby Vision 콘텐츠는 Base Layer와 Enhancement Layer, 그리고 RPU(Reference Picture Unit) 메타데이터로 구성됩니다.
+                <code>MediaExtractor</code>가 <code>dvcC</code>, <code>dvvv</code> 박스를 파싱할 수 있도록 Dolby Vision-aware
+                Extractor가 필요합니다.
+            </p>
+        </section>
+
+        <!-- 4. Display HAL Integration -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="step-number">4</span>
+                Display HAL Integration
+            </h2>
+            <p>
+                디코더에서 추출된 동적 메타데이터(RPU)는 디스플레이 프로세서로 전달되어 톤 매핑(Tone Mapping)에 사용되어야 합니다.
+            </p>
+            <ul>
+                <li><strong>HdrCapabilities:</strong> <code>Display.getHdrCapabilities()</code>가
+                    <code>HDR_TYPE_DOLBY_VISION</code>을 반환해야 합니다.</li>
+                <li><strong>Metadata Propagation:</strong> 디코딩된 버퍼(GraphicBuffer)에 메타데이터를 첨부하여 SurfaceFlinger 및
+                    HWC(Hardware Composer)로 전달.</li>
+                <li><strong>Color Gamut:</strong> BT.2020 색역 및 PQ(Perceptual Quantizer) EOTF 지원 확인.</li>
+                <li><strong>Tone Mapping:</strong> 디스플레이 패널의 최대 밝기(Nits)에 맞춰 장면별 밝기를 조절하는 Dolby Vision Processing
+                    Unit(VPU) 통합.</li>
+            </ul>
+
+            <h3 style="margin-top: 24px;">4.1 Android 15 HDR Headroom</h3>
+            <p>Android 15에서는 <code>setDesiredHdrHeadroom</code> API를 지원하기 위해 Display HAL이 SDR/HDR 혼합 시 밝기 비율을 동적으로 조절할 수
+                있어야 합니다.</p>
+        </section>
+
+        <!-- 5. Verification -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="step-number">5</span>
+                Verification & Testing
+            </h2>
+            <p>통합 검증을 위해 다음 절차를 수행합니다.</p>
+            <ul>
+                <li><strong>Capability Check:</strong> <code>Display.getHdrCapabilities()</code> 호출 시
+                    <code>HDR_TYPE_DOLBY_VISION</code> 반환 확인.
+                </li>
+                <li><strong>Visual Inspection:</strong> Dolby Vision 데모 콘텐츠 재생 시 HDR 마크 표시 및 밝기/색감 변화 확인.</li>
+                <li><strong>Capture Test (Android 13+):</strong> Camera2 API로 10-bit 녹화 시 Dolby Vision Profile 8.4로
+                    인코딩되는지 확인.</li>
+            </ul>
+        </section>
+
+        <a href="dolby-codecs.html" class="nav-button">← Back to Dolby Codecs</a>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

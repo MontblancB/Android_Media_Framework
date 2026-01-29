@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android AOSP Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">Android AOSP</h1>
+            <p class="page-subtitle">Android Open Source Project Full Architecture</p>
+        </header>
+
+        <!-- Section 1: AOSP Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                AOSP Overview
+            </h2>
+            <p class="section-description">
+                Android Open Source Project (AOSP) is the open-source foundation of the Android operating system led by Google.
+            </p>
+
+            <div class="highlight-box">
+                <strong>What is AOSP?</strong> It provides complete Android platform source code and toolchain that can run on various devices including smartphones, tablets, TVs, wearables, and automobiles.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📖</span>
+                        AOSP Definition
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Open-source project led by Google</li>
+                            <li>Apache 2.0 License</li>
+                            <li>Free to use, modify, and distribute</li>
+                            <li>Supports various hardware platforms</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌍</span>
+                        Major Use Cases
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Smartphones/Tablets</strong>: Samsung, Xiaomi, OnePlus</li>
+                            <li><strong>Android TV</strong>: Sony, TCL TV</li>
+                            <li><strong>Wear OS</strong>: Smartwatches</li>
+                            <li><strong>Android Automotive</strong>: Vehicle infotainment</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Key Features
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Layered architecture</li>
+                            <li>Linux kernel based</li>
+                            <li>Java/Kotlin app development support</li>
+                            <li>Hardware abstraction through HAL</li>
+                            <li>Strong security model</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🆚</span>
+                        AOSP vs GMS
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>AOSP</strong>: Open-source, free</li>
+                            <li><strong>GMS (Google Mobile Services)</strong>: Proprietary, license required</li>
+                            <li>GMS: Play Store, Gmail, Maps and other Google apps</li>
+                            <li>Complete Android devices can be built with AOSP alone</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: AOSP Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                AOSP Full Architecture
+            </h2>
+            <p class="section-description">
+                AOSP consists of 5 main layers from the Linux kernel to applications. (Official Android Architecture)
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph LAYER1["📱 Layer 1: System Apps"]
+                        APP["System Apps<br/>Phone • Contacts • Settings<br/>Email • Camera • Browser"]
+                    end
+
+                    subgraph LAYER2["☕ Layer 2: Java API Framework"]
+                        FW["View System • Activity Manager • Package Manager<br/>Window Manager • Notification Manager • Content Providers<br/>Resource Manager • Location Manager • Telephony Manager"]
+                        SERVICES["System Services (system_server)<br/>ActivityManagerService • WindowManagerService<br/>PackageManagerService • NotificationManagerService"]
+                    end
+
+                    subgraph LAYER3["⚡ Layer 3: Native Libraries & Android Runtime"]
+                        ART["Android Runtime (ART)<br/>Ahead-of-Time Compilation<br/>Garbage Collection<br/>Core Libraries"]
+                        NATIVE["Native C/C++ Libraries<br/>Media Framework (libstagefright)<br/>SurfaceFlinger • AudioFlinger<br/>WebView • libc (Bionic) • SSL"]
+                    end
+
+                    subgraph LAYER4["🔌 Layer 4: Hardware Abstraction Layer (HAL)"]
+                        HAL["HIDL/AIDL Interfaces<br/>Audio HAL • Camera HAL • Codec HAL<br/>Sensor HAL • Graphics HAL • Vehicle HAL"]
+                    end
+
+                    subgraph LAYER5["🐧 Layer 5: Linux Kernel"]
+                        KERNEL["Binder Driver • Display Driver • Camera Driver<br/>Audio Driver • Bluetooth Driver • WiFi Driver<br/>Power Management • Memory Management • SELinux"]
+                    end
+
+                    APP -->|Java API| FW
+                    FW -->|JNI| ART
+                    FW -->|Binder IPC| SERVICES
+                    ART -->|JNI| NATIVE
+                    SERVICES -->|Native Calls| NATIVE
+                    NATIVE -->|HIDL/AIDL| HAL
+                    HAL -->|System Calls| KERNEL
+
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>Key Architecture Principle</strong><br/>
+                Each layer is separated by standardized interfaces, allowing vendors to independently update lower layers (especially HAL, Kernel) without modifying upper layers.
+                This is the core design philosophy of <strong>Project Treble</strong>.
+            </div>
+        </section>
+
+        <!-- Section 3: Layer Details -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Detailed Layer Structure
+            </h2>
+            <p class="section-description">
+                Detailed description of each layer's role and main components.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎨</span>
+                        Application Layer
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Direct user interaction</strong></p>
+                        <ul>
+                            <li>System Apps: Phone, Contacts, Settings</li>
+                            <li>OEM Apps: Manufacturer apps</li>
+                            <li>3rd Party Apps: Play Store apps</li>
+                            <li>Developed in Java/Kotlin</li>
+                            <li>Uses Android API</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Android Framework
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Java API for app development</strong></p>
+                        <ul>
+                            <li>Activity Manager: App lifecycle</li>
+                            <li>Window Manager: Window management</li>
+                            <li>Package Manager: App install/uninstall</li>
+                            <li>Notification Manager: Notifications</li>
+                            <li>Content Providers: Data sharing</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">☕</span>
+                        Android Runtime (ART)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Java/Kotlin execution environment</strong></p>
+                        <ul>
+                            <li>Ahead-Of-Time (AOT) compilation</li>
+                            <li>Garbage Collection</li>
+                            <li>Core Libraries (java.*, android.*)</li>
+                            <li>Replaced Dalvik (Android 5.0+)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Native Layer
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>C/C++ libraries</strong></p>
+                        <ul>
+                            <li>libc (Bionic): C standard library</li>
+                            <li>SSL/Crypto: Security and encryption</li>
+                            <li>Media Framework: Audio/Video</li>
+                            <li>SQLite: Database</li>
+                            <li>WebView: Web browsing</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        System Services
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Background system processes</strong></p>
+                        <ul>
+                            <li>system_server: Core system services</li>
+                            <li>SurfaceFlinger: Screen rendering</li>
+                            <li>AudioFlinger: Audio mixing</li>
+                            <li>MediaService: Media playback</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        HAL (Hardware Abstraction Layer)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Hardware abstraction</strong></p>
+                        <ul>
+                            <li>Camera HAL: Camera control</li>
+                            <li>Audio HAL: Audio I/O</li>
+                            <li>Sensor HAL: Sensor data</li>
+                            <li>HIDL/AIDL interfaces</li>
+                            <li>Vendor-specific implementations</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🐧</span>
+                        Linux Kernel
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Direct hardware control</strong></p>
+                        <ul>
+                            <li>Device Drivers: Hardware drivers</li>
+                            <li>Process Management: Process management</li>
+                            <li>Memory Management: Memory management</li>
+                            <li>Security (SELinux): Security</li>
+                            <li>Power Management: Power management</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+<!-- Section 4: Media Framework Overview -->
+<section class="content-section section">
+    <h2 class="section-title">
+        <span class="section-number">4</span>
+        Media Framework Overview
+    </h2>
+    <p class="section-description">
+        The AOSP media stack consists of core components responsible for audio, video, and image processing.
+    </p>
+
+    <div class="mermaid-container">
+        <div class="mermaid">
+            graph TB
+            subgraph APP_LAYER["Application Layer"]
+                MEDIA_API["MediaPlayer • ExoPlayer<br/>MediaRecorder • Camera2 API<br/>AudioTrack • AudioRecord"]
+            end
+
+            subgraph FRAMEWORK["Framework Layer"]
+                MEDIA_SESSION["MediaSessionService<br/>Session Management"]
+                MEDIA_ROUTER["MediaRouter<br/>Audio Routing"]
+            end
+
+            subgraph NATIVE["Native Layer"]
+                STAGEFRIGHT["libstagefright<br/>Media Pipeline"]
+                CODEC_SERVICE["MediaCodecService<br/>Codec Management"]
+                AUDIO_FLINGER["AudioFlinger<br/>Audio Mixing & Routing"]
+                CAMERA_SERVICE["CameraService<br/>Camera Management"]
+            end
+
+            subgraph HAL_LAYER["HAL Layer"]
+                CODEC_HAL["Codec 2.0 HAL<br/>Hardware Codecs"]
+                AUDIO_HAL["Audio HAL<br/>Audio Hardware"]
+                CAMERA_HAL["Camera HAL<br/>Camera Hardware"]
+            end
+
+            MEDIA_API -->|Binder IPC| MEDIA_SESSION
+            MEDIA_API -->|Binder IPC| STAGEFRIGHT
+            MEDIA_API -->|Binder IPC| AUDIO_FLINGER
+            MEDIA_SESSION -->|Control| STAGEFRIGHT
+            STAGEFRIGHT -->|Codec Request| CODEC_SERVICE
+            CODEC_SERVICE -->|HIDL/AIDL| CODEC_HAL
+            AUDIO_FLINGER -->|HIDL/AIDL| AUDIO_HAL
+            CAMERA_SERVICE -->|HIDL/AIDL| CAMERA_HAL
+
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🎬</span>
+                Codec 2.0 Framework
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>libstagefright</strong>: Media pipeline engine</li>
+                    <li><strong>MediaCodec API</strong>: App-level codec API</li>
+                    <li><strong>Codec 2.0 HAL</strong>: Hardware acceleration interface</li>
+                    <li><strong>OMX IL replacement</strong>: Android 10+</li>
+                    <li>H.264/H.265/VP9/AV1 support</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔊</span>
+                Audio Framework
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>AudioFlinger</strong>: Audio mixing engine</li>
+                    <li><strong>AudioPolicyService</strong>: Routing policy</li>
+                    <li><strong>Audio HAL</strong>: Hardware abstraction</li>
+                    <li>ALSA/TinyALSA kernel drivers</li>
+                    <li>Multi-stream mixing & resampling</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">📹</span>
+                Camera Framework
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Camera2 API</strong>: Advanced camera control</li>
+                    <li><strong>CameraService</strong>: Camera session management</li>
+                    <li><strong>Camera HAL3</strong>: Request-based pipeline</li>
+                    <li>RAW, YUV, JPEG output support</li>
+                    <li>Multi-camera & HDR support</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section 5: Graphics Stack -->
+<section class="content-section section">
+    <h2 class="section-title">
+        <span class="section-number">5</span>
+        Graphics Stack
+    </h2>
+    <p class="section-description">
+        Android's graphics rendering pipeline operates around BufferQueue.
+    </p>
+
+    <div class="mermaid-container">
+        <div class="mermaid">
+            graph TB
+            APP_VIEW["App: View/Canvas<br/>UI Rendering"]
+            SURFACE["Surface<br/>(Buffer Producer)"]
+            BUFFER_QUEUE["BufferQueue<br/>Triple Buffering"]
+            SURFACE_FLINGER["SurfaceFlinger<br/>Compositor"]
+            HWC["HWComposer (HAL)<br/>Hardware Composition"]
+            DISPLAY["Display Driver<br/>Frame Output"]
+
+            APP_VIEW -->|"1. Draw"| SURFACE
+            SURFACE -->|"2. Queue Buffer"| BUFFER_QUEUE
+            BUFFER_QUEUE -->|"3. Acquire Buffer"| SURFACE_FLINGER
+            SURFACE_FLINGER -->|"4. Composite Layers"| HWC
+            HWC -->|"5. Scan Out"| DISPLAY
+
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🖼️</span>
+                SurfaceFlinger
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li>Composites all Surfaces for screen output</li>
+                    <li>Multi-display support</li>
+                    <li>VSync synchronization</li>
+                    <li>Hardware acceleration via HWComposer</li>
+                    <li>Display HAL interface</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔄</span>
+                BufferQueue
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li>Producer-Consumer pattern</li>
+                    <li>Triple Buffering (Front, Back, Spare)</li>
+                    <li>GPU memory allocation via Gralloc</li>
+                    <li>ANativeWindow interface</li>
+                    <li>Frame drop prevention</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">⚡</span>
+                HWComposer (HWC)
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li>Hardware layer composition</li>
+                    <li>Minimizes GPU usage</li>
+                    <li>Utilizes overlay planes</li>
+                    <li>Power consumption optimization</li>
+                    <li>Display HAL 2.x/3.x</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section 6: Security Architecture -->
+<section class="content-section section">
+    <h2 class="section-title">
+        <span class="section-number">6</span>
+        Security Architecture
+    </h2>
+    <p class="section-description">
+        Android protects the system and user data through a multi-layered security model.
+    </p>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🛡️</span>
+                SELinux (Mandatory Access Control)
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Mandatory access control</strong>: Policy applied to all processes</li>
+                    <li><strong>Domain isolation</strong>: Per-process permission restrictions</li>
+                    <li><strong>Type Enforcement</strong>: File/socket access control</li>
+                    <li>Enforcing mode since Android 4.4+</li>
+                    <li>System partition protection</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">✅</span>
+                Verified Boot
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Bootloader verification</strong>: Only signed images can boot</li>
+                    <li><strong>dm-verity</strong>: System partition integrity</li>
+                    <li><strong>Rollback Protection</strong>: Prevents downgrade</li>
+                    <li>Full boot chain verification</li>
+                    <li>CTS required (Android 7.0+)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔐</span>
+                Keystore & Hardware Security
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Keymaster HAL</strong>: Hardware key storage</li>
+                    <li><strong>Trusted Execution Environment (TEE)</strong></li>
+                    <li><strong>StrongBox</strong>: Dedicated security chip (Titan M)</li>
+                    <li>Encryption keys cannot be extracted</li>
+                    <li>Biometric authentication integration</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">📦</span>
+                Application Sandbox
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li>Each app runs with unique UID</li>
+                    <li>Process isolation (Linux User-based)</li>
+                    <li>File system permission separation</li>
+                    <li>Network policy (UID based)</li>
+                    <li>Inter-app communication only through Binder</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section 7: AOSP Boot Process -->
+<section class="content-section section">
+    <h2 class="section-title">
+        <span class="section-number">7</span>
+        AOSP Boot Process
+    </h2>
+    <p class="section-description">
+        Step-by-step explanation of the entire Android system boot process.
+    </p>
+
+    <div class="mermaid-container">
+        <div class="mermaid">
+            graph TB
+            BOOTROM["① Boot ROM<br/>Power On"]
+            BOOTLOADER["② Bootloader<br/>U-Boot/Fastboot"]
+            KERNEL["③ Linux Kernel<br/>Drivers & Memory Init"]
+            INIT["④ Init Process<br/>(PID 1)"]
+            DAEMONS["⑤ Native Daemons<br/>servicemanager • vold • netd"]
+            ZYGOTE["⑥ Zygote Process<br/>Preload Core Libraries"]
+            SYSSERVER["⑦ System Server<br/>60+ System Services"]
+            LAUNCHER["⑧ Launcher<br/>Home Screen Ready"]
+
+            BOOTROM -->|"Hardware Init"| BOOTLOADER
+            BOOTLOADER -->|"Load Kernel"| KERNEL
+            KERNEL -->|"Start"| INIT
+            INIT -->|"Parallel"| DAEMONS
+            INIT -->|"Fork"| ZYGOTE
+            ZYGOTE -->|"Fork"| SYSSERVER
+            SYSSERVER -->|"Boot Complete"| LAUNCHER
+
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔧</span>
+                Init Process (PID 1)
+            </h3>
+            <div class="card-description">
+                <p><strong>First user space process</strong></p>
+                <ul>
+                    <li>First process started by Linux kernel</li>
+                    <li>Reads <code>init.rc</code> configuration file</li>
+                    <li>Mounts file systems</li>
+                    <li>Starts essential services (daemons)</li>
+                    <li>Executes Zygote process</li>
+                    <li>Service monitoring and restart</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🥚</span>
+                Zygote Process
+            </h3>
+            <div class="card-description">
+                <p><strong>App process creation optimization</strong></p>
+                <ul>
+                    <li>Preloads all core libraries</li>
+                    <li>Loads common resources into memory</li>
+                    <li>Forks for fast app startup</li>
+                    <li>Copy-on-Write mechanism</li>
+                    <li>Creates System Server via fork</li>
+                    <li>64-bit Zygote runs separately</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">⚙️</span>
+                System Server
+            </h3>
+            <div class="card-description">
+                <p><strong>Hosts all system services</strong></p>
+                <ul>
+                    <li>Forked by Zygote</li>
+                    <li>Starts ActivityManagerService</li>
+                    <li>Starts PackageManagerService</li>
+                    <li>Starts WindowManagerService</li>
+                    <li>Initializes 60+ system services</li>
+                    <li>Boot complete broadcast</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section 8: System Services -->
+<section class="content-section section">
+    <h2 class="section-title">
+        <span class="section-number">8</span>
+        System Services
+    </h2>
+    <p class="section-description">
+        Core system services running within the System Server process.
+    </p>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">📱</span>
+                ActivityManagerService
+            </h3>
+            <div class="card-description">
+                <p><strong>App lifecycle management</strong></p>
+                <ul>
+                    <li>Activity stack management</li>
+                    <li>App process start/termination</li>
+                    <li>Task and Back Stack</li>
+                    <li>OOM (Out of Memory) management</li>
+                    <li>Broadcast delivery</li>
+                    <li>Content Provider management</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">📦</span>
+                PackageManagerService
+            </h3>
+            <div class="card-description">
+                <p><strong>App installation and info management</strong></p>
+                <ul>
+                    <li>APK file parsing</li>
+                    <li>App install/uninstall/update</li>
+                    <li>Permission management</li>
+                    <li>Intent filter resolution</li>
+                    <li>App information queries</li>
+                    <li>Package verification</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🪟</span>
+                WindowManagerService
+            </h3>
+            <div class="card-description">
+                <p><strong>Window and display</strong></p>
+                <ul>
+                    <li>Window layout management</li>
+                    <li>Z-order and layering</li>
+                    <li>Input event routing</li>
+                    <li>Animation control</li>
+                    <li>Screen rotation handling</li>
+                    <li>Works with SurfaceFlinger</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔔</span>
+                NotificationManagerService
+            </h3>
+            <div class="card-description">
+                <p><strong>Notification management</strong></p>
+                <ul>
+                    <li>Notification display and removal</li>
+                    <li>Notification channel management</li>
+                    <li>Priority and importance</li>
+                    <li>Do Not Disturb mode</li>
+                    <li>Notification permission control</li>
+                    <li>Notification listener services</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔋</span>
+                PowerManagerService
+            </h3>
+            <div class="card-description">
+                <p><strong>Power and battery saving</strong></p>
+                <ul>
+                    <li>WakeLock management</li>
+                    <li>Screen brightness control</li>
+                    <li>Battery saver mode (Doze)</li>
+                    <li>App standby mode</li>
+                    <li>Battery optimization</li>
+                    <li>Power button events</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🌐</span>
+                ConnectivityService
+            </h3>
+            <div class="card-description">
+                <p><strong>Network connectivity</strong></p>
+                <ul>
+                    <li>Wi-Fi, Cellular, Ethernet</li>
+                    <li>Network switching management</li>
+                    <li>VPN connections</li>
+                    <li>Data usage monitoring</li>
+                    <li>Network policy</li>
+                    <li>Background data restrictions</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section 9: Binder IPC -->
+<section class="content-section section">
+    <h2 class="section-title">
+        <span class="section-number">9</span>
+        Binder IPC
+    </h2>
+    <p class="section-description">
+        The core mechanism responsible for Inter-Process Communication (IPC) in Android.
+    </p>
+
+    <div class="highlight-box">
+        <strong>What is Binder?</strong> Android's lightweight, high-performance IPC framework that enables secure and efficient communication between apps and system services.
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔗</span>
+                Binder Components
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Binder Driver</strong>: Kernel module</li>
+                    <li><strong>Binder Objects</strong>: Remote service representation</li>
+                    <li><strong>Parcels</strong>: Data serialization</li>
+                    <li><strong>Service Manager</strong>: Service registration/lookup</li>
+                    <li><strong>AIDL</strong>: Interface Definition Language</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">⚡</span>
+                Binder Features
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Efficiency</strong>: Single-copy data transfer</li>
+                    <li><strong>Security</strong>: Process ID authentication</li>
+                    <li><strong>Permissions</strong>: Fine-grained permission control</li>
+                    <li><strong>Sync/Async</strong>: Bidirectional support</li>
+                    <li><strong>Object Reference</strong>: Remote object calls</li>
+                    <li><strong>Death Notification</strong>: Process termination detection</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🛠️</span>
+                AIDL (Android Interface Definition Language)
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li>Binder interface definition</li>
+                    <li>Write <code>.aidl</code> files</li>
+                    <li>Auto-generated stub/proxy</li>
+                    <li>Type safety guaranteed</li>
+                    <li>Process boundary abstraction</li>
+                    <li>High-level IPC API</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="mermaid-container">
+        <div class="mermaid">
+            graph TB
+            subgraph CLIENT["📱 Client Process"]
+                APP["Application"]
+                PROXY["Proxy<br/>(AIDL Generated)"]
+            end
+
+            subgraph KERNEL["🐧 Kernel Space"]
+                BINDER["Binder Driver<br/>/dev/binder"]
+                SERVICE_MGR["Service Manager<br/>(Registry)"]
+            end
+
+            subgraph SERVER["🔧 Server Process"]
+                STUB["Stub<br/>(AIDL Generated)"]
+                SERVICE["System Service"]
+            end
+
+            APP -->|"① Method Call"| PROXY
+            PROXY -->|"② Serialize & Send"| BINDER
+            BINDER -->|"③ Route to Server"| STUB
+            STUB -->|"④ Execute"| SERVICE
+            SERVICE -->|"⑤ Result"| STUB
+            STUB -->|"⑥ Serialize & Send"| BINDER
+            BINDER -->|"⑦ Route to Client"| PROXY
+            PROXY -->|"⑧ Return"| APP
+
+            SERVICE_MGR -.->|"Register Service"| BINDER
+            BINDER -.->|"Lookup Service"| SERVICE_MGR
+
+        </div>
+    </div>
+</section>
+
+<!-- Section 10: Project Treble -->
+<section class="content-section section">
+    <h2 class="section-title">
+        <span class="section-number">10</span>
+        Project Treble (Android 8.0+)
+    </h2>
+    <p class="section-description">
+        Treble, introduced in Android 8.0, separates Framework and Vendor implementation to dramatically improve update speed.
+    </p>
+
+    <div class="mermaid-container">
+        <div class="mermaid">
+            graph TB
+            subgraph SYSTEM["System Partition (Google)"]
+                FRAMEWORK["Android Framework<br/>System Services"]
+                VNDK["VNDK<br/>(Vendor NDK)"]
+            end
+
+            subgraph VENDOR["Vendor Partition (OEM)"]
+                VENDOR_IMPL["Vendor Implementation<br/>HAL Implementations"]
+                VENDOR_LIBS["Vendor Libraries"]
+            end
+
+            subgraph HAL_INTERFACE["Vendor Interface (VINTF)"]
+                HIDL["HIDL Interfaces<br/>(Hardware Interface Definition Language)"]
+                STABLE_AIDL["Stable AIDL<br/>(Android 11+)"]
+            end
+
+            FRAMEWORK -->|Uses| HIDL
+            FRAMEWORK -->|Uses| STABLE_AIDL
+            HIDL -->|Implements| VENDOR_IMPL
+            STABLE_AIDL -->|Implements| VENDOR_IMPL
+            VENDOR_IMPL -->|Uses| VENDOR_LIBS
+            FRAMEWORK -->|Links| VNDK
+
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🎯</span>
+                Treble Core Goals
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Partition separation</strong>: Complete System and Vendor separation</li>
+                    <li><strong>Independent updates</strong>: Framework-only updates possible</li>
+                    <li><strong>Enhanced CTS</strong>: Added VTS (Vendor Test Suite)</li>
+                    <li><strong>Compatibility matrix</strong>: Version management via VINTF</li>
+                    <li>Update development time reduced from months to weeks</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔌</span>
+                HIDL (Hardware Interface Definition Language)
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li>Define HAL interfaces in .hal files</li>
+                    <li>Version management (e.g., android.hardware.audio@7.0)</li>
+                    <li>Passthrough vs Binderized mode</li>
+                    <li>Auto-generated C++/Java code</li>
+                    <li>Transition to Stable AIDL from Android 11</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">📦</span>
+                VNDK (Vendor Native Development Kit)
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li>System libraries usable by Vendor code</li>
+                    <li>Ensures compatibility during System updates</li>
+                    <li>VNDK-SP (Same Process): Performance-critical libraries</li>
+                    <li>LLNDK: Low-level libraries (libc, libm)</li>
+                    <li>Vendor libraries isolated in /vendor partition</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section 11: Project Mainline -->
+<section class="content-section section">
+    <h2 class="section-title">
+        <span class="section-number">11</span>
+        Project Mainline (Android 10+)
+    </h2>
+    <p class="section-description">
+        Mainline, introduced in Android 10, modularizes core system components for independent updates through Google Play.
+    </p>
+
+    <div class="highlight-box">
+        <strong>Treble vs Mainline</strong><br/>
+        <strong>Treble</strong> separates Vendor (OEM) implementation to enable Framework updates,
+        <strong>Mainline</strong> modularizes the Framework itself to update individual components without OTA.
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">📦</span>
+                Mainline Modules (APEX/APK)
+            </h3>
+            <div class="card-description">
+                <p><strong>30+ modules as of Android 13</strong></p>
+                <ul>
+                    <li><strong>Media</strong>: com.android.media (Codec updates)</li>
+                    <li><strong>MediaProvider</strong>: Storage management</li>
+                    <li><strong>DNS Resolver</strong>: Network DNS</li>
+                    <li><strong>Conscrypt</strong>: TLS/SSL</li>
+                    <li><strong>Timezone Data</strong>: Timezone data</li>
+                    <li><strong>WebView</strong>: Web rendering engine</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🔄</span>
+                APEX (Android Pony EXpress)
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Container format</strong>: APK + ext4/f2fs image</li>
+                    <li><strong>Signature verification</strong>: Integrity via dm-verity</li>
+                    <li><strong>Mounted at boot</strong>: /apex directory</li>
+                    <li>Native libraries (.so) can be updated</li>
+                    <li>Rollback support</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">⚡</span>
+                Mainline Benefits
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Fast security patches</strong>: No OEM OTA needed</li>
+                    <li><strong>Feature additions</strong>: New features without OS upgrade</li>
+                    <li><strong>Bug fixes</strong>: Immediate deployment</li>
+                    <li><strong>Compatibility</strong>: Latest features on older devices</li>
+                    <li>Automatic updates through Google Play Store</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section 12: AOSP vs AAOS Link -->
+<section class="content-section section">
+    <h2 class="section-title">
+        <span class="section-number">12</span>
+        Android Automotive OS (AAOS)
+    </h2>
+    <p class="section-description">
+        Learn about the Android platform for vehicles.
+    </p>
+
+    <div class="highlight-box">
+        <strong>What is AAOS?</strong> A platform that adds vehicle-specific layers to AOSP, enabling direct communication and control with vehicle hardware (ECU, CAN Bus, sensors) through <strong>Vehicle HAL, Car Services, Car API</strong>.
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🚗</span>
+                AAOS Key Features
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Vehicle HAL (VHAL)</strong>: Vehicle hardware abstraction</li>
+                    <li><strong>Car Services</strong>: Vehicle data management</li>
+                    <li><strong>android.car.* API</strong>: Vehicle control API</li>
+                    <li><strong>Multi-Zone Audio</strong>: Independent audio per zone</li>
+                    <li><strong>Driver Distraction Guidelines</strong>: Driver safety UI</li>
+                    <li><strong>Car UI Library</strong>: Template-based UI</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">🏭</span>
+                AAOS Adopters
+            </h3>
+            <div class="card-description">
+                <ul>
+                    <li><strong>Volvo</strong>: Polestar, XC40 Recharge</li>
+                    <li><strong>GM</strong>: Chevrolet, GMC, Cadillac</li>
+                    <li><strong>Ford</strong>: Lincoln series</li>
+                    <li><strong>Honda</strong>: Acura models</li>
+                    <li><strong>Renault</strong>: Megane E-Tech</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">
+                <span class="card-icon">📚</span>
+                Learn More
+            </h3>
+            <div class="card-description">
+                <p style="margin-bottom: 15px;">For comprehensive information about Android Automotive OS architecture, Vehicle HAL, Car Services, multi-zone audio, and more, visit the dedicated page.</p>
+                <a href="aaos.html"
+                    style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600; transition: all 0.3s ease;">
+                    Go to AAOS Detail Page →
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Android Open Source Project (AOSP) Architecture</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                The foundation of the open-source Android platform
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-green); text-decoration: none;">
+                    ← Back to AOSP Media Framework
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script>
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

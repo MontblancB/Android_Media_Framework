@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Zone Audio Deep Dive - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">← Android Media Framework</a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Multi-Zone Audio Deep Dive</h1>
+            <p class="page-subtitle">AAOS In-Vehicle Audio Zone Design and Implementation</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>Audio Zone Concept</h2>
+
+            <p>In the vehicle environment, <strong>Audio Zone</strong> defines independent audio playback areas. The driver can listen to navigation guidance while rear passengers watch a movie simultaneously.</p>
+
+            <h3>1.1 Audio Zone Architecture</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph APPS["Applications"]
+        A1[Navigation]
+        A2[Music Player]
+        A3[RSE Video]
+        A4[Phone Call]
+    end
+
+    subgraph CAS["CarAudioService"]
+        AF[Audio Focus Manager]
+        AR[Audio Routing]
+        AZ[Audio Zone Manager]
+        VG[Volume Groups]
+    end
+
+    subgraph ZONES["Audio Zones"]
+        Z1["Primary Zone<br/>(Driver + Front)"]
+        Z2["Rear Left Zone"]
+        Z3["Rear Right Zone"]
+    end
+
+    subgraph OUTPUT["Audio Output"]
+        SP1[Front Speakers]
+        SP2[Rear Left Speaker]
+        SP3[Rear Right Speaker]
+        HP1[Headphone L]
+        HP2[Headphone R]
+    end
+
+    A1 --> AF
+    A2 --> AF
+    A3 --> AF
+    A4 --> AF
+    AF --> AZ
+    AZ --> AR
+    AR --> Z1
+    AR --> Z2
+    AR --> Z3
+    Z1 --> SP1
+    Z2 --> SP2
+    Z2 --> HP1
+    Z3 --> SP3
+    Z3 --> HP2
+            </div>
+
+            <h3>1.2 Zone vs OccupantZone</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Concept</th>
+                        <th>Definition</th>
+                        <th>Managing Service</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>OccupantZone</strong></td>
+                        <td>Physical passenger position + display</td>
+                        <td>CarOccupantZoneService</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Audio Zone</strong></td>
+                        <td>Audio output area + volume groups</td>
+                        <td>CarAudioService</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Relationship</strong></td>
+                        <td>OccupantZone : Audio Zone = 1:1 or N:1</td>
+                        <td>car_audio_configuration.xml</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 2: CarAudioService -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>CarAudioService Structure</h2>
+
+            <h3>2.1 Service Components</h3>
+            <div class="mermaid">
+flowchart LR
+    subgraph CAS["CarAudioService"]
+        CAM[CarAudioManager]
+        CAZM[CarAudioZoneManager]
+        CVGM[CarVolumeGroupManager]
+        CAFM[CarAudioFocusManager]
+    end
+
+    subgraph HAL["Audio HAL"]
+        APC[AudioPolicyConfig]
+        APM[AudioPolicyManager]
+    end
+
+    subgraph HW["Hardware"]
+        MIXER[Audio Mixer/DSP]
+        AMP[Amplifier]
+    end
+
+    CAM --> CAZM
+    CAM --> CVGM
+    CAM --> CAFM
+    CAZM --> APC
+    APC --> APM
+    APM --> MIXER
+    MIXER --> AMP
+            </div>
+
+            <h3>2.2 Key Classes</h3>
+            <pre><code>// CarAudioService main components
+packages/services/Car/service/src/com/android/car/audio/
+├── CarAudioService.java        // Main service
+├── CarAudioZone.java          // Zone definition
+├── CarVolumeGroup.java        // Volume group
+├── CarAudioContext.java       // Audio context (music, nav, call, etc.)
+├── CarAudioFocus.java         // Zone-specific focus management
+└── CarAudioDynamicRouting.java // Dynamic routing</code></pre>
+
+            <h3>2.3 CarAudioManager API</h3>
+            <pre><code>val carAudioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+
+// Query zone information
+val zoneIds = carAudioManager.audioZoneIds
+zoneIds.forEach { zoneId ->
+    Log.d(TAG, "Zone ID: $zoneId")
+
+    // Volume groups per zone
+    val groupCount = carAudioManager.getVolumeGroupCount(zoneId)
+    for (groupId in 0 until groupCount) {
+        val info = carAudioManager.getVolumeGroupInfo(zoneId, groupId)
+        Log.d(TAG, "  Group $groupId: ${info.name}, " +
+                   "volume=${carAudioManager.getGroupVolume(zoneId, groupId)}")
+    }
+}
+
+// Set volume for specific zone
+carAudioManager.setGroupVolume(
+    zoneId = PRIMARY_AUDIO_ZONE,
+    groupId = 0,
+    index = 10,
+    flags = AudioManager.FLAG_SHOW_UI
+)</code></pre>
+        </section>
+
+        <!-- Section 3: Zone Configuration -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>Audio Zone Configuration (car_audio_configuration.xml)</h2>
+
+            <h3>3.1 Overall Structure</h3>
+            <pre><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;carAudioConfiguration version="2"&gt;
+    &lt;zones&gt;
+        &lt;!-- Primary Audio Zone --&gt;
+        &lt;zone name="primary" isPrimary="true" occupantZoneId="0"&gt;
+            &lt;zoneConfigs&gt;
+                &lt;zoneConfig name="primary zone config" isDefault="true"&gt;
+                    &lt;volumeGroups&gt;
+                        &lt;!-- Media Volume Group --&gt;
+                        &lt;group name="media"&gt;
+                            &lt;device address="bus0_media_out"&gt;
+                                &lt;context context="music"/&gt;
+                                &lt;context context="movies"/&gt;
+                                &lt;context context="games"/&gt;
+                            &lt;/device&gt;
+                        &lt;/group&gt;
+
+                        &lt;!-- Navigation Volume Group --&gt;
+                        &lt;group name="navigation"&gt;
+                            &lt;device address="bus1_nav_out"&gt;
+                                &lt;context context="navigation"/&gt;
+                            &lt;/device&gt;
+                        &lt;/group&gt;
+
+                        &lt;!-- Voice Volume Group --&gt;
+                        &lt;group name="voice"&gt;
+                            &lt;device address="bus2_voice_out"&gt;
+                                &lt;context context="voice_command"/&gt;
+                                &lt;context context="call"/&gt;
+                            &lt;/device&gt;
+                        &lt;/group&gt;
+
+                        &lt;!-- System Sounds --&gt;
+                        &lt;group name="system"&gt;
+                            &lt;device address="bus3_system_out"&gt;
+                                &lt;context context="system_sound"/&gt;
+                                &lt;context context="alarm"/&gt;
+                                &lt;context context="notification"/&gt;
+                            &lt;/device&gt;
+                        &lt;/group&gt;
+                    &lt;/volumeGroups&gt;
+                &lt;/zoneConfig&gt;
+            &lt;/zoneConfigs&gt;
+        &lt;/zone&gt;
+
+        &lt;!-- Rear Left Audio Zone --&gt;
+        &lt;zone name="rear_left" occupantZoneId="2"&gt;
+            &lt;zoneConfigs&gt;
+                &lt;zoneConfig name="rear left config" isDefault="true"&gt;
+                    &lt;volumeGroups&gt;
+                        &lt;group name="rear_media"&gt;
+                            &lt;device address="bus4_rse_left_out"&gt;
+                                &lt;context context="music"/&gt;
+                                &lt;context context="movies"/&gt;
+                            &lt;/device&gt;
+                        &lt;/group&gt;
+                    &lt;/volumeGroups&gt;
+                &lt;/zoneConfig&gt;
+            &lt;/zoneConfigs&gt;
+        &lt;/zone&gt;
+
+        &lt;!-- Rear Right Audio Zone --&gt;
+        &lt;zone name="rear_right" occupantZoneId="3"&gt;
+            &lt;zoneConfigs&gt;
+                &lt;zoneConfig name="rear right config" isDefault="true"&gt;
+                    &lt;volumeGroups&gt;
+                        &lt;group name="rear_media"&gt;
+                            &lt;device address="bus5_rse_right_out"&gt;
+                                &lt;context context="music"/&gt;
+                                &lt;context context="movies"/&gt;
+                            &lt;/device&gt;
+                        &lt;/group&gt;
+                    &lt;/volumeGroups&gt;
+                &lt;/zoneConfig&gt;
+            &lt;/zoneConfigs&gt;
+        &lt;/zone&gt;
+    &lt;/zones&gt;
+&lt;/carAudioConfiguration&gt;</code></pre>
+
+            <h3>3.2 Audio Context Types</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Context</th>
+                        <th>Purpose</th>
+                        <th>Typical Priority</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>emergency</code></td>
+                        <td>Emergency alerts</td>
+                        <td>Highest</td>
+                    </tr>
+                    <tr>
+                        <td><code>safety</code></td>
+                        <td>Safety warnings (parking sensors, etc.)</td>
+                        <td>Very High</td>
+                    </tr>
+                    <tr>
+                        <td><code>call</code></td>
+                        <td>Phone calls</td>
+                        <td>High</td>
+                    </tr>
+                    <tr>
+                        <td><code>navigation</code></td>
+                        <td>Navigation guidance</td>
+                        <td>High</td>
+                    </tr>
+                    <tr>
+                        <td><code>voice_command</code></td>
+                        <td>Voice assistant</td>
+                        <td>High</td>
+                    </tr>
+                    <tr>
+                        <td><code>music</code></td>
+                        <td>Music playback</td>
+                        <td>Medium</td>
+                    </tr>
+                    <tr>
+                        <td><code>movies</code></td>
+                        <td>Video audio</td>
+                        <td>Medium</td>
+                    </tr>
+                    <tr>
+                        <td><code>notification</code></td>
+                        <td>Notification sounds</td>
+                        <td>Low</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 4: Routing Policy -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>Audio Routing Policy</h2>
+
+            <h3>4.1 Routing Flow</h3>
+            <div class="mermaid">
+sequenceDiagram
+    participant App
+    participant AM as AudioManager
+    participant CAS as CarAudioService
+    participant APM as AudioPolicyManager
+    participant HAL as Audio HAL
+
+    App->>AM: requestAudioFocus(USAGE_MEDIA)
+    AM->>CAS: handleFocusRequest()
+    CAS->>CAS: getZoneForUid(callingUid)
+    CAS->>APM: setForceUse(ZONE_X, MEDIA)
+    APM->>HAL: route(bus0_media_out)
+    HAL-->>App: Audio Output
+            </div>
+
+            <h3>4.2 UID-based Zone Mapping</h3>
+            <pre><code>// Map app UID to specific zone
+carAudioManager.setZoneIdForUid(
+    zoneId = REAR_LEFT_ZONE_ID,
+    uid = rseAppUid
+)
+
+// OccupantZone-based automatic mapping
+val ozManager = car.getCarManager(Car.CAR_OCCUPANT_ZONE_SERVICE)
+    as CarOccupantZoneManager
+
+// Apps running on a display are automatically mapped to that zone
+val displayId = windowManager.defaultDisplay.displayId
+val zoneId = carAudioManager.getZoneIdForDisplay(displayId)</code></pre>
+
+            <h3>4.3 Dynamic Routing Configuration</h3>
+            <pre><code>&lt;!-- audio_policy_configuration.xml --&gt;
+&lt;audioPolicyConfiguration version="7.0"&gt;
+    &lt;modules&gt;
+        &lt;module name="primary" halVersion="3.0"&gt;
+            &lt;!-- Mix Ports for Dynamic Routing --&gt;
+            &lt;mixPorts&gt;
+                &lt;mixPort name="bus0_media_out" role="source"
+                         flags="AUDIO_OUTPUT_FLAG_PRIMARY"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/mixPort&gt;
+
+                &lt;mixPort name="bus4_rse_left_out" role="source"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/mixPort&gt;
+            &lt;/mixPorts&gt;
+
+            &lt;!-- Device Ports --&gt;
+            &lt;devicePorts&gt;
+                &lt;devicePort tagName="bus0_media_out"
+                            type="AUDIO_DEVICE_OUT_BUS"
+                            role="sink" address="bus0_media_out"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/devicePort&gt;
+            &lt;/devicePorts&gt;
+
+            &lt;!-- Routes --&gt;
+            &lt;routes&gt;
+                &lt;route type="mix" sink="bus0_media_out"
+                       sources="bus0_media_out"/&gt;
+            &lt;/routes&gt;
+        &lt;/module&gt;
+    &lt;/modules&gt;
+&lt;/audioPolicyConfiguration&gt;</code></pre>
+        </section>
+
+        <!-- Section 5: Volume Management -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>Volume Groups and Ducking</h2>
+
+            <h3>5.1 Zone-specific Volume Control</h3>
+            <pre><code>// Query volume group information
+val zoneId = PRIMARY_AUDIO_ZONE
+val groupCount = carAudioManager.getVolumeGroupCount(zoneId)
+
+for (groupId in 0 until groupCount) {
+    val info = carAudioManager.getVolumeGroupInfo(zoneId, groupId)
+
+    println("Group: ${info.name}")
+    println("  Min: ${info.minVolumeGain}")
+    println("  Max: ${info.maxVolumeGain}")
+    println("  Current: ${carAudioManager.getGroupVolume(zoneId, groupId)}")
+    println("  Muted: ${info.isMuted}")
+}
+
+// Register volume change callback
+carAudioManager.registerCarVolumeCallback(object : CarAudioManager.CarVolumeCallback() {
+    override fun onGroupVolumeChanged(zoneId: Int, groupId: Int, flags: Int) {
+        val newVolume = carAudioManager.getGroupVolume(zoneId, groupId)
+        Log.d(TAG, "Zone $zoneId Group $groupId: $newVolume")
+    }
+
+    override fun onMasterMuteChanged(zoneId: Int, flags: Int) {
+        Log.d(TAG, "Zone $zoneId mute changed")
+    }
+})</code></pre>
+
+            <h3>5.2 Audio Focus & Ducking</h3>
+            <div class="mermaid">
+stateDiagram-v2
+    [*] --> Music_Playing: Start Music
+
+    Music_Playing --> Music_Ducked: Nav Announcement
+    Music_Ducked --> Music_Playing: Nav Complete
+
+    Music_Playing --> Music_Paused: Phone Call
+    Music_Paused --> Music_Playing: Call End
+
+    Music_Playing --> Music_Stopped: Emergency Alert
+    Music_Stopped --> [*]: Alert Dismissed
+            </div>
+
+            <h3>5.3 Duck Policy Configuration</h3>
+            <pre><code>&lt;!-- Add duck policy to car_audio_configuration.xml --&gt;
+&lt;carAudioConfiguration version="2"&gt;
+    &lt;!-- Focus interaction definitions --&gt;
+    &lt;audioFocusInteractions&gt;
+        &lt;!-- Navigation ducks Music --&gt;
+        &lt;interaction
+            focusHolder="music"
+            focusRequester="navigation"
+            interaction="INTERACTION_DUCK" /&gt;
+
+        &lt;!-- Call pauses Music --&gt;
+        &lt;interaction
+            focusHolder="music"
+            focusRequester="call"
+            interaction="INTERACTION_PAUSE" /&gt;
+
+        &lt;!-- Emergency stops all --&gt;
+        &lt;interaction
+            focusHolder="*"
+            focusRequester="emergency"
+            interaction="INTERACTION_STOP" /&gt;
+    &lt;/audioFocusInteractions&gt;
+&lt;/carAudioConfiguration&gt;</code></pre>
+        </section>
+
+        <!-- Section 6: Cross-Zone Sharing -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>Cross-Zone Scenarios</h2>
+
+            <h3>6.1 Audio Sharing Scenarios</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Behavior</th>
+                        <th>Implementation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Full Share</strong></td>
+                        <td>Same audio to all zones</td>
+                        <td>Simultaneous output to all buses</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Emergency Alert</strong></td>
+                        <td>Emergency plays on all zones</td>
+                        <td>Global routing for emergency context</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Nav Guidance</strong></td>
+                        <td>Driver Zone + RSE Duck</td>
+                        <td>Navigation context + ducking</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rear Seat Share</strong></td>
+                        <td>Same playback on RSE Left/Right</td>
+                        <td>Route to both zones simultaneously</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>6.2 Mirroring Implementation</h3>
+            <pre><code>// Audio mirroring between zones (Primary → All)
+fun mirrorToAllZones(sourceZoneId: Int) {
+    val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+    // Route same audio stream to all zones
+    val allZones = carAudioManager.audioZoneIds
+
+    allZones.forEach { zoneId ->
+        if (zoneId != sourceZoneId) {
+            // Hardware-level mirroring (OEM implementation required)
+            carAudioManager.setAudioMirrorConfig(sourceZoneId, zoneId, true)
+        }
+    }
+}
+
+// Disable mirroring
+fun disableMirroring() {
+    carAudioManager.clearAudioMirrorConfig()
+}</code></pre>
+        </section>
+
+        <!-- Section 7: Testing -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>Testing and Validation</h2>
+
+            <h3>7.1 dumpsys Commands</h3>
+            <pre><code># Check CarAudioService status
+adb shell dumpsys car_service --services CarAudioService
+
+# Check Audio Policy
+adb shell dumpsys media.audio_policy
+
+# Example output:
+# Audio Zones:
+#   Zone 0 (primary):
+#     Volume Groups:
+#       Group 0 (media): volume=10, devices=[bus0_media_out]
+#       Group 1 (nav): volume=15, devices=[bus1_nav_out]
+#   Zone 2 (rear_left):
+#     Volume Groups:
+#       Group 0 (media): volume=8, devices=[bus4_rse_left_out]</code></pre>
+
+            <h3>7.2 Test Checklist</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Independent volume per zone</li>
+                <li><input type="checkbox"> Independent mute per zone</li>
+                <li><input type="checkbox"> Music ducks during nav guidance</li>
+                <li><input type="checkbox"> All pauses on incoming call</li>
+                <li><input type="checkbox"> Emergency alert plays everywhere</li>
+                <li><input type="checkbox"> RSE app audio routes to correct zone</li>
+                <li><input type="checkbox"> Audio isolation between zones verified</li>
+            </ul>
+
+            <h3>7.3 Automated Testing</h3>
+            <pre><code># Zone test script
+#!/bin/bash
+
+echo "=== Multi-Zone Audio Test ==="
+
+# 1. Check zone list
+echo "--- Audio Zones ---"
+adb shell dumpsys car_service --services CarAudioService | grep -A 3 "Audio Zones"
+
+# 2. Change Primary Zone volume
+echo "--- Set Primary Zone Volume ---"
+adb shell cmd car_service set-volume-group 0 0 15
+sleep 1
+
+# 3. Change Rear Zone volume
+echo "--- Set Rear Zone Volume ---"
+adb shell cmd car_service set-volume-group 2 0 8
+sleep 1
+
+# 4. Check results
+echo "--- Final State ---"
+adb shell dumpsys car_service --services CarAudioService | grep "volume="</code></pre>
+        </section>
+
+        <!-- Related Documents -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>Related Documents</h2>
+            <ul>
+                <li><a href="multi-display-entertainment.html">Multi-Display Entertainment</a> - RSE implementation</li>
+                <li><a href="audio-framework.html">Audio Framework</a> - AudioFlinger basics</li>
+                <li><a href="carmedia.html">Car Media Service</a> - CarMediaService</li>
+                <li><a href="oem-customization.html">OEM Customization</a> - Zone customization</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+</html>

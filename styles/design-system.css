@@ -357,6 +357,65 @@ body::before {
 }
 
 /* ========================================
+   Language Switch
+   ======================================== */
+
+.lang-switch {
+    display: inline-flex;
+    align-items: center;
+    background: var(--color-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 4px;
+    gap: 2px;
+    margin-right: var(--spacing-sm);
+}
+
+[data-theme="light"] .lang-switch {
+    background: var(--color-surface);
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+.lang-btn {
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--color-text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lang-btn:hover:not(.active):not(:disabled) {
+    color: var(--color-accent);
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.lang-btn.active {
+    background: var(--color-accent);
+    color: var(--color-bg-primary);
+    cursor: default;
+}
+
+[data-theme="light"] .lang-btn.active {
+    background: var(--color-accent);
+    color: #ffffff;
+}
+
+.lang-btn:disabled {
+    cursor: default;
+}
+
+/* Language switch in fixed nav */
+.nav.fixed-nav .lang-switch {
+    margin-right: var(--spacing-sm);
+}
+
+/* ========================================
    Header
    ======================================== */
 

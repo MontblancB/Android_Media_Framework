@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Automotive OS (AAOS)</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">🚗 Android Automotive OS</h1>
+            <p class="page-subtitle">Android Platform for Vehicle Infotainment</p>
+        </header>
+
+        <!-- Section 1: AAOS Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                AAOS Overview
+            </h2>
+            <p class="section-description">
+                Android Automotive OS is an Android platform specifically designed for vehicle infotainment systems (IVI).
+            </p>
+
+            <div class="highlight-box">
+                <strong>What is AAOS?</strong> AAOS is a complete vehicle operating system built on top of standard AOSP with vehicle-specific layers, enabling direct communication with vehicle hardware such as ECUs and CAN bus.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Key Objectives
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Power vehicle infotainment systems (IVI)</li>
+                            <li>Access and control vehicle data</li>
+                            <li>UI/UX optimized for driver safety</li>
+                            <li>Multi-user/Multi-zone support</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏭</span>
+                        Major Manufacturers (2024)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Volvo/Polestar</strong>: XC40 Recharge, Polestar 2/3 (Full AAOS)</li>
+                            <li><strong>GM</strong>: Chevrolet, GMC, Cadillac (North America lineup)</li>
+                            <li><strong>Ford</strong>: Lincoln series, Mustang Mach-E</li>
+                            <li><strong>BMW</strong>: iDrive 8 (Android 13 based, 7 Series, iX)</li>
+                            <li><strong>Honda</strong>: Acura models</li>
+                            <li><strong>Renault</strong>: Megane E-Tech, Austral</li>
+                            <li><strong>Nissan/Infiniti</strong>: Select EV models</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Key Differentiators
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Vehicle HAL (VHAL) addition</li>
+                            <li>Car Services layer</li>
+                            <li>android.car API package</li>
+                            <li>Driver distraction prevention guidelines</li>
+                            <li>Car UI Library templates</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Android Auto vs AAOS -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Android Auto vs AAOS
+            </h2>
+            <p class="section-description">
+                It's important to clearly understand the fundamental differences between Android Auto and AAOS, which many people confuse.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Key Difference:</strong> <strong>Android Auto</strong> is an app that mirrors your smartphone to the vehicle,
+                while <strong>AAOS</strong> is a complete operating system running natively in the vehicle.
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph AA["Android Auto (Projection)"]
+                        PHONE["📱 Smartphone<br/>(Android/iOS)"]
+                        AA_APP["Android Auto App<br/>Running on Phone"]
+                        PHONE_HW["Phone Hardware<br/>(CPU, GPS, Network)"]
+                    end
+
+                    subgraph CAR_AA["Car (Display Only)"]
+                        CAR_DISPLAY["🖥️ Car Display<br/>(Head Unit)"]
+                        CAR_CONTROLS["Steering Wheel<br/>Controls"]
+                    end
+
+                    subgraph AAOS_FULL["Android Automotive OS (Native)"]
+                        AAOS_OS["🚗 AAOS<br/>Running in Car"]
+                        CAR_HW["Car Hardware<br/>(IVI SoC, GPS)"]
+                        VHAL["Vehicle HAL<br/>(ECU/CAN Access)"]
+                    end
+
+                    PHONE --> AA_APP
+                    AA_APP -->|USB/Wireless Projection| CAR_DISPLAY
+                    CAR_CONTROLS -->|Input Events| AA_APP
+                    PHONE_HW -.->|Uses Phone's Resources| AA_APP
+
+                    AAOS_OS --> CAR_HW
+                    AAOS_OS --> VHAL
+                    VHAL -.->|Direct Vehicle Access| CAR_HW
+                </div>
+            </div>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Comparison Item</th>
+                        <th>Android Auto</th>
+                        <th>AAOS (Android Automotive OS)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Execution Location</strong></td>
+                        <td>Runs on smartphone</td>
+                        <td>Runs on vehicle IVI system</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Connection Method</strong></td>
+                        <td>USB cable or wireless connection</td>
+                        <td>No connection needed (auto-starts on vehicle boot)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Smartphone Required</strong></td>
+                        <td>Required (won't work without phone)</td>
+                        <td>Not required (runs independently)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Vehicle Role</strong></td>
+                        <td>Display + input device</td>
+                        <td>Complete computing platform</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Vehicle Data Access</strong></td>
+                        <td>Limited (basic info like speed, fuel only)</td>
+                        <td>Full access (all ECU data via VHAL)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>App Store</strong></td>
+                        <td>Google Play (phone apps)</td>
+                        <td>Google Play for Cars (vehicle apps)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>App Execution Environment</strong></td>
+                        <td>Uses phone's CPU/memory</td>
+                        <td>Uses vehicle IVI SoC</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPS/Network</strong></td>
+                        <td>Uses phone's GPS/4G/5G</td>
+                        <td>Uses vehicle's built-in GPS/LTE module</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Updates</strong></td>
+                        <td>Phone app updates</td>
+                        <td>Vehicle OTA updates</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Multi-User</strong></td>
+                        <td>Not supported (phone owner only)</td>
+                        <td>Supported (multiple profiles in vehicle)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Audio Routing</strong></td>
+                        <td>Single output (car speakers)</td>
+                        <td>Multi-Zone Audio (independent by zone)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HVAC Control</strong></td>
+                        <td>Not possible</td>
+                        <td>Possible (direct control via VHAL)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Installation Cost</strong></td>
+                        <td>Low (only compatible head unit needed)</td>
+                        <td>High (integrated from vehicle manufacturing)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Adoption</strong></td>
+                        <td>Most modern vehicles (including aftermarket)</td>
+                        <td>Volvo, GM, Ford, Polestar, Renault, etc.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Development Complexity</strong></td>
+                        <td>Low (standard Android app development)</td>
+                        <td>High (Car App Library, vehicle integration)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Android Auto Use Cases
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Existing vehicles</strong>: Install Android Auto compatible head unit</li>
+                            <li><strong>Smartphone dependency</strong>: Uses phone's apps/data</li>
+                            <li><strong>Easy upgrade</strong>: Phone app updates without hardware changes</li>
+                            <li><strong>Cost-effective</strong>: No separate vehicle hardware required</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        AAOS Use Cases
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Premium vehicles</strong>: High-end IVI experience</li>
+                            <li><strong>Full integration</strong>: Deep integration of vehicle functions and apps</li>
+                            <li><strong>Independent operation</strong>: Full functionality without smartphone</li>
+                            <li><strong>OEM customization</strong>: Manufacturer-specific brand experience</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Can Be Used Together
+                    </h3>
+                    <div class="card-description">
+                        <p>AAOS vehicles can also support Android Auto!</p>
+                        <ul>
+                            <li>Run Android Auto app on AAOS</li>
+                            <li>Passengers can connect their phones</li>
+                            <li>Driver uses AAOS, passengers use Android Auto</li>
+                            <li>Maximum flexibility</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: AAOS Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                AAOS Full Architecture
+            </h2>
+            <p class="section-description">
+                AAOS adds the Car Services Layer on top of AOSP's 5-layer architecture.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Layer1["Layer 1: Vehicle Apps"]
+                        APP["Navigation • Media • HVAC<br/>Car Settings • OEM Apps"]
+                    end
+
+                    subgraph Layer2["Layer 2: Car Services (AAOS Addition)"]
+                        CAR_API["android.car.* API"]
+                        CAR_SVC["CarPropertyManager • CarAudioService<br/>CarPowerService • CarUserService<br/>CarInputService • CarPackageManager"]
+                    end
+
+                    subgraph Layer3["Layer 3-6: AOSP Core (Standard Android)"]
+                        FW["Java API Framework<br/>Activity Manager • Window Manager"]
+                        ART["Android Runtime (ART)<br/>Native Libraries"]
+                        HAL_STD["Standard HALs<br/>Audio • Camera • Graphics"]
+                    end
+
+                    subgraph Layer7["Layer 7: Vehicle HAL (AAOS Addition)"]
+                        VHAL["Vehicle HAL 3.0 (AIDL)<br/>Vehicle Properties<br/>Get/Set/Subscribe"]
+                    end
+
+                    subgraph Hardware["Vehicle Hardware"]
+                        ECU["ECU Controllers<br/>CAN/LIN Bus<br/>Sensors & Actuators"]
+                    end
+
+                    APP -->|android.car API| CAR_API
+                    CAR_API --> CAR_SVC
+                    CAR_SVC -->|Binder IPC| FW
+                    FW --> ART
+                    ART --> HAL_STD
+                    CAR_SVC -->|AIDL/HIDL| VHAL
+                    VHAL -->|CAN Messages| ECU
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 AAOS Architecture Essentials</strong><br/>
+                AAOS adds <strong>2 layers</strong> on top of AOSP:
+                <br/>① <strong>Car Services Layer</strong>: Provides android.car API
+                <br/>② <strong>Vehicle HAL</strong>: Vehicle hardware access
+            </div>
+        </section>
+
+        <!-- Section 3: Car Services -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Car Services
+            </h2>
+            <p class="section-description">
+                Car Services acts as a mediator between apps and vehicle hardware, exposing vehicle functions as Android APIs.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Key Roles
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Mediator</strong>: Brokers between apps and vehicle data</li>
+                            <li><strong>Security</strong>: Permission-based access control</li>
+                            <li><strong>Abstraction</strong>: Hides hardware complexity</li>
+                            <li><strong>Interoperability</strong>: Compatibility across manufacturers</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Core Services
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>CarPropertyManager</code>: Vehicle property management</li>
+                            <li><code>CarAudioService</code>: Multi-zone audio</li>
+                            <li><code>CarPowerService</code>: Power management</li>
+                            <li><code>CarUserService</code>: Multi-user</li>
+                            <li><code>CarInputService</code>: Input events</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Security & Permissions
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Automotive-specific permission system</li>
+                            <li>Sensitive vehicle data protection</li>
+                            <li>Per-app access control</li>
+                            <li>OEM-exclusive permissions</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                    APP[Vehicle App]
+
+                    subgraph Car_Services["Car Services"]
+                    CAR_API[android.car API]
+                    CPM[CarPropertyManager]
+                    end
+
+                    VHAL[Vehicle HAL]
+                    ECU[ECU/CAN Bus]
+
+                    APP -->|Request Speed| CAR_API
+                    CAR_API -->|getProperty| CPM
+                    CPM -->|VHAL Property| VHAL
+                    VHAL -->|CAN Message| ECU
+                    ECU -->|Speed Data| VHAL
+                    VHAL -->|VehiclePropValue| CPM
+                    CPM -->|Property Value| CAR_API
+                    CAR_API -->|Speed| APP
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Vehicle HAL -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Vehicle HAL (VHAL)
+            </h2>
+            <p class="section-description">
+                Vehicle Hardware Abstraction Layer is the standard interface between Android and vehicle hardware.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔌</span>
+                        VHAL Concept
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Vehicle hardware abstraction layer</li>
+                            <li>Translator between ECU/CAN bus and Android</li>
+                            <li>Exposes vehicle data as Properties</li>
+                            <li>AIDL/HIDL based interface</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Vehicle Properties
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Speed</strong>: PERF_VEHICLE_SPEED</li>
+                            <li><strong>Fuel</strong>: FUEL_LEVEL_LOW, FUEL_LEVEL</li>
+                            <li><strong>Gear</strong>: GEAR_SELECTION</li>
+                            <li><strong>HVAC</strong>: HVAC_TEMPERATURE_SET</li>
+                            <li><strong>Door</strong>: DOOR_LOCK, DOOR_POS</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Property Types
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Access</strong>: READ, WRITE, READ_WRITE</li>
+                            <li><strong>Change Mode</strong>:
+                                <ul>
+                                    <li>STATIC: Never changes</li>
+                                    <li>ON_CHANGE: Notifies on change</li>
+                                    <li>CONTINUOUS: Periodic updates</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph VHAL_Layer["Vehicle HAL Layer"]
+                    VHAL_IF[VHAL Interface<br />AIDL/HIDL]
+                    PROPS[Vehicle Properties<br />Speed, Fuel, HVAC, Gear]
+                    end
+
+                    subgraph Vehicle["Vehicle Hardware"]
+                    ECU1[Engine ECU]
+                    ECU2[Body ECU]
+                    CAN[CAN Bus]
+                    SENSORS[Sensors]
+                    end
+
+                    CAR_SVC[Car Services]
+
+                    CAR_SVC -->|Get/Set Property| VHAL_IF
+                    VHAL_IF --> PROPS
+                    PROPS -->|Translate| CAN
+                    CAN --> ECU1 & ECU2
+                    SENSORS --> CAN
+
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔄 VHAL 2.0 vs 3.0</strong><br/>
+                • <strong>VHAL 2.0 (HIDL)</strong>: Android 8.0~12, hardware.automotive.vehicle@2.0<br/>
+                • <strong>VHAL 3.0 (AIDL)</strong>: Android 13+, android.hardware.automotive.vehicle (Stable AIDL)<br/>
+                • Performance improvements, better version management, simplified interface
+            </div>
+
+            <table class="comparison-table" style="margin-top: 20px;">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>VHAL 2.0 (HIDL)</th>
+                        <th>VHAL 3.0 (AIDL)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Introduction</strong></td>
+                        <td>Android 8.0 (Oreo, 2017)</td>
+                        <td>Android 13 (Tiramisu, 2022)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Interface</strong></td>
+                        <td>HIDL (Hardware Interface Definition Language)</td>
+                        <td>Stable AIDL (Android Interface Definition Language)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Package Name</strong></td>
+                        <td><code>android.hardware.automotive.vehicle@2.0</code></td>
+                        <td><code>android.hardware.automotive.vehicle</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Version Management</strong></td>
+                        <td>Breaking compatibility on major version changes</td>
+                        <td>Backward compatibility guaranteed with Stable AIDL</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Performance</strong></td>
+                        <td>HIDL Binder IPC overhead</td>
+                        <td>Optimized AIDL Binder (faster)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Extensibility</strong></td>
+                        <td>Vendor Extensions</td>
+                        <td>More flexible Property extensions</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Legacy (supported until Android 12)</td>
+                        <td>Current (recommended from Android 13)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 6: Multi-User Support -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Multi-User Support
+            </h2>
+            <p class="section-description">
+                AAOS supports multi-user functionality allowing multiple passengers in the vehicle to use independent profiles and apps.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">👥</span>
+                        User Isolation
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Independent accounts per user</li>
+                            <li>App and data isolation</li>
+                            <li>Personal settings and environment</li>
+                            <li>Privacy protection</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🪑</span>
+                        Occupant Zones
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>User mapping by occupant zone</li>
+                            <li>Display assignment</li>
+                            <li>Audio zone connection</li>
+                            <li>User ID ↔ Occupant Zone mapping</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        User Switching
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Fast user switching</li>
+                            <li>Guest mode support</li>
+                            <li>Driver vs passenger mode</li>
+                            <li>Auto-login option</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Multi-Zone Audio -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Multi-Zone Audio
+            </h2>
+            <p class="section-description">
+                A multi-zone audio system that allows independent audio playback simultaneously in multiple areas of the vehicle.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Zone Concept
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Independent audio output groups</li>
+                            <li>Independent focus per zone</li>
+                            <li>Independent volume per zone</li>
+                            <li>Example: Driver seat vs rear seats</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Configuration & Management
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>car_audio_configuration.xml</code></li>
+                            <li>Volume Groups definition</li>
+                            <li>Output device mapping</li>
+                            <li>CarAudioService auto-routing</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✨</span>
+                        Android 14 Features
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Dynamic zone configuration</li>
+                            <li>Primary Zone Passenger Cast</li>
+                            <li>Passengers can cast to main cabin</li>
+                            <li>Driver retains control</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Zone1["Audio Zone 1 (Front)"]
+                    USER1[Driver<br />User ID: 10]
+                    APP1[Navigation App]
+                    AUDIO1[Front Speakers]
+                    end
+
+                    subgraph Zone2["Audio Zone 2 (Rear)"]
+                    USER2[Passenger<br />User ID: 11]
+                    APP2[Media App]
+                    AUDIO2[Rear Speakers]
+                    end
+
+                    CAR_AUDIO[CarAudioService<br />Dynamic Audio Policy]
+
+                    USER1 --> APP1
+                    APP1 --> CAR_AUDIO
+                    CAR_AUDIO -->|Zone 1<br />Focus & Volume| AUDIO1
+
+                    USER2 --> APP2
+                    APP2 --> CAR_AUDIO
+                    CAR_AUDIO -->|Zone 2<br />Focus & Volume| AUDIO2
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Car UI Library -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Car UI Library
+            </h2>
+            <p class="section-description">
+                A template-based UI library designed for driver safety.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        Driver Distraction Guidelines
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Limited interaction while driving</li>
+                            <li>Tasks completable in a few seconds</li>
+                            <li>No video/games/long text</li>
+                            <li>'Distraction Optimized' tag required</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📐</span>
+                        Template-Based UI
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>androidx.car.app</code> library</li>
+                            <li><code>MediaTemplate</code>: Media player</li>
+                            <li><code>PaneTemplate</code>: Information display</li>
+                            <li><code>MessageTemplate</code>: Messages/confirmations</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎤</span>
+                        Voice-First Design
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Google Assistant integration</li>
+                            <li>Hands-free operations</li>
+                            <li>Voice command priority</li>
+                            <li>Minimize screen interaction</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚦</span>
+                        Context-Aware UX
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>CarUxRestrictionsManager</code></li>
+                            <li>While driving: Simplified UI</li>
+                            <li>When parked: Rich UI</li>
+                            <li>Dynamic input field deactivation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: AOSP vs AAOS -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                AOSP vs AAOS Comparison
+            </h2>
+            <p class="section-description">
+                Comparing key differences between standard AOSP and vehicle-specific AAOS.
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>AOSP (Standard)</th>
+                        <th>AAOS (Automotive)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Purpose</strong></td>
+                        <td>Smartphones, tablets, TV</td>
+                        <td>Vehicle infotainment (IVI)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HAL</strong></td>
+                        <td>Camera, Audio, Sensor HAL</td>
+                        <td><strong>+ Vehicle HAL (VHAL)</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Additional Layer</strong></td>
+                        <td>None</td>
+                        <td><strong>Car Services Layer</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>API Package</strong></td>
+                        <td>android.* packages</td>
+                        <td><strong>+ android.car.* packages</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Vehicle Data</strong></td>
+                        <td>Not accessible</td>
+                        <td><strong>Access to speed, fuel, gear, HVAC</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Multi-User</strong></td>
+                        <td>Basic multi-user</td>
+                        <td><strong>Occupant Zones based</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Audio</strong></td>
+                        <td>Single output</td>
+                        <td><strong>Multi-Zone Audio</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>UI Guidelines</strong></td>
+                        <td>Standard Material Design</td>
+                        <td><strong>Driver Distraction Guidelines</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>UI Library</strong></td>
+                        <td>Standard Android UI</td>
+                        <td><strong>Car UI Library (templates)</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Communication</strong></td>
+                        <td>Wi-Fi, Cellular, Bluetooth</td>
+                        <td><strong>+ CAN Bus, Vehicle Network</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>App Categories</strong></td>
+                        <td>All categories</td>
+                        <td><strong>Limited (Navigation, Media, Communication)</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Security</strong></td>
+                        <td>Standard permissions</td>
+                        <td><strong>+ Automotive-specific permissions</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>Key Summary:</strong> AAOS adds <strong>Car Services</strong>, <strong>Vehicle HAL</strong>,
+                and <strong>android.car API</strong> on top of AOSP to provide
+                complete integration with vehicle hardware, making it a vehicle-dedicated platform with UI/UX guidelines prioritizing driver safety.
+            </div>
+        </section>
+
+        <!-- Section 9: AAOS App Development -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                AAOS App Development
+            </h2>
+            <p class="section-description">
+                Introduction to developing AAOS apps and key libraries.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph AppTypes["AAOS App Types"]
+                        CAR_APP["Car App<br/>(androidx.car.app)<br/>Navigation, Parking, Charging"]
+                        MEDIA_APP["Media App<br/>(androidx.media3)<br/>Audio/Video Playback"]
+                        SYSTEM_APP["System App<br/>(android.car API)<br/>OEM Customization"]
+                    end
+
+                    subgraph Framework["AAOS Framework"]
+                        CAR_APP_LIB["Car App Library<br/>Templates & APIs"]
+                        MEDIA3["Media3 Library<br/>MediaSession"]
+                        CAR_SERVICE["Car Services<br/>android.car.*"]
+                    end
+
+                    CAR_APP -->|Uses| CAR_APP_LIB
+                    MEDIA_APP -->|Uses| MEDIA3
+                    SYSTEM_APP -->|Uses| CAR_SERVICE
+
+                    CAR_APP_LIB --> CAR_SERVICE
+                    MEDIA3 --> CAR_SERVICE
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Car App Library
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>androidx.car.app</strong> (Navigation, Parking, Charging)</p>
+                        <ul>
+                            <li>Template-based UI (safe driver experience)</li>
+                            <li>NavigationTemplate, PlaceListNavigationTemplate</li>
+                            <li>Supports both Android Auto and AAOS</li>
+                            <li>Automatic compliance with driver distraction rules</li>
+                            <li>Requires <code>CarAppService</code> implementation</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Media App Development
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>androidx.media3</strong> (Audio & Video)</p>
+                        <ul>
+                            <li>Use MediaSession API (Media3 recommended)</li>
+                            <li>Implement MediaBrowserService</li>
+                            <li>ExoPlayer integration</li>
+                            <li>Provide album art, metadata</li>
+                            <li>Support Play/Pause/Skip controls</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        System App Development
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>android.car API</strong> (OEM Only)</p>
+                        <ul>
+                            <li>OEM manufacturer only (System permission required)</li>
+                            <li>Access vehicle data with CarPropertyManager</li>
+                            <li>Control audio zones with CarAudioManager</li>
+                            <li>Power management with CarPowerManager</li>
+                            <li>Requires AAOS platform signature</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Distribution
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Google Play for Cars</strong>: Car App & Media App</li>
+                            <li>Must comply with Car App Quality Guidelines</li>
+                            <li>Driver Distraction review</li>
+                            <li>Multi-screen (cluster) support recommended</li>
+                            <li>OEM preloading (System Apps)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Getting Started</strong><br/>
+                • <strong>Media App</strong>: Media3 + MediaSession (most common)<br/>
+                • <strong>Navigation App</strong>: Car App Library (template-based)<br/>
+                • <strong>OEM App</strong>: android.car API (manufacturers only)<br/>
+                • All apps must declare <code>android.hardware.type.automotive</code> in AndroidManifest.xml
+            </div>
+        </section>
+
+        <!-- Section 10: Related AAOS Pages -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                AAOS Detailed Topics
+            </h2>
+            <p class="section-description">
+                For detailed explanations of AAOS main features, please refer to the pages below.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Car Media Service
+                    </h3>
+                    <div class="card-description">
+                        <p>Vehicle-specific media service and audio routing architecture</p>
+                        <ul>
+                            <li>CarAudioService detailed structure</li>
+                            <li>Audio Zone configuration and management</li>
+                            <li>Dynamic Audio Policy</li>
+                            <li>Volume Groups & Device Routing</li>
+                        </ul>
+                        <a href="carmedia.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⌨️</span>
+                        Key Event Handling
+                    </h3>
+                    <div class="card-description">
+                        <p>AAOS key event handling and media control</p>
+                        <ul>
+                            <li>CarService Input Framework</li>
+                            <li>Steering Wheel Controls</li>
+                            <li>UX Restriction Manager</li>
+                            <li>Media Key Routing</li>
+                        </ul>
+                        <a href="aaos-key-events.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Last Media & Autoplay
+                    </h3>
+                    <div class="card-description">
+                        <p>Last Media Source storage and autoplay policy</p>
+                        <ul>
+                            <li>Last Media Source restoration mechanism</li>
+                            <li>Autoplay Policy & Triggers</li>
+                            <li>MediaSession Priority</li>
+                            <li>User Preference Storage</li>
+                        </ul>
+                        <a href="aaos-last-media.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔋</span>
+                        Power Policy & Suspend
+                    </h3>
+                    <div class="card-description">
+                        <p>Vehicle power management and Deep Sleep mechanism</p>
+                        <ul>
+                            <li>Suspend-to-RAM vs Deep Sleep</li>
+                            <li>Audio Context preservation logic</li>
+                            <li>Wake-up Triggers</li>
+                            <li>CarPowerManager API</li>
+                        </ul>
+                        <a href="power-policy-suspend.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        Google Automotive Services (GAS)
+                    </h3>
+                    <div class="card-description">
+                        <p>Google services integration for vehicles</p>
+                        <ul>
+                            <li>Google Play Services for Cars</li>
+                            <li>Google Assistant Integration</li>
+                            <li>Google Maps Navigation</li>
+                            <li>GAS components and licensing</li>
+                        </ul>
+                        <a href="gas.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        CarMa (Car Ready Mobile Apps)
+                    </h3>
+                    <div class="card-description">
+                        <p>Program to extend mobile apps to vehicles</p>
+                        <ul>
+                            <li>Extend existing mobile apps to vehicles</li>
+                            <li>Minimal code changes</li>
+                            <li>Android Auto + AAOS integration</li>
+                            <li>Google's new app strategy</li>
+                        </ul>
+                        <a href="carma.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

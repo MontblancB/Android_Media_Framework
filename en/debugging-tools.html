@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debugging Tools</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media Framework
+        </a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Android Media Debugging & Profiling Tools</h1>
+            <p class="page-subtitle">Complete Guide to Media Framework Debugging and Performance Analysis</p>
+        </header>
+
+
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>1. Overview</h2>
+
+            <p>Android media framework debugging requires tracing across Framework, Native, HAL, and Kernel levels due to its <strong>multi-layer architecture</strong>. This page provides step-by-step debugging tools and workflows for practical use.</p>
+
+            <h3>1.1 Tool Mapping by Debugging Level</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Level</th>
+                        <th>Key Components</th>
+                        <th>Tools</th>
+                        <th>Output Format</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>App Layer</strong></td>
+                        <td>MediaPlayer, ExoPlayer, Media3</td>
+                        <td>Android Studio Profiler, logcat</td>
+                        <td>CPU/Memory timeline, log stream</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Framework</strong></td>
+                        <td>MediaSession, AudioManager</td>
+                        <td>dumpsys, adb shell pm</td>
+                        <td>Service state dump, JSON</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Native</strong></td>
+                        <td>MediaCodec, AudioFlinger</td>
+                        <td>perfetto, systrace</td>
+                        <td>Trace protobuf, HTML timeline</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HAL</strong></td>
+                        <td>Codec2, Audio HAL</td>
+                        <td>hidl-test, aidl dump</td>
+                        <td>Test report, interface dump</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Kernel</strong></td>
+                        <td>Binder, ION allocator</td>
+                        <td>ftrace, /proc, /sys</td>
+                        <td>Kernel trace, sysfs values</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>1.2 Debugging Workflow</h3>
+            <div class="mermaid">
+graph TD
+    A[Issue Occurred] --> B{Error in Log?}
+    B -->|Yes| C[Filter logcat]
+    B -->|No| D{Performance Issue?}
+
+    C --> E[Framework Stack?]
+    C --> F[Native Stack?]
+
+    D -->|Yes| G[perfetto Trace]
+    D -->|No| H[Check dumpsys State]
+
+    E --> I[dumpsys media.*]
+    F --> J[Analyze Native Logs]
+
+    G --> K[CPU/GPU Profile]
+    H --> L[Verify Service State]
+
+    I --> M[Apply Solution]
+    J --> M
+    K --> M
+    L --> M
+
+    M --> N[Reproduction Test]
+    N --> O{Resolved?}
+    O -->|No| P[Generate Bugreport]
+    O -->|Yes| Q[Done]
+
+    P --> R[AOSP Issue Report]
+            </div>
+
+            <div class="info-box">
+                <strong>Tip: Debugging Order</strong>
+                <ol>
+                    <li>Check error stack with <strong>logcat</strong> (5 min)</li>
+                    <li>Check service state with <strong>dumpsys</strong> (3 min)</li>
+                    <li>Analyze timeline with <strong>perfetto</strong> (10 min)</li>
+                    <li>Generate <strong>Bugreport</strong> for expert analysis (30+ min)</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- Section 2: logcat Filtering -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>2. logcat Filtering Patterns</h2>
+
+            <p>logcat is the <strong>first entry point</strong> for Android debugging. Media-related logs can output hundreds of lines per second, so effective filtering is essential.</p>
+
+            <h3>2.1 Basic Filtering</h3>
+
+            <h4>All Media Logs</h4>
+            <pre><code># All media-related logs
+adb logcat -s MediaPlayer MediaCodec ExoPlayerImpl MediaSession AudioFlinger
+
+# Priority filter (Warning and above only)
+adb logcat *:W | grep -E "Media|Audio|Codec"
+
+# Specific package only
+adb logcat --pid=$(adb shell pidof -s com.example.mediaplayer)</code></pre>
+
+            <h4>Extract Error Logs Only</h4>
+            <pre><code># Java Exception stack
+adb logcat -s AndroidRuntime:E
+
+# Native Crash
+adb logcat -s DEBUG:I libc:I
+
+# ANR (Application Not Responding)
+adb logcat -s ActivityManager:I | grep "ANR in"</code></pre>
+
+            <h3>2.2 Component-specific Filters</h3>
+
+            <div class="tool-grid">
+                <div class="tool-card">
+                    <h4>MediaCodec</h4>
+                    <pre><code>adb logcat -s \
+  MediaCodec \
+  MediaCodecList \
+  ACodec \
+  CCodec \
+  OMXClient</code></pre>
+                </div>
+
+                <div class="tool-card">
+                    <h4>ExoPlayer / Media3</h4>
+                    <pre><code>adb logcat -s \
+  ExoPlayerImpl \
+  MediaCodecRenderer \
+  MediaCodecVideoRenderer \
+  MediaCodecAudioRenderer \
+  DefaultTrackSelector</code></pre>
+                </div>
+
+                <div class="tool-card">
+                    <h4>AudioFlinger</h4>
+                    <pre><code>adb logcat -s \
+  AudioFlinger \
+  AudioPolicyService \
+  AudioTrack \
+  AudioFocus</code></pre>
+                </div>
+
+                <div class="tool-card">
+                    <h4>MediaSession</h4>
+                    <pre><code>adb logcat -s \
+  MediaSessionService \
+  MediaController \
+  MediaBrowserService \
+  MediaNotificationManager</code></pre>
+                </div>
+
+                <div class="tool-card">
+                    <h4>Car Media (AAOS)</h4>
+                    <pre><code>adb logcat -s \
+  CarMediaService \
+  CarAudioService \
+  VehicleHal \
+  CarInputService</code></pre>
+                </div>
+
+                <div class="tool-card">
+                    <h4>DRM (Widevine)</h4>
+                    <pre><code>adb logcat -s \
+  MediaDrm \
+  Drm \
+  WVCdm \
+  ClearKeyDrm</code></pre>
+                </div>
+            </div>
+
+            <h3>2.3 Regex Patterns</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Issue Type</th>
+                        <th>grep Pattern</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Codec Error</td>
+                        <td><code>grep -E "codec.*error|configure.*failed"</code></td>
+                        <td>configure/start failure</td>
+                    </tr>
+                    <tr>
+                        <td>Buffer Error</td>
+                        <td><code>grep -E "dequeue.*timeout|ETIMEDOUT"</code></td>
+                        <td>dequeueOutputBuffer timeout</td>
+                    </tr>
+                    <tr>
+                        <td>DRM Error</td>
+                        <td><code>grep -E "license.*error|provision.*failed"</code></td>
+                        <td>License acquisition failure</td>
+                    </tr>
+                    <tr>
+                        <td>Audio Focus</td>
+                        <td><code>grep -E "AudioFocus.*LOSS|abandonAudioFocus"</code></td>
+                        <td>Focus loss event</td>
+                    </tr>
+                    <tr>
+                        <td>ANR</td>
+                        <td><code>grep "Input dispatching timed out"</code></td>
+                        <td>UI blocked for 5+ seconds</td>
+                    </tr>
+                    <tr>
+                        <td>OOM</td>
+                        <td><code>grep "OutOfMemoryError"</code></td>
+                        <td>Out of memory</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>2.4 Practical Example: Tracking Codec Errors</h3>
+            <pre><code># Step 1: Check error occurrence time
+adb logcat -t 500 | grep -E "MediaCodec|ACodec|CCodec"
+
+# Example output:
+# 01-25 10:32:15.421  1234  5678 E MediaCodec: configure failed with err 0xffffffe2
+# 01-25 10:32:15.422  1234  5678 E ACodec   : [OMX.qcom.video.decoder.avc] ERROR(0x80001001)
+
+# Step 2: Interpret error codes
+# 0xffffffe2 = -30 (INVALID_OPERATION)
+# 0x80001001 = OMX_ErrorInsufficientResources
+
+# Step 3: Dump configuration values
+adb logcat -s MediaCodec:V | grep "format"
+# Output: MediaFormat: {mime=video/avc, width=3840, height=2160, ...}
+
+# Step 4: Check Capabilities
+adb shell dumpsys media.codec | grep "avc"</code></pre>
+
+            <div class="warning-box">
+                <strong>Warning: logcat Buffer Size</strong>
+                <p>Default logcat buffer is 256KB and gets overwritten quickly. Increase buffer for long debugging sessions:</p>
+                <pre><code>adb logcat -G 16M   # Increase to 16MB
+adb logcat -g       # Check current buffer size</code></pre>
+            </div>
+
+            <h3>2.5 Saving and Sharing Log Files</h3>
+            <pre><code># Save to file (with timestamp)
+adb logcat -v threadtime > logcat_$(date +%Y%m%d_%H%M%S).txt
+
+# For specific duration only (30 seconds)
+timeout 30 adb logcat > logcat_30s.txt
+
+# Dump all already output logs (-d: dump mode)
+adb logcat -d > logcat_dump.txt
+
+# Save compressed
+adb logcat -d | gzip > logcat.txt.gz</code></pre>
+        </section>
+
+        <!-- Section 3: dumpsys Commands -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>3. dumpsys Command Collection</h2>
+
+            <p>dumpsys is a tool that <strong>dumps the runtime state</strong> of Android system services. There are more than 15 media-related services.</p>
+
+            <h3>3.1 Key Media Services</h3>
+
+            <h4>3.1.1 media.player (MediaPlayerService)</h4>
+            <pre><code># Full dump
+adb shell dumpsys media.player
+
+# Example output:
+# MediaPlayerService:
+#   Clients:
+#     pid(1234) uid(10123) connId(5)
+#       IMediaPlayer[OMX.qcom.video.decoder.avc]
+#         state: started
+#         position: 125300 ms
+#         duration: 300000 ms</code></pre>
+
+            <div class="info-box">
+                <strong>Key Information:</strong>
+                <ul>
+                    <li><strong>Clients</strong>: List of currently playing clients</li>
+                    <li><strong>state</strong>: idle/prepared/started/paused/stopped</li>
+                    <li><strong>Audio routing</strong>: Output device (speaker/headset/bluetooth)</li>
+                </ul>
+            </div>
+
+            <h4>3.1.2 media.codec (MediaCodecService)</h4>
+            <pre><code># Codec list and Capabilities
+adb shell dumpsys media.codec
+
+# Example output (partial):
+# Decoder: OMX.qcom.video.decoder.avc (video/avc)
+#   Max instances: 4
+#   Current instances: 1
+#   Supported sizes: 64x64 ~ 3840x2160
+#   Frame rates: 1fps ~ 240fps
+#   Color formats: YUV420Flexible, YUV420Planar</code></pre>
+
+            <h4>Search Specific Codec</h4>
+            <pre><code># H.264 decoder only
+adb shell dumpsys media.codec | grep -A 20 "video/avc.*decoder"
+
+# H.265 encoder only
+adb shell dumpsys media.codec | grep -A 20 "video/hevc.*encoder"</code></pre>
+
+            <h4>3.1.3 media.audio_flinger (AudioFlinger)</h4>
+            <pre><code># Full AudioFlinger state
+adb shell dumpsys media.audio_flinger
+
+# Output structure:
+# - Hardware status (HAL state)
+# - Playback threads (each audio stream)
+# - Active tracks (currently playing tracks)
+# - FastMixer status (low-latency mixer)
+# - Global effects (equalizer, reverb, etc.)</code></pre>
+
+            <div class="success-box">
+                <strong>Usage Example: Audio glitch debugging</strong>
+                <pre><code># Check FastMixer state
+adb shell dumpsys media.audio_flinger | grep -A 50 "FastMixer"
+
+# Output analysis:
+# - underruns: 0 → Normal
+# - underruns: 152 → Buffer underrun occurred (glitch cause)</code></pre>
+            </div>
+
+            <h4>3.1.4 media.audio_policy (AudioPolicyService)</h4>
+            <pre><code># Audio routing policy
+adb shell dumpsys media.audio_policy
+
+# Key information:
+# - Available audio devices
+# - Audio streams (MUSIC, ALARM, NOTIFICATION, etc.)
+# - Volume curves
+# - Audio focus stack (current focus owner)</code></pre>
+
+            <h3>3.2 Automotive (AAOS) Services</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Service</th>
+                        <th>Command</th>
+                        <th>Key Information</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>CarMediaService</strong></td>
+                        <td><code>dumpsys car_service --services CarMediaService</code></td>
+                        <td>Last media source, autoplay state</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CarAudioService</strong></td>
+                        <td><code>dumpsys car_service --services CarAudioService</code></td>
+                        <td>Audio zones, volume groups, ducking</td>
+                    </tr>
+                    <tr>
+                        <td><strong>VehicleHal</strong></td>
+                        <td><code>dumpsys android.hardware.automotive.vehicle@2.0::IVehicle/default</code></td>
+                        <td>Vehicle properties (speed, gear, etc.)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CarInputService</strong></td>
+                        <td><code>dumpsys car_service --services CarInputService</code></td>
+                        <td>Key event routing, inject events</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CarPowerManagement</strong></td>
+                        <td><code>dumpsys car_service --services CarPowerManagementService</code></td>
+                        <td>Power state, suspend listeners</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>CarMediaService Details</h4>
+            <pre><code># Check last media source
+adb shell dumpsys car_service --services CarMediaService | grep "last.*source"
+
+# Example output:
+# mPrimaryMediaSource: [MediaSource:
+#   packageName=com.spotify.music
+#   className=com.spotify.music.MusicService]
+
+# Autoplay settings
+# mPlayOnBootConfiguration: RETAIN
+# mPlayOnMediaSourceChanged: ENABLE</code></pre>
+
+            <h3>3.3 MediaSession</h3>
+            <pre><code># Full session list
+adb shell dumpsys media_session
+
+# Output structure:
+# Sessions Stack:
+#   User 0:
+#     - com.spotify.music/MediaSessionService (priority: 100, active: true)
+#       controller: PendingIntent{...}
+#       metadata: {title=Song Name, artist=Artist Name, ...}
+#       playbackState: {state=3(PLAYING), position=45123, ...}</code></pre>
+
+            <div class="tool-card">
+                <h4>Filter Only Specific App's MediaSession</h4>
+                <pre><code>adb shell dumpsys media_session | grep -A 30 "com.spotify.music"</code></pre>
+            </div>
+
+            <h3>3.4 DRM Related</h3>
+            <pre><code># MediaDrm plugin
+adb shell dumpsys media.drm
+
+# Output:
+# Drm Plugins:
+#   Plugin: libwvdrmengine.so (Widevine CDM)
+#     UUID: edef8ba9-79d6-4ace-a3c8-27dcd51d21ed
+#     Description: Widevine Content Decryption Module
+#     Algorithms: AES/CBC/NoPadding
+#   Plugin: libclearkeydrmengine.so (ClearKey)
+#     UUID: e2719d58-a985-b3c9-781a-b030af78d30e</code></pre>
+
+            <h3>3.5 Comprehensive Script</h3>
+            <pre><code>#!/bin/bash
+# media_debug_dump.sh - Comprehensive media debugging dump
+
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+OUTPUT_DIR="media_dump_${TIMESTAMP}"
+mkdir -p "${OUTPUT_DIR}"
+
+echo "Collecting media debugging data..."
+
+# 1. logcat (recent 1000 lines)
+adb logcat -t 1000 > "${OUTPUT_DIR}/logcat.txt"
+
+# 2. Full dumpsys
+adb shell dumpsys media.player > "${OUTPUT_DIR}/media.player.txt"
+adb shell dumpsys media.codec > "${OUTPUT_DIR}/media.codec.txt"
+adb shell dumpsys media.audio_flinger > "${OUTPUT_DIR}/audio_flinger.txt"
+adb shell dumpsys media.audio_policy > "${OUTPUT_DIR}/audio_policy.txt"
+adb shell dumpsys media_session > "${OUTPUT_DIR}/media_session.txt"
+
+# 3. Car services (AAOS only)
+adb shell dumpsys car_service > "${OUTPUT_DIR}/car_service.txt" 2>/dev/null
+
+# 4. Process information
+adb shell ps -A | grep -E "media|audio" > "${OUTPUT_DIR}/processes.txt"
+
+# 5. Memory
+adb shell dumpsys meminfo com.example.mediaplayer > "${OUTPUT_DIR}/meminfo.txt"
+
+# Compress
+tar -czf "${OUTPUT_DIR}.tar.gz" "${OUTPUT_DIR}"
+echo "Done: ${OUTPUT_DIR}.tar.gz"</code></pre>
+        </section>
+
+        <!-- Section 4: perfetto / systrace -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>4. perfetto / systrace Tracing</h2>
+
+            <p><strong>perfetto</strong> is the next-generation system tracing tool for Android 10+, replacing the legacy systrace. It enables <strong>timeline-level analysis</strong> of media pipelines.</p>
+
+            <h3>4.1 perfetto vs systrace Comparison</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>perfetto (Android 10+)</th>
+                        <th>systrace (Legacy)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Output Format</td>
+                        <td>Protobuf (binary)</td>
+                        <td>HTML (text)</td>
+                    </tr>
+                    <tr>
+                        <td>File Size</td>
+                        <td>Small (compressed)</td>
+                        <td>Large (uncompressed)</td>
+                    </tr>
+                    <tr>
+                        <td>Viewer</td>
+                        <td>ui.perfetto.dev (web)</td>
+                        <td>chrome://tracing</td>
+                    </tr>
+                    <tr>
+                        <td>Features</td>
+                        <td>CPU, GPU, Memory, Power</td>
+                        <td>CPU, ftrace only</td>
+                    </tr>
+                    <tr>
+                        <td>Recommended</td>
+                        <td>Required for Android 10+</td>
+                        <td>Android 9 and below only</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>4.2 perfetto Basic Usage</h3>
+
+            <h4>4.2.1 Installation (PC)</h4>
+            <pre><code># Linux / macOS
+curl -O https://get.perfetto.dev/perfetto
+chmod +x perfetto
+sudo mv perfetto /usr/local/bin/
+
+# Or from AOSP build environment
+source build/envsetup.sh
+lunch aosp_cf_x86_64_phone-userdebug
+perfetto --help</code></pre>
+
+            <h4>4.2.2 Media Tracing Configuration</h4>
+            <pre><code># config.pbtx (perfetto configuration file)
+cat > media_trace_config.pbtx << 'EOF'
+# Trace duration: 10 seconds
+duration_ms: 10000
+
+buffers {
+  size_kb: 65536  # 64MB buffer
+  fill_policy: RING_BUFFER
+}
+
+# ftrace (Kernel events)
+data_sources {
+  config {
+    name: "linux.ftrace"
+    ftrace_config {
+      # Scheduler (CPU)
+      ftrace_events: "sched/sched_switch"
+      ftrace_events: "sched/sched_wakeup"
+
+      # Binder IPC
+      ftrace_events: "binder/binder_transaction"
+      ftrace_events: "binder/binder_transaction_received"
+
+      # Graphics
+      ftrace_events: "fence/fence_wait_start"
+      ftrace_events: "fence/fence_wait_end"
+    }
+  }
+}
+
+# atrace (Android Framework)
+data_sources {
+  config {
+    name: "linux.ftrace"
+    ftrace_config {
+      atrace_categories: "video"
+      atrace_categories: "audio"
+      atrace_categories: "camera"
+      atrace_categories: "gfx"
+      atrace_categories: "view"
+      atrace_categories: "am"  # ActivityManager
+      atrace_categories: "dalvik"
+      atrace_apps: "com.example.mediaplayer"
+    }
+  }
+}
+
+# Process stats
+data_sources {
+  config {
+    name: "linux.process_stats"
+    process_stats_config {
+      scan_all_processes_on_start: true
+    }
+  }
+}
+EOF</code></pre>
+
+            <h4>4.2.3 Capture Trace</h4>
+            <pre><code># Method 1: Using config file (recommended)
+adb shell perfetto \
+  -c - --txt \
+  -o /data/misc/perfetto-traces/media_trace.perfetto-trace \
+  < media_trace_config.pbtx
+
+# Method 2: Command-line flags (for simple cases)
+adb shell perfetto \
+  -o /data/misc/perfetto-traces/trace.perfetto-trace \
+  -t 10s \
+  sched freq idle am wm gfx view binder_driver \
+  video audio camera
+
+# Download to PC
+adb pull /data/misc/perfetto-traces/media_trace.perfetto-trace ./
+
+# Open in web viewer
+# Visit https://ui.perfetto.dev → Open trace file</code></pre>
+
+            <div class="info-box">
+                <strong>Tip: Real-time Tracing</strong>
+                <p>perfetto has <code>traced</code> daemon always running, so capture is instant:</p>
+                <pre><code># Start trace just before launching app
+adb shell perfetto -o /data/misc/perfetto-traces/trace.pb -t 10s video audio &
+# Launch app
+adb shell am start -n com.example.app/.MainActivity
+# Wait 10 seconds for auto-completion</code></pre>
+            </div>
+
+            <h3>4.3 Media Trace Analysis</h3>
+
+            <h4>4.3.1 Key Checkpoints</h4>
+            <div class="tool-grid">
+                <div class="tool-card">
+                    <h4>1. CPU Scheduling</h4>
+                    <p>In <strong>Thread States</strong> track:</p>
+                    <ul>
+                        <li><strong>Running</strong>: Executing on CPU</li>
+                        <li><strong>Runnable</strong>: Waiting to run (CPU contention)</li>
+                        <li><strong>Sleeping</strong>: Waiting for I/O</li>
+                    </ul>
+                </div>
+
+                <div class="tool-card">
+                    <h4>2. MediaCodec Pipeline</h4>
+                    <p>In <code>video</code> category:</p>
+                    <ul>
+                        <li><code>C2SoftAvcDec::process</code></li>
+                        <li><code>dequeueInputBuffer</code></li>
+                        <li><code>queueInputBuffer</code></li>
+                        <li><code>dequeueOutputBuffer</code></li>
+                    </ul>
+                </div>
+
+                <div class="tool-card">
+                    <h4>3. AudioFlinger Mixing</h4>
+                    <p>In <code>audio</code> category:</p>
+                    <ul>
+                        <li><code>AudioMixer::process</code></li>
+                        <li><code>FastMixer::threadLoop</code></li>
+                        <li><code>write</code> (HAL call)</li>
+                    </ul>
+                </div>
+
+                <div class="tool-card">
+                    <h4>4. Binder IPC</h4>
+                    <p><code>binder_driver</code> category:</p>
+                    <ul>
+                        <li>Transaction delay (>100ms warning)</li>
+                        <li>Sync vs async calls</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h4>4.3.2 Frame Drop Analysis Example</h4>
+            <pre><code># 1. Search for "Choreographer#doFrame" in trace
+# 2. Check frame timeline:
+#    - Normal: 16.6ms interval (60fps)
+#    - Frame drop: >33ms interval (frame skipped)
+#
+# 3. Trace cause:
+#    - UI Thread blocked? → Long operation on Main Thread
+#    - RenderThread delayed? → GPU overload
+#    - MediaCodec delayed? → dequeueOutputBuffer timeout</code></pre>
+
+            <div class="mermaid">
+sequenceDiagram
+    participant App as App Thread
+    participant Codec as MediaCodec
+    participant HAL as Codec2 HAL
+    participant HW as Hardware Decoder
+
+    Note over App,HW: perfetto trace timeline →
+
+    App->>Codec: dequeueInputBuffer()
+    activate Codec
+    Codec-->>App: inputBufferId
+    deactivate Codec
+
+    App->>Codec: queueInputBuffer(data)
+    activate Codec
+    Codec->>HAL: C2Work (input buffer)
+    activate HAL
+    HAL->>HW: DMA transfer
+    activate HW
+    HW-->>HAL: decode done
+    deactivate HW
+    HAL-->>Codec: C2Work (output buffer)
+    deactivate HAL
+    deactivate Codec
+
+    App->>Codec: dequeueOutputBuffer()
+    activate Codec
+    Note right of Codec: If HAL is slow,<br/>TIMEOUT occurs here
+    Codec-->>App: outputBufferId
+    deactivate Codec
+
+    App->>Codec: releaseOutputBuffer(render=true)
+    activate Codec
+    Codec->>App: renderOutputBuffer (SurfaceFlinger)
+    deactivate Codec
+            </div>
+
+            <h3>4.4 systrace (Legacy - Android 9 and below)</h3>
+            <pre><code># AOSP environment
+cd $ANDROID_BUILD_TOP
+python systrace.py --time=10 -o trace.html \
+  sched freq idle am wm gfx view binder_driver hal \
+  video audio camera
+
+# Or simple version
+adb shell atrace --async_start -b 32768 sched gfx view video audio
+# ... reproduce ...
+adb shell atrace --async_stop > trace.txt
+# Open in chrome://tracing</code></pre>
+
+            <h3>4.5 Advanced: Custom Trace Points</h3>
+            <pre><code>// Kotlin/Java
+import android.os.Trace
+
+class MyMediaPlayer {
+    fun decodeFrame() {
+        Trace.beginSection("MyMediaPlayer::decodeFrame")
+        try {
+            // decode logic
+        } finally {
+            Trace.endSection()
+        }
+    }
+}</code></pre>
+
+            <pre><code>// C++ (Native)
+#include <cutils/trace.h>
+
+void decodeFrame() {
+    ATRACE_CALL();  // Auto function name
+    // or
+    ATRACE_BEGIN("decodeFrame");
+    // decode logic
+    ATRACE_END();
+}</code></pre>
+
+            <div class="success-box">
+                <strong>Now "MyMediaPlayer::decodeFrame" custom event will appear in perfetto!</strong>
+            </div>
+        </section>
+
+        <!-- Section 5: adb Media Debugging -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>5. adb Media Debugging Commands</h2>
+
+            <p>You can execute debugging commands directly on the device through adb shell.</p>
+
+            <h3>5.1 MediaPlayer Control</h3>
+
+            <h4>Media Playback Test</h4>
+            <pre><code># Play local file
+adb shell am start -a android.intent.action.VIEW \
+  -d file:///sdcard/test.mp4 \
+  -t video/mp4
+
+# HTTP streaming
+adb shell am start -a android.intent.action.VIEW \
+  -d "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+
+# Launch specific app via Intent
+adb shell am start -n com.google.android.apps.youtube.music/.MainActivity</code></pre>
+
+            <h4>Inject Media Key Events</h4>
+            <pre><code># Play/Pause
+adb shell input keyevent KEYCODE_MEDIA_PLAY_PAUSE  # 85
+
+# Play
+adb shell input keyevent KEYCODE_MEDIA_PLAY  # 126
+
+# Pause
+adb shell input keyevent KEYCODE_MEDIA_PAUSE  # 127
+
+# Next
+adb shell input keyevent KEYCODE_MEDIA_NEXT  # 87
+
+# Previous
+adb shell input keyevent KEYCODE_MEDIA_PREVIOUS  # 88
+
+# Stop
+adb shell input keyevent KEYCODE_MEDIA_STOP  # 86
+
+# Volume Up/Down
+adb shell input keyevent KEYCODE_VOLUME_UP  # 24
+adb shell input keyevent KEYCODE_VOLUME_DOWN  # 25</code></pre>
+
+            <div class="tool-card">
+                <h4>Automation Script</h4>
+                <pre><code>#!/bin/bash
+# test_media_keys.sh
+
+echo "Testing media keys..."
+adb shell input keyevent KEYCODE_MEDIA_PLAY
+sleep 2
+adb shell input keyevent KEYCODE_MEDIA_PAUSE
+sleep 1
+adb shell input keyevent KEYCODE_MEDIA_NEXT
+echo "Done"</code></pre>
+            </div>
+
+            <h3>5.2 File System Exploration</h3>
+
+            <h4>Search Media Files</h4>
+            <pre><code># All media files (MP4, MKV, MP3, etc.)
+adb shell find /sdcard -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.mp3" \)
+
+# Specific directory
+adb shell ls -lh /sdcard/Music/
+adb shell ls -lh /sdcard/Movies/
+
+# Direct query to MediaProvider DB
+adb shell content query --uri content://media/external/video/media \
+  --projection _id,_data,title,duration</code></pre>
+
+            <h4>File Transfer</h4>
+            <pre><code># PC → Device
+adb push test.mp4 /sdcard/Download/
+
+# Device → PC
+adb pull /sdcard/Download/test.mp4 ./
+
+# Large file (with progress)
+adb push large_video.mp4 /sdcard/ | pv</code></pre>
+
+            <h3>5.3 Codec Information Query</h3>
+            <pre><code># Full MediaCodecList output
+adb shell am broadcast -a android.media.action.QUERY_CODEC_SUPPORT
+
+# Or direct class call
+adb shell cmd media_codec list
+
+# Example output:
+# Decoders:
+#   OMX.qcom.video.decoder.avc (video/avc)
+#     Supported sizes: 64x64 - 3840x2160
+#     Color formats: 0x7f000789, 0x13
+#   c2.android.avc.decoder (video/avc)
+#     ...</code></pre>
+
+            <h3>5.4 Audio Routing</h3>
+
+            <h4>Check Output Device</h4>
+            <pre><code># Current audio device
+adb shell dumpsys audio | grep "Devices:"
+
+# Example output:
+# - device:0x2 (SPEAKER)
+# - device:0x4 (WIRED_HEADSET)
+# - device:0x80 (BLUETOOTH_A2DP)
+
+# Force connect Bluetooth device
+adb shell cmd bluetooth_manager connect-audio <device_mac></code></pre>
+
+            <h4>Volume Control</h4>
+            <pre><code># Check current volume
+adb shell dumpsys audio | grep "STREAM_MUSIC"
+
+# Example output:
+# - STREAM_MUSIC:
+#     Current: 8 (range: 0..15)
+
+# Set volume (0~15)
+adb shell media volume --stream 3 --set 10
+# stream 3 = STREAM_MUSIC</code></pre>
+
+            <h3>5.5 DRM / Security</h3>
+            <pre><code># Check Widevine security level
+adb shell getprop drm.service.enabled  # true/false
+adb shell getprop ro.vendor.mtk_widevine_drm_level  # L1/L3 (Vendor specific)
+
+# ClearKey DRM test
+adb shell am start -a android.intent.action.VIEW \
+  -d "https://storage.googleapis.com/shaka-demo-assets/angel-one-clearkey/dash.mpd"</code></pre>
+
+            <h3>5.6 Performance Monitoring</h3>
+
+            <h4>CPU Usage (Real-time)</h4>
+            <pre><code># All processes
+adb shell top -m 10
+
+# Specific app only
+adb shell top -p $(adb shell pidof com.example.mediaplayer)</code></pre>
+
+            <h4>Memory Usage</h4>
+            <pre><code># Per-app memory
+adb shell dumpsys meminfo com.example.mediaplayer
+
+# Key output items:
+# - Native Heap: 45MB (MediaCodec buffers)
+# - Graphics: 120MB (SurfaceFlinger)
+# - Total PSS: 180MB</code></pre>
+
+            <h4>GPU Rendering Profile</h4>
+            <pre><code># Enable GPU rendering profile
+adb shell setprop debug.hwui.profile true
+adb shell setprop debug.hwui.profile.maxframes 128
+
+# Dump after restarting app
+adb shell dumpsys gfxinfo com.example.mediaplayer
+
+# Output: Draw/Process/Execute time for each frame</code></pre>
+
+            <h3>5.7 Automotive (AAOS) Specific</h3>
+
+            <h4>Read/Write Vehicle Property</h4>
+            <pre><code># Read Vehicle Speed
+adb shell dumpsys android.hardware.automotive.vehicle@2.0::IVehicle/default \
+  --get PERF_VEHICLE_SPEED
+
+# Gear Selection
+adb shell dumpsys android.hardware.automotive.vehicle@2.0::IVehicle/default \
+  --get GEAR_SELECTION
+
+# Inject property (for testing)
+adb shell cmd car_service inject-vhal-event PERF_VEHICLE_SPEED 50</code></pre>
+
+            <h4>Car Audio Zone Test</h4>
+            <pre><code># Set primary zone volume
+adb shell cmd car_service set-audio-zone-volume 0 1 10
+# zone=0 (primary), group=1 (music), volume=10
+
+# Rear zone volume
+adb shell cmd car_service set-audio-zone-volume 1 1 5</code></pre>
+
+            <h3>5.8 Comprehensive Monitoring Script</h3>
+            <pre><code>#!/bin/bash
+# real_time_monitor.sh - Real-time media app monitoring
+
+PACKAGE="com.example.mediaplayer"
+PID=$(adb shell pidof "$PACKAGE")
+
+if [ -z "$PID" ]; then
+    echo "App not running: $PACKAGE"
+    exit 1
+fi
+
+echo "Monitoring: $PACKAGE (PID: $PID)"
+echo "-----------------------------------"
+
+while true; do
+    clear
+    echo "=== $(date) ==="
+
+    # CPU %
+    CPU=$(adb shell top -n 1 -p "$PID" | tail -1 | awk '{print $9}')
+    echo "CPU: ${CPU}%"
+
+    # Memory (PSS)
+    PSS=$(adb shell dumpsys meminfo "$PID" | grep TOTAL | awk '{print $2}')
+    echo "Memory: ${PSS} KB"
+
+    # Audio Focus
+    FOCUS=$(adb shell dumpsys media_session | grep -A 5 "$PACKAGE" | grep "playbackState")
+    echo "Playback: $FOCUS"
+
+    sleep 2
+done</code></pre>
+        </section>
+
+        <!-- Section 6: Android Studio Profiler -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>6. Android Studio Profiler</h2>
+
+            <p>Android Studio's <strong>Profiler</strong> is a real-time GUI-based profiling tool that can simultaneously monitor CPU/Memory/Network/Energy.</p>
+
+            <h3>6.1 Starting Profiler</h3>
+            <ol>
+                <li>Select <strong>View → Tool Windows → Profiler</strong></li>
+                <li>Select app process from connected device</li>
+                <li>4 timelines automatically displayed: CPU, Memory, Network, Energy</li>
+            </ol>
+
+            <div class="info-box">
+                <strong>Tip: Debuggable Build</strong>
+                <p>For accurate profiling, in <code>build.gradle</code>:</p>
+                <pre><code>android {
+    buildTypes {
+        debug {
+            debuggable true
+            minifyEnabled false
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3>6.2 CPU Profiler</h3>
+
+            <h4>6.2.1 Trace Types</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Trace Type</th>
+                        <th>Overhead</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Sample Java Methods</strong></td>
+                        <td>Low (~5%)</td>
+                        <td>Overall CPU usage overview</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Trace Java Methods</strong></td>
+                        <td>High (~30%)</td>
+                        <td>Record all method calls (precise)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sample C/C++ Functions</strong></td>
+                        <td>Low</td>
+                        <td>Native code profiling</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Trace System Calls</strong></td>
+                        <td>Very High</td>
+                        <td>Track Binder/I/O calls</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>6.2.2 Media App Analysis Example</h4>
+            <div class="success-box">
+                <strong>Scenario: ExoPlayer Buffering Delay</strong>
+                <ol>
+                    <li>Click <strong>Record</strong> button → Select "Sample Java Methods"</li>
+                    <li>Play video in app → Buffering occurs</li>
+                    <li>Click <strong>Stop</strong> button</li>
+                    <li>Analyze in <strong>Flame Chart</strong>:
+                        <ul>
+                            <li><code>ExoPlayerImpl.handleMessage()</code>: 45% CPU</li>
+                            <li><code>MediaCodecRenderer.render()</code>: 30% CPU</li>
+                            <li><code>DefaultLoadControl.shouldContinueLoading()</code>: 10% CPU</li>
+                        </ul>
+                    </li>
+                    <li><strong>Conclusion</strong>: Excessive time spent in <code>handleMessage</code> → Suspected UI Thread block</li>
+                </ol>
+            </div>
+
+            <h4>6.2.3 Thread Analysis</h4>
+            <p>Profiler displays all threads as individual tracks:</p>
+            <ul>
+                <li><strong>main</strong>: UI Thread (should complete within 16ms)</li>
+                <li><strong>ExoPlayer:Playback</strong>: ExoPlayer playback thread</li>
+                <li><strong>ExoPlayer:Loader:Progressive</strong>: Download thread</li>
+                <li><strong>RenderThread</strong>: GPU rendering</li>
+            </ul>
+
+            <div class="warning-box">
+                <strong>Warning: No I/O on Main Thread</strong>
+                <p>If you see I/O calls like <code>MediaExtractor.readSampleData()</code> on the main Thread, immediately move to Background Thread.</p>
+            </div>
+
+            <h3>6.3 Memory Profiler</h3>
+
+            <h4>6.3.1 Memory Timeline</h4>
+            <ul>
+                <li><strong>Java Heap</strong>: Java object memory</li>
+                <li><strong>Native Heap</strong>: MediaCodec buffers, etc.</li>
+                <li><strong>Graphics</strong>: Texture, SurfaceFlinger buffers</li>
+                <li><strong>Stack</strong>: Thread stack</li>
+                <li><strong>Code</strong>: APK code memory</li>
+            </ul>
+
+            <h4>6.3.2 Heap Dump Analysis</h4>
+            <pre><code>1. Select memory spike section
+2. Click "Dump Java heap" button
+3. Heap dump (.hprof) automatically generated
+4. Search for large objects in Instance View:
+   - ByteBuffer[] (codec buffers)
+   - Bitmap[] (thumbnails)
+   - ArrayList<MediaItem> (playlist)</code></pre>
+
+            <div class="error-box">
+                <strong>Memory Leak Detection</strong>
+                <p>After video playback, exit Activity → Generate heap dump → If Activity instance remains, it's a Leak!</p>
+                <pre><code>// Leak example
+class VideoActivity : AppCompatActivity() {
+    companion object {
+        var player: ExoPlayer? = null  // Stored in static variable (Leak!)
+    }
+}</code></pre>
+            </div>
+
+            <h3>6.4 Network Profiler</h3>
+
+            <h4>HTTP Streaming Analysis</h4>
+            <p>Network Profiler captures all HTTP/HTTPS requests:</p>
+            <ul>
+                <li><strong>Timeline</strong>: Bytes sent/received per second</li>
+                <li><strong>Connection View</strong>: URL, Size, Duration of each request</li>
+                <li><strong>Response</strong>: HTTP headers and body (max 1MB)</li>
+            </ul>
+
+            <div class="tool-card">
+                <h4>HLS/DASH Streaming Debugging</h4>
+                <ol>
+                    <li>Find <code>.m3u8</code> or <code>.mpd</code> requests in Network Profiler</li>
+                    <li>Check Manifest content in Response tab</li>
+                    <li>Check Duration of each Segment request (>2s indicates network bottleneck)</li>
+                </ol>
+            </div>
+
+            <h3>6.5 Energy Profiler</h3>
+            <p>Breaks down battery consumption by component:</p>
+            <ul>
+                <li><strong>CPU</strong>: Processor usage</li>
+                <li><strong>Network</strong>: WiFi/Cellular transfer</li>
+                <li><strong>Location</strong>: GPS usage (usually 0 for media apps)</li>
+            </ul>
+
+            <div class="info-box">
+                <strong>Background Playback Optimization</strong>
+                <p>Check CPU usage with screen off in Energy Profiler → Immediately pause on <strong>Audio Focus</strong> loss to save battery</p>
+            </div>
+
+            <h3>6.6 Layout Inspector (Bonus)</h3>
+            <p>Real-time inspection of media app UI layout:</p>
+            <pre><code>Tools → Layout Inspector → Select device
+
+Items to check:
+- PlayerView size (verify match_parent)
+- SurfaceView hierarchy (no nesting)
+- VideoTextureView vs VideoSurfaceView selection</code></pre>
+        </section>
+
+        <!-- Section 7: MediaMetrics -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>7. MediaMetrics Analysis</h2>
+
+            <p><strong>MediaMetrics</strong> is a media event collection system introduced in Android 11+, automatically recording lifecycle and performance metrics for MediaCodec/AudioTrack/MediaPlayer.</p>
+
+            <h3>7.1 MediaMetrics Overview</h3>
+            <div class="info-box">
+                <strong>Key Features:</strong>
+                <ul>
+                    <li>Automatic collection: No app modification needed</li>
+                    <li>Privacy protection: No personal information included</li>
+                    <li>System-wide: Integrated across all media apps</li>
+                    <li>Statsd integration: Dashboard visualization available</li>
+                </ul>
+            </div>
+
+            <h3>7.2 Querying MediaMetrics Data</h3>
+
+            <h4>7.2.1 Check with dumpsys</h4>
+            <pre><code># Recent MediaMetrics events
+adb shell dumpsys media.metrics
+
+# Example output:
+# MediaMetrics:
+#   Item[0]: {
+#     "key": "codec.video.decoder.avc",
+#     "package": "com.example.mediaplayer",
+#     "timestamp": 1705825935421,
+#     "width": 1920,
+#     "height": 1080,
+#     "framerate": 30.0,
+#     "bitrate": 5000000,
+#     "encoder": 0,
+#     "secure": 0,
+#     "error_count": 0,
+#     "latency_max": 45,
+#     "latency_avg": 18
+#   }</code></pre>
+
+            <h4>7.2.2 Key Metric Items</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Key</th>
+                        <th>Main Fields</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>MediaCodec</strong></td>
+                        <td><code>codec.video.decoder.*</code></td>
+                        <td>width, height, framerate, bitrate, error_count, latency</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AudioTrack</strong></td>
+                        <td><code>audio.track.*</code></td>
+                        <td>sample_rate, channel_count, buffer_size, underrun_count</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MediaPlayer</strong></td>
+                        <td><code>mediaplayer.*</code></td>
+                        <td>duration, buffering_ms, seek_count</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MediaDrm</strong></td>
+                        <td><code>drm.*</code></td>
+                        <td>scheme, security_level, error_code</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>7.3 Practical Analysis Example</h3>
+
+            <h4>Scenario: Codec Error Rate Monitoring</h4>
+            <pre><code># 1. Extract all Codec events
+adb shell dumpsys media.metrics | grep "codec.video" > codec_metrics.json
+
+# 2. Calculate error rate with Python
+python3 << 'EOF'
+import json
+
+with open('codec_metrics.json') as f:
+    events = [json.loads(line) for line in f if line.strip()]
+
+total = len(events)
+errors = sum(1 for e in events if e.get('error_count', 0) > 0)
+
+print(f"Total codec sessions: {total}")
+print(f"Sessions with errors: {errors}")
+print(f"Error rate: {errors/total*100:.2f}%")
+EOF
+
+# Output:
+# Total codec sessions: 152
+# Sessions with errors: 3
+# Error rate: 1.97%</code></pre>
+
+            <h4>Latency Distribution Analysis</h4>
+            <pre><code># Extract latency_max values
+adb shell dumpsys media.metrics | jq -r '.[] | select(.key | contains("codec.video")) | .latency_max' | sort -n
+
+# Output (ms):
+# 12
+# 18
+# 22
+# ...
+# 87  ← Check P99
+# 145 ← Outlier</code></pre>
+
+            <h3>7.4 Statsd Integration (Advanced)</h3>
+
+            <p>MediaMetrics automatically sends to <code>StatsD</code> and appears on system dashboards.</p>
+
+            <h4>Statsd Query</h4>
+            <pre><code># Check Statsd configuration
+adb shell dumpsys stats
+
+# Query MediaMetrics atom (Atom ID: 276)
+adb shell cmd stats print-stats 276
+
+# Output: Codec session count, average latency for the last hour, etc.</code></pre>
+
+            <div class="warning-box">
+                <strong>Warning: Statsd requires system permissions</strong>
+                <p>Not accessible from regular apps, only available in OEM/AOSP build environments.</p>
+            </div>
+
+            <h3>7.5 Custom MediaMetrics (For App Developers)</h3>
+
+            <p>From Android 12+, apps can directly record MediaMetrics events:</p>
+
+            <pre><code>// Kotlin
+import android.media.metrics.MediaMetricsManager
+import android.media.metrics.PlaybackMetrics
+
+val metricsManager = getSystemService(MediaMetricsManager::class.java)
+val session = metricsManager.createPlaybackSession()
+
+// Playback start
+val playbackMetrics = PlaybackMetrics.Builder()
+    .setStreamSource(PlaybackMetrics.STREAM_SOURCE_NETWORK)
+    .setStreamType(PlaybackMetrics.STREAM_TYPE_OTHER)
+    .setMediaDurationMillis(300000)
+    .build()
+
+session.reportPlaybackMetrics(playbackMetrics)
+
+// Error report
+val errorMetrics = PlaybackErrorEvent.Builder()
+    .setErrorCode(PlaybackErrorEvent.ERROR_CODE_CODEC_ERROR)
+    .setSubErrorCode(MediaCodec.CodecException.ERROR_INSUFFICIENT_RESOURCE)
+    .build()
+
+session.reportPlaybackErrorEvent(errorMetrics)
+
+// Session close
+session.close()</code></pre>
+
+            <div class="success-box">
+                <strong>Now custom events will appear in <code>dumpsys media.metrics</code>!</strong>
+            </div>
+        </section>
+
+        <!-- Section 8: Bugreport -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>8. Bugreport Generation and Analysis</h2>
+
+            <p><strong>Bugreport</strong> is a comprehensive diagnostic file containing the entire Android system state, essential for complex issue analysis.</p>
+
+            <h3>8.1 Generating Bugreport</h3>
+
+            <h4>8.1.1 adb Commands</h4>
+            <pre><code># Method 1: Simple version (recommended)
+adb bugreport bugreport_$(date +%Y%m%d_%H%M%S).zip
+
+# Method 2: Full version (more detailed)
+adb shell bugreportz
+# Output: OK:/data/user_de/0/com.android.shell/files/bugreports/bugreport-...-.zip
+adb pull /data/user_de/0/com.android.shell/files/bugreports/bugreport-XXX.zip ./
+
+# Method 3: From device UI
+# Settings → About phone → (tap 7 times) Developer options → Take bug report</code></pre>
+
+            <div class="info-box">
+                <strong>Tip: Generation Time</strong>
+                <p>Bugreport generation takes <strong>30 seconds to 3 minutes</strong> depending on device specifications. Minimize device usage during generation.</p>
+            </div>
+
+            <h4>8.1.2 Bugreport Contents</h4>
+            <p>Inside the ZIP file:</p>
+            <ul>
+                <li><strong>bugreport-*.txt</strong>: Text dump (main analysis target)</li>
+                <li><strong>dumpstate_board.bin</strong>: Vendor logs (OEM specific)</li>
+                <li><strong>FS/</strong>: File system snapshot</li>
+                <li><strong>proto/</strong>: Protobuf format metrics</li>
+            </ul>
+
+            <h3>8.2 Bugreport Analysis Tools</h3>
+
+            <h4>8.2.1 Battery Historian</h4>
+            <p>Google's battery analysis tool (supports Bugreport upload):</p>
+            <pre><code># Run with Docker
+docker run -p 9999:9999 gcr.io/android-battery-historian/stable:3.1 --port 9999
+
+# Access in browser
+# http://localhost:9999
+# Upload Bugreport ZIP → Battery usage timeline displayed</code></pre>
+
+            <div class="success-box">
+                <strong>Media App Battery Consumption Analysis</strong>
+                <p>In Battery Historian, check "App Usage" section → Check media app's CPU/Wake Lock time</p>
+            </div>
+
+            <h4>8.2.2 Text Search</h4>
+            <pre><code># Extract ZIP
+unzip bugreport_20260125.zip -d bugreport/
+
+# Search key sections
+cd bugreport/
+
+# MediaCodec errors
+grep -E "MediaCodec.*error|ACodec.*ERROR" *.txt
+
+# ANR occurrence
+grep -A 100 "ANR in" *.txt
+
+# Native Crash
+grep -A 50 "Fatal signal" *.txt
+
+# Audio underrun
+grep "underrun" *.txt</code></pre>
+
+            <h3>8.3 Key Bugreport Sections</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Section Title</th>
+                        <th>Content</th>
+                        <th>Search Keyword</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>DUMPSYS MEDIA.PLAYER</strong></td>
+                        <td>MediaPlayerService state</td>
+                        <td><code>grep -A 200 "DUMPSYS MEDIA.PLAYER"</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>DUMPSYS MEDIA.CODEC</strong></td>
+                        <td>Codec list and active instances</td>
+                        <td><code>grep -A 500 "DUMPSYS MEDIA.CODEC"</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>DUMPSYS MEDIA.AUDIO_FLINGER</strong></td>
+                        <td>AudioFlinger state (threads, tracks)</td>
+                        <td><code>grep -A 1000 "DUMPSYS MEDIA.AUDIO_FLINGER"</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>SYSTEM LOG</strong></td>
+                        <td>Full logcat (thousands to tens of thousands of lines)</td>
+                        <td><code>grep -A 10000 "SYSTEM LOG"</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>KERNEL LOG</strong></td>
+                        <td>dmesg (kernel messages)</td>
+                        <td><code>grep -A 5000 "KERNEL LOG"</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>PROCESSES AND THREADS</strong></td>
+                        <td>ps -A output</td>
+                        <td><code>grep -A 500 "PROCESSES AND THREADS"</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>8.4 Practical Analysis Workflow</h3>
+
+            <div class="tool-card">
+                <h4>Scenario: ANR During Video Playback</h4>
+                <pre><code># Step 1: Extract ANR stack
+grep -A 100 "ANR in com.example.mediaplayer" bugreport.txt > anr_stack.txt
+
+# Step 2: Check Main Thread state
+# Example output:
+# "main" prio=5 tid=1 Native
+#   | at android.os.MessageQueue.nativePollOnce(MessageQueue.java:0)
+#   | at android.os.Looper.loop(Looper.java:168)
+#   → Main Thread waiting in Message Queue (normal)
+
+# Step 3: Find Blocking Thread
+grep "ExoPlayer:Playback" anr_stack.txt
+# Output:
+# "ExoPlayer:Playback" prio=5 tid=15 TimedWaiting
+#   | at java.lang.Thread.sleep(Thread.java:1000)
+#   | at com.google.android.exoplayer2.MediaCodecRenderer.render(...)
+#   → ExoPlayer Thread sleeping (suspected codec timeout)
+
+# Step 4: Check Codec state
+grep -A 50 "DUMPSYS MEDIA.CODEC" bugreport.txt
+# Output: Current instances: 5 / Max instances: 4
+# → Codec instance exceeded! (cause found)</code></pre>
+            </div>
+
+            <h3>8.5 Automated Analysis Script</h3>
+            <pre><code>#!/bin/bash
+# analyze_bugreport.sh - Automated Bugreport analysis
+
+BUGREPORT_ZIP=$1
+
+if [ ! -f "$BUGREPORT_ZIP" ]; then
+    echo "Usage: $0 <bugreport.zip>"
+    exit 1
+fi
+
+# Extract
+TMPDIR=$(mktemp -d)
+unzip -q "$BUGREPORT_ZIP" -d "$TMPDIR"
+TXTFILE=$(find "$TMPDIR" -name "bugreport-*.txt")
+
+echo "Bugreport Analysis Report"
+echo "============================="
+
+# 1. ANR count
+ANR_COUNT=$(grep -c "ANR in" "$TXTFILE")
+echo "ANR count: $ANR_COUNT"
+
+# 2. Native Crash count
+CRASH_COUNT=$(grep -c "Fatal signal" "$TXTFILE")
+echo "Native crashes: $CRASH_COUNT"
+
+# 3. Codec errors
+CODEC_ERRORS=$(grep -c "MediaCodec.*error" "$TXTFILE")
+echo "MediaCodec errors: $CODEC_ERRORS"
+
+# 4. Audio underrun
+UNDERRUNS=$(grep -c "underrun" "$TXTFILE")
+echo "Audio underruns: $UNDERRUNS"
+
+# 5. Top CPU consuming apps (TOP 5)
+echo ""
+echo "Top CPU consumers:"
+grep -A 50 "PROCESSES AND THREADS" "$TXTFILE" | grep -E "^[0-9]+" | sort -k9 -rn | head -5
+
+# Cleanup
+rm -rf "$TMPDIR"</code></pre>
+
+            <div class="success-box">
+                <strong>Usage Example:</strong>
+                <pre><code>./analyze_bugreport.sh bugreport_20260125.zip
+
+# Output:
+# Bugreport Analysis Report
+# =============================
+# ANR count: 1
+# Native crashes: 0
+# MediaCodec errors: 3
+# Audio underruns: 152
+#
+# Top CPU consumers:
+# 1234 u0_a123   20  0  2.1G 180M  45M S 38.2  ... com.example.mediaplayer
+# ...</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 9: Advanced Debugging Techniques -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>9. Advanced Debugging Techniques</h2>
+
+            <h3>9.1 Native Debugging with GDB</h3>
+
+            <h4>9.1.1 gdbserver Setup</h4>
+            <pre><code># 1. Push gdbserver to device
+adb push $ANDROID_NDK/prebuilt/android-arm64/gdbserver/gdbserver /data/local/tmp/
+
+# 2. Launch app and check PID
+PID=$(adb shell pidof com.example.mediaplayer)
+
+# 3. Attach gdbserver
+adb shell /data/local/tmp/gdbserver :5039 --attach $PID
+
+# 4. Connect gdb from PC
+adb forward tcp:5039 tcp:5039
+$ANDROID_NDK/prebuilt/linux-x86_64/bin/gdb
+
+# In gdb prompt
+(gdb) target remote :5039
+(gdb) symbol-file /path/to/symbols/libmediaplayer.so
+(gdb) break MediaCodec::configure
+(gdb) continue</code></pre>
+
+            <h4>9.1.2 Practical: Debugging Codec Crash</h4>
+            <pre><code># Backtrace at crash point
+(gdb) bt
+#0  0x00007f8a1c3d4e20 in OMX_GetHandle () from libstagefright_omx.so
+#1  0x00007f8a1c3d5123 in android::OMXClient::connect () from libstagefright.so
+#2  0x00007f8a1c3d6456 in android::ACodec::initiateAllocateComponent ()
+
+# Variable inspection
+(gdb) print componentName
+$1 = "OMX.qcom.video.decoder.avc"
+
+# Memory dump
+(gdb) x/16x $sp</code></pre>
+
+            <h3>9.2 Simpleperf (Native Profiler)</h3>
+
+            <p>Android NDK profiling tool specialized for Native code performance analysis.</p>
+
+            <pre><code># 1. Install simpleperf (included in NDK)
+# or
+adb push $ANDROID_NDK/simpleperf/android/arm64/simpleperf /data/local/tmp/
+
+# 2. Profile (30 seconds)
+adb shell /data/local/tmp/simpleperf record -p $(adb shell pidof com.example.mediaplayer) -o /data/local/tmp/perf.data --duration 30
+
+# 3. Download to PC
+adb pull /data/local/tmp/perf.data ./
+
+# 4. Generate report
+$ANDROID_NDK/simpleperf/report_html.py -i perf.data
+
+# 5. Open index.html in browser
+# → Flamegraph showing Native function CPU usage</code></pre>
+
+            <h3>9.3 AddressSanitizer (ASan)</h3>
+
+            <p>Memory error detection tool (Use-after-free, Buffer overflow, etc.):</p>
+
+            <pre><code># Add to build.gradle
+android {
+    buildTypes {
+        debug {
+            externalNativeBuild {
+                cmake {
+                    arguments "-DANDROID_ARM_MODE=arm", "-DENABLE_ASAN=1"
+                }
+            }
+        }
+    }
+}
+
+# CMakeLists.txt
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+
+# Build and run → Detailed stack output on crash</code></pre>
+
+            <h3>9.4 Enabling MediaCodec Dump</h3>
+
+            <p>Dump MediaCodec input/output buffers to files for visual verification:</p>
+
+            <pre><code># Set system properties
+adb shell setprop debug.stagefright.ccodec_delayed_params 1
+adb shell setprop debug.stagefright.ccodec 4  # Log level
+
+# Input/Output dump
+adb shell setprop debug.stagefright.codecname OMX.qcom.video.decoder.avc
+adb shell setprop debug.stagefright.codecinput /sdcard/codec_input.h264
+adb shell setprop debug.stagefright.codecoutput /sdcard/codec_output.yuv
+
+# Download files after playback
+adb pull /sdcard/codec_input.h264
+adb pull /sdcard/codec_output.yuv
+
+# Verify with ffmpeg
+ffmpeg -i codec_input.h264 -f null -
+ffplay -f rawvideo -pixel_format yuv420p -video_size 1920x1080 codec_output.yuv</code></pre>
+
+            <h3>9.5 Kernel ftrace</h3>
+
+            <p>Trace pure Kernel events without perfetto:</p>
+
+            <pre><code># Enable ftrace
+adb shell
+mount -t debugfs none /sys/kernel/debug
+cd /sys/kernel/debug/tracing
+
+# Enable Binder events
+echo 1 > events/binder/enable
+
+# Start trace
+echo 1 > tracing_on
+# ... reproduce ...
+cat trace > /sdcard/kernel_trace.txt
+echo 0 > tracing_on
+
+# Download to PC
+adb pull /sdcard/kernel_trace.txt</code></pre>
+
+            <h3>9.6 Remote Debugging (Android Studio)</h3>
+
+            <p>Attach debugger to app running on real device:</p>
+
+            <pre><code>1. Android Studio → Run → Attach Debugger to Android Process
+2. Select process: com.example.mediaplayer
+3. Set Breakpoints:
+   - MediaCodecRenderer.java:324 (render method)
+   - ExoPlayerImpl.java:567 (handleMessage)
+4. Execute Variable Inspection, Step Over/Into</code></pre>
+
+            <div class="warning-box">
+                <strong>Warning: Release builds are hard to debug due to code obfuscation</strong>
+                <p>Disable ProGuard/R8 or add <code>-keepattributes SourceFile,LineNumberTable</code></p>
+            </div>
+        </section>
+
+        <!-- Section 10: References -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">10</span>10. Reference Documents and Resources</h2>
+
+            <h3>10.1 Official Documentation</h3>
+            <ul>
+                <li><a href="https://source.android.com/docs/core/media" target="_blank">AOSP Media Framework</a></li>
+                <li><a href="https://developer.android.com/studio/profile" target="_blank">Android Studio Profiler</a></li>
+                <li><a href="https://perfetto.dev/docs/" target="_blank">Perfetto Documentation</a></li>
+                <li><a href="https://developer.android.com/studio/command-line/adb" target="_blank">adb Reference</a></li>
+            </ul>
+
+            <h3>10.2 Tool Downloads</h3>
+            <ul>
+                <li><a href="https://get.perfetto.dev/perfetto" target="_blank">perfetto CLI</a></li>
+                <li><a href="https://ui.perfetto.dev" target="_blank">perfetto Web UI</a></li>
+                <li><a href="https://github.com/google/battery-historian" target="_blank">Battery Historian</a></li>
+                <li><a href="https://developer.android.com/ndk/downloads" target="_blank">Android NDK (simpleperf, gdb)</a></li>
+            </ul>
+
+            <h3>10.3 Related Pages</h3>
+            <ul>
+                <li><a href="common-media-issues.html">Common Media Issues & Solutions</a> - Practical issue resolution</li>
+                <li><a href="media-framework-core.html">Media Framework Core</a> - Architecture understanding</li>
+                <li><a href="codec2.html">Codec 2.0 & Media HAL</a> - Codec deep dive</li>
+                <li><a href="audio-framework.html">Audio Framework</a> - AudioFlinger details</li>
+            </ul>
+
+            <h3>10.4 Debugging Checklist</h3>
+            <div class="success-box">
+                <strong>When Media Issues Occur:</strong>
+                <ol>
+                    <li>Check error message with <strong>logcat</strong> (5 min)</li>
+                    <li>Verify service state with <strong>dumpsys</strong> (3 min)</li>
+                    <li>Capture <strong>perfetto</strong> trace if reproducible (10 min)</li>
+                    <li>Generate <strong>Bugreport</strong> for complex issues (30+ min)</li>
+                    <li>Use <strong>gdb/simpleperf</strong> for Native Crash (1+ hour)</li>
+                </ol>
+            </div>
+
+            <h3>10.5 Community</h3>
+            <ul>
+                <li><a href="https://groups.google.com/g/android-platform" target="_blank">android-platform Google Group</a></li>
+                <li><a href="https://stackoverflow.com/questions/tagged/android-mediaplayer" target="_blank">Stack Overflow - android-mediaplayer</a></li>
+                <li><a href="https://issuetracker.google.com/issues?q=componentid:190923" target="_blank">Google Issue Tracker - Media</a></li>
+            </ul>
+        </section>
+
+        <!-- Back to Home -->
+        <section style="text-align: center; padding: 3rem;" class="content-section section">
+            <a href="index.html" style="display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; transition: transform 0.3s ease;">
+                ← Back to Main Page
+            </a>
+        </section>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+</html>

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle HAL Media Integration - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">← Android Media Framework</a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Vehicle HAL Media Integration</h1>
+            <p class="page-subtitle">Vehicle System and Android Media Framework Integration</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>Vehicle HAL Overview</h2>
+
+            <p><strong>Vehicle HAL (Hardware Abstraction Layer)</strong> provides the interface between the vehicle's ECU/CAN network and the Android system. It enables media control, HW button events, and vehicle state-based behavior.</p>
+
+            <h3>1.1 Vehicle HAL Architecture</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph ANDROID["Android"]
+        CMS[CarMediaService]
+        CAS[CarAudioService]
+        CIS[CarInputService]
+        CVS[CarVehicleService]
+    end
+
+    subgraph VHAL["Vehicle HAL"]
+        VH[VehicleHAL Service]
+        VP[Vehicle Properties]
+    end
+
+    subgraph VEHICLE["Vehicle Network"]
+        CAN[CAN Bus]
+        ECU[Body ECU]
+        SW[Steering Wheel]
+        AMP[Amplifier]
+    end
+
+    CMS --> CVS
+    CAS --> CVS
+    CIS --> CVS
+    CVS --> VH
+    VH --> VP
+    VP <--> CAN
+    CAN <--> ECU
+    CAN <--> SW
+    CAN <--> AMP
+            </div>
+
+            <h3>1.2 Media-related Vehicle Properties</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>ID</th>
+                        <th>Purpose</th>
+                        <th>Access</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>HW_KEY_INPUT</code></td>
+                        <td>0x0A000000</td>
+                        <td>Hardware key input</td>
+                        <td>Read</td>
+                    </tr>
+                    <tr>
+                        <td><code>AUDIO_VOLUME</code></td>
+                        <td>0x11400900</td>
+                        <td>Audio volume</td>
+                        <td>Read/Write</td>
+                    </tr>
+                    <tr>
+                        <td><code>AUDIO_FOCUS</code></td>
+                        <td>0x11400901</td>
+                        <td>Audio focus state</td>
+                        <td>Read/Write</td>
+                    </tr>
+                    <tr>
+                        <td><code>CLUSTER_DISPLAY_STATE</code></td>
+                        <td>0x11410F01</td>
+                        <td>Cluster state</td>
+                        <td>Read</td>
+                    </tr>
+                    <tr>
+                        <td><code>DRIVING_STATUS</code></td>
+                        <td>0x11400404</td>
+                        <td>Driving/Parking state</td>
+                        <td>Read</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 2: CAN Bus Events -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>CAN Bus Event Processing</h2>
+
+            <h3>2.1 Event Flow</h3>
+            <div class="mermaid">
+sequenceDiagram
+    participant SW as Steering Wheel
+    participant CAN as CAN Bus
+    participant VHAL as Vehicle HAL
+    participant CIS as CarInputService
+    participant CMS as CarMediaService
+    participant App as Media App
+
+    SW->>CAN: Button Press (0x1A3)
+    CAN->>VHAL: CAN Frame
+    VHAL->>VHAL: Parse to VehicleProperty
+    VHAL->>CIS: HW_KEY_INPUT event
+    CIS->>CMS: MediaKeyEvent(KEYCODE_MEDIA_NEXT)
+    CMS->>App: onMediaButtonEvent()
+    App-->>App: skipToNext()
+            </div>
+
+            <h3>2.2 Vehicle HAL Event Reception</h3>
+            <pre><code>// Subscribe to Vehicle Property
+val carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE)
+    as CarPropertyManager
+
+// Subscribe to HW Key Input
+carPropertyManager.registerCallback(
+    object : CarPropertyManager.CarPropertyEventCallback {
+        override fun onChangeEvent(event: CarPropertyValue&lt;*&gt;) {
+            when (event.propertyId) {
+                VehiclePropertyIds.HW_KEY_INPUT -> {
+                    val keyEvent = event.value as IntArray
+                    val action = keyEvent[0]  // ACTION_DOWN/UP
+                    val keyCode = keyEvent[1]
+                    val targetDisplay = keyEvent[2]
+
+                    handleHwKeyInput(action, keyCode, targetDisplay)
+                }
+            }
+        }
+
+        override fun onErrorEvent(propId: Int, zone: Int) {
+            Log.e(TAG, "Property error: $propId, zone: $zone")
+        }
+    },
+    VehiclePropertyIds.HW_KEY_INPUT,
+    CarPropertyManager.SENSOR_RATE_ONCHANGE
+)</code></pre>
+
+            <h3>2.3 CAN Message Mapping Example</h3>
+            <pre><code>// Vehicle HAL internal CAN mapping (C++)
+// hardware/interfaces/automotive/vehicle/impl/
+
+static const std::unordered_map&lt;uint32_t, int32_t&gt; kCanToKeyCodeMap = {
+    // CAN ID 0x1A3 (Steering Wheel Controls)
+    {0x01, AKEYCODE_MEDIA_PLAY_PAUSE},  // Play/Pause
+    {0x02, AKEYCODE_MEDIA_NEXT},         // Next Track
+    {0x03, AKEYCODE_MEDIA_PREVIOUS},     // Previous Track
+    {0x04, AKEYCODE_VOLUME_UP},          // Volume Up
+    {0x05, AKEYCODE_VOLUME_DOWN},        // Volume Down
+    {0x06, AKEYCODE_VOICE_ASSIST},       // Voice Button
+    {0x10, AKEYCODE_MEDIA_STOP},         // Stop
+};
+
+void VehicleHal::handleCanFrame(const CanFrame& frame) {
+    if (frame.id == 0x1A3) {  // Steering Wheel CAN ID
+        uint8_t buttonCode = frame.data[0];
+        auto it = kCanToKeyCodeMap.find(buttonCode);
+        if (it != kCanToKeyCodeMap.end()) {
+            VehiclePropValue prop = {
+                .prop = HW_KEY_INPUT,
+                .value = {
+                    .int32Values = {ACTION_DOWN, it->second, MAIN_DISPLAY}
+                }
+            };
+            mCallback->onPropertyEvent({prop});
+        }
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 3: Media Control -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>Vehicle State-based Media Control</h2>
+
+            <h3>3.1 Driving State-based Control</h3>
+            <pre><code>// Monitor driving state
+carPropertyManager.registerCallback(
+    object : CarPropertyManager.CarPropertyEventCallback {
+        override fun onChangeEvent(event: CarPropertyValue&lt;*&gt;) {
+            when (event.propertyId) {
+                VehiclePropertyIds.DRIVING_STATUS -> {
+                    val status = event.value as Int
+                    handleDrivingStatus(status)
+                }
+            }
+        }
+    },
+    VehiclePropertyIds.DRIVING_STATUS,
+    CarPropertyManager.SENSOR_RATE_ONCHANGE
+)
+
+fun handleDrivingStatus(status: Int) {
+    when (status) {
+        DRIVING_STATUS_NO_VIDEO -> {
+            // Driving: Restrict video playback
+            mediaController.pause()
+            showDrivingRestrictionUI()
+        }
+        DRIVING_STATUS_UNRESTRICTED -> {
+            // Parked: Remove restrictions
+            enableVideoPlayback()
+        }
+    }
+}</code></pre>
+
+            <h3>3.2 Vehicle Mode-based Behavior</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Vehicle State</th>
+                        <th>Media Behavior</th>
+                        <th>Implementation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Ignition ON</strong></td>
+                        <td>Restore last media / autoplay</td>
+                        <td>Subscribe IGNITION_STATE</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Driving</strong></td>
+                        <td>Video restriction, simplified UI</td>
+                        <td>Subscribe DRIVING_STATUS</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Incoming Call</strong></td>
+                        <td>Media duck/pause</td>
+                        <td>AudioFocus integration</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Reverse Gear</strong></td>
+                        <td>Camera view switch</td>
+                        <td>Subscribe GEAR_SELECTION</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ignition OFF</strong></td>
+                        <td>Save state, cleanup</td>
+                        <td>Subscribe IGNITION_STATE</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 4: Steering Wheel Buttons -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>Steering Wheel Button Mapping</h2>
+
+            <h3>4.1 Standard Media Key Codes</h3>
+            <pre><code>// KeyEvent.java media key codes
+KEYCODE_MEDIA_PLAY           = 126  // Play
+KEYCODE_MEDIA_PAUSE          = 127  // Pause
+KEYCODE_MEDIA_PLAY_PAUSE     = 85   // Play/Pause toggle
+KEYCODE_MEDIA_STOP           = 86   // Stop
+KEYCODE_MEDIA_NEXT           = 87   // Next track
+KEYCODE_MEDIA_PREVIOUS       = 88   // Previous track
+KEYCODE_MEDIA_REWIND         = 89   // Rewind
+KEYCODE_MEDIA_FAST_FORWARD   = 90   // Fast forward
+KEYCODE_VOLUME_UP            = 24   // Volume up
+KEYCODE_VOLUME_DOWN          = 25   // Volume down
+KEYCODE_VOLUME_MUTE          = 164  // Mute
+KEYCODE_VOICE_ASSIST         = 231  // Voice assistant</code></pre>
+
+            <h3>4.2 CarInputService Key Processing</h3>
+            <div class="mermaid">
+flowchart TD
+    A[HW Key Event] --> B{Key Type?}
+
+    B -->|Media Key| C[CarMediaService]
+    B -->|Volume Key| D[CarAudioService]
+    B -->|Voice Key| E[Voice Assistant]
+    B -->|Navigation| F[Navigation App]
+
+    C --> G[Active MediaSession]
+    D --> H[Zone Volume Control]
+    E --> I[Google Assistant / OEM Voice]
+    F --> J[Map Navigation]
+
+    G --> K[onMediaButtonEvent]
+    H --> L[setGroupVolume]
+            </div>
+
+            <h3>4.3 Custom Key Mapping</h3>
+            <pre><code>&lt;!-- vendor/etc/car/steering_wheel_config.xml --&gt;
+&lt;steeringWheelConfig&gt;
+    &lt;keyMappings&gt;
+        &lt;!-- Basic media keys --&gt;
+        &lt;key hwCode="0x01" keyCode="KEYCODE_MEDIA_PLAY_PAUSE" /&gt;
+        &lt;key hwCode="0x02" keyCode="KEYCODE_MEDIA_NEXT" /&gt;
+        &lt;key hwCode="0x03" keyCode="KEYCODE_MEDIA_PREVIOUS" /&gt;
+
+        &lt;!-- Volume (long press = repeat) --&gt;
+        &lt;key hwCode="0x04" keyCode="KEYCODE_VOLUME_UP" longPress="repeat" /&gt;
+        &lt;key hwCode="0x05" keyCode="KEYCODE_VOLUME_DOWN" longPress="repeat" /&gt;
+
+        &lt;!-- OEM custom keys --&gt;
+        &lt;key hwCode="0x10" keyCode="KEYCODE_CUSTOM_FAVORITE_1"
+             action="com.vendor.action.FAVORITE_1" /&gt;
+        &lt;key hwCode="0x11" keyCode="KEYCODE_CUSTOM_FAVORITE_2"
+             action="com.vendor.action.FAVORITE_2" /&gt;
+
+        &lt;!-- Voice (short/long press differentiation) --&gt;
+        &lt;key hwCode="0x06"
+             shortPress="KEYCODE_VOICE_ASSIST"
+             longPress="KEYCODE_SEARCH" /&gt;
+    &lt;/keyMappings&gt;
+&lt;/steeringWheelConfig&gt;</code></pre>
+        </section>
+
+        <!-- Section 5: Cluster Integration -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>Cluster (Instrument Panel) Media Integration</h2>
+
+            <h3>5.1 Cluster Display Structure</h3>
+            <div class="mermaid">
+flowchart LR
+    subgraph IVI["Center IVI"]
+        MA[Media App]
+        MS[MediaSession]
+    end
+
+    subgraph CLUSTER["Instrument Cluster"]
+        CI[ClusterInstrumentService]
+        CD[Cluster Display]
+    end
+
+    subgraph INFO["Media Info"]
+        TI[Track Info]
+        AA[Album Art]
+        PB[Playback State]
+    end
+
+    MS --> CI
+    CI --> TI
+    CI --> AA
+    CI --> PB
+    TI --> CD
+    AA --> CD
+    PB --> CD
+            </div>
+
+            <h3>5.2 InstrumentClusterService Integration</h3>
+            <pre><code>// Deliver media info to cluster
+class MediaClusterRenderer : InstrumentClusterRenderingService() {
+
+    override fun onMediaStateChanged(bundle: Bundle) {
+        // Receive MediaSession state changes
+        val title = bundle.getString(MediaMetadataCompat.METADATA_KEY_TITLE)
+        val artist = bundle.getString(MediaMetadataCompat.METADATA_KEY_ARTIST)
+        val albumArt = bundle.getParcelable&lt;Bitmap&gt;(
+            MediaMetadataCompat.METADATA_KEY_ALBUM_ART
+        )
+        val state = bundle.getInt("playback_state")
+
+        // Update cluster UI
+        updateClusterMediaInfo(title, artist, albumArt, state)
+    }
+
+    private fun updateClusterMediaInfo(
+        title: String?,
+        artist: String?,
+        albumArt: Bitmap?,
+        state: Int
+    ) {
+        // Render on cluster display
+        clusterView?.apply {
+            trackTitle.text = title
+            artistName.text = artist
+            albumImage.setImageBitmap(albumArt?.let { scaleToBitmap(it) })
+            playbackIcon.setImageResource(
+                if (state == PlaybackStateCompat.STATE_PLAYING)
+                    R.drawable.ic_pause
+                else
+                    R.drawable.ic_play
+            )
+        }
+    }
+}</code></pre>
+
+            <h3>5.3 Cluster Configuration</h3>
+            <pre><code>&lt;!-- AndroidManifest.xml --&gt;
+&lt;service
+    android:name=".MediaClusterRenderer"
+    android:exported="true"
+    android:permission="android.car.permission.BIND_INSTRUMENT_CLUSTER_RENDERER"&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="android.car.cluster.INSTRUMENT_CLUSTER_RENDERER" /&gt;
+    &lt;/intent-filter&gt;
+
+    &lt;meta-data
+        android:name="android.car.cluster.NAVIGATION"
+        android:value="true" /&gt;
+    &lt;meta-data
+        android:name="android.car.cluster.MEDIA"
+        android:value="true" /&gt;
+&lt;/service&gt;</code></pre>
+        </section>
+
+        <!-- Section 6: Vehicle Mode -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>Driving/Parking Mode Handling</h2>
+
+            <h3>6.1 UX Restrictions</h3>
+            <pre><code>// Using CarUxRestrictionsManager
+val uxManager = car.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE)
+    as CarUxRestrictionsManager
+
+uxManager.registerListener { restrictions ->
+    val isVideoAllowed = !restrictions.isRequiresDistractionOptimization
+
+    if (isVideoAllowed) {
+        // Video playback allowed (parked state)
+        enableVideoPlayback()
+    } else {
+        // Video restricted (driving state)
+        when {
+            restrictions.activeRestrictions and
+                CarUxRestrictions.UX_RESTRICTIONS_NO_VIDEO != 0 -> {
+                pauseVideoShowAudioOnly()
+            }
+            restrictions.activeRestrictions and
+                CarUxRestrictions.UX_RESTRICTIONS_NO_TEXT_MESSAGE != 0 -> {
+                hideDetailedInfo()
+            }
+        }
+    }
+}
+
+// Check current restriction state
+val currentRestrictions = uxManager.currentCarUxRestrictions
+if (currentRestrictions.isRequiresDistractionOptimization) {
+    // Driving optimization mode
+}</code></pre>
+
+            <h3>6.2 Video Restriction Implementation</h3>
+            <pre><code>class VideoPlayerActivity : Activity() {
+    private lateinit var uxManager: CarUxRestrictionsManager
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val car = Car.createCar(this)
+        uxManager = car.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE)
+            as CarUxRestrictionsManager
+
+        // Check current state
+        checkAndApplyRestrictions(uxManager.currentCarUxRestrictions)
+
+        // Detect changes
+        uxManager.registerListener { restrictions ->
+            checkAndApplyRestrictions(restrictions)
+        }
+    }
+
+    private fun checkAndApplyRestrictions(restrictions: CarUxRestrictions) {
+        val noVideo = restrictions.activeRestrictions and
+            CarUxRestrictions.UX_RESTRICTIONS_NO_VIDEO != 0
+
+        if (noVideo) {
+            // Hide video and play audio only
+            videoView.visibility = View.GONE
+            audioOnlyView.visibility = View.VISIBLE
+            showToast("Video cannot be viewed while driving")
+        } else {
+            videoView.visibility = View.VISIBLE
+            audioOnlyView.visibility = View.GONE
+        }
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 7: Implementation Example -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>Complete Integration Example</h2>
+
+            <h3>7.1 Full Integration Code</h3>
+            <pre><code>class VehicleMediaManager(private val context: Context) {
+    private lateinit var car: Car
+    private lateinit var propertyManager: CarPropertyManager
+    private lateinit var audioManager: CarAudioManager
+    private lateinit var uxManager: CarUxRestrictionsManager
+
+    fun initialize() {
+        car = Car.createCar(context)
+        propertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+        audioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+        uxManager = car.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE)
+            as CarUxRestrictionsManager
+
+        registerVehicleCallbacks()
+    }
+
+    private fun registerVehicleCallbacks() {
+        // 1. Ignition state
+        propertyManager.registerCallback(ignitionCallback,
+            VehiclePropertyIds.IGNITION_STATE,
+            CarPropertyManager.SENSOR_RATE_ONCHANGE)
+
+        // 2. Gear state
+        propertyManager.registerCallback(gearCallback,
+            VehiclePropertyIds.GEAR_SELECTION,
+            CarPropertyManager.SENSOR_RATE_ONCHANGE)
+
+        // 3. HW key input
+        propertyManager.registerCallback(hwKeyCallback,
+            VehiclePropertyIds.HW_KEY_INPUT,
+            CarPropertyManager.SENSOR_RATE_ONCHANGE)
+
+        // 4. UX restrictions
+        uxManager.registerListener(uxListener)
+    }
+
+    private val ignitionCallback = object : CarPropertyManager.CarPropertyEventCallback {
+        override fun onChangeEvent(event: CarPropertyValue&lt;*&gt;) {
+            when (event.value as Int) {
+                VehicleIgnitionState.ON -> onIgnitionOn()
+                VehicleIgnitionState.OFF -> onIgnitionOff()
+            }
+        }
+        override fun onErrorEvent(propId: Int, zone: Int) {}
+    }
+
+    private fun onIgnitionOn() {
+        // Restore last media source
+        val lastSource = preferences.getString("last_media_source", null)
+        lastSource?.let { restoreMediaSource(it) }
+    }
+
+    private fun onIgnitionOff() {
+        // Save current state
+        saveCurrentMediaState()
+    }
+}</code></pre>
+
+            <h3>7.2 Test Commands</h3>
+            <pre><code># Vehicle Property simulation
+# Inject HW Key event
+adb shell cmd car_service inject-vhal-event 0x0A000000 1 87 0
+# (HW_KEY_INPUT, ACTION_DOWN, KEYCODE_MEDIA_NEXT, DISPLAY_0)
+
+# Change driving state
+adb shell cmd car_service inject-vhal-event 0x11400404 1
+# DRIVING_STATUS = NO_VIDEO
+
+# Change gear
+adb shell cmd car_service inject-vhal-event 0x11400400 2
+# GEAR_SELECTION = REVERSE
+
+# Check current Vehicle Property
+adb shell dumpsys car_service --services CarPropertyService</code></pre>
+        </section>
+
+        <!-- Section 8: Checklist -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>Development Checklist</h2>
+
+            <ul class="checklist">
+                <li><input type="checkbox"> Vehicle HAL Property definition complete</li>
+                <li><input type="checkbox"> CAN message mapping implemented</li>
+                <li><input type="checkbox"> Steering wheel button working</li>
+                <li><input type="checkbox"> Volume control integration</li>
+                <li><input type="checkbox"> Voice assistant button working</li>
+                <li><input type="checkbox"> Cluster media info display</li>
+                <li><input type="checkbox"> Driving/Parking mode switching</li>
+                <li><input type="checkbox"> Video restriction working</li>
+                <li><input type="checkbox"> Ignition ON/OFF handling</li>
+            </ul>
+        </section>
+
+        <!-- Related Documents -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>Related Documents</h2>
+            <ul>
+                <li><a href="aaos-key-events.html">AAOS Key Events</a> - Key event details</li>
+                <li><a href="carmedia.html">Car Media Service</a> - CarMediaService</li>
+                <li><a href="oem-customization.html">OEM Customization</a> - Vendor extension</li>
+                <li><a href="aaos-boot-optimization.html">AAOS Boot Optimization</a> - Boot-time media</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+</html>

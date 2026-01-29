@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Media Framework Evolution</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+    <style>
+        /* Timeline Styles */
+        .timeline-container-scroll {
+            width: 100%;
+            overflow-x: auto;
+            padding: var(--spacing-lg) 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .timeline-wrapper {
+            display: flex;
+            gap: var(--spacing-xl);
+            min-width: min-content;
+            padding: var(--spacing-md) 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-sm);
+            min-width: 200px;
+            position: relative;
+        }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            right: -100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--color-accent), transparent);
+            z-index: 0;
+        }
+
+        .timeline-item:last-child::after {
+            display: none;
+        }
+
+        .timeline-date {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--color-accent);
+            text-align: center;
+            min-height: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timeline-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--color-accent);
+            box-shadow: 0 0 20px var(--color-accent);
+            position: relative;
+            z-index: 1;
+        }
+
+        .timeline-content-box {
+            background: var(--color-surface);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: var(--spacing-md);
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            transition: all 0.3s ease;
+        }
+
+        .timeline-content-box:hover {
+            background: var(--color-surface-elevated);
+            border-color: var(--color-accent);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .timeline-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .timeline-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+
+        .timeline-list li {
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+            padding-left: var(--spacing-sm);
+            position: relative;
+        }
+
+        .timeline-list li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--color-accent);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--color-accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: auto;
+        }
+
+        /* Card Grid */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-lg);
+        }
+
+        .card {
+            background: var(--color-surface);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: var(--spacing-lg);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            background: var(--color-surface-elevated);
+            border-color: var(--color-accent);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .card h3 {
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .card ul {
+            margin-top: var(--spacing-sm);
+        }
+
+        /* Tags */
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .tag-deprecated {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .tag-version {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .tag-new {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* Light Theme Overrides */
+        [data-theme="light"] .timeline-content-box,
+        [data-theme="light"] .card {
+            border-color: rgba(41, 37, 36, 0.12);
+            box-shadow: 0 2px 8px rgba(41, 37, 36, 0.06);
+        }
+
+        [data-theme="light"] .timeline-content-box:hover,
+        [data-theme="light"] .card:hover {
+            border-color: var(--color-accent);
+            box-shadow: 0 8px 24px rgba(3, 105, 161, 0.2);
+        }
+
+        [data-theme="light"] .timeline-item::after {
+            background: linear-gradient(90deg, var(--color-accent), rgba(3, 105, 161, 0.2));
+        }
+
+        [data-theme="light"] .tag-deprecated {
+            background: rgba(220, 38, 38, 0.1);
+            color: #dc2626;
+            border-color: rgba(220, 38, 38, 0.3);
+        }
+
+        [data-theme="light"] .tag-version {
+            background: rgba(29, 78, 216, 0.1);
+            color: #1d4ed8;
+            border-color: rgba(29, 78, 216, 0.3);
+        }
+
+        [data-theme="light"] .tag-new {
+            background: rgba(4, 120, 87, 0.1);
+            color: #047857;
+            border-color: rgba(4, 120, 87, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">Android Media Framework Evolution</h1>
+            <p class="page-subtitle">History, API changes, and architecture evolution of the media framework from Android 1.0 to 15</p>
+        </header>
+
+        <!-- Section 1: Overview & Timeline -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overview & Timeline
+            </h2>
+            <p>
+                The Android media framework has continuously evolved from the initial monolithic Stagefright-based structure to the modularized Codec2 and Jetpack-based Media3 library.
+                This timeline shows major architecture changes and API introduction points.
+            </p>
+
+            <div class="timeline-container-scroll">
+                <div class="timeline-wrapper">
+                    <!-- 2008 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2008<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                1.0</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">MediaPlayer</div>
+                            <ul class="timeline-list">
+                                <li>Basic media playback support</li>
+                                <li>Initial framework release</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2010 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2010<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                2.2</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Stagefright</div>
+                            <ul class="timeline-list">
+                                <li>New playback engine</li>
+                                <li>Replaced OpenCore</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2012 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2012<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                4.1</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">MediaCodec API</div>
+                            <ul class="timeline-list">
+                                <li>Low-level codec access</li>
+                                <li>MediaExtractor introduced</li>
+                            </ul>
+                            <span class="badge">Major Milestone</span>
+                        </div>
+                    </div>
+
+                    <!-- 2014 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2014<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                5.0</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">NuPlayer Default</div>
+                            <ul class="timeline-list">
+                                <li>Replaced Stagefright for streaming</li>
+                                <li>AudioAttributes API</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2015 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2015<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                6.0</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">MediaBrowser API</div>
+                            <ul class="timeline-list">
+                                <li>MediaBrowser/MediaController</li>
+                                <li>Adoptable Storage</li>
+                                <li>Auto Backup for Apps</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2016 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2016<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                7.0</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Multi-window Media</div>
+                            <ul class="timeline-list">
+                                <li>Multi-window playback</li>
+                                <li>Data Saver improvements</li>
+                                <li>Scoped Directory Access</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2017 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2017<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                8.0</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Project Treble</div>
+                            <ul class="timeline-list">
+                                <li>HIDL for HALs</li>
+                                <li>AAudio API (Low-latency)</li>
+                                <li>MediaPlayer2 API</li>
+                                <li>BT Audio Codec selection</li>
+                            </ul>
+                            <span class="badge">Architecture Change</span>
+                        </div>
+                    </div>
+
+                    <!-- 2018 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2018<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                9.0</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">HDR & HEIF</div>
+                            <ul class="timeline-list">
+                                <li>HDR VP9 Profile 2</li>
+                                <li>HEIF image format</li>
+                                <li>Dynamic Processing Effect</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2019 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2019<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                10</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Codec2 Framework</div>
+                            <ul class="timeline-list">
+                                <li>Replaced OpenMAX</li>
+                                <li>Updatable components (Mainline)</li>
+                                <li>Opus support</li>
+                            </ul>
+                            <span class="badge">Major Milestone</span>
+                        </div>
+                    </div>
+
+                    <!-- 2020 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2020<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                11</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">AIDL & MediaParser</div>
+                            <ul class="timeline-list">
+                                <li>Transition from HIDL to AIDL</li>
+                                <li>MediaParser API</li>
+                                <li>Variable Refresh Rate</li>
+                                <li>Frame Rate API</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2021 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2021<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                12</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">AVIF & Haptic Audio</div>
+                            <ul class="timeline-list">
+                                <li>AVIF image support</li>
+                                <li>Haptic-coupled audio</li>
+                                <li>MediaDrm improvements</li>
+                                <li>TranscodingSession API</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2022 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2022<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                13</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Media3 (Jetpack)</div>
+                            <ul class="timeline-list">
+                                <li>Unified media library</li>
+                                <li>Spatial Audio support</li>
+                                <li>MIDI 2.0 support</li>
+                            </ul>
+                            <span class="badge">New Standard</span>
+                        </div>
+                    </div>
+
+                    <!-- 2023 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2023<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                14</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Lossless USB Audio</div>
+                            <ul class="timeline-list">
+                                <li>Bit-perfect USB audio</li>
+                                <li>Ultra HDR image support</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2024 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                15</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Loudness Control</div>
+                            <ul class="timeline-list">
+                                <li>CTA-2075 loudness standard</li>
+                                <li>HDR Headroom control</li>
+                                <li>dav1d AV1 decoder</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 2025 -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025<br><span style="font-size: 0.8em; opacity: 0.7;">Android
+                                16</span></div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-title">Future & Beyond</div>
+                            <ul class="timeline-list">
+                                <li>APV Codec support</li>
+                                <li>Audio Sharing</li>
+                                <li>Media Quality Framework</li>
+                            </ul>
+                            <span class="badge">Upcoming</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Codec Evolution -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Codec Evolution: OpenMAX to Codec2
+            </h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h3 class="card-title">🏛️ OpenMAX Era (Legacy)</h3>
+                    <span class="tag tag-deprecated">Deprecated</span>
+                    <p>Early Android used the Khronos Group's OpenMAX IL standard to control hardware codecs. It was tightly coupled with the Stagefright framework, but lacked flexibility and was difficult to update.</p>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">🛠️ MediaCodec API</h3>
+                    <span class="tag tag-version">Android 4.1+</span>
+                    <p>Low-level codec interface introduced in API Level 16. It operates by apps filling input buffers and consuming output buffers, and remains the core API for media processing today.
+                        <br /><br />
+                        <strong>Key Features:</strong>
+                    <ul>
+                        <li>Asynchronous Processing</li>
+                        <li>Surface Input/Output (Zero-copy)</li>
+                        <li>CryptoInfo for DRM</li>
+                    </ul>
+                    </p>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">🚀 Codec2 Architecture</h3>
+                    <span class="tag tag-new">Android 10+</span>
+                    <p>New codec framework introduced to replace OpenMAX. Enhanced modularization allows codec components to be updated without system updates (Project Mainline), with reduced overhead.
+                        <br /><br />
+                        <strong>Improvements:</strong>
+                    <ul>
+                        <li>Modular & Updatable (Mainline)</li>
+                        <li>Better Memory Management</li>
+                        <li>Software Codec Optimization (dav1d for AV1 in A15)</li>
+                    </ul>
+                    </p>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+graph LR
+    subgraph Legacy ["Legacy (Pre-Android 10)"]
+        App1[App] --> MediaCodec1[MediaCodec API]
+        MediaCodec1 --> ACodec
+        ACodec --> OMX[OpenMAX IL]
+        OMX --> VendorLib[Vendor Codec Lib]
+    end
+
+    subgraph Modern ["Modern (Android 10+)"]
+        App2[App] --> MediaCodec2[MediaCodec API]
+        MediaCodec2 --> CCodec
+        CCodec --> Codec2[Codec2 API]
+        Codec2 --> Codec2Impl[Codec2 Implementation]
+    end
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Media Player Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Media Player Architecture
+            </h2>
+            <p class="section-description">
+                Android media players are divided into low-level engines and high-level APIs, evolving over time.
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>MediaPlayer API</th>
+                        <th>Stagefright Engine</th>
+                        <th>NuPlayer Engine</th>
+                        <th>ExoPlayer / Media3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Introduction</strong></td>
+                        <td>Android 1.0 (2008)</td>
+                        <td>Android 2.2 (2010)</td>
+                        <td>Android 5.0 (2014)</td>
+                        <td>Jetpack Library (2016+)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Layer</strong></td>
+                        <td>Java API (Public)</td>
+                        <td>Native Engine (Internal)</td>
+                        <td>Native Engine (Internal)</td>
+                        <td>App-level Library (Public)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Characteristics</strong></td>
+                        <td>Simple playback API</td>
+                        <td>OpenCore replacement engine</td>
+                        <td>Streaming optimized</td>
+                        <td>Extensible player</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Key Features</strong></td>
+                        <td>
+                            <ul>
+                                <li>Local/remote playback</li>
+                                <li>Basic controls (play/pause)</li>
+                                <li>Simple event callbacks</li>
+                            </ul>
+                        </td>
+                        <td>
+                            <ul>
+                                <li>MediaPlayer backend</li>
+                                <li>Local file focused</li>
+                                <li>OS integration</li>
+                            </ul>
+                        </td>
+                        <td>
+                            <ul>
+                                <li>RTSP, HLS support</li>
+                                <li>Improved buffering</li>
+                                <li>MediaPlayer2 backend</li>
+                            </ul>
+                        </td>
+                        <td>
+                            <ul>
+                                <li>DASH, HLS, SS support</li>
+                                <li>Custom extensions</li>
+                                <li>Consistent cross-device</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td><span class="tag tag-version">Stable</span></td>
+                        <td><span class="tag tag-deprecated">Internal Only</span></td>
+                        <td><span class="tag tag-deprecated">Internal Only</span></td>
+                        <td><span class="tag tag-new">Recommended</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>Recommendation</strong><br/>
+                Use <strong>Media3 (ExoPlayer)</strong> for new app development. MediaPlayer API is still valid for simple playback,
+                but Media3 is more suitable when adaptive streaming, DRM, and advanced controls are needed.
+            </div>
+        </section>
+
+        <!-- Section 4: Codec & Player Performance Tuning -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Codec & Player Performance Tuning
+            </h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h3 class="card-title">⚡ Low Latency Decoding</h3>
+                    <p>Android 11+ supports Low Latency mode for <code>MediaCodec</code>. Useful for real-time streaming or cloud gaming.
+                        <br />Activate by setting <code>MediaFormat.KEY_LOW_LATENCY</code>.
+                    </p>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">🔄 Asynchronous Buffer Queueing</h3>
+                    <p>Using <code>MediaCodec.Callback</code> to process buffers asynchronously prevents UI thread blocking and maximizes throughput.
+                        Avoid using synchronous APIs.</p>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">📺 Surface Rendering (Zero-copy)</h3>
+                    <p>When decoding video, setting <code>Surface</code> as output instead of <code>ByteBuffer</code> passes decoder output directly to the display compositor,
+                        reducing memory copies and saving battery.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: HAL Interface Evolution -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                HAL Interface: HIDL to AIDL
+            </h2>
+            <p>
+                HIDL introduced in Android 8.0 (Project Treble) began transitioning to AIDL starting from Android 11.
+                From Android 13, new HAL interfaces must be written in AIDL.
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>HAL Type</th>
+                        <th>Legacy (Pre-8.0)</th>
+                        <th>HIDL (8.0 - 12)</th>
+                        <th>AIDL (13+)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Audio HAL</strong></td>
+                        <td>C header (audio.h)</td>
+                        <td>android.hardware.audio@7.0</td>
+                        <td><span class="tag tag-new">android.hardware.audio.core</span> (Android 14+)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Graphics</strong></td>
+                        <td>gralloc.h</td>
+                        <td>android.hardware.graphics.mapper@4.0</td>
+                        <td><span class="tag tag-new">android.hardware.graphics.allocator</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 6: API Deprecation Timeline -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Major API Deprecation Timeline
+            </h2>
+            <p class="section-description">
+                Major API changes and deprecation history of the Android media framework.
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>API / Class</th>
+                        <th>Introduced</th>
+                        <th>Deprecated In</th>
+                        <th>Replacement</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>android.hardware.Camera</code></td>
+                        <td>API 1 (2008)</td>
+                        <td>API 21 (Lollipop, 2014)</td>
+                        <td><code>android.hardware.camera2</code></td>
+                        <td><span class="tag tag-deprecated">Deprecated</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>RemoteControlClient</code></td>
+                        <td>API 14 (2011)</td>
+                        <td>API 21 (Lollipop, 2014)</td>
+                        <td><code>MediaSession</code></td>
+                        <td><span class="tag tag-deprecated">Deprecated</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>OpenSL ES</code></td>
+                        <td>API 9 (2010)</td>
+                        <td>API 26+ (Oreo, 2017)</td>
+                        <td><code>AAudio</code> (Native C++)</td>
+                        <td><span class="tag tag-deprecated">AAudio Recommended</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>MediaPlayer2</code></td>
+                        <td>API 28 (Pie, 2018)</td>
+                        <td>API 30 (Android 11, 2020)</td>
+                        <td><code>Media3</code></td>
+                        <td><span class="tag tag-deprecated">Removed</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>MediaSession</code> (Framework)</td>
+                        <td>API 21 (2014)</td>
+                        <td>Not Deprecated (but migration recommended)</td>
+                        <td><code>androidx.media3.session.MediaSession</code></td>
+                        <td><span class="tag tag-version">Stable, Media3 Preferred</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>ExoPlayer</code> (Standalone)</td>
+                        <td>2016 (Google I/O)</td>
+                        <td>2023 (v2.19.0)</td>
+                        <td><code>androidx.media3.exoplayer</code></td>
+                        <td><span class="tag tag-deprecated">Deprecated</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>MediaRecorder.AudioEncoder.AMR_NB</code></td>
+                        <td>API 1</td>
+                        <td>Not Deprecated (but AAC preferred)</td>
+                        <td>AAC (Better quality)</td>
+                        <td><span class="tag tag-version">Legacy</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>OpenMAX IL</code></td>
+                        <td>API 16 (2012)</td>
+                        <td>API 29 (Android 10, 2019)</td>
+                        <td><code>Codec2</code></td>
+                        <td><span class="tag tag-deprecated">Replaced</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>MediaDrm.SECURITY_LEVEL_UNKNOWN</code></td>
+                        <td>API 18</td>
+                        <td>API 28 (Pie)</td>
+                        <td>Use <code>getSecurityLevel()</code></td>
+                        <td><span class="tag tag-deprecated">Deprecated</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>Key Migration Guide</strong><br/>
+                • <strong>Camera → Camera2</strong>: Required for manual control and RAW capture<br/>
+                • <strong>OpenSL ES → AAudio</strong>: AAudio recommended for low-latency audio apps (games, instruments)<br/>
+                • <strong>ExoPlayer → Media3</strong>: Complete migration by 2024 recommended (ExoPlayer v2 support ending)<br/>
+                • <strong>MediaSession (Framework) → Media3 MediaSession</strong>: Jetpack version offers more features
+            </div>
+        </section>
+
+        <!-- Section 7: Camera API Evolution -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Camera API Evolution
+            </h2>
+            <p class="section-description">
+                Android's camera API has evolved over three generations from simple image capture to advanced RAW control.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Gen1["1st Gen: Camera API (API 1+)"]
+                        CAM1["android.hardware.Camera<br/>2008~2014"]
+                        CAM1_FEAT["• Simple preview/capture<br/>• Limited manual control<br/>• Deprecated in API 21"]
+                    end
+
+                    subgraph Gen2["2nd Gen: Camera2 API (API 21+)"]
+                        CAM2["android.hardware.camera2<br/>2014~Present"]
+                        CAM2_FEAT["• Request-based pipeline<br/>• Manual control (ISO, exposure)<br/>• RAW capture<br/>• Concurrent camera streams"]
+                    end
+
+                    subgraph Gen3["3rd Gen: CameraX (Jetpack)"]
+                        CAMX["androidx.camera.core<br/>2019~Present"]
+                        CAMX_FEAT["• Lifecycle-aware<br/>• Use cases (Preview, Capture, Analysis)<br/>• Vendor extensions support<br/>• Simplified API"]
+                    end
+
+                    Gen1 -->|Deprecated| Gen2
+                    Gen2 -->|Recommended for advanced| Gen3
+                    Gen3 -.->|Built on top of| Gen2
+                </div>
+            </div>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h3 class="card-title">📷 Camera API (Legacy)</h3>
+                    <span class="tag tag-deprecated">Deprecated</span>
+                    <ul>
+                        <li><strong>Introduction</strong>: Android 1.0 (2008)</li>
+                        <li><strong>Features</strong>: Simple preview/capture, limited control</li>
+                        <li><strong>Status</strong>: Deprecated from API 21 (Lollipop)</li>
+                        <li><strong>Replacement</strong>: Transition to Camera2 API recommended</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">📸 Camera2 API</h3>
+                    <span class="tag tag-version">Android 5.0+</span>
+                    <ul>
+                        <li><strong>Introduction</strong>: Android 5.0 (2014)</li>
+                        <li><strong>Features</strong>: Request-based pipeline, manual control</li>
+                        <li><strong>Advantages</strong>: RAW capture, multi-camera, fine control</li>
+                        <li><strong>Difficulty</strong>: Complex API, long learning curve</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">🎥 CameraX (Jetpack)</h3>
+                    <span class="tag tag-new">Recommended</span>
+                    <ul>
+                        <li><strong>Introduction</strong>: 2019 (Jetpack Library)</li>
+                        <li><strong>Features</strong>: Lifecycle-aware, use case based</li>
+                        <li><strong>Advantages</strong>: Consistent behavior on 80% of devices, simple API</li>
+                        <li><strong>Extension</strong>: Camera2 Interop for advanced features</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Audio API Evolution -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Audio API Evolution
+            </h2>
+            <p class="section-description">
+                Android's audio API has continuously evolved for low-latency and high-quality playback.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                    subgraph Java["Java/Kotlin APIs"]
+                        AT["AudioTrack<br/>(API 1+)"]
+                        AR["AudioRecord<br/>(API 1+)"]
+                    end
+
+                    subgraph Native1["Native C/C++ (Legacy)"]
+                        OPENSL["OpenSL ES<br/>(API 9-27)"]
+                    end
+
+                    subgraph Native2["Native C/C++ (Modern)"]
+                        AAUDIO["AAudio<br/>(API 26+)"]
+                    end
+
+                    subgraph Features["Key Features"]
+                        FEAT_AT["• High-level API<br/>• Android-specific"]
+                        FEAT_OPENSL["• Cross-platform<br/>• Complex API"]
+                        FEAT_AAUDIO["• Low-latency<br/>• Simple & efficient"]
+                    end
+
+                    AT -.-> FEAT_AT
+                    OPENSL -.-> FEAT_OPENSL
+                    AAUDIO -.-> FEAT_AAUDIO
+
+                    OPENSL -->|Replaced by| AAUDIO
+                </div>
+            </div>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h3 class="card-title">🔊 AudioTrack/AudioRecord</h3>
+                    <span class="tag tag-version">Android 1.0+</span>
+                    <ul>
+                        <li><strong>Level</strong>: Java/Kotlin API</li>
+                        <li><strong>Features</strong>: Simple playback/recording interface</li>
+                        <li><strong>Advantages</strong>: Ease of use, Android-specific features</li>
+                        <li><strong>Disadvantages</strong>: Relatively high latency</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">🎹 OpenSL ES</h3>
+                    <span class="tag tag-deprecated">Deprecated</span>
+                    <ul>
+                        <li><strong>Introduction</strong>: Android 2.3 (API 9)</li>
+                        <li><strong>Features</strong>: Khronos standard C API</li>
+                        <li><strong>Advantages</strong>: Cross-platform</li>
+                        <li><strong>Status</strong>: AAudio recommended (API 26+)</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">⚡ AAudio</h3>
+                    <span class="tag tag-new">Android 8.0+</span>
+                    <ul>
+                        <li><strong>Introduction</strong>: Android 8.0 (API 26)</li>
+                        <li><strong>Features</strong>: Low-latency Native C++ API</li>
+                        <li><strong>Advantages</strong>: MMAP mode, sub-10ms latency</li>
+                        <li><strong>Use cases</strong>: Real-time audio apps (instruments, games)</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">🎵 AudioAttributes (API 21+)</h3>
+                    <span class="tag tag-version">Android 5.0+</span>
+                    <ul>
+                        <li><strong>Introduction</strong>: Android 5.0 (Lollipop)</li>
+                        <li><strong>Role</strong>: Defines audio stream purpose</li>
+                        <li><strong>Examples</strong>: USAGE_MEDIA, USAGE_ALARM, USAGE_GAME</li>
+                        <li><strong>Effect</strong>: Determines system routing and volume policy</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 9: DRM Framework Evolution -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                DRM Framework Evolution
+            </h2>
+            <p class="section-description">
+                Android's DRM framework has evolved to hardware-based security for content protection.
+            </p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h3 class="card-title">🔐 MediaDrm API</h3>
+                    <span class="tag tag-version">Android 4.3+</span>
+                    <ul>
+                        <li><strong>Introduction</strong>: Android 4.3 (API 18)</li>
+                        <li><strong>Role</strong>: DRM plugin interface</li>
+                        <li><strong>Support</strong>: Widevine, PlayReady, ClearKey</li>
+                        <li><strong>Improvements</strong>: Performance and security enhanced in Android 12</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">🛡️ Widevine DRM Levels</h3>
+                    <span class="tag tag-version">All Versions</span>
+                    <ul>
+                        <li><strong>L1 (Hardware)</strong>: All processing in TEE, 4K/HDR support</li>
+                        <li><strong>L2 (Hybrid)</strong>: Encryption only in hardware, max 540p</li>
+                        <li><strong>L3 (Software)</strong>: All processing in software, SD resolution only</li>
+                        <li><strong>Certification</strong>: OEM must obtain L1 certification</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">🔒 Hardware-backed Security</h3>
+                    <span class="tag tag-new">Modern Devices</span>
+                    <ul>
+                        <li><strong>TEE (Trusted Execution Environment)</strong>: Isolated secure area</li>
+                        <li><strong>Keymaster HAL</strong>: Hardware key storage</li>
+                        <li><strong>StrongBox</strong>: Dedicated security chip (Titan M, Android 9+)</li>
+                        <li><strong>Effect</strong>: Key extraction impossible, DRM L1 requirement</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">📺 DRM + Codec Integration</h3>
+                    <span class="tag tag-version">All Versions</span>
+                    <ul>
+                        <li><strong>Secure Decoder</strong>: MediaCodec FEATURE_SecurePlayback</li>
+                        <li><strong>Protected Surface</strong>: FLAG_SECURE prevents screen capture</li>
+                        <li><strong>HDCP</strong>: External display output protection</li>
+                        <li><strong>Encrypted Buffer</strong>: Passed to decoder without decryption</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 10: Image & Video Format Evolution -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                Image & Video Format Evolution
+            </h2>
+            <p class="section-description">
+                Android continuously introduces next-generation formats for efficient media storage and transmission.
+            </p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h3 class="card-title">🖼️ Image Format Timeline</h3>
+                    <ul>
+                        <li><strong>JPEG (API 1+)</strong>: Default image format, wide compatibility</li>
+                        <li><strong>PNG (API 1+)</strong>: Lossless compression, transparency support</li>
+                        <li><strong>WebP (API 14+)</strong>: 25-35% smaller than JPEG</li>
+                        <li><strong>HEIF (API 28+)</strong>: H.265 based, 50% compression improvement</li>
+                        <li><strong>AVIF (API 31+)</strong>: AV1 based, 20% better than HEIF</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">🎬 Video Codec Timeline</h3>
+                    <ul>
+                        <li><strong>H.264/AVC (API 1+)</strong>: Standard video codec, universal support</li>
+                        <li><strong>VP8 (API 14+)</strong>: Google WebM, open-source</li>
+                        <li><strong>H.265/HEVC (API 21+)</strong>: 4K/8K video, 50% efficiency</li>
+                        <li><strong>VP9 (API 19+)</strong>: YouTube default, HDR support (API 28)</li>
+                        <li><strong>AV1 (API 29+)</strong>: Next-gen codec, 30% compression improvement</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">🎨 HDR Support</h3>
+                    <span class="tag tag-version">Android 7.0+</span>
+                    <ul>
+                        <li><strong>Android 7.0 (API 24)</strong>: HDR video playback support began</li>
+                        <li><strong>Android 8.0 (API 26)</strong>: HDR display API</li>
+                        <li><strong>Android 9.0 (API 28)</strong>: HDR VP9 Profile 2</li>
+                        <li><strong>Android 13 (API 33)</strong>: Ultra HDR images (JPEG + Gainmap)</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">📦 Container Formats</h3>
+                    <ul>
+                        <li><strong>MP4 (API 1+)</strong>: Most universal container</li>
+                        <li><strong>WebM (API 16+)</strong>: VP8/VP9 + Vorbis/Opus</li>
+                        <li><strong>Matroska (.mkv)</strong>: Flexible multi-track support</li>
+                        <li><strong>HEIF Container (API 28+)</strong>: HEIC image sequences</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Legacy["Legacy Era (2008-2014)"]
+                        L1["H.264 + JPEG<br/>Universal Compatibility"]
+                    end
+
+                    subgraph Modern["Modern Era (2015-2020)"]
+                        M1["H.265 + WebP<br/>Improved Efficiency"]
+                        M2["VP9 + HEIF<br/>4K/HDR Support"]
+                    end
+
+                    subgraph Future["Future Era (2021+)"]
+                        F1["AV1 + AVIF<br/>Next-gen Compression"]
+                        F2["Ultra HDR<br/>Enhanced Imaging"]
+                    end
+
+                    Legacy -->|Evolution| Modern
+                    Modern -->|Evolution| Future
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAOS Last Media & Autoplay | Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">AAOS Last Media & Autoplay</h1>
+            <p class="page-subtitle">Comprehensive guide to Last Media Source, Playback State restoration, and Autoplay
+                policies in Android Automotive OS.</p>
+        </header>
+
+        <!-- Section 1: Concept -->
+        <section class="section sec-concept">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                What is "Last Media"?
+            </h2>
+            <p class="section-description">
+                In AAOS, "Last Media" is a core concept for seamlessly continuing the previous media experience when the vehicle restarts or user switches. It stores and manages two main pieces of information.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎵</span> Last Media Source</h3>
+                    <div class="card-description">
+                        The last used media app/service (ComponentName).
+                        <br>(e.g., <code>com.spotify.music</code>, <code>com.google.android.apps.youtube.music</code>)
+                        <br>CarMediaService stores the history in <strong>SharedPreferences</strong> Per-User, Per-Mode (PLAYBACK/BROWSE).
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">▶️</span> Last Playback State</h3>
+                    <div class="card-description">
+                        Information about whether the source was last playing (PLAYING) or paused (PAUSED).
+                        <br>Based on this state, the system decides whether to <strong>autoplay</strong> when the vehicle starts.
+                    </div>
+                </div>
+            </div>
+            <p
+                style="margin-top: 20px; color: var(--text-secondary); padding-left: 10px; border-left: 3px solid var(--accent-purple);">
+                User experiences like "play the music I was listening to last time", automatically resuming previous media after vehicle ignition, or voice/button actions like "Connect and play last media source" are all built on top of this concept.
+            </p>
+        </section>
+
+        <!-- Section 2: Architecture Overview -->
+        <section class="section sec-arch">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Architecture Overview
+            </h2>
+            <p class="section-description">
+                The Last Media feature operates through the organic collaboration between <code>CarMediaService</code>, <code>MediaConnectorService</code>, and each media app.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TD
+                    User[User / Voice Command] -- "Play Last Media" --> CMS[CarMediaService]
+
+                    subgraph System Services
+                    CMS -- "Store/Retrieve History" --> Prefs[(SharedPreferences)]
+                    CMS -- "Start with EXTRA_AUTOPLAY" --> MCS[MediaConnectorService]
+                    end
+
+                    subgraph Media App
+                    MCS -- "MediaBrowser.connect()" --> MBS[MediaBrowserService]
+                    MBS -- "Session Token" --> MCS
+                    MCS -- "TransportControls.play()" --> Session[MediaSession]
+                    end
+
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📱</span> Media App (Spotify, etc.)</h3>
+                    <div class="card-description">
+                        Must implement <code>MediaBrowserService</code> + <code>MediaSession</code> (or
+                        <code>MediaSessionCompat</code>).
+                        Reports its playback state to the system and responds to connection requests.
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🧠</span> CarMediaService</h3>
+                    <div class="card-description">
+                        The core manager. Stores and manages the current Primary Media Source, Browse Source, Last Media History, and Playback State.
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔌</span> MediaConnectorService</h3>
+                    <div class="card-description">
+                        An OEM/AAOS system service that receives instructions from CarMediaService to bind to the target Media Source and attempts "autoplay" via <code>EXTRA_AUTOPLAY</code> when needed.
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🚗</span> CarService / Car API</h3>
+                    <div class="card-description">
+                        Restores based on Snapshot from vehicle power/sleep state, and continues the Last Media related state when rebooting.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Internal Logic & Storage -->
+        <section class="section sec-logic">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Internal Logic: How it works
+            </h2>
+            <p class="section-description">
+                Detailed logic of how Last Media information is stored inside CarMediaService and how autoplay decision is made.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">3-1. Last Media Source Storage Structure</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Uses <code>SharedPreferences</code> to store History Per-User, Per-Mode.
+                <br>Keys: <code>SOURCE_KEY</code>, <code>PLAYBACK_STATE_KEY</code>
+            </p>
+
+            <div class="content-grid">
+                <div class="card" style="grid-column: span 2;">
+                    <h3 class="card-title"><span class="card-icon">💾</span> Logic Summary</h3>
+                    <div class="card-description">
+                        <pre><code>private void setPlaybackMediaSource(ComponentName playbackMediaSource) {
+    // ... Stop existing callbacks ...
+    synchronized (mLock) {
+        mPrimaryMediaComponents[MEDIA_SOURCE_MODE_PLAYBACK] = playbackMediaSource;
+    }
+    if (playbackMediaSource != null) {
+        if (!isCurrentUserEphemeral()) {
+            saveLastMediaSource(playbackMediaSource, MEDIA_SOURCE_MODE_PLAYBACK);
+        }
+    }
+    // ... Notify listeners & Start MediaConnectorService ...
+}</code></pre>
+                        <p style="margin-top: 10px;">
+                            <code>saveLastMediaSource()</code> manages a History (Deque). It adds the new source to the front, removes duplicates, and serializes for storage.
+                            This maintains the <strong>"Recently Used Media Source List"</strong>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">3-2. Last Playback State & Autoplay</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Detects state through <code>onPlaybackStateChanged</code> in <code>MediaController.Callback</code> and stores it.
+                This value is used in <code>shouldStartPlayback()</code> to determine autoplay.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚙️</span> Autoplay Config Policies</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>AUTOPLAY_CONFIG_NEVER</code>: Never autoplay.</li>
+                            <li><code>AUTOPLAY_CONFIG_ALWAYS</code>: Always attempt playback.</li>
+                            <li><code>RETAIN_PER_SOURCE</code>: Autoplay if this app's last state was PLAYING.</li>
+                            <li><code>RETAIN_PREVIOUS</code>: Play if CarMediaService's remembered last state was PLAYING.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Restoration Flow -->
+        <section class="section sec-restore">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Restoration Flow
+            </h2>
+            <p class="section-description">
+                How Last Media is restored at the system level, divided into boot scenarios and UX scenarios.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">4-1. Boot / Resume Scenario</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant CarService
+                    participant CMS as CarMediaService
+                    participant MCS as MediaConnectorService
+                    participant App as Media App
+
+                    Note over CarService: Vehicle Ignition ON (Resume)
+                    CarService->>CMS: Restore State (Snapshot)
+                    CMS->>CMS: getLastMediaSource() -> Set Default
+
+                    Note over CMS: Power Policy / User Unlock
+                    CMS->>CMS: shouldStartPlayback() -> true/false
+
+                    alt Autoplay Allowed
+                    CMS->>MCS: startMediaConnectorService(EXTRA_AUTOPLAY=true)
+                    MCS->>App: MediaBrowser.connect()
+                    MCS->>App: MediaController.play()
+                    else Autoplay Denied
+                    CMS->>MCS: startMediaConnectorService(EXTRA_AUTOPLAY=false)
+                    MCS->>App: MediaBrowser.connect()
+                    Note right of App: Only Connect (Ready State)
+                    end
+                </div>
+            </div>
+            <p style="color: var(--text-secondary); margin-top: 15px;">
+                CarService restores state from the last Snapshot (Suspend-to-RAM state) when resuming from Suspend, without reconnecting to VHAL.
+                Then, depending on the config, it attempts autoplay or simply exposes the "last source" in the UI.
+            </p>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">4-2. Voice / UX Interaction</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🗣️</span> Voice Commands</h3>
+                    <div class="card-description">
+                        Commands like "Play last media source", "Resume music" internally get the <strong>"Last Media Source + Autoplay status"</strong> through CarMediaService and execute.
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">👆</span> Home Screen UI</h3>
+                    <div class="card-description">
+                        The home screen or media widget's "Play last media" card also uses the same mechanism to display the recent app and resume playback when touched.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Developer & OEM Guide -->
+        <section class="section sec-dev">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Developer & OEM Guide
+            </h2>
+            <p class="section-description">
+                Guidelines for fully utilizing the Last Media feature.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">👨‍💻</span> For App Developers</h3>
+                    <div class="card-description">
+                        What app developers need to do is surprisingly simple.
+                        <ul>
+                            <li><strong>Implement MediaSession:</strong> Update <code>PlaybackState</code> (STATE_PLAYING, etc.) correctly.</li>
+                            <li><strong>Browse Service Extras:</strong> You can specify the Browse Service by putting <code>CAR_EXTRA_BROWSE_SERVICE_FOR_SESSION</code> in session Extras.</li>
+                            <li><strong>Self-Restoration:</strong> Restoring queue and playback position when the app restarts is <strong>the app's responsibility</strong>. The OS just "presses the play button".</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🏭</span> For OEMs / Platform</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Autoplay Policy:</strong> Override <code>config_mediaSourceAutoplayConfig</code> to control autoplay behavior.</li>
+                            <li><strong>Default Source:</strong> Specify the default app when there's no history with <code>config_defaultMediaSource</code>.</li>
+                            <li><strong>User Types:</strong> Note that guest/temporary users where <code>isCurrentUserEphemeral()</code> is true may not save Last Media.</li>
+                            <li><strong>Independent Playback:</strong> Determine whether to separate radio and media app sources through <code>mIndependentPlaybackConfig</code> setting.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Summary -->
+        <section class="section"
+            style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1)); border-color: var(--accent-indigo);">
+            <h2 class="section-title" style="color: var(--text-primary);">
+                <span class="section-number" style="background: var(--accent-indigo);">6</span>
+                Summary
+            </h2>
+            <p class="section-description" style="color: var(--text-primary); font-weight: 500;">
+                AAOS "Last Media" is a complete mechanism where CarMediaService stores the user's last media source and playback state Per-User, then appropriately reconnects to apps and controls autoplay based on policy (Autoplay Config) during vehicle restart/voice commands/UX.
+            </p>
+            <p style="margin-top: 10px; color: var(--text-secondary);">
+                App developers can focus on proper MediaSession/PlaybackState implementation,
+                while platform/OEM developers can tune CarMediaService and related configs to control "how actively to resume what was playing last".
+            </p>
+        </section>
+
+        <!-- Section 7: Code Examples -->
+        <section class="section sec-code">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Code Examples
+            </h2>
+            <p class="section-description">
+                Examples of Last Media Source save/restore, MediaBrowserService autoplay handling, and CarMediaManager API usage.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-1. Saving/Restoring Last Media Source in SharedPreferences (CarMediaService)</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// packages/services/Car/service/src/com/android/car/media/CarMediaService.java
+// Save Last Media Source to SharedPreferences
+private void saveLastMediaSource(
+    @NonNull ComponentName component,
+    @CarMediaManager.MediaSourceMode int mode
+) {
+    if (mUserManager.isUserUnlocked()) {
+        String key = getSharedPrefsKey(mode);
+        String componentString = component.flattenToString();
+
+        // Deque-based history management
+        Deque&lt;String&gt; lastMediaSources = getLastMediaSources(mode);
+        lastMediaSources.remove(componentString); // Remove duplicates
+        lastMediaSources.addFirst(componentString); // Add latest to front
+
+        // Keep only up to 10 items
+        while (lastMediaSources.size() &gt; MAX_LAST_MEDIA_SOURCES) {
+            lastMediaSources.removeLast();
+        }
+
+        // Serialize and save to SharedPreferences
+        mSharedPrefs.edit()
+            .putString(key, serializeDeque(lastMediaSources))
+            .apply();
+    }
+}
+
+// Restore Last Media Source
+private ComponentName getLastMediaSource(@CarMediaManager.MediaSourceMode int mode) {
+    if (!mUserManager.isUserUnlocked()) return null;
+
+    String key = getSharedPrefsKey(mode);
+    String serialized = mSharedPrefs.getString(key, null);
+    if (serialized == null) return null;
+
+    Deque&lt;String&gt; lastMediaSources = deserializeDeque(serialized);
+    if (lastMediaSources.isEmpty()) return null;
+
+    // Return most recent item
+    String componentString = lastMediaSources.peekFirst();
+    return ComponentName.unflattenFromString(componentString);
+}
+
+// Generate Per-User, Per-Mode SharedPreferences key
+private String getSharedPrefsKey(@CarMediaManager.MediaSourceMode int mode) {
+    int userId = ActivityManager.getCurrentUser();
+    return String.format("user_%d_mode_%d_last_media_source", userId, mode);
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-2. Implementing onPlaybackResumption() in MediaBrowserService (Media App)</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Media app's MediaBrowserService implementation
+class MyMediaBrowserService : MediaBrowserServiceCompat() {
+
+    private lateinit var mediaSession: MediaSessionCompat
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // Initialize MediaSession
+        mediaSession = MediaSessionCompat(this, "MyMediaSession").apply {
+            setCallback(MediaSessionCallback())
+            setFlags(
+                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+            )
+            setSessionToken(sessionToken)
+        }
+    }
+
+    // Called when AAOS requests autoplay
+    override fun onPlaybackResumption(
+        mediaSession: MediaSessionCompat,
+        controller: MediaControllerCompat
+    ) {
+        Log.d(TAG, "onPlaybackResumption: Autoplay requested by system")
+
+        // Restore last playback state
+        val lastPlaylist = restoreLastPlaylist() // App's internal DB/SharedPreferences
+        val lastPosition = restoreLastPosition()
+
+        if (lastPlaylist != null) {
+            // Restore queue
+            controller.addQueueItem(lastPlaylist)
+
+            // Seek to last position
+            controller.transportControls.seekTo(lastPosition)
+
+            // Start autoplay
+            controller.transportControls.play()
+
+            Log.d(TAG, "Restored and started playback: ${lastPlaylist.description.title}")
+        } else {
+            Log.w(TAG, "No last playlist found, playing default")
+            playDefaultContent()
+        }
+    }
+
+    // MediaSession Callback
+    private inner class MediaSessionCallback : MediaSessionCompat.Callback() {
+        override fun onPlay() {
+            // Request Audio Focus
+            val result = audioFocusHelper.requestAudioFocus()
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                player.start()
+                updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+            }
+        }
+
+        override fun onPause() {
+            player.pause()
+            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED)
+        }
+    }
+
+    // Update PlaybackState (detected by CarMediaService)
+    private fun updatePlaybackState(@PlaybackStateCompat.State state: Int) {
+        val playbackState = PlaybackStateCompat.Builder()
+            .setState(state, player.currentPosition, 1.0f)
+            .setActions(
+                PlaybackStateCompat.ACTION_PLAY or
+                PlaybackStateCompat.ACTION_PAUSE or
+                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+            )
+            .build()
+
+        mediaSession.setPlaybackState(playbackState)
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-3. Querying/Changing Last Media Source with CarMediaManager API</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Using CarMediaManager in an AAOS app to control Last Media Source
+class CarMediaActivity : AppCompatActivity() {
+
+    private lateinit var car: Car
+    private lateinit var carMediaManager: CarMediaManager
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Connect to Car API
+        car = Car.createCar(this)
+        carMediaManager = car.getCarManager(Car.CAR_MEDIA_SERVICE) as CarMediaManager
+
+        // Query Last Media Source
+        val lastMediaSource = carMediaManager.lastMediaSource
+        Log.d(TAG, "Last Media Source: ${lastMediaSource?.flattenToShortString()}")
+
+        // Change MediaSource (switch to new app)
+        btnSwitchToSpotify.setOnClickListener {
+            val spotifyComponent = ComponentName(
+                "com.spotify.music",
+                "com.spotify.music.MainActivity"
+            )
+            carMediaManager.setMediaSource(
+                spotifyComponent,
+                CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK
+            )
+        }
+
+        // Register MediaSource change listener
+        carMediaManager.addMediaSourceListener(
+            Executor { it.run() },
+            object : CarMediaManager.MediaSourceChangedListener {
+                override fun onMediaSourceChanged(componentName: ComponentName?) {
+                    Log.d(TAG, "Media source changed: ${componentName?.flattenToShortString()}")
+                    updateUI(componentName)
+                }
+            }
+        )
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        car.disconnect()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-4. Handling EXTRA_AUTOPLAY Intent Extra (MediaConnectorService)</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Processing EXTRA_AUTOPLAY in MediaConnectorService
+private fun connectToMediaBrowser(component: ComponentName, autoplay: Boolean) {
+    val intent = Intent().apply {
+        setComponent(component)
+        putExtra(MediaConstants.EXTRA_AUTOPLAY, autoplay) // Pass autoplay status
+    }
+
+    val mediaBrowser = MediaBrowserCompat(
+        context,
+        component,
+        object : MediaBrowserCompat.ConnectionCallback() {
+            override fun onConnected() {
+                Log.d(TAG, "MediaBrowser connected: $component")
+
+                val token = mediaBrowser.sessionToken
+                val controller = MediaControllerCompat(context, token)
+
+                if (autoplay) {
+                    // If Autoplay is true, automatically call play()
+                    Log.d(TAG, "Starting autoplay")
+                    controller.transportControls.play()
+                } else {
+                    Log.d(TAG, "Connected without autoplay (ready state)")
+                }
+            }
+
+            override fun onConnectionFailed() {
+                Log.e(TAG, "MediaBrowser connection failed: $component")
+            }
+        },
+        null
+    )
+
+    mediaBrowser.connect()
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 8: Autoplay Policy Configuration -->
+        <section class="section sec-policy">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Autoplay Policy Configuration
+            </h2>
+            <p class="section-description">
+                Config resources that allow OEMs to control autoplay behavior according to vehicle characteristics.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">8-1. config_mediaSourceAutoplayConfig XML</h3>
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- packages/services/Car/service/res/values/config.xml --&gt;
+&lt;!-- Autoplay Policy Settings --&gt;
+&lt;integer name="config_mediaSourceAutoplayConfig"&gt;2&lt;/integer&gt;
+
+&lt;!--
+    0 = AUTOPLAY_CONFIG_NEVER (no autoplay)
+    1 = AUTOPLAY_CONFIG_ALWAYS (always play)
+    2 = AUTOPLAY_CONFIG_RETAIN_PER_SOURCE (retain last state per source)
+    3 = AUTOPLAY_CONFIG_RETAIN_PREVIOUS (retain global last state)
+--&gt;</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">8-2. 4 Autoplay Policies in Detail</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Policy</th>
+                            <th>Value</th>
+                            <th>Behavior</th>
+                            <th>Use Case</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>AUTOPLAY_CONFIG_NEVER</code></td>
+                            <td>0</td>
+                            <td>No autoplay on vehicle start. Just display last source in UI</td>
+                            <td>Policy requiring driver to manually press play (safety priority)</td>
+                        </tr>
+                        <tr>
+                            <td><code>AUTOPLAY_CONFIG_ALWAYS</code></td>
+                            <td>1</td>
+                            <td>Always attempt autoplay regardless of last playback state</td>
+                            <td>Commercial vehicles, environments needing constant background music</td>
+                        </tr>
+                        <tr>
+                            <td><code>RETAIN_PER_SOURCE</code></td>
+                            <td>2</td>
+                            <td>Remember last state per media source. Autoplay if Spotify was PLAYING when connecting to Spotify</td>
+                            <td>Most AAOS default setting (source-independent behavior)</td>
+                        </tr>
+                        <tr>
+                            <td><code>RETAIN_PREVIOUS</code></td>
+                            <td>3</td>
+                            <td>Global last state remembered by CarMediaService. Play if any source was PLAYING last</td>
+                            <td>When simple UX is desired (global behavior)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">8-3. Changing Policy with OEM Overlay</h3>
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- OEM overlay: device/oem/project/overlay/packages/services/Car/service/res/values/config.xml --&gt;
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;resources&gt;
+    &lt;!-- Completely disable Autoplay --&gt;
+    &lt;integer name="config_mediaSourceAutoplayConfig"&gt;0&lt;/integer&gt;
+
+    &lt;!-- Specify default media source (when no history) --&gt;
+    &lt;string name="config_defaultMediaSource"&gt;com.google.android.apps.youtube.music&lt;/string&gt;
+
+    &lt;!-- Independent Playback Config (separate radio vs media) --&gt;
+    &lt;bool name="config_mediaSourceIndependentPlayback"&gt;true&lt;/bool&gt;
+&lt;/resources&gt;</code></pre>
+            </div>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔧</span> OEM Customization Points</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>config_mediaSourceAutoplayConfig</code>: Autoplay policy</li>
+                            <li><code>config_defaultMediaSource</code>: Default media app (when no history)</li>
+                            <li><code>config_mediaSourceIndependentPlayback</code>: Whether radio and media play independently</li>
+                            <li><code>config_allowMediaSourceChange</code>: Whether source change is allowed (lock)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 9: Boot Sequence & Timing -->
+        <section class="section sec-boot">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                Boot Sequence & Timing
+            </h2>
+            <p class="section-description">
+                The actual order in which Last Media restoration occurs after vehicle ignition, and key event timings.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-1. Boot Timeline</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    gantt
+                    title AAOS Last Media Restoration Timeline
+                    dateFormat X
+                    axisFormat %L ms
+
+                    section Boot
+                    Vehicle Ignition ON           :0, 0
+                    Kernel Boot                   :0, 1500
+                    Android Init                  :1500, 3000
+
+                    section CarService
+                    CarService.onCreate()         :3000, 500
+                    VHAL Connection               :3500, 500
+                    Power Policy Init             :4000, 300
+
+                    section User
+                    User Unlock (HEAD_USER)       :4300, 700
+
+                    section CarMediaService
+                    CarMediaService.onCreate()    :5000, 200
+                    Load SharedPreferences        :5200, 100
+                    getLastMediaSource()          :5300, 50
+                    shouldStartPlayback()         :5350, 50
+
+                    section Media App
+                    Start MediaConnectorService   :5400, 200
+                    MediaBrowser.connect()        :5600, 300
+                    MediaSession Ready            :5900, 100
+                    Autoplay (if enabled)         :6000, 200
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-2. Key Event Timings</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Timing (ms)</th>
+                            <th>Event</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>0</td>
+                            <td>Vehicle Ignition ON</td>
+                            <td>Vehicle ignition key on (IGN_ON VHAL signal)</td>
+                        </tr>
+                        <tr>
+                            <td>~3000</td>
+                            <td>Android System Boot</td>
+                            <td>Kernel, Init, Zygote, System Server boot</td>
+                        </tr>
+                        <tr>
+                            <td>~4000</td>
+                            <td>Power Policy Applied</td>
+                            <td>Power policy received from VHAL, audio subsystem activated</td>
+                        </tr>
+                        <tr>
+                            <td>~5000</td>
+                            <td>User Unlock Complete</td>
+                            <td>HEAD_USER (driver) unlocked, SharedPreferences accessible</td>
+                        </tr>
+                        <tr>
+                            <td>~5300</td>
+                            <td>Last Media Source Restored</td>
+                            <td>CarMediaService loads last source from SharedPreferences</td>
+                        </tr>
+                        <tr>
+                            <td>~5400</td>
+                            <td>Autoplay Decision</td>
+                            <td>shouldStartPlayback() logic determines autoplay</td>
+                        </tr>
+                        <tr>
+                            <td>~6000</td>
+                            <td>MediaBrowser Connected</td>
+                            <td>MediaConnectorService binds to app, acquires MediaSession token</td>
+                        </tr>
+                        <tr>
+                            <td>~6200</td>
+                            <td>Autoplay Started</td>
+                            <td>transportControls.play() called according to policy</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-3. Power Policy Integration</h3>
+            <div class="code-block">
+                <pre><code class="language-java">// Power Policy event handling in CarMediaService
+@Override
+public void onStateChanged(int state, CompletableFuture&lt;Void&gt; future) {
+    switch (state) {
+        case CarPowerManager.STATE_ON:
+            Log.d(TAG, "Vehicle ON: Restoring last media source");
+            restoreLastMediaSource();
+            future.complete(null);
+            break;
+
+        case CarPowerManager.STATE_SHUTDOWN_PREPARE:
+            Log.d(TAG, "Vehicle shutdown: Saving current state");
+            saveCurrentMediaState();
+            future.complete(null);
+            break;
+
+        case CarPowerManager.STATE_SUSPEND:
+            Log.d(TAG, "Vehicle suspend: Preparing snapshot");
+            // Memory maintained in Suspend-to-RAM state
+            future.complete(null);
+            break;
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚡</span> Suspend vs Cold Boot</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Suspend-to-RAM:</strong> Memory state maintained, instant restore on resume (~2 sec)</li>
+                            <li><strong>Cold Boot:</strong> Restore from SharedPreferences, full boot required (~6 sec)</li>
+                            <li><strong>Hybrid Mode:</strong> Suspend for short parking, Shutdown for long parking</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 10: Multi-user Support -->
+        <section class="section sec-multiuser">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                Multi-user Support
+            </h2>
+            <p class="section-description">
+                AAOS supports Multi-user so multiple drivers can share the vehicle, and Last Media is stored independently per user.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">10-1. Per-User Storage</h3>
+            <div class="code-block">
+                <pre><code class="language-java">// Per-User SharedPreferences key generation in CarMediaService
+private static final String SHARED_PREF = "com.android.car.media.car_media_service";
+
+private SharedPreferences getSharedPrefsForCurrentUser() {
+    int userId = ActivityManager.getCurrentUser();
+    Context userContext = mContext.createContextAsUser(UserHandle.of(userId), 0);
+    return userContext.getSharedPreferences(SHARED_PREF, Context.MODE_PRIVATE);
+}
+
+// Generate key including User ID
+private String getLastMediaSourceKey(@CarMediaManager.MediaSourceMode int mode) {
+    int userId = ActivityManager.getCurrentUser();
+    return String.format("user_%d_mode_%d_source", userId, mode);
+}
+
+// Ephemeral User check (guest users don't save)
+private boolean isCurrentUserEphemeral() {
+    UserManager userManager = mContext.getSystemService(UserManager.class);
+    UserInfo userInfo = userManager.getUserInfo(ActivityManager.getCurrentUser());
+    return userInfo != null &amp;&amp; userInfo.isEphemeral();
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">10-2. User Switching Scenario</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant User1
+                    participant CarService
+                    participant CMS as CarMediaService
+                    participant Prefs as SharedPreferences
+
+                    Note over User1: Driver 1 listening to Spotify
+                    User1->>CMS: Play Spotify
+                    CMS->>Prefs: Save (user_10_mode_0 = Spotify)
+
+                    Note over User1,CarService: User Switch
+                    CarService->>CMS: onUserSwitching(user_11)
+                    CMS->>CMS: Stop current media
+                    CMS->>Prefs: Load (user_11_mode_0)
+
+                    alt User 11 has history
+                    Prefs-->>CMS: Return YouTube Music
+                    CMS->>CMS: Restore YouTube Music
+                    else No history
+                    Prefs-->>CMS: Return null
+                    CMS->>CMS: Use default source
+                    end
+
+                    Note over User1: Driver 2 listening to YouTube Music
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">10-3. Behavior by User Type</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User Type</th>
+                            <th>Saves</th>
+                            <th>Restores</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>SYSTEM (User 0)</td>
+                            <td>❌</td>
+                            <td>❌</td>
+                            <td>System only, no media playback</td>
+                        </tr>
+                        <tr>
+                            <td>HEAD_USER (Driver)</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>Primary driver, full feature support</td>
+                        </tr>
+                        <tr>
+                            <td>SECONDARY_USER</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>Secondary driver (family sharing, etc.)</td>
+                        </tr>
+                        <tr>
+                            <td>GUEST_USER (Guest)</td>
+                            <td>❌</td>
+                            <td>❌</td>
+                            <td>Temporary user, Ephemeral=true, not saved</td>
+                        </tr>
+                        <tr>
+                            <td>PROFILE (Work Profile)</td>
+                            <td>✅</td>
+                            <td>✅</td>
+                            <td>Work profile, independent storage</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">10-4. Multi-user Processing Code</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// User Switching event handling
+class CarMediaService : SystemService() {
+
+    private val userSwitchObserver = object : UserLifecycleListener() {
+        override fun onUserSwitching(from: UserHandle, to: UserHandle) {
+            Log.d(TAG, "User switching: ${from.identifier} -> ${to.identifier}")
+
+            // Stop currently playing media
+            stopCurrentMediaSource()
+
+            // Restore new user's Last Media Source
+            val lastSource = getLastMediaSourceForUser(to.identifier)
+            if (lastSource != null) {
+                Log.d(TAG, "Restoring last media for user ${to.identifier}: $lastSource")
+                setMediaSource(lastSource, CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK)
+            } else {
+                Log.d(TAG, "No history for user ${to.identifier}, using default")
+                setMediaSource(getDefaultMediaSource(), CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK)
+            }
+        }
+    }
+
+    private fun getLastMediaSourceForUser(userId: Int): ComponentName? {
+        val userContext = context.createContextAsUser(UserHandle.of(userId), 0)
+        val userPrefs = userContext.getSharedPreferences(SHARED_PREF, Context.MODE_PRIVATE)
+
+        // Ephemeral users have no storage
+        val userManager = context.getSystemService(UserManager::class.java)
+        val userInfo = userManager.getUserInfo(userId)
+        if (userInfo?.isEphemeral == true) {
+            return null
+        }
+
+        val key = "user_${userId}_mode_0_source"
+        val componentString = userPrefs.getString(key, null) ?: return null
+        return ComponentName.unflattenFromString(componentString)
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 11: MediaConnectorService Details -->
+        <section class="section sec-connector">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                MediaConnectorService Details
+            </h2>
+            <p class="section-description">
+                MediaConnectorService is the core component that receives instructions from CarMediaService to actually connect to media apps and control autoplay.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">11-1. EXTRA_AUTOPLAY Mechanism</h3>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    stateDiagram-v2
+                    [*] --> Idle: Service Created
+                    Idle --> Connecting: startService(EXTRA_AUTOPLAY)
+
+                    Connecting --> Connected: onConnected()
+                    Connecting --> Failed: onConnectionFailed()
+
+                    Connected --> Autoplay_Check: Check EXTRA_AUTOPLAY
+
+                    Autoplay_Check --> Playing: EXTRA_AUTOPLAY=true
+                    Autoplay_Check --> Ready: EXTRA_AUTOPLAY=false
+
+                    Playing --> Ready: User Pause
+                    Ready --> Playing: User Play
+
+                    Failed --> Idle: Retry or Give Up
+                    Ready --> [*]: Service Destroyed
+                    Playing --> [*]: Service Destroyed
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">11-2. Intent Structure</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Starting MediaConnectorService from CarMediaService
+private fun startMediaConnectorService(
+    component: ComponentName,
+    autoplay: Boolean
+) {
+    val intent = Intent(mContext, MediaConnectorService::class.java).apply {
+        putExtra(MediaConstants.EXTRA_MEDIA_COMPONENT, component.flattenToString())
+        putExtra(MediaConstants.EXTRA_AUTOPLAY, autoplay) // Key: autoplay flag
+        putExtra(MediaConstants.EXTRA_BROWSE_SERVICE_HINT, getBrowseServiceForComponent(component))
+    }
+
+    Log.d(TAG, "Starting MediaConnectorService: component=$component, autoplay=$autoplay")
+    mContext.startForegroundService(intent)
+}
+
+// MediaConstants definition
+object MediaConstants {
+    const val EXTRA_MEDIA_COMPONENT = "media_component"
+    const val EXTRA_AUTOPLAY = "autoplay"
+    const val EXTRA_BROWSE_SERVICE_HINT = "browse_service_hint"
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">11-3. MediaBrowser Connection Logic</h3>
+            <div class="code-block">
+                <pre><code class="language-kotlin">// MediaConnectorService.kt (simplified from AOSP)
+class MediaConnectorService : Service() {
+
+    private var mediaBrowser: MediaBrowserCompat? = null
+    private var mediaController: MediaControllerCompat? = null
+    private var shouldAutoplay: Boolean = false
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val componentString = intent?.getStringExtra(EXTRA_MEDIA_COMPONENT) ?: return START_NOT_STICKY
+        val component = ComponentName.unflattenFromString(componentString) ?: return START_NOT_STICKY
+
+        shouldAutoplay = intent.getBooleanExtra(EXTRA_AUTOPLAY, false)
+
+        Log.d(TAG, "Connecting to $component with autoplay=$shouldAutoplay")
+        connectToMediaBrowser(component)
+
+        return START_STICKY
+    }
+
+    private fun connectToMediaBrowser(component: ComponentName) {
+        val connectionCallback = object : MediaBrowserCompat.ConnectionCallback() {
+            override fun onConnected() {
+                Log.d(TAG, "MediaBrowser connected")
+
+                val browser = mediaBrowser ?: return
+                val token = browser.sessionToken
+
+                mediaController = MediaControllerCompat(this@MediaConnectorService, token).also {
+                    it.registerCallback(controllerCallback)
+                }
+
+                // If EXTRA_AUTOPLAY=true, autoplay
+                if (shouldAutoplay) {
+                    Log.d(TAG, "Triggering autoplay")
+                    mediaController?.transportControls?.play()
+                } else {
+                    Log.d(TAG, "Connected without autoplay (ready state)")
+                }
+            }
+
+            override fun onConnectionFailed() {
+                Log.e(TAG, "MediaBrowser connection failed")
+                stopSelf()
+            }
+
+            override fun onConnectionSuspended() {
+                Log.w(TAG, "MediaBrowser connection suspended")
+                mediaController?.unregisterCallback(controllerCallback)
+                mediaController = null
+            }
+        }
+
+        mediaBrowser = MediaBrowserCompat(this, component, connectionCallback, null)
+        mediaBrowser?.connect()
+    }
+
+    private val controllerCallback = object : MediaControllerCompat.Callback() {
+        override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
+            Log.d(TAG, "Playback state changed: ${state?.state}")
+
+            // Propagate state to CarMediaService (Broadcast or Binder)
+            val intent = Intent(ACTION_PLAYBACK_STATE_CHANGED).apply {
+                putExtra(EXTRA_PLAYBACK_STATE, state?.state)
+            }
+            sendBroadcast(intent)
+        }
+    }
+
+    override fun onDestroy() {
+        mediaController?.unregisterCallback(controllerCallback)
+        mediaBrowser?.disconnect()
+        super.onDestroy()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-indigo); font-size: 1.3rem;">11-4. Key Scenarios</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>EXTRA_AUTOPLAY</th>
+                            <th>Behavior</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Vehicle start + RETAIN_PER_SOURCE + last PLAYING</td>
+                            <td>true</td>
+                            <td>MediaBrowser connect → play() called → autoplay</td>
+                        </tr>
+                        <tr>
+                            <td>Vehicle start + RETAIN_PER_SOURCE + last PAUSED</td>
+                            <td>false</td>
+                            <td>MediaBrowser connect → Ready state only</td>
+                        </tr>
+                        <tr>
+                            <td>Vehicle start + AUTOPLAY_CONFIG_NEVER</td>
+                            <td>false</td>
+                            <td>Connect only, no playback</td>
+                        </tr>
+                        <tr>
+                            <td>Vehicle start + AUTOPLAY_CONFIG_ALWAYS</td>
+                            <td>true</td>
+                            <td>Always autoplay</td>
+                        </tr>
+                        <tr>
+                            <td>Voice command "Play last media"</td>
+                            <td>true</td>
+                            <td>Force autoplay (ignores settings)</td>
+                        </tr>
+                        <tr>
+                            <td>User Switching</td>
+                            <td>false</td>
+                            <td>Connect new user's last source, no playback</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 12: State Persistence -->
+        <section class="section sec-persistence">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                State Persistence
+            </h2>
+            <p class="section-description">
+                Comparing how state is maintained and restored in Suspend-to-RAM vs Cold Boot scenarios.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">12-1. Suspend-to-RAM (S3)</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">💾</span> State Maintenance</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Memory:</strong> DRAM powered, all in-memory state preserved</li>
+                            <li><strong>CarService:</strong> Snapshot-based restore (no VHAL reconnection needed)</li>
+                            <li><strong>MediaSession:</strong> Maintained as-is if app process is alive</li>
+                            <li><strong>Resume time:</strong> ~2 seconds (fast resume)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚡</span> Pros & Cons</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>✅ Fast resume, perfect state restoration</li>
+                            <li>✅ Exact playback position maintained</li>
+                            <li>❌ DRAM power consumption (battery drain risk)</li>
+                            <li>❌ Not suitable for long parking</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">12-2. Cold Boot (Full Shutdown)</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔄</span> State Restoration</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Storage:</strong> SharedPreferences (ComponentName only)</li>
+                            <li><strong>CarService:</strong> Full boot, VHAL reconnection</li>
+                            <li><strong>MediaSession:</strong> App restart, onPlaybackResumption() called</li>
+                            <li><strong>Resume time:</strong> ~6 seconds (full boot)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📝</span> App's Responsibility</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Queue restoration: App's internal DB/SharedPreferences</li>
+                            <li>Playback position: Last saved point</li>
+                            <li>Metadata: Song info, album art, etc.</li>
+                            <li>Accuracy: Depends on app implementation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">12-3. Comparison Table</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Suspend-to-RAM</th>
+                            <th>Cold Boot</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Power State</td>
+                            <td>DRAM powered (S3)</td>
+                            <td>Fully off (S5)</td>
+                        </tr>
+                        <tr>
+                            <td>Resume Time</td>
+                            <td>~2 seconds</td>
+                            <td>~6 seconds</td>
+                        </tr>
+                        <tr>
+                            <td>CarService State</td>
+                            <td>Snapshot-based restore</td>
+                            <td>Full restart</td>
+                        </tr>
+                        <tr>
+                            <td>MediaSession State</td>
+                            <td>Memory maintained</td>
+                            <td>Recreated (onPlaybackResumption)</td>
+                        </tr>
+                        <tr>
+                            <td>Position Accuracy</td>
+                            <td>100% accurate</td>
+                            <td>Depends on app implementation</td>
+                        </tr>
+                        <tr>
+                            <td>Battery Consumption</td>
+                            <td>Yes (DRAM)</td>
+                            <td>None</td>
+                        </tr>
+                        <tr>
+                            <td>Suitable Scenario</td>
+                            <td>Short parking (5min~2hours)</td>
+                            <td>Long parking (2+ hours)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-teal); font-size: 1.3rem;">12-4. Hybrid Power Policy</h3>
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- car_power_policy.xml --&gt;
+&lt;powerPolicy id="suspend_to_ram"&gt;
+    &lt;component id="AUDIO"&gt;on&lt;/component&gt;
+    &lt;component id="MEDIA"&gt;on&lt;/component&gt;
+    &lt;component id="DISPLAY"&gt;off&lt;/component&gt;
+    &lt;component id="WIFI"&gt;off&lt;/component&gt;
+&lt;/powerPolicy&gt;
+
+&lt;powerPolicy id="full_shutdown"&gt;
+    &lt;component id="AUDIO"&gt;off&lt;/component&gt;
+    &lt;component id="MEDIA"&gt;off&lt;/component&gt;
+    &lt;component id="DISPLAY"&gt;off&lt;/component&gt;
+    &lt;component id="WIFI"&gt;off&lt;/component&gt;
+&lt;/powerPolicy&gt;
+
+&lt;!-- Condition: Suspend within 2 hours, Shutdown after --&gt;
+&lt;policyGroup id="default_policy_group"&gt;
+    &lt;defaultPolicy&gt;suspend_to_ram&lt;/defaultPolicy&gt;
+    &lt;noDefaultPolicy state="wait_for_vhal" timeout="7200000"&gt;full_shutdown&lt;/noDefaultPolicy&gt;
+&lt;/policyGroup&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 13: Android Version History -->
+        <section class="section sec-versions">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                Android Version History
+            </h2>
+            <p class="section-description">
+                Evolution of the Last Media feature from Android 10 (AAOS first introduction) to Android 15.
+            </p>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Android Version</th>
+                            <th>AAOS Version</th>
+                            <th>Major Changes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Android 10 (Q)</td>
+                            <td>AAOS 1.0</td>
+                            <td>
+                                <ul>
+                                    <li>CarMediaService first introduction</li>
+                                    <li>Basic Last Media Source save/restore</li>
+                                    <li>SharedPreferences-based storage</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 11 (R)</td>
+                            <td>AAOS 2.0</td>
+                            <td>
+                                <ul>
+                                    <li>AUTOPLAY_CONFIG_RETAIN_PER_SOURCE policy added</li>
+                                    <li>Enhanced Per-User storage support</li>
+                                    <li>MediaBrowser.onPlaybackResumption() API added</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 12 (S)</td>
+                            <td>AAOS 3.0</td>
+                            <td>
+                                <ul>
+                                    <li>EXTRA_AUTOPLAY Intent Extra standardized</li>
+                                    <li>Improved Multi-user synchronization</li>
+                                    <li>Power Policy integration (Suspend-to-RAM optimization)</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 13 (T)</td>
+                            <td>AAOS 4.0</td>
+                            <td>
+                                <ul>
+                                    <li>Media3 (Jetpack Media) integration</li>
+                                    <li>MediaSession performance improvements (reduced latency)</li>
+                                    <li>config_mediaSourceIndependentPlayback added (radio separation)</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 14 (U)</td>
+                            <td>AAOS 5.0</td>
+                            <td>
+                                <ul>
+                                    <li>CarMediaManager.addMediaSourceListener() API improvements</li>
+                                    <li>Enhanced Ephemeral User handling</li>
+                                    <li>Privacy Sandbox integration (user data protection)</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Android 15 (V)</td>
+                            <td>AAOS 6.0</td>
+                            <td>
+                                <ul>
+                                    <li>AI-based recommendation integration (Gemini Nano)</li>
+                                    <li>Playback context awareness (weather, time-based)</li>
+                                    <li>Multi-zone Audio improvements (independent Autoplay)</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-rose); font-size: 1.3rem;">13-1. Deprecated APIs</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚠️</span> Before Android 12</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>CarMediaManager.setMediaSource(String)</code> → <code>setMediaSource(ComponentName)</code></li>
+                            <li>Must use ComponentName instead of String-based package name</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🆕</span> Android 13+</h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>MediaSessionCompat → Media3 MediaSession recommended</li>
+                            <li>Use androidx.media3:media3-session library</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 14: Debugging & Troubleshooting -->
+        <section class="section sec-debug">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                Debugging & Troubleshooting
+            </h2>
+            <p class="section-description">
+                Debugging tools and common solutions when the Last Media feature is not working properly.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">14-1. dumpsys Commands</h3>
+            <div class="code-block">
+                <pre><code class="language-bash"># Dump full CarMediaService state
+adb shell dumpsys car_service --services CarMediaService
+
+# Example output:
+# Primary Media Component (PLAYBACK): com.spotify.music/.MainActivity
+# Primary Media Component (BROWSE): com.spotify.music/.MediaBrowserService
+# Last Media Source (user_10_mode_0): com.spotify.music/.MainActivity
+# Autoplay Config: RETAIN_PER_SOURCE (2)
+# Independent Playback: false
+
+# Current MediaSession info
+adb shell dumpsys media_session
+
+# Example output:
+# Sessions Stack - have 1 sessions:
+#   com.spotify.music (userId=10)
+#     state=PlaybackState {state=3(STATE_PLAYING), position=125000ms, ...}
+
+# Check SharedPreferences directly
+adb shell run-as com.android.car.media cat /data/data/com.android.car.media/shared_prefs/com.android.car.media.car_media_service.xml
+
+# Power Policy state
+adb shell dumpsys car_service --services CarPowerManagementService</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">14-2. logcat Filtering</h3>
+            <div class="code-block">
+                <pre><code class="language-bash"># Filter CarMediaService logs only
+adb logcat -s CarMediaService:V
+
+# Include MediaConnectorService
+adb logcat -s CarMediaService:V MediaConnectorService:V
+
+# Track MediaSession state changes
+adb logcat | grep -E "(PlaybackState|MediaSession|CarMedia)"
+
+# Autoplay-related logs only
+adb logcat | grep -i autoplay
+
+# Key log examples:
+# D/CarMediaService: setPlaybackMediaSource: com.spotify.music/.MainActivity
+# D/CarMediaService: saveLastMediaSource: mode=0, component=com.spotify.music
+# D/CarMediaService: shouldStartPlayback: config=RETAIN_PER_SOURCE, lastState=PLAYING -> true
+# D/MediaConnectorService: Starting with EXTRA_AUTOPLAY=true</code></pre>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">14-3. Common Issues</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Issue</th>
+                            <th>Cause</th>
+                            <th>Solution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Last Media Source not saved</td>
+                            <td>User not in Unlocked state</td>
+                            <td>Check user state with <code>adb shell dumpsys user</code>, unlock needed after Direct Boot</td>
+                        </tr>
+                        <tr>
+                            <td>Autoplay not working</td>
+                            <td>config_mediaSourceAutoplayConfig=0 (NEVER)</td>
+                            <td>Change value to 2 (RETAIN_PER_SOURCE) in OEM overlay</td>
+                        </tr>
+                        <tr>
+                            <td>Not saving for guest user</td>
+                            <td>isCurrentUserEphemeral()=true</td>
+                            <td>Intended behavior, Ephemeral users don't save</td>
+                        </tr>
+                        <tr>
+                            <td>MediaBrowser connection failed</td>
+                            <td>App doesn't implement MediaBrowserService</td>
+                            <td>Check <code>&lt;service android:name=".MediaBrowserService"&gt;</code> in AndroidManifest.xml</td>
+                        </tr>
+                        <tr>
+                            <td>Playback position not restored</td>
+                            <td>App doesn't save internal state</td>
+                            <td>Implement position restore from app's internal DB/SharedPrefs in onPlaybackResumption()</td>
+                        </tr>
+                        <tr>
+                            <td>Previous source plays after User Switching</td>
+                            <td>Not using Per-User storage</td>
+                            <td>Verify getSharedPrefsForCurrentUser() usage</td>
+                        </tr>
+                        <tr>
+                            <td>State lost after Suspend</td>
+                            <td>Power Policy set to SHUTDOWN</td>
+                            <td>Check suspend_to_ram policy in car_power_policy.xml</td>
+                        </tr>
+                        <tr>
+                            <td>Specific app doesn't autoplay</td>
+                            <td>That app's Audio Focus request failed</td>
+                            <td>Check app's AudioFocusRequest implementation, AUDIOFOCUS_GAIN required</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-red); font-size: 1.3rem;">14-4. Manual Test Scenarios</h3>
+            <div class="code-block">
+                <pre><code class="language-bash"># 1. Force set Last Media Source
+adb shell am broadcast -a com.android.car.media.SET_MEDIA_SOURCE \
+  --es component "com.spotify.music/.MainActivity"
+
+# 2. Runtime change Autoplay Config (requires root)
+adb shell setprop persist.car.media.autoplay 2
+
+# 3. Directly modify SharedPreferences (for testing)
+adb shell
+run-as com.android.car.media
+vi /data/data/com.android.car.media/shared_prefs/com.android.car.media.car_media_service.xml
+# Modify user_10_mode_0_source value
+
+# 4. Simulate User Switching
+adb shell am switch-user 11
+
+# 5. Simulate Suspend/Resume
+adb shell dumpsys car_service suspend  # Suspend
+adb shell dumpsys car_service resume   # Resume</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 15: AOSP Source Code -->
+        <section class="section sec-source">
+            <h2 class="section-title">
+                <span class="section-number">15</span>
+                AOSP Source Code Reference
+            </h2>
+            <p class="section-description">
+                Key AOSP source files for understanding the Last Media feature implementation.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📂</span> CarMediaService.java</h3>
+                    <div class="card-description">
+                        <strong>Path:</strong> <code>packages/services/Car/service/src/com/android/car/media/CarMediaService.java</code><br>
+                        <strong>Key Features:</strong>
+                        <ul>
+                            <li>Last Media Source save/restore (<code>saveLastMediaSource()</code>)</li>
+                            <li>Autoplay decision logic (<code>shouldStartPlayback()</code>)</li>
+                            <li>Per-User SharedPreferences management</li>
+                            <li>MediaController.Callback handling (PlaybackState detection)</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/src/com/android/car/media/CarMediaService.java"
+                           target="_blank" style="color: var(--accent-blue);">→ View Source</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔌</span> MediaConnectorService.java</h3>
+                    <div class="card-description">
+                        <strong>Path:</strong> <code>packages/apps/Car/Media/src/com/android/car/media/MediaConnectorService.java</code><br>
+                        <strong>Key Features:</strong>
+                        <ul>
+                            <li>EXTRA_AUTOPLAY Intent handling</li>
+                            <li>MediaBrowser connection management</li>
+                            <li>Automatic MediaController.play() call</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/apps/Car/Media/src/com/android/car/media/"
+                           target="_blank" style="color: var(--accent-blue);">→ View Source</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎛️</span> CarMediaManager.java</h3>
+                    <div class="card-description">
+                        <strong>Path:</strong> <code>packages/services/Car/car-lib/src/android/car/media/CarMediaManager.java</code><br>
+                        <strong>Key Features:</strong>
+                        <ul>
+                            <li>Public API: <code>getLastMediaSource()</code></li>
+                            <li>Public API: <code>setMediaSource(ComponentName, int mode)</code></li>
+                            <li>MediaSourceChangedListener interface</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/car-lib/src/android/car/media/CarMediaManager.java"
+                           target="_blank" style="color: var(--accent-blue);">→ View Source</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">⚙️</span> config.xml</h3>
+                    <div class="card-description">
+                        <strong>Path:</strong> <code>packages/services/Car/service/res/values/config.xml</code><br>
+                        <strong>Key Settings:</strong>
+                        <ul>
+                            <li><code>config_mediaSourceAutoplayConfig</code></li>
+                            <li><code>config_defaultMediaSource</code></li>
+                            <li><code>config_mediaSourceIndependentPlayback</code></li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/res/values/config.xml"
+                           target="_blank" style="color: var(--accent-blue);">→ View Source</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔋</span> CarPowerManagementService.java</h3>
+                    <div class="card-description">
+                        <strong>Path:</strong> <code>packages/services/Car/service/src/com/android/car/power/CarPowerManagementService.java</code><br>
+                        <strong>Related Features:</strong>
+                        <ul>
+                            <li>Suspend-to-RAM state management</li>
+                            <li>Power Policy application</li>
+                            <li>Power state propagation to CarMediaService</li>
+                        </ul>
+                        <a href="https://cs.android.com/android/platform/superproject/+/main:packages/services/Car/service/src/com/android/car/power/"
+                           target="_blank" style="color: var(--accent-blue);">→ View Source</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📱</span> MediaBrowserServiceCompat.java</h3>
+                    <div class="card-description">
+                        <strong>Path:</strong> <code>frameworks/support/media/media/src/main/java/androidx/media/MediaBrowserServiceCompat.java</code><br>
+                        <strong>App-side Implementation:</strong>
+                        <ul>
+                            <li><code>onGetRoot()</code> override</li>
+                            <li><code>onLoadChildren()</code> override</li>
+                            <li><code>onPlaybackResumption()</code> (Android 11+)</li>
+                        </ul>
+                        <a href="https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:media/media/src/main/java/androidx/media/MediaBrowserServiceCompat.java"
+                           target="_blank" style="color: var(--accent-blue);">→ View Source</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 16: Related Documentation -->
+        <section class="section sec-related">
+            <h2 class="section-title">
+                <span class="section-number">16</span>
+                Related Documentation
+            </h2>
+            <p class="section-description">
+                Other documents closely related to Last Media & Autoplay.
+            </p>
+
+            <div class="content-grid">
+                <div class="card clickable" onclick="location.href='carmedia.html'">
+                    <h3 class="card-title"><span class="card-icon">📻</span> Car Media Service</h3>
+                    <div class="card-description">
+                        Full CarMediaService architecture, Active Media Source management, Audio Focus integration, Last Media Service mechanism
+                    </div>
+                    <a href="carmedia.html" class="card-link">Learn More →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='mediasession.html'">
+                    <h3 class="card-title"><span class="card-icon">🎛️</span> MediaSession Framework</h3>
+                    <div class="card-description">
+                        MediaSession/MediaController architecture, PlaybackState propagation, TransportControls API, Callback mechanism
+                    </div>
+                    <a href="mediasession.html" class="card-link">Learn More →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='audio-framework.html'">
+                    <h3 class="card-title"><span class="card-icon">🔊</span> Audio Framework</h3>
+                    <div class="card-description">
+                        Audio Focus system, AudioManager API, AAOS Car Audio Zone, Multi-zone audio routing
+                    </div>
+                    <a href="audio-framework.html" class="card-link">Learn More →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='power-policy-suspend.html'">
+                    <h3 class="card-title"><span class="card-icon">🔋</span> Power Policy & Suspend</h3>
+                    <div class="card-description">
+                        Suspend-to-RAM (S3) mechanism, Deep Sleep timing, Power Policy configuration, Snapshot-based restoration
+                    </div>
+                    <a href="power-policy-suspend.html" class="card-link">Learn More →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='media-app-layer.html'">
+                    <h3 class="card-title"><span class="card-icon">📱</span> Media App Layer</h3>
+                    <div class="card-description">
+                        MediaPlayer/ExoPlayer/Media3 API, MediaBrowserService implementation guide, AAOS app development best practices
+                    </div>
+                    <a href="media-app-layer.html" class="card-link">Learn More →</a>
+                </div>
+
+                <div class="card clickable" onclick="location.href='aaos.html'">
+                    <h3 class="card-title"><span class="card-icon">🚗</span> AAOS Overview</h3>
+                    <div class="card-description">
+                        Android Automotive OS full overview, CarService architecture, Multi-user system, Vehicle HAL integration
+                    </div>
+                    <a href="aaos.html" class="card-link">Learn More →</a>
+                </div>
+            </div>
+        </section>
+
+        <a href="index.html" class="nav-button">← Back to Dashboard</a>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

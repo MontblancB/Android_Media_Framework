@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Security Guide - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">← Android Media Framework</a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Media Security Guide</h1>
+            <p class="page-subtitle">Security Model and DRM Integration in Android Media Framework</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>Media Security Overview</h2>
+            <p>Media security is divided into two aspects: <strong>Content Protection</strong> and <strong>System Security</strong>. It involves preventing illegal copying of premium content while protecting the system from malicious media files.</p>
+
+            <h3>1.1 Security Architecture</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph REE["Rich Execution Environment (Android)"]
+        APP[Media App]
+        MC[MediaCodec]
+        DRM[MediaDrm API]
+    end
+
+    subgraph TEE["Trusted Execution Environment"]
+        OEM[OEMCrypto]
+        SD[Secure Decoder]
+        KS[Key Storage]
+    end
+
+    subgraph HW["Secure Hardware"]
+        SB[Secure Buffer]
+        HDCP[HDCP Output]
+    end
+
+    APP --> MC
+    APP --> DRM
+    DRM --> OEM
+    MC --> SD
+    OEM --> KS
+    SD --> SB
+    SB --> HDCP
+
+            </div>
+        </section>
+
+        <!-- Section 2: Permission Model -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>Media Permission Model</h2>
+
+            <h3>2.1 Key Media Permissions</h3>
+            <table>
+                <thead>
+                    <tr><th>Permission</th><th>Purpose</th><th>Protection Level</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>RECORD_AUDIO</code></td><td>Microphone access</td><td>dangerous</td></tr>
+                    <tr><td><code>CAMERA</code></td><td>Camera access</td><td>dangerous</td></tr>
+                    <tr><td><code>READ_MEDIA_AUDIO</code></td><td>Read audio files</td><td>dangerous</td></tr>
+                    <tr><td><code>READ_MEDIA_VIDEO</code></td><td>Read video files</td><td>dangerous</td></tr>
+                    <tr><td><code>MODIFY_AUDIO_SETTINGS</code></td><td>Modify audio settings</td><td>normal</td></tr>
+                </tbody>
+            </table>
+
+            <h3>2.2 Scoped Storage (Android 10+)</h3>
+            <pre><code>// Safe media access through MediaStore
+val collection = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+
+val projection = arrayOf(
+    MediaStore.Video.Media._ID,
+    MediaStore.Video.Media.DISPLAY_NAME
+)
+
+contentResolver.query(collection, projection, null, null, null)?.use { cursor ->
+    while (cursor.moveToNext()) {
+        val id = cursor.getLong(0)
+        val uri = ContentUris.withAppendedId(collection, id)
+        // Safely access media
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 3: Secure Buffer -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>Secure Buffer Processing</h2>
+
+            <h3>3.1 Secure Buffer Flow</h3>
+            <div class="mermaid">
+sequenceDiagram
+    participant App
+    participant MediaCodec
+    participant TEE
+    participant SecureMemory
+    participant Display
+
+    App->>MediaCodec: queueSecureInputBuffer()
+    MediaCodec->>TEE: Decrypt in TEE
+    TEE->>SecureMemory: Store decrypted frame
+    Note over SecureMemory: Protected memory region
+    SecureMemory->>Display: Direct render (HDCP)
+    Note over Display: Never exposed to REE
+            </div>
+
+            <h3>3.2 Secure Codec Configuration</h3>
+            <pre><code>// Select secure decoder
+val codecName = MediaCodecList(MediaCodecList.ALL_CODECS)
+    .codecInfos
+    .filter { !it.isEncoder }
+    .filter { it.supportedTypes.contains("video/avc") }
+    .firstOrNull {
+        it.getCapabilitiesForType("video/avc")
+            .isFeatureSupported(CodecCapabilities.FEATURE_SecurePlayback)
+    }?.name
+
+// Configure secure surface
+val format = MediaFormat.createVideoFormat("video/avc", width, height)
+mediaCodec.configure(format, secureSurface, mediaCrypto, 0)</code></pre>
+        </section>
+
+        <!-- Section 4: TEE Integration -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>TEE (Trusted Execution Environment)</h2>
+
+            <h3>4.1 TEE Structure</h3>
+            <table>
+                <thead>
+                    <tr><th>Component</th><th>Role</th><th>Location</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Trustlet</strong></td><td>App running in TEE</td><td>Secure World</td></tr>
+                    <tr><td><strong>OEMCrypto</strong></td><td>DRM decryption</td><td>Secure World</td></tr>
+                    <tr><td><strong>Keymaster</strong></td><td>Key management</td><td>Secure World</td></tr>
+                    <tr><td><strong>Secure Decoder</strong></td><td>Secure decoding</td><td>Secure World</td></tr>
+                </tbody>
+            </table>
+
+            <h3>4.2 OEMCrypto API</h3>
+            <pre><code>// OEMCrypto key functions (Widevine L1)
+OEMCrypto_Initialize()           // Initialize
+OEMCrypto_OpenSession()          // Open session
+OEMCrypto_GenerateDerivedKeys()  // Key derivation
+OEMCrypto_DecryptCENC()          // CENC decryption
+OEMCrypto_CloseSession()         // Close session</code></pre>
+        </section>
+
+        <!-- Section 5: DRM Levels -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>DRM Security Levels</h2>
+
+            <h3>5.1 Widevine Level Comparison</h3>
+            <table>
+                <thead>
+                    <tr><th>Item</th><th>L1</th><th>L2</th><th>L3</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Decryption</strong></td><td>Inside TEE</td><td>Inside TEE</td><td>Software</td></tr>
+                    <tr><td><strong>Decoding</strong></td><td>Inside TEE</td><td>REE</td><td>REE</td></tr>
+                    <tr><td><strong>Max Resolution</strong></td><td>4K HDR</td><td>SD/720p</td><td>SD</td></tr>
+                    <tr><td><strong>Hardware Requirement</strong></td><td>TEE + Secure Path</td><td>TEE</td><td>None</td></tr>
+                    <tr><td><strong>Certification Difficulty</strong></td><td>High</td><td>Medium</td><td>Low</td></tr>
+                </tbody>
+            </table>
+
+            <h3>5.2 Level Check Code</h3>
+            <pre><code>val mediaDrm = MediaDrm(WIDEVINE_UUID)
+val securityLevel = mediaDrm.getPropertyString("securityLevel")
+// "L1", "L2", or "L3"
+
+val hdcpLevel = mediaDrm.getPropertyString("hdcpLevel")
+// "HDCP_V1", "HDCP_V2_2", etc.</code></pre>
+        </section>
+
+        <!-- Section 6: Security Checklist -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>Security Audit Checklist</h2>
+
+            <h3>Content Protection</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> DRM license server HTTPS communication</li>
+                <li><input type="checkbox"> Secure Buffer usage (L1 content)</li>
+                <li><input type="checkbox"> HDCP output protection</li>
+                <li><input type="checkbox"> Screen capture prevention (FLAG_SECURE)</li>
+            </ul>
+
+            <h3>System Security</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Input file validation</li>
+                <li><input type="checkbox"> Buffer overflow prevention</li>
+                <li><input type="checkbox"> Principle of least privilege</li>
+                <li><input type="checkbox"> SELinux policy enforcement</li>
+            </ul>
+        </section>
+
+        <!-- Section 7: Common Media Security Vulnerabilities -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>Common Media Security Vulnerabilities</h2>
+
+            <h3>7.1 Codec Vulnerability Types</h3>
+            <table>
+                <thead>
+                    <tr><th>Vulnerability Type</th><th>Description</th><th>Impact</th><th>Mitigation</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Buffer Overflow</strong></td>
+                        <td>Writing beyond buffer due to incorrect size calculation</td>
+                        <td>Code execution, crash</td>
+                        <td>Bounds checking, ASAN testing</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Integer Overflow</strong></td>
+                        <td>Overflow when calculating resolution/size</td>
+                        <td>Memory corruption</td>
+                        <td>SafeInt library usage</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Heap Corruption</strong></td>
+                        <td>Use-after-free, Double-free</td>
+                        <td>Code execution</td>
+                        <td>Smart pointers, HWASAN</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Format String</strong></td>
+                        <td>Format string injection in metadata</td>
+                        <td>Information leak, crash</td>
+                        <td>Fixed format strings</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>7.2 Major Media CVE Cases</h3>
+            <div class="info-box warning">
+                <strong>Historical Media Vulnerabilities</strong>
+                <ul>
+                    <li><strong>Stagefright (2015)</strong>: Remote code execution via malicious MP4 sent through MMS. Integer overflow in MPEG4 parser.</li>
+                    <li><strong>libstagefright (2016)</strong>: HEVC parser heap overflow. Triggered when playing malicious video.</li>
+                    <li><strong>Mediaserver vulnerabilities</strong>: Memory safety issues in various container/codec parsers.</li>
+                </ul>
+                <p><em>These vulnerabilities led to sandboxing of the media stack and enhanced process isolation starting from Android 7.0.</em></p>
+            </div>
+
+            <h3>7.3 Safe Media File Processing</h3>
+            <pre><code>// Bad: Direct file access
+val inputStream = FileInputStream(untrustedFile)
+mediaPlayer.setDataSource(inputStream.fd)
+
+// Good: Safe access through ContentResolver
+contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
+    mediaPlayer.setDataSource(pfd.fileDescriptor)
+}
+
+// Good: Timeout and exception handling when extracting metadata
+fun safeExtractMetadata(uri: Uri): MediaMetadata? {
+    return try {
+        MediaMetadataRetriever().use { retriever ->
+            retriever.setDataSource(context, uri)
+            // Validation
+            val duration = retriever.extractMetadata(
+                MediaMetadataRetriever.METADATA_KEY_DURATION
+            )?.toLongOrNull() ?: return null
+
+            if (duration <= 0 || duration > MAX_DURATION_MS) {
+                return null
+            }
+            // Safely return metadata
+            extractSafeMetadata(retriever)
+        }
+    } catch (e: Exception) {
+        Log.w(TAG, "Failed to extract metadata", e)
+        null
+    }
+}</code></pre>
+
+            <h3>7.4 Process Isolation Architecture (Android 7.0+)</h3>
+            <div class="mermaid">
+flowchart TB
+    subgraph APP["App Process"]
+        A[Media App]
+    end
+
+    subgraph ISOLATED["Isolated Processes (Sandboxed)"]
+        MC[mediacodec]
+        ME[mediaextractor]
+        MD[mediadrmserver]
+    end
+
+    subgraph SYSTEM["System Process"]
+        MS[mediaserver]
+        AF[audioflinger]
+    end
+
+    A -->|Binder IPC| MC
+    A -->|Binder IPC| ME
+    A -->|Binder IPC| MD
+    MC --> MS
+    MS --> AF
+            </div>
+            <p>Media codecs and extractors are isolated in separate processes, limiting the impact scope when vulnerabilities are exploited.</p>
+        </section>
+
+        <!-- Section 8: DRM System Comparison -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>DRM System Comparison</h2>
+
+            <h3>8.1 Major DRM Systems</h3>
+            <table>
+                <thead>
+                    <tr><th>DRM</th><th>Owner</th><th>Primary Platforms</th><th>Android Support</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Widevine</strong></td>
+                        <td>Google</td>
+                        <td>Android, Chrome, Smart TV</td>
+                        <td>Native support</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PlayReady</strong></td>
+                        <td>Microsoft</td>
+                        <td>Windows, Xbox, Smart TV</td>
+                        <td>OEM implementation required</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FairPlay</strong></td>
+                        <td>Apple</td>
+                        <td>iOS, macOS, Apple TV</td>
+                        <td>Not supported</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ClearKey</strong></td>
+                        <td>W3C (Standard)</td>
+                        <td>All EME-supporting browsers</td>
+                        <td>Supported (for testing)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>8.2 Widevine vs PlayReady Detailed Comparison</h3>
+            <table>
+                <thead>
+                    <tr><th>Item</th><th>Widevine</th><th>PlayReady</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>License Cost</strong></td>
+                        <td>Free (Google devices)</td>
+                        <td>Paid (royalty)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Security Levels</strong></td>
+                        <td>L1, L2, L3</td>
+                        <td>SL150, SL2000, SL3000</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TEE Requirement</strong></td>
+                        <td>L1: Required</td>
+                        <td>SL3000: Required</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Content Providers</strong></td>
+                        <td>Netflix, YouTube, Amazon</td>
+                        <td>Netflix, Amazon, Hulu</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Android Integration</strong></td>
+                        <td>MediaDrm API native</td>
+                        <td>Separate SDK required</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>8.3 Multi-DRM Implementation</h3>
+            <pre><code>// Multi-DRM support (Widevine + PlayReady)
+class MultiDrmManager(private val context: Context) {
+    companion object {
+        val WIDEVINE_UUID = UUID(-0x121074568629b532L, -0x5c37d8232ae2de13L)
+        val PLAYREADY_UUID = UUID(-0x65fb0f8667bfbd7aL, -0x546d19a41f77a06bL)
+    }
+
+    fun getSupportedDrm(): DrmType {
+        return when {
+            MediaDrm.isCryptoSchemeSupported(WIDEVINE_UUID) -> DrmType.WIDEVINE
+            MediaDrm.isCryptoSchemeSupported(PLAYREADY_UUID) -> DrmType.PLAYREADY
+            else -> DrmType.CLEARKEY
+        }
+    }
+
+    fun createDrmSession(drmType: DrmType, licenseUrl: String): DrmSession {
+        val uuid = when (drmType) {
+            DrmType.WIDEVINE -> WIDEVINE_UUID
+            DrmType.PLAYREADY -> PLAYREADY_UUID
+            DrmType.CLEARKEY -> CLEARKEY_UUID
+        }
+
+        val mediaDrm = MediaDrm(uuid)
+        // Set license server URL
+        mediaDrm.setPropertyString("serverUrl", licenseUrl)
+
+        return DrmSession(mediaDrm)
+    }
+}
+
+enum class DrmType { WIDEVINE, PLAYREADY, CLEARKEY }</code></pre>
+        </section>
+
+        <!-- Section 9: Content Protection Bypass Prevention -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>Content Protection Bypass Prevention</h2>
+
+            <h3>9.1 Screen Capture/Recording Prevention</h3>
+            <pre><code>// Prevent screen capture in Activity
+class SecureVideoActivity : Activity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Set FLAG_SECURE (prevents screenshot, screen recording)
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE
+        )
+    }
+}
+
+// Set Secure flag on SurfaceView
+surfaceView.holder.addCallback(object : SurfaceHolder.Callback {
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        // Set as Secure Surface (for DRM content)
+        holder.surface.setFrameRate(60f, Surface.FRAME_RATE_COMPATIBILITY_DEFAULT)
+    }
+    // ...
+})</code></pre>
+
+            <h3>9.2 Root/Jailbreak Device Detection</h3>
+            <pre><code>object SecurityCheck {
+    // Root detection (basic checks)
+    fun isDeviceRooted(): Boolean {
+        return checkRootBinaries() ||
+               checkRootPackages() ||
+               checkBuildTags() ||
+               checkWritableSystem()
+    }
+
+    private fun checkRootBinaries(): Boolean {
+        val paths = listOf(
+            "/system/app/Superuser.apk",
+            "/sbin/su", "/system/bin/su", "/system/xbin/su",
+            "/data/local/xbin/su", "/data/local/bin/su",
+            "/system/sd/xbin/su", "/system/bin/failsafe/su",
+            "/data/local/su", "/su/bin/su"
+        )
+        return paths.any { File(it).exists() }
+    }
+
+    private fun checkRootPackages(): Boolean {
+        val packages = listOf(
+            "com.koushikdutta.superuser",
+            "com.thirdparty.superuser",
+            "eu.chainfire.supersu",
+            "com.topjohnwu.magisk"
+        )
+        val pm = context.packageManager
+        return packages.any { pkg ->
+            try {
+                pm.getPackageInfo(pkg, 0)
+                true
+            } catch (e: PackageManager.NameNotFoundException) {
+                false
+            }
+        }
+    }
+
+    private fun checkBuildTags(): Boolean {
+        val tags = Build.TAGS
+        return tags != null && tags.contains("test-keys")
+    }
+
+    private fun checkWritableSystem(): Boolean {
+        return try {
+            Runtime.getRuntime().exec("mount").inputStream.bufferedReader()
+                .readText().contains("/system.*rw")
+        } catch (e: Exception) {
+            false
+        }
+    }
+}</code></pre>
+
+            <h3>9.3 SafetyNet/Play Integrity API</h3>
+            <pre><code>// Play Integrity API (SafetyNet successor)
+class IntegrityChecker(private val context: Context) {
+
+    suspend fun checkIntegrity(): IntegrityResult {
+        val integrityManager = IntegrityManagerFactory.create(context)
+
+        // Request integrity token
+        val nonce = generateNonce()
+        val request = IntegrityTokenRequest.builder()
+            .setNonce(nonce)
+            .build()
+
+        return try {
+            val response = integrityManager.requestIntegrityToken(request).await()
+            val token = response.token()
+
+            // Verify token on server (recommended)
+            verifyTokenOnServer(token)
+        } catch (e: Exception) {
+            IntegrityResult.Error(e.message)
+        }
+    }
+
+    private fun generateNonce(): String {
+        val bytes = ByteArray(32)
+        SecureRandom().nextBytes(bytes)
+        return Base64.encodeToString(bytes, Base64.NO_WRAP)
+    }
+}
+
+// Integrity check before DRM playback
+suspend fun playDrmContent(uri: Uri) {
+    val integrityResult = integrityChecker.checkIntegrity()
+
+    when (integrityResult) {
+        is IntegrityResult.Valid -> {
+            // Normal device -> Play DRM content
+            startSecurePlayback(uri)
+        }
+        is IntegrityResult.DeviceTampered -> {
+            // Rooted/tampered device -> Low quality or deny playback
+            showSecurityWarning()
+        }
+        is IntegrityResult.Error -> {
+            // Network error etc. -> Apply offline policy
+            applyOfflinePolicy(uri)
+        }
+    }
+}</code></pre>
+
+            <h3>9.4 HDCP Output Protection</h3>
+            <table>
+                <thead>
+                    <tr><th>HDCP Version</th><th>Supported Resolution</th><th>Applicable Content</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>HDCP 1.4</strong></td>
+                        <td>1080p</td>
+                        <td>HD content</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HDCP 2.2</strong></td>
+                        <td>4K</td>
+                        <td>4K/HDR content</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HDCP 2.3</strong></td>
+                        <td>8K</td>
+                        <td>8K/Premium HDR</td>
+                    </tr>
+                </tbody>
+            </table>
+            <pre><code>// Check HDCP level
+val mediaDrm = MediaDrm(WIDEVINE_UUID)
+val hdcpLevel = mediaDrm.connectedHdcpLevel
+
+when (hdcpLevel) {
+    MediaDrm.HDCP_LEVEL_UNKNOWN -> Log.d(TAG, "HDCP level unknown")
+    MediaDrm.HDCP_NONE -> Log.d(TAG, "No HDCP")
+    MediaDrm.HDCP_V1 -> Log.d(TAG, "HDCP 1.x - HD supported")
+    MediaDrm.HDCP_V2 -> Log.d(TAG, "HDCP 2.0")
+    MediaDrm.HDCP_V2_1 -> Log.d(TAG, "HDCP 2.1")
+    MediaDrm.HDCP_V2_2 -> Log.d(TAG, "HDCP 2.2 - 4K supported")
+    MediaDrm.HDCP_V2_3 -> Log.d(TAG, "HDCP 2.3 - 8K supported")
+}
+
+// Apply content resolution policy
+val maxResolution = when {
+    hdcpLevel >= MediaDrm.HDCP_V2_2 -> Resolution.UHD_4K
+    hdcpLevel >= MediaDrm.HDCP_V1 -> Resolution.FHD_1080P
+    else -> Resolution.SD_480P
+}</code></pre>
+        </section>
+
+        <!-- Related Documents -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">10</span>Related Documents</h2>
+            <ul>
+                <li><a href="widevine.html">DRM & Widevine Architecture</a> - Widevine details</li>
+                <li><a href="vendor-extension.html">Vendor Extension Development</a> - HAL security</li>
+                <li><a href="media-porting-checklist.html">Porting Checklist</a> - DRM porting</li>
+                <li><a href="production-debugging.html">Production Debugging</a> - Security issue debugging</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+</html>

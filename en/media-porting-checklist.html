@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Stack Porting Checklist - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+    <style>
+        .phase-card {
+            background: var(--color-surface);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+        }
+        .phase-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+        .phase-number {
+            background: var(--color-accent);
+            color: var(--color-bg-primary);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        .phase-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--color-text-primary);
+        }
+        .phase-duration {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--color-text-tertiary);
+        }
+        .checklist-group {
+            margin-top: var(--spacing-md);
+        }
+        .checklist-group h4 {
+            color: var(--color-accent);
+            font-size: 0.95rem;
+            margin-bottom: var(--spacing-sm);
+        }
+        .progress-bar {
+            height: 8px;
+            background: var(--color-bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: var(--spacing-sm);
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-accent), #10b981);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media Framework
+        </a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Media Stack Porting Checklist</h1>
+            <p class="page-subtitle">Step-by-step guide for porting Android media stack to a new SoC/platform</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>Porting Overview</h2>
+
+            <p>Porting the Android media stack to a new hardware platform requires a <strong>systematic approach</strong>. This guide provides a step-by-step checklist to help SoC vendors and OEM engineers successfully complete media porting.</p>
+
+            <h3>1.1 Porting Roadmap</h3>
+            <div class="mermaid">
+flowchart LR
+    subgraph P1[Phase 1]
+        A[Preparation<br/>1-2 weeks]
+    end
+    subgraph P2[Phase 2-3]
+        B[Codec HAL<br/>3-4 weeks]
+        C[Audio HAL<br/>2-3 weeks]
+    end
+    subgraph P4[Phase 4]
+        D[DRM Porting<br/>2-3 weeks]
+    end
+    subgraph P5[Phase 5-6]
+        E[Integration Test<br/>1-2 weeks]
+        F[CTS/VTS<br/>2-3 weeks]
+    end
+    subgraph P7[Phase 7]
+        G[GMS Certification<br/>1-2 weeks]
+    end
+
+    A --> B
+    A --> C
+    B --> D
+    C --> E
+    D --> E
+    E --> F
+    F --> G
+            </div>
+
+            <h3>1.2 Key Components</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Responsibility</th>
+                        <th>Required</th>
+                        <th>Complexity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Codec2 HAL</strong></td>
+                        <td>Video/Audio codecs</td>
+                        <td>Required</td>
+                        <td>High</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Audio HAL</strong></td>
+                        <td>Audio input/output</td>
+                        <td>Required</td>
+                        <td>Medium</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DRM HAL</strong></td>
+                        <td>Content protection</td>
+                        <td>Conditional</td>
+                        <td>High</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Camera HAL</strong></td>
+                        <td>Camera input</td>
+                        <td>Optional</td>
+                        <td>High</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Display HAL</strong></td>
+                        <td>Display output</td>
+                        <td>Required</td>
+                        <td>Medium</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Phase 1: Preparation -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>Phase 1: Preparation</h2>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-number">1</div>
+                    <div>
+                        <div class="phase-title">Requirements Analysis and Environment Setup</div>
+                        <div class="phase-duration">Estimated time: 1-2 weeks</div>
+                    </div>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>1.1 Hardware Requirements Review</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Review HW codec IP specs (supported codecs, resolution, profiles)</li>
+                        <li><input type="checkbox"> Review audio DSP specifications</li>
+                        <li><input type="checkbox"> Review memory architecture (ION/DMA-BUF support)</li>
+                        <li><input type="checkbox"> Review security hardware (TrustZone, TEE)</li>
+                        <li><input type="checkbox"> Review display output specifications</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>1.2 Software Requirements</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Determine target Android version</li>
+                        <li><input type="checkbox"> Review mandatory CDD requirements</li>
+                        <li><input type="checkbox"> Check GMS certification requirements</li>
+                        <li><input type="checkbox"> Set performance targets (resolution, FPS, latency)</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>1.3 Development Environment Setup</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Download AOSP source and set up build environment</li>
+                        <li><input type="checkbox"> Design vendor source tree structure</li>
+                        <li><input type="checkbox"> Configure build system (Android.bp/mk)</li>
+                        <li><input type="checkbox"> Set up CI/CD pipeline</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Deliverables</h3>
+            <pre><code># Project structure example
+vendor/
+├── &lt;company&gt;/
+│   ├── &lt;platform&gt;/
+│   │   ├── Android.bp
+│   │   ├── BoardConfig.mk
+│   │   ├── device.mk
+│   │   └── proprietary/
+│   │       ├── media/
+│   │       ├── audio/
+│   │       └── drm/
+│   └── common/
+│       ├── media/
+│       └── sepolicy/</code></pre>
+        </section>
+
+        <!-- Phase 2: Codec HAL -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>Phase 2: Codec HAL Implementation</h2>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-number">2</div>
+                    <div>
+                        <div class="phase-title">Codec2 HAL Implementation</div>
+                        <div class="phase-duration">Estimated time: 3-4 weeks</div>
+                    </div>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>2.1 Basic Structure Implementation</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Implement C2ComponentStore</li>
+                        <li><input type="checkbox"> Implement C2Component base class</li>
+                        <li><input type="checkbox"> Implement buffer management (C2Buffer, C2Block)</li>
+                        <li><input type="checkbox"> Write HAL service daemon</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>2.2 Video Decoder Implementation</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> H.264/AVC decoder</li>
+                        <li><input type="checkbox"> H.265/HEVC decoder</li>
+                        <li><input type="checkbox"> VP9 decoder</li>
+                        <li><input type="checkbox"> AV1 decoder (optional)</li>
+                        <li><input type="checkbox"> Secure decoder (for DRM)</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>2.3 Video Encoder Implementation</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> H.264/AVC encoder</li>
+                        <li><input type="checkbox"> H.265/HEVC encoder</li>
+                        <li><input type="checkbox"> VP9 encoder (optional)</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>2.4 Audio Codec Implementation</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> AAC decoder/encoder</li>
+                        <li><input type="checkbox"> MP3 decoder</li>
+                        <li><input type="checkbox"> Opus decoder</li>
+                        <li><input type="checkbox"> FLAC decoder</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>2.5 Configuration Files</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Write media_codecs.xml</li>
+                        <li><input type="checkbox"> Write media_codecs_performance.xml</li>
+                        <li><input type="checkbox"> Register VINTF manifest</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>media_codecs.xml Template</h3>
+            <pre><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;MediaCodecs&gt;
+    &lt;Settings&gt;
+        &lt;Setting name="max-video-encoder-input-buffers" value="9" /&gt;
+    &lt;/Settings&gt;
+
+    &lt;Decoders&gt;
+        &lt;!-- Video Decoders --&gt;
+        &lt;MediaCodec name="c2.vendor.avc.decoder" type="video/avc" rank="0"&gt;
+            &lt;Limit name="size" min="16x16" max="4096x2160" /&gt;
+            &lt;Limit name="alignment" value="2x2" /&gt;
+            &lt;Limit name="block-size" value="16x16" /&gt;
+            &lt;Limit name="blocks-per-second" min="1" max="2073600" /&gt;
+            &lt;Limit name="bitrate" range="1-120000000" /&gt;
+            &lt;Limit name="concurrent-instances" max="16" /&gt;
+            &lt;Feature name="adaptive-playback" /&gt;
+            &lt;Feature name="secure-playback" required="true" /&gt;
+        &lt;/MediaCodec&gt;
+
+        &lt;MediaCodec name="c2.vendor.hevc.decoder" type="video/hevc" rank="0"&gt;
+            &lt;Limit name="size" min="16x16" max="8192x4320" /&gt;
+            &lt;Limit name="bitrate" range="1-160000000" /&gt;
+            &lt;Feature name="adaptive-playback" /&gt;
+        &lt;/MediaCodec&gt;
+    &lt;/Decoders&gt;
+
+    &lt;Encoders&gt;
+        &lt;MediaCodec name="c2.vendor.avc.encoder" type="video/avc" rank="0"&gt;
+            &lt;Limit name="size" min="16x16" max="4096x2160" /&gt;
+            &lt;Limit name="bitrate" range="1-80000000" /&gt;
+            &lt;Feature name="bitrate-modes" value="VBR,CBR,CQ" /&gt;
+        &lt;/MediaCodec&gt;
+    &lt;/Encoders&gt;
+&lt;/MediaCodecs&gt;</code></pre>
+        </section>
+
+        <!-- Phase 3: Audio HAL -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>Phase 3: Audio HAL Implementation</h2>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-number">3</div>
+                    <div>
+                        <div class="phase-title">Audio HAL Implementation</div>
+                        <div class="phase-duration">Estimated time: 2-3 weeks</div>
+                    </div>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>3.1 Audio HAL Basic Implementation</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Implement IDevicesFactory</li>
+                        <li><input type="checkbox"> Implement IDevice</li>
+                        <li><input type="checkbox"> Implement IStreamOut</li>
+                        <li><input type="checkbox"> Implement IStreamIn</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>3.2 Audio Routing</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Write audio_policy_configuration.xml</li>
+                        <li><input type="checkbox"> Configure output devices (speaker, headphone, HDMI)</li>
+                        <li><input type="checkbox"> Configure input devices (microphone)</li>
+                        <li><input type="checkbox"> Set volume curves</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>3.3 Advanced Features</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Implement Effects HAL (optional)</li>
+                        <li><input type="checkbox"> Bluetooth audio integration</li>
+                        <li><input type="checkbox"> USB audio support</li>
+                        <li><input type="checkbox"> HDMI/ARC audio output</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>audio_policy_configuration.xml Template</h3>
+            <pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;audioPolicyConfiguration version="7.0"&gt;
+    &lt;modules&gt;
+        &lt;module name="primary" halVersion="3.0"&gt;
+            &lt;mixPorts&gt;
+                &lt;mixPort name="primary output"
+                         role="source"
+                         flags="AUDIO_OUTPUT_FLAG_PRIMARY"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/mixPort&gt;
+            &lt;/mixPorts&gt;
+            &lt;devicePorts&gt;
+                &lt;devicePort tagName="Speaker"
+                            type="AUDIO_DEVICE_OUT_SPEAKER"
+                            role="sink"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/devicePort&gt;
+            &lt;/devicePorts&gt;
+            &lt;routes&gt;
+                &lt;route type="mix" sink="Speaker"
+                       sources="primary output"/&gt;
+            &lt;/routes&gt;
+        &lt;/module&gt;
+    &lt;/modules&gt;
+&lt;/audioPolicyConfiguration&gt;</code></pre>
+        </section>
+
+        <!-- Phase 4: DRM Porting -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>Phase 4: DRM Porting</h2>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-number">4</div>
+                    <div>
+                        <div class="phase-title">DRM HAL and Widevine Porting</div>
+                        <div class="phase-duration">Estimated time: 2-3 weeks</div>
+                    </div>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>4.1 TEE Environment Setup</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Port TrustZone/TEE OS</li>
+                        <li><input type="checkbox"> Implement Secure World communication interface</li>
+                        <li><input type="checkbox"> Implement Keymaster/Keymint HAL</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>4.2 Widevine Porting</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Integrate OEMCrypto library</li>
+                        <li><input type="checkbox"> Implement DRM HAL service</li>
+                        <li><input type="checkbox"> Implement Secure Buffer handling</li>
+                        <li><input type="checkbox"> Set up key provisioning system</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>4.3 Certification</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Apply for Widevine L1 certification</li>
+                        <li><input type="checkbox"> Pass Robustness tests</li>
+                        <li><input type="checkbox"> Obtain Production keys</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>Widevine Level Requirements</strong>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Level</th>
+                            <th>Decryption</th>
+                            <th>Decoding</th>
+                            <th>Content</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>L1</td>
+                            <td>Inside TEE</td>
+                            <td>Inside TEE</td>
+                            <td>HD/4K</td>
+                        </tr>
+                        <tr>
+                            <td>L2</td>
+                            <td>Inside TEE</td>
+                            <td>REE</td>
+                            <td>SD</td>
+                        </tr>
+                        <tr>
+                            <td>L3</td>
+                            <td>REE</td>
+                            <td>REE</td>
+                            <td>SD</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Phase 5: Integration Testing -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>Phase 5: Integration Testing</h2>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-number">5</div>
+                    <div>
+                        <div class="phase-title">System Integration Testing</div>
+                        <div class="phase-duration">Estimated time: 1-2 weeks</div>
+                    </div>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>5.1 Functional Testing</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Basic playback test (local files)</li>
+                        <li><input type="checkbox"> Streaming playback test (HLS, DASH)</li>
+                        <li><input type="checkbox"> DRM content playback test</li>
+                        <li><input type="checkbox"> Recording test</li>
+                        <li><input type="checkbox"> Concurrent playback test</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>5.2 Performance Testing</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Measure startup latency (&lt; 500ms)</li>
+                        <li><input type="checkbox"> Measure frame drop rate (&lt; 0.1%)</li>
+                        <li><input type="checkbox"> Measure CPU usage</li>
+                        <li><input type="checkbox"> Measure memory usage</li>
+                        <li><input type="checkbox"> Measure battery consumption</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>5.3 Stability Testing</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Long-duration playback test (8+ hours)</li>
+                        <li><input type="checkbox"> Repeated play/stop test</li>
+                        <li><input type="checkbox"> Memory leak test</li>
+                        <li><input type="checkbox"> Stress test</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Test Automation Script</h3>
+            <pre><code>#!/bin/bash
+# media_stress_test.sh
+
+ITERATIONS=1000
+PASS=0
+FAIL=0
+
+for i in $(seq 1 $ITERATIONS); do
+    echo "=== Iteration $i / $ITERATIONS ==="
+
+    # Playback test
+    adb shell am start -a android.intent.action.VIEW \
+        -d "file:///sdcard/test_video.mp4" \
+        -t "video/*"
+    sleep 5
+
+    # Check playback state
+    STATE=$(adb shell dumpsys media.player | grep "state")
+    if [[ $STATE == *"PLAYING"* ]]; then
+        ((PASS++))
+    else
+        ((FAIL++))
+        adb shell bugreport > "bugreport_$i.zip"
+    fi
+
+    # Cleanup
+    adb shell am force-stop com.android.gallery3d
+    sleep 2
+done
+
+echo "=== Results ==="
+echo "Pass: $PASS / $ITERATIONS"
+echo "Fail: $FAIL / $ITERATIONS"</code></pre>
+        </section>
+
+        <!-- Phase 6: CTS/VTS Certification -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>Phase 6: CTS/VTS Certification</h2>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-number">6</div>
+                    <div>
+                        <div class="phase-title">Compatibility Test Pass</div>
+                        <div class="phase-duration">Estimated time: 2-3 weeks</div>
+                    </div>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>6.1 VTS (Vendor Test Suite)</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> VtsHalMediaC2V1_0TargetTest</li>
+                        <li><input type="checkbox"> VtsHalAudioV7_0TargetTest</li>
+                        <li><input type="checkbox"> VtsHalDrmV1_0TargetTest</li>
+                        <li><input type="checkbox"> VtsTrebleVintfTest</li>
+                        <li><input type="checkbox"> VtsVndkDependencyTest</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>6.2 CTS (Compatibility Test Suite)</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> CtsMediaTestCases</li>
+                        <li><input type="checkbox"> CtsMediaCodecTestCases</li>
+                        <li><input type="checkbox"> CtsMediaDecoderTestCases</li>
+                        <li><input type="checkbox"> CtsMediaEncoderTestCases</li>
+                        <li><input type="checkbox"> CtsMediaDrmFrameworkTestCases</li>
+                        <li><input type="checkbox"> CtsAudioTestCases</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>6.3 GTS (Google Test Suite)</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> GtsMediaTestCases</li>
+                        <li><input type="checkbox"> GtsExoPlayerTestCases</li>
+                        <li><input type="checkbox"> GtsYouTubeTestCases</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Test Execution Commands</h3>
+            <pre><code># Run VTS
+vts-tradefed run commandAndExit vts \
+    --module VtsHalMediaC2V1_0TargetTest
+
+# Run CTS media modules
+cts-tradefed run commandAndExit cts \
+    --module CtsMediaTestCases \
+    --module CtsMediaCodecTestCases
+
+# Retry failed tests
+cts-tradefed run commandAndExit retry \
+    --retry &lt;session_id&gt;
+
+# Check results
+cat /path/to/results/test_result.xml | grep "fail"</code></pre>
+        </section>
+
+        <!-- Phase 7: GMS Certification -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">08</span>Phase 7: GMS Certification</h2>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-number">7</div>
+                    <div>
+                        <div class="phase-title">Google Mobile Services Certification</div>
+                        <div class="phase-duration">Estimated time: 1-2 weeks</div>
+                    </div>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>7.1 GMS Requirements</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> 100% CTS/VTS pass</li>
+                        <li><input type="checkbox"> GTS pass</li>
+                        <li><input type="checkbox"> CDD requirements met</li>
+                        <li><input type="checkbox"> Latest Security Patch Level</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>7.2 Submission Documents</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> CTS/VTS reports</li>
+                        <li><input type="checkbox"> Build information (fingerprint)</li>
+                        <li><input type="checkbox"> Device specifications</li>
+                        <li><input type="checkbox"> Widevine certificate</li>
+                    </ul>
+                </div>
+
+                <div class="checklist-group">
+                    <h4>7.3 Final Verification</h4>
+                    <ul class="checklist">
+                        <li><input type="checkbox"> Google app testing (YouTube, Play Movies)</li>
+                        <li><input type="checkbox"> SafetyNet pass</li>
+                        <li><input type="checkbox"> Play Protect certification</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Complete Checklist -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">09</span>Complete Checklist Summary</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Phase</th>
+                        <th>Key Items</th>
+                        <th>Estimated Duration</th>
+                        <th>Owner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1. Preparation</td>
+                        <td>Requirements, Environment setup</td>
+                        <td>1-2 weeks</td>
+                        <td>PM, Architect</td>
+                    </tr>
+                    <tr>
+                        <td>2. Codec HAL</td>
+                        <td>Codec2 HAL implementation</td>
+                        <td>3-4 weeks</td>
+                        <td>Media Engineer</td>
+                    </tr>
+                    <tr>
+                        <td>3. Audio HAL</td>
+                        <td>Audio HAL implementation</td>
+                        <td>2-3 weeks</td>
+                        <td>Audio Engineer</td>
+                    </tr>
+                    <tr>
+                        <td>4. DRM Porting</td>
+                        <td>Widevine, TEE</td>
+                        <td>2-3 weeks</td>
+                        <td>Security Engineer</td>
+                    </tr>
+                    <tr>
+                        <td>5. Integration Test</td>
+                        <td>Functional, Performance, Stability</td>
+                        <td>1-2 weeks</td>
+                        <td>QA Team</td>
+                    </tr>
+                    <tr>
+                        <td>6. CTS/VTS</td>
+                        <td>Compatibility tests</td>
+                        <td>2-3 weeks</td>
+                        <td>QA Team</td>
+                    </tr>
+                    <tr>
+                        <td>7. GMS Certification</td>
+                        <td>Google certification</td>
+                        <td>1-2 weeks</td>
+                        <td>PM</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2"><strong>Total Estimated Duration</strong></td>
+                        <td colspan="2"><strong>12-19 weeks</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </section>
+
+        <!-- Related Documents -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">10</span>Related Documents</h2>
+            <ul>
+                <li><a href="vendor-extension.html">Vendor Extension Development Guide</a> - HAL extension details</li>
+                <li><a href="codec2.html">Codec 2.0 & Media HAL</a> - Codec2 architecture</li>
+                <li><a href="widevine.html">DRM & Widevine Architecture</a> - DRM details</li>
+                <li><a href="cts.html">CTS / VTS / GTS</a> - Test suite guide</li>
+                <li><a href="cdd.html">CDD Policy</a> - Compatibility requirements</li>
+            </ul>
+        </section>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

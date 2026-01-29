@@ -1,0 +1,2372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android MediaProvider Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles */
+
+        /* Header Action Button */
+        .header-action {
+            margin-top: 2rem;
+        }
+
+        .action-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            background: rgba(0, 212, 255, 0.08);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            color: var(--color-accent, #00d4ff);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-button::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(139, 92, 246, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .action-button:hover {
+            background: rgba(0, 212, 255, 0.15);
+            border-color: rgba(0, 212, 255, 0.5);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2),
+                        0 4px 12px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .action-button:hover::before {
+            opacity: 1;
+        }
+
+        .action-icon {
+            font-size: 1.25rem;
+            z-index: 1;
+        }
+
+        .action-text {
+            z-index: 1;
+        }
+
+        .action-arrow {
+            z-index: 1;
+            transition: transform 0.3s ease;
+        }
+
+        .action-button:hover .action-arrow {
+            transform: translateX(4px);
+        }
+
+        /* Light theme */
+        [data-theme="light"] .action-button {
+            background: rgba(0, 150, 200, 0.1);
+            border-color: rgba(0, 150, 200, 0.3);
+            color: #0096c8;
+        }
+
+        [data-theme="light"] .action-button:hover {
+            background: rgba(0, 150, 200, 0.15);
+            border-color: rgba(0, 150, 200, 0.5);
+            box-shadow: 0 0 20px rgba(0, 150, 200, 0.15),
+                        0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">🗄️ MediaProvider</h1>
+            <p class="page-subtitle">Android Media Data Management and Scoped Storage Architecture</p>
+            <div class="header-action">
+                <a href="media-playback.html" class="action-button">
+                    <span class="action-icon">🎬</span>
+                    <span class="action-text">Media Playback Flow</span>
+                    <svg class="action-arrow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="18" height="18">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                </a>
+            </div>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Overview: Role of MediaProvider
+            </h2>
+            <p class="section-description">
+                MediaProvider is a core component in the Android system that manages media file metadata and controls app file access.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        MediaStore Management
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Media Metadata Indexing</strong></p>
+                        <ul>
+                            <li>Optimization and indexing of Audio, Video, Images file metadata</li>
+                            <li>Scanning internal/external storage (SD card, USB) and building database</li>
+                            <li>Providing app access through <code>MediaStore</code> API</li>
+                            <li>Automatic MIME type detection and classification</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        Scoped Storage Security
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>App-specific Isolated Storage</strong></p>
+                        <ul>
+                            <li>Mandatory on Android 10+ (Scoped Storage)</li>
+                            <li>Apps can only directly access their own data</li>
+                            <li>Other apps' media accessible only through <code>MediaStore</code></li>
+                            <li>Automatic redaction of sensitive metadata like location</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        FUSE File System
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>User-space File Handling</strong></p>
+                        <ul>
+                            <li>Operates as FUSE Daemon on Android 11+</li>
+                            <li>Intercepts kernel file operations in User-space</li>
+                            <li>Real-time permission checking and filtering on file access</li>
+                            <li>Performance optimization with FUSE Passthrough (Android 12+)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Mainline Module
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Independent Updates</strong></p>
+                        <ul>
+                            <li>Deployed as APK-in-APEX (Android 11+)</li>
+                            <li>Security patches and feature additions without OS updates</li>
+                            <li>Quick response to new media format support</li>
+                            <li>Automatic updates via Google Play</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                MediaProvider Architecture
+            </h2>
+            <p class="section-description">
+                The complete architecture from Application to File System where MediaProvider is involved.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP ["Application Layer"]
+                    GALLERY["Gallery App"]
+                    MUSIC["Music Player"]
+                    CAMERA["Camera App"]
+                    end
+
+                    subgraph FRAMEWORK ["Android Framework"]
+                    CR["ContentResolver"]
+                    MS_API["MediaStore API<br />(Contract)"]
+                    end
+
+                    subgraph PROVIDER ["MediaProvider Module"]
+                    MP["MediaProvider<br />(ContentProvider)"]
+                    DB["SQLite Database<br />(Metadata)"]
+                    SCANNER["Media Scanner"]
+                    end
+
+                    subgraph FUSE_LAYER ["FUSE Layer (Android 11+)"]
+                    FD["FuseDaemon<br />(User-space Handler)"]
+                    KERNEL_FUSE["FUSE Driver<br />(Kernel)"]
+                    end
+
+                    subgraph STORAGE ["File System"]
+                    INT_STORAGE["Internal Storage"]
+                    EXT_STORAGE["External Storage<br />(SD Card, USB)"]
+                    end
+
+                    APP --> CR
+                    CR --> MS_API
+                    MS_API --> MP
+                    MP --> DB
+                    MP --> SCANNER
+                    MP <--> FD
+                        FD <--> KERNEL_FUSE
+                            KERNEL_FUSE <--> INT_STORAGE
+                                KERNEL_FUSE <--> EXT_STORAGE
+                                    SCANNER -.->|Scan Files| INT_STORAGE
+                                    SCANNER -.->|Scan Files| EXT_STORAGE
+
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>Key Points:</strong>
+                <ul>
+                    <li><strong>ContentResolver</strong>: The only interface for apps to communicate with MediaProvider</li>
+                    <li><strong>MediaProvider</strong>: Implements ContentProvider to handle CRUD operations</li>
+                    <li><strong>FuseDaemon</strong>: Intercepts file system operations and performs permission checks</li>
+                    <li><strong>SQLite DB</strong>: Stores media metadata for fast query support</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 3: Data Flow -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                MediaStore Data Flow
+            </h2>
+            <p class="section-description">
+                The complete flow of how apps query and manipulate media data through the MediaStore API.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App as Application
+                    participant CR as ContentResolver
+                    participant MP as MediaProvider
+                    participant DB as SQLite DB
+                    participant FS as File System
+
+                    Note over App,FS: Query Operation (Media Search)
+                    App->>CR: query(MediaStore.Images.EXTERNAL_CONTENT_URI)
+                    CR->>MP: query() call
+                    MP->>DB: SELECT * FROM images WHERE...
+                    DB-->>MP: Cursor (result set)
+                    MP-->>CR: Return Cursor
+                    CR-->>App: Return Cursor
+                    App->>App: Iterate Cursor and extract data
+
+                    Note over App,FS: Insert Operation (Add New Media)
+                    App->>CR: insert(uri, ContentValues)
+                    CR->>MP: insert() call
+                    MP->>DB: INSERT INTO images VALUES(...)
+                    DB-->>MP: Row ID
+                    MP->>FS: Prepare file creation
+                    MP-->>CR: Return new media URI
+                    CR-->>App: Return URI
+                    App->>FS: Write file via OutputStream
+
+                    Note over App,FS: Delete Operation (Remove Media)
+                    App->>CR: delete(uri)
+                    CR->>MP: delete() call
+                    MP->>DB: DELETE FROM images WHERE _id=...
+                    MP->>FS: Delete actual file
+                    FS-->>MP: Deletion complete
+                    MP-->>CR: Return deleted row count
+                    CR-->>App: Return result
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔍</span>
+                        Query (Read)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Media Search and Filtering</strong></p>
+                        <ul>
+                            <li>Call <code>contentResolver.query()</code></li>
+                            <li>MediaProvider searches metadata in SQLite DB</li>
+                            <li>Returns results as Cursor object (Worker Thread recommended)</li>
+                            <li>Supports Projection, Selection, Sort Order</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">➕</span>
+                        Insert (Add)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Register New Media File</strong></p>
+                        <ul>
+                            <li>Register metadata with <code>contentResolver.insert()</code></li>
+                            <li>MediaProvider creates record in DB</li>
+                            <li>Returns new media URI (including file path)</li>
+                            <li>Write actual file data via OutputStream</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✏️</span>
+                        Update (Modify)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Update Metadata</strong></p>
+                        <ul>
+                            <li>Modify with <code>contentResolver.update()</code></li>
+                            <li>Can freely modify own media</li>
+                            <li>User consent required for other apps' media</li>
+                            <li>Change flags like <code>is_favorite</code>, <code>is_trashed</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🗑️</span>
+                        Delete (Remove)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Remove Media File</strong></p>
+                        <ul>
+                            <li>Delete with <code>contentResolver.delete()</code></li>
+                            <li>Removes both DB record and actual file</li>
+                            <li>User confirmation required for other apps' media</li>
+                            <li>Trash (<code>is_trashed</code>) feature support (Android 11+)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Scoped Storage -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Scoped Storage Model
+            </h2>
+            <p class="section-description">
+                Scoped Storage introduced in Android 10 restricts app file access to enhance user privacy.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TB
+                    subgraph LEGACY ["Legacy Storage (Android 9 and below)"]
+                    L_APP["App"]
+                    L_PERM["READ/WRITE_EXTERNAL_STORAGE"]
+                    L_FS["Full File System Access"]
+
+                    L_APP --> L_PERM
+                    L_PERM --> L_FS
+                    end
+
+                    subgraph SCOPED ["Scoped Storage (Android 10+)"]
+                    S_APP["App"]
+                    S_OWN["App-specific Directory<br />(No permission required)"]
+                    S_MEDIA["Media Access via<br />MediaStore"]
+                    S_SAF["Storage Access Framework<br />(User selection)"]
+
+                    S_APP --> S_OWN
+                    S_APP --> S_MEDIA
+                    S_APP --> S_SAF
+                    end
+
+                    LEGACY -.->|Android 10+| SCOPED
+
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏠</span>
+                        App-specific Directory
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>App-dedicated Storage</strong></p>
+                        <ul>
+                            <li>Access via <code>getExternalFilesDir()</code></li>
+                            <li>Read/write without permissions</li>
+                            <li>Data automatically removed on app uninstall</li>
+                            <li>Other apps cannot access (isolated)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📸</span>
+                        MediaStore Collections
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Shared Media Access</strong></p>
+                        <ul>
+                            <li>Own media: No permission required</li>
+                            <li>Reading other apps' media: <code>READ_MEDIA_*</code> permission</li>
+                            <li>Modifying other apps' media: User consent required</li>
+                            <li><code>Images</code>, <code>Video</code>, <code>Audio</code> collections</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Privacy Protection
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Sensitive Information Protection</strong></p>
+                        <ul>
+                            <li>Automatic location metadata deletion (Redaction)</li>
+                            <li>App clutter prevention (data cleanup on uninstall)</li>
+                            <li>File access history tracking available</li>
+                            <li>User-centric permission model</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Special Permissions
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Special Permissions</strong></p>
+                        <ul>
+                            <li><code>MANAGE_EXTERNAL_STORAGE</code>: Full file access</li>
+                            <li>Only allowed for file managers, backup apps, etc.</li>
+                            <li>Strictly restricted by Play Store policy</li>
+                            <li>General apps should use MediaStore/SAF</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: FUSE Daemon -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                FUSE Daemon Architecture
+            </h2>
+            <p class="section-description">
+                Since Android 11, MediaProvider operates as a FUSE (Filesystem in Userspace) daemon to control file access in real-time.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App as Application
+                    participant Kernel as FUSE Driver (Kernel)
+                    participant FD as FuseDaemon (MediaProvider)
+                    participant FS as Underlying File System
+
+                    Note over App,FS: File Open (open)
+                    App->>Kernel: open("/storage/emulated/0/DCIM/photo.jpg")
+                    Kernel->>FD: FUSE_OPEN request
+                    FD->>FD: Permission check (app UID, file owner)
+                    alt Has Permission
+                    FD->>FS: Open actual file
+                    FS-->>FD: File Descriptor
+                    FD->>Kernel: Set up FUSE Passthrough (Android 12+)
+                    FD-->>Kernel: Allow response
+                    Kernel-->>App: Return File Descriptor
+                    else No Permission
+                    FD-->>Kernel: Deny response (EACCES)
+                    Kernel-->>App: Return error
+                    end
+
+                    Note over App,FS: File Read (read) - With Passthrough enabled
+                    App->>Kernel: read(fd, buffer, size)
+                    Kernel->>FS: Direct read (bypass FuseDaemon)
+                    FS-->>Kernel: Data
+                    Kernel-->>App: Return data
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        Access Control
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Real-time Permission Checking</strong></p>
+                        <ul>
+                            <li>Intercept all file operations in User-space</li>
+                            <li>Compare app UID with file owner</li>
+                            <li>Apply Scoped Storage policy</li>
+                            <li>Decide allow/deny/redaction</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        FUSE Passthrough
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Performance Optimization (Android 12+)</strong></p>
+                        <ul>
+                            <li>Allow direct file system access after permission check</li>
+                            <li>Bypass FuseDaemon for Read/Write operations</li>
+                            <li>Eliminate User-space ↔ Kernel-space transition overhead</li>
+                            <li>Significant I/O performance improvement</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        JNI Integration
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Java ↔ Native Communication</strong></p>
+                        <ul>
+                            <li>FuseDaemon implemented in C++ Native code</li>
+                            <li>Communicates with Java layer via MediaProviderWrapper</li>
+                            <li>Permission check logic handled in Java</li>
+                            <li>Kernel communication through <code>/dev/fuse</code> node</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        Per-User Instance
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>User-specific Daemon</strong></p>
+                        <ul>
+                            <li>FuseDaemon instance created for each user (u0, u10, etc.)</li>
+                            <li>Starts at boot, runs until shutdown</li>
+                            <li>Multi-threaded processing with <code>fuse_session_loop_mt</code></li>
+                            <li>Independent file access control per user</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Code Examples -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Code Examples
+            </h2>
+            <p class="section-description">
+                Actual implementation code using MediaStore API and Scoped Storage migration examples.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                🔍 MediaStore Query (Image Query)
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Query images from MediaStore
+fun queryImages(context: Context): List<ImageData> {
+    val images = mutableListOf<ImageData>()
+
+    // Projection (specify columns to return)
+    val projection = arrayOf(
+        MediaStore.Images.Media._ID,
+        MediaStore.Images.Media.DISPLAY_NAME,
+        MediaStore.Images.Media.SIZE,
+        MediaStore.Images.Media.DATE_ADDED,
+        MediaStore.Images.Media.MIME_TYPE,
+        MediaStore.Images.Media.WIDTH,
+        MediaStore.Images.Media.HEIGHT
+    )
+
+    // Selection (WHERE clause)
+    val selection = "${MediaStore.Images.Media.SIZE} > ?"
+    val selectionArgs = arrayOf("10240") // Greater than 10KB
+
+    // Sort Order
+    val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
+
+    // Query with ContentResolver
+    context.contentResolver.query(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        projection,
+        selection,
+        selectionArgs,
+        sortOrder
+    )?.use { cursor ->
+        val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+        val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+        val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
+        val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
+        val mimeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.MIME_TYPE)
+
+        while (cursor.moveToNext()) {
+            val id = cursor.getLong(idColumn)
+            val name = cursor.getString(nameColumn)
+            val size = cursor.getLong(sizeColumn)
+            val dateAdded = cursor.getLong(dateColumn)
+            val mimeType = cursor.getString(mimeColumn)
+
+            // Create Content URI
+            val contentUri = ContentUris.withAppendedId(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                id
+            )
+
+            images.add(ImageData(id, name, size, dateAdded, mimeType, contentUri))
+        }
+    }
+
+    return images
+}
+
+data class ImageData(
+    val id: Long,
+    val name: String,
+    val size: Long,
+    val dateAdded: Long,
+    val mimeType: String,
+    val uri: Uri
+)</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ➕ MediaStore Insert (Save New Image)
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Save new image to MediaStore
+fun saveImageToMediaStore(context: Context, bitmap: Bitmap, displayName: String): Uri? {
+    // Set ContentValues
+    val contentValues = ContentValues().apply {
+        put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
+        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+        put(MediaStore.Images.Media.WIDTH, bitmap.width)
+        put(MediaStore.Images.Media.HEIGHT, bitmap.height)
+
+        // Android 10+ (Scoped Storage)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+            put(MediaStore.Images.Media.IS_PENDING, 1) // In-progress state
+        }
+    }
+
+    // Insert record into MediaStore
+    val uri = context.contentResolver.insert(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        contentValues
+    ) ?: return null
+
+    try {
+        // Write file via OutputStream
+        context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 95, outputStream)
+        }
+
+        // Android 10+: Clear IS_PENDING flag (completed state)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            contentValues.clear()
+            contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
+            context.contentResolver.update(uri, contentValues, null, null)
+        }
+
+        return uri
+    } catch (e: IOException) {
+        // Delete record on error
+        context.contentResolver.delete(uri, null, null)
+        return null
+    }
+}
+
+// Save Bitmap to file and scan with MediaScanner (Legacy method)
+fun saveBitmapLegacy(context: Context, bitmap: Bitmap, filename: String) {
+    val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), filename)
+
+    FileOutputStream(file).use { out ->
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+    }
+
+    // Request scan with MediaScannerConnection
+    MediaScannerConnection.scanFile(
+        context,
+        arrayOf(file.absolutePath),
+        arrayOf("image/jpeg")
+    ) { path, uri ->
+        Log.d("MediaScanner", "Scanned: $path -> $uri")
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ✏️ MediaStore Update & Delete
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Update image metadata (Set Favorite)
+fun markAsFavorite(context: Context, imageUri: Uri) {
+    val contentValues = ContentValues().apply {
+        put(MediaStore.Images.Media.IS_FAVORITE, 1)
+    }
+
+    try {
+        context.contentResolver.update(imageUri, contentValues, null, null)
+    } catch (e: RecoverableSecurityException) {
+        // Android 10+: User consent required for modifying other apps' files
+        val intentSender = e.userAction.actionIntent.intentSender
+        startIntentSenderForResult(intentSender, REQUEST_CODE_MODIFY, null, 0, 0, 0, null)
+    }
+}
+
+// Delete image
+fun deleteImage(context: Context, imageUri: Uri): Boolean {
+    return try {
+        val deletedRows = context.contentResolver.delete(imageUri, null, null)
+        deletedRows > 0
+    } catch (e: RecoverableSecurityException) {
+        // User consent required
+        val intentSender = e.userAction.actionIntent.intentSender
+        startIntentSenderForResult(intentSender, REQUEST_CODE_DELETE, null, 0, 0, 0, null)
+        false
+    }
+}
+
+// Handle in Activity's onActivityResult
+override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    super.onActivityResult(requestCode, resultCode, data)
+
+    when (requestCode) {
+        REQUEST_CODE_MODIFY, REQUEST_CODE_DELETE -> {
+            if (resultCode == Activity.RESULT_OK) {
+                // User approved → retry operation
+                retryPendingOperation()
+            } else {
+                // User denied
+                Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📂 Storage Access Framework (SAF)
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Pick file with SAF (user directly selects)
+fun openFilePicker() {
+    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+        addCategory(Intent.CATEGORY_OPENABLE)
+        type = "image/*"
+
+        // Allow multiple file selection
+        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+    }
+    startActivityForResult(intent, REQUEST_CODE_PICK_FILE)
+}
+
+// Handle file selection result
+override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    super.onActivityResult(requestCode, resultCode, data)
+
+    if (requestCode == REQUEST_CODE_PICK_FILE && resultCode == Activity.RESULT_OK) {
+        data?.data?.let { uri ->
+            // Single file selection
+            processFile(uri)
+        }
+
+        // Multiple file selection
+        data?.clipData?.let { clipData ->
+            for (i in 0 until clipData.itemCount) {
+                val uri = clipData.getItemAt(i).uri
+                processFile(uri)
+            }
+        }
+    }
+}
+
+// Process selected file
+fun processFile(uri: Uri) {
+    contentResolver.openInputStream(uri)?.use { inputStream ->
+        val bitmap = BitmapFactory.decodeStream(inputStream)
+        // Process Bitmap...
+    }
+
+    // Query file metadata
+    contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+        if (cursor.moveToFirst()) {
+            val displayNameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+
+            val displayName = cursor.getString(displayNameIndex)
+            val size = cursor.getLong(sizeIndex)
+
+            Log.d("SAF", "File: $displayName, Size: $size bytes")
+        }
+    }
+
+    // Grant persistent permission (accessible after app restart)
+    val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+    contentResolver.takePersistableUriPermission(uri, takeFlags)
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Code Example Key Points:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Query</strong>: Query only needed columns with projection, use cursor.use for auto close</li>
+                    <li><strong>Insert</strong>: Manage in-progress/completed state with IS_PENDING flag (Android 10+)</li>
+                    <li><strong>Update/Delete</strong>: Handle user consent with RecoverableSecurityException</li>
+                    <li><strong>SAF</strong>: User directly selects file, persistent permission with takePersistableUriPermission</li>
+                    <li><strong>Worker Thread</strong>: All ContentResolver operations recommended on background thread</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 7: Permissions & User Consent -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Permission Model & User Consent
+            </h2>
+            <p class="section-description">
+                Permission models by Android version and how to handle user consent.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    flowchart TB
+                    START[App attempts media access] --> VERSION{Android Version}
+
+                    VERSION -->|Android 12 and below| OLD_PERM[READ_EXTERNAL_STORAGE]
+                    VERSION -->|Android 13+| NEW_PERM[READ_MEDIA_IMAGES<br />READ_MEDIA_VIDEO<br />READ_MEDIA_AUDIO]
+
+                    OLD_PERM --> CHECK_OLD{Has Permission?}
+                    NEW_PERM --> CHECK_NEW{Has Permission?}
+
+                    CHECK_OLD -->|Yes| OWN{Own file?}
+                    CHECK_OLD -->|No| REQUEST_OLD[Request Permission]
+
+                    CHECK_NEW -->|Yes| OWN
+                    CHECK_NEW -->|No| REQUEST_NEW[Request Granular Permission]
+
+                    OWN -->|Yes| FULL_ACCESS[Read/Write Available]
+                    OWN -->|No| READ_ONLY[Read Only]
+
+                    READ_ONLY --> MODIFY{Modify/Delete?}
+                    MODIFY -->|Yes| USER_CONSENT[RecoverableSecurityException<br />Request User Consent]
+                    MODIFY -->|No| SUCCESS[Operation Complete]
+
+                    USER_CONSENT --> APPROVE{Approved?}
+                    APPROVE -->|Yes| FULL_ACCESS
+                    APPROVE -->|No| DENIED[Operation Denied]
+
+                    REQUEST_OLD --> GRANTED_OLD{Granted?}
+                    REQUEST_NEW --> GRANTED_NEW{Granted?}
+
+                    GRANTED_OLD -->|Yes| OWN
+                    GRANTED_OLD -->|No| DENIED
+
+                    GRANTED_NEW -->|Yes| OWN
+                    GRANTED_NEW -->|No| DENIED
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📱 Android 13+ Granular Permissions
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// AndroidManifest.xml
+&lt;manifest&gt;
+    &lt;!-- Android 13+ Granular permissions --&gt;
+    &lt;uses-permission android:name="android.permission.READ_MEDIA_IMAGES" /&gt;
+    &lt;uses-permission android:name="android.permission.READ_MEDIA_VIDEO" /&gt;
+    &lt;uses-permission android:name="android.permission.READ_MEDIA_AUDIO" /&gt;
+
+    &lt;!-- Android 12 and below compatibility --&gt;
+    &lt;uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+                     android:maxSdkVersion="32" /&gt;
+    &lt;uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+                     android:maxSdkVersion="29" /&gt;
+
+    &lt;!-- Special permission (file manager apps, etc.) --&gt;
+    &lt;uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+                     tools:ignore="ScopedStorage" /&gt;
+&lt;/manifest&gt;
+
+// Kotlin permission request
+class MainActivity : AppCompatActivity() {
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.entries.all { it.value }
+        if (allGranted) {
+            loadMedia()
+        } else {
+            Toast.makeText(this, "Permission required", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        checkAndRequestPermissions()
+    }
+
+    private fun checkAndRequestPermissions() {
+        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Android 13+: Granular permissions
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO,
+                Manifest.permission.READ_MEDIA_AUDIO
+            )
+        } else {
+            // Android 12 and below
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+
+        val notGranted = permissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (notGranted.isNotEmpty()) {
+            requestPermissionLauncher.launch(notGranted.toTypedArray())
+        } else {
+            loadMedia()
+        }
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔐 RecoverableSecurityException Handling
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Handle user consent when modifying/deleting files created by other apps
+class MediaEditor : AppCompatActivity() {
+
+    private val modifyRequestLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // User approved → retry operation
+            pendingUri?.let { uri ->
+                when (pendingAction) {
+                    Action.UPDATE -> updateMediaItem(uri)
+                    Action.DELETE -> deleteMediaItem(uri)
+                }
+            }
+        } else {
+            Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+        }
+        pendingUri = null
+        pendingAction = null
+    }
+
+    private var pendingUri: Uri? = null
+    private var pendingAction: Action? = null
+
+    enum class Action {
+        UPDATE, DELETE
+    }
+
+    fun updateMediaItem(uri: Uri) {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.IS_FAVORITE, 1)
+        }
+
+        try {
+            contentResolver.update(uri, contentValues, null, null)
+            Toast.makeText(this, "Update complete", Toast.LENGTH_SHORT).show()
+        } catch (e: RecoverableSecurityException) {
+            // Android 10+: User consent required
+            pendingUri = uri
+            pendingAction = Action.UPDATE
+
+            val intentSender = e.userAction.actionIntent.intentSender
+            val request = IntentSenderRequest.Builder(intentSender).build()
+            modifyRequestLauncher.launch(request)
+        } catch (e: SecurityException) {
+            // No permission
+            Toast.makeText(this, "No permission", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun deleteMediaItem(uri: Uri) {
+        try {
+            val deletedRows = contentResolver.delete(uri, null, null)
+            if (deletedRows > 0) {
+                Toast.makeText(this, "Delete complete", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: RecoverableSecurityException) {
+            pendingUri = uri
+            pendingAction = Action.DELETE
+
+            val intentSender = e.userAction.actionIntent.intentSender
+            val request = IntentSenderRequest.Builder(intentSender).build()
+            modifyRequestLauncher.launch(request)
+        }
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ⚙️ MANAGE_EXTERNAL_STORAGE Special Permission
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Request MANAGE_EXTERNAL_STORAGE permission (file manager apps)
+fun requestManageExternalStorage() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (!Environment.isExternalStorageManager()) {
+            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            startActivityForResult(intent, REQUEST_CODE_MANAGE_STORAGE)
+        } else {
+            // Already has permission
+            accessAllFiles()
+        }
+    } else {
+        // Android 10 and below: Use WRITE_EXTERNAL_STORAGE
+        requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_CODE_STORAGE)
+    }
+}
+
+override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    super.onActivityResult(requestCode, resultCode, data)
+
+    if (requestCode == REQUEST_CODE_MANAGE_STORAGE) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (Environment.isExternalStorageManager()) {
+                accessAllFiles()
+            } else {
+                Toast.makeText(this, "All Files Access denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}
+
+fun accessAllFiles() {
+    // Full file system access available
+    val rootDir = Environment.getExternalStorageDirectory()
+    rootDir.listFiles()?.forEach { file ->
+        Log.d("FileManager", "File: ${file.absolutePath}")
+    }
+}</code></pre>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ MANAGE_EXTERNAL_STORAGE Restrictions:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Very strictly restricted</strong> on Google Play Store</li>
+                    <li>Allowed app types: File managers, backup/restore, antivirus, document management</li>
+                    <li>General apps will <strong>likely be rejected</strong></li>
+                    <li>In most cases <strong>MediaStore API + SAF</strong> is sufficient</li>
+                    <li>Play Store policy: <a href="https://support.google.com/googleplay/android-developer/answer/10467955" target="_blank" style="color: var(--accent-primary);">MANAGE_EXTERNAL_STORAGE Policy</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 8: Trash & Favorites -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Trash & Favorites Features
+            </h2>
+            <p class="section-description">
+                How to utilize the Trash and Favorites features supported since Android 11.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🗑️</span>
+                        Trash
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>is_trashed Flag</strong></p>
+                        <ul>
+                            <li>Supported on Android 11+</li>
+                            <li>Move to trash instead of immediate deletion</li>
+                            <li>Automatically permanently deleted after 30 days</li>
+                            <li>User can restore</li>
+                            <li>Manual emptying available in system settings</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⭐</span>
+                        Favorites
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>is_favorite Flag</strong></p>
+                        <ul>
+                            <li>Supported on Android 11+</li>
+                            <li>Media marked as favorite by user</li>
+                            <li>Special collection display in gallery apps</li>
+                            <li>Quick access available</li>
+                            <li>Auto-delete prevention (some apps)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📅</span>
+                        is_pending
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>In-progress Status</strong></p>
+                        <ul>
+                            <li>Supported on Android 10+</li>
+                            <li>Hide from other apps during file writing</li>
+                            <li>Set to 0 after completion to make public</li>
+                            <li>Used during downloads, camera captures</li>
+                            <li>Ensures atomic operations</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏰</span>
+                        date_expires
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Auto-expiration Time</strong></p>
+                        <ul>
+                            <li>Supported on Android 11+</li>
+                            <li>Permanent deletion time for trashed files</li>
+                            <li>Default 30 days (2592000 seconds)</li>
+                            <li>Automatically set by System</li>
+                            <li>Auto-deleted upon expiration</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🗑️ Trash Usage Example
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Move file to trash (Android 11+)
+fun moveToTrash(context: Context, imageUri: Uri) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.IS_TRASHED, 1)
+            // date_expires is automatically set by System (current time + 30 days)
+        }
+
+        try {
+            val updatedRows = context.contentResolver.update(imageUri, contentValues, null, null)
+            if (updatedRows > 0) {
+                Toast.makeText(context, "Moved to trash", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: RecoverableSecurityException) {
+            // Other app's file → user consent required
+            requestUserConsent(e)
+        }
+    } else {
+        // Android 10 and below: immediate deletion
+        context.contentResolver.delete(imageUri, null, null)
+    }
+}
+
+// Restore from trash
+fun restoreFromTrash(context: Context, imageUri: Uri) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.IS_TRASHED, 0)
+        }
+
+        try {
+            context.contentResolver.update(imageUri, contentValues, null, null)
+            Toast.makeText(context, "Restored", Toast.LENGTH_SHORT).show()
+        } catch (e: RecoverableSecurityException) {
+            requestUserConsent(e)
+        }
+    }
+}
+
+// Query all files in trash
+fun queryTrashedFiles(context: Context): List<Uri> {
+    val trashedFiles = mutableListOf<Uri>()
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val projection = arrayOf(
+            MediaStore.Images.Media._ID,
+            MediaStore.Images.Media.DISPLAY_NAME,
+            MediaStore.Images.Media.DATE_EXPIRES
+        )
+
+        val selection = "${MediaStore.Images.Media.IS_TRASHED} = ?"
+        val selectionArgs = arrayOf("1")
+
+        context.contentResolver.query(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            projection,
+            Bundle().apply {
+                putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
+                putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, selectionArgs)
+                putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_INCLUDE)
+            },
+            null
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idColumn)
+                val uri = ContentUris.withAppendedId(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    id
+                )
+                trashedFiles.add(uri)
+            }
+        }
+    }
+
+    return trashedFiles
+}
+
+// Permanently empty trash (immediate deletion)
+fun emptyTrash(context: Context, trashedUris: List<Uri>) {
+    trashedUris.forEach { uri ->
+        try {
+            context.contentResolver.delete(uri, null, null)
+        } catch (e: RecoverableSecurityException) {
+            requestUserConsent(e)
+        }
+    }
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ⭐ Favorites Usage Example
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Mark as favorite
+fun markAsFavorite(context: Context, imageUri: Uri, isFavorite: Boolean) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.IS_FAVORITE, if (isFavorite) 1 else 0)
+        }
+
+        try {
+            context.contentResolver.update(imageUri, contentValues, null, null)
+        } catch (e: RecoverableSecurityException) {
+            requestUserConsent(e)
+        }
+    }
+}
+
+// Query only favorite files
+fun queryFavorites(context: Context): List<Uri> {
+    val favorites = mutableListOf<Uri>()
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val projection = arrayOf(
+            MediaStore.Images.Media._ID,
+            MediaStore.Images.Media.DISPLAY_NAME
+        )
+
+        val selection = "${MediaStore.Images.Media.IS_FAVORITE} = ?"
+        val selectionArgs = arrayOf("1")
+
+        context.contentResolver.query(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            projection,
+            selection,
+            selectionArgs,
+            "${MediaStore.Images.Media.DATE_ADDED} DESC"
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idColumn)
+                val uri = ContentUris.withAppendedId(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    id
+                )
+                favorites.add(uri)
+            }
+        }
+    }
+
+    return favorites
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Trash & Favorites Key Points:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Trash</strong>: 30-day grace period before permanent deletion, prevents user mistakes</li>
+                    <li><strong>Favorites</strong>: Media marked as important by user, special treatment in UI</li>
+                    <li><strong>MATCH_INCLUDE</strong>: Must be explicitly specified to include Trash files in query results</li>
+                    <li><strong>date_expires</strong>: Automatically set by System, cannot be manually changed</li>
+                    <li><strong>Compatibility</strong>: Flags are ignored on Android versions below 11</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: Performance Optimization -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                Performance Optimization
+            </h2>
+            <p class="section-description">
+                How to optimize MediaStore queries and file operations for performance.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Projection Optimization
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Query Only Needed Columns</strong></p>
+                        <ul>
+                            <li>Specify only needed columns instead of all (*)</li>
+                            <li>Exclude BLOB columns (thumbnails)</li>
+                            <li>Reduced data transfer</li>
+                            <li>Improved query speed</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔢</span>
+                        Limit & Offset
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Pagination</strong></p>
+                        <ul>
+                            <li>Load small amounts at a time (e.g., 20)</li>
+                            <li>Implement infinite scroll</li>
+                            <li>Reduced memory usage</li>
+                            <li>Improved initial loading speed</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Batch Operations
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Bulk Processing</strong></p>
+                        <ul>
+                            <li>Insert multiple records at once with bulkInsert</li>
+                            <li>Transaction processing with applyBatch</li>
+                            <li>Reduced Binder call count</li>
+                            <li>Minimized IPC overhead</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        ContentObserver
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Change Detection</strong></p>
+                        <ul>
+                            <li>Real-time MediaStore change detection</li>
+                            <li>Push method instead of polling</li>
+                            <li>Automatic UI updates</li>
+                            <li>Resource efficient</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📊 Cursor Optimization
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// ❌ Bad example: Query all columns
+val cursor = contentResolver.query(
+    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+    null,  // All columns
+    null,
+    null,
+    null
+)
+
+// ✅ Good example: Query only needed columns
+val projection = arrayOf(
+    MediaStore.Images.Media._ID,
+    MediaStore.Images.Media.DISPLAY_NAME,
+    MediaStore.Images.Media.DATE_ADDED
+)
+
+val cursor = contentResolver.query(
+    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+    projection,  // Only needed
+    null,
+    null,
+    "${MediaStore.Images.Media.DATE_ADDED} DESC LIMIT 20"  // Pagination
+)
+
+// ✅ Android 10+: Specify LIMIT/OFFSET with Bundle
+val queryArgs = Bundle().apply {
+    putInt(ContentResolver.QUERY_ARG_LIMIT, 20)
+    putInt(ContentResolver.QUERY_ARG_OFFSET, 0)
+    putString(ContentResolver.QUERY_ARG_SORT_COLUMNS, arrayOf(MediaStore.Images.Media.DATE_ADDED).first())
+    putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_DESCENDING)
+}
+
+val cursor = contentResolver.query(
+    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+    projection,
+    queryArgs,
+    null
+)
+
+// ⚠️ Always close Cursor
+cursor?.use { c ->
+    while (c.moveToNext()) {
+        // Process data
+    }
+}  // Auto close at end of use block</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📦 Batch Operations
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Insert multiple images at once with bulkInsert
+fun bulkInsertImages(context: Context, images: List<ImageInfo>): Int {
+    val contentValues = images.map { image ->
+        ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, image.name)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+        }
+    }.toTypedArray()
+
+    return context.contentResolver.bulkInsert(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        contentValues
+    )
+}
+
+// Execute multiple operations as transaction with applyBatch
+fun batchOperations(context: Context, operations: List<ContentProviderOperation>) {
+    try {
+        val results = context.contentResolver.applyBatch(
+            MediaStore.AUTHORITY,
+            ArrayList(operations)
+        )
+        Log.d("Batch", "Success: ${results.size} operations")
+    } catch (e: Exception) {
+        Log.e("Batch", "Failed", e)
+    }
+}
+
+// Example: Mark multiple images as Favorite
+fun batchMarkFavorite(context: Context, imageUris: List<Uri>) {
+    val operations = imageUris.map { uri ->
+        ContentProviderOperation.newUpdate(uri)
+            .withValue(MediaStore.Images.Media.IS_FAVORITE, 1)
+            .build()
+    }
+
+    batchOperations(context, operations)
+}</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 ContentObserver Change Detection
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// Detect MediaStore changes
+class MediaObserver(
+    private val handler: Handler,
+    private val onChange: () -> Unit
+) : ContentObserver(handler) {
+
+    override fun onChange(selfChange: Boolean) {
+        super.onChange(selfChange)
+        onChange()
+    }
+
+    override fun onChange(selfChange: Boolean, uri: Uri?) {
+        super.onChange(selfChange, uri)
+        Log.d("MediaObserver", "Changed: $uri")
+        onChange()
+    }
+}
+
+// Usage in Activity
+class GalleryActivity : AppCompatActivity() {
+    private lateinit var mediaObserver: ContentObserver
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Register ContentObserver
+        val handler = Handler(Looper.getMainLooper())
+        mediaObserver = MediaObserver(handler) {
+            // Update UI on MediaStore change
+            loadImages()
+        }
+
+        contentResolver.registerContentObserver(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            true,  // Also detect descendants
+            mediaObserver
+        )
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        contentResolver.unregisterContentObserver(mediaObserver)
+    }
+
+    private fun loadImages() {
+        // Reload images and update UI
+        lifecycleScope.launch {
+            val images = withContext(Dispatchers.IO) {
+                queryImages(this@GalleryActivity)
+            }
+            adapter.submitList(images)
+        }
+    }
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>📏 Performance Benchmark:</strong>
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Operation</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Before Optimization</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">After Optimization</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Improvement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Query (1000 items)</strong></td>
+                            <td style="padding: 10px;">250ms (all columns)</td>
+                            <td style="padding: 10px;">80ms (Projection)</td>
+                            <td style="padding: 10px;">68% improvement</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Insert (100 items)</strong></td>
+                            <td style="padding: 10px;">1500ms (individual inserts)</td>
+                            <td style="padding: 10px;">120ms (bulkInsert)</td>
+                            <td style="padding: 10px;">92% improvement</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Update (50 items)</strong></td>
+                            <td style="padding: 10px;">800ms (individual updates)</td>
+                            <td style="padding: 10px;">90ms (applyBatch)</td>
+                            <td style="padding: 10px;">89% improvement</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px;"><strong>Change Detection</strong></td>
+                            <td style="padding: 10px;">Polling (query every 1sec)</td>
+                            <td style="padding: 10px;">ContentObserver (push)</td>
+                            <td style="padding: 10px;">95% CPU reduction</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 10: Android Version Changes -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                Android Version Changes
+            </h2>
+            <p class="section-description">
+                Summary of major changes in Scoped Storage and permission model from Android 10 to 13.
+            </p>
+
+            <div class="highlight-box">
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Item</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Android 9 (Pie)</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Android 10 (Q)</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Android 11 (R)</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Android 12 (S)</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Android 13 (T)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Storage Model</strong></td>
+                            <td style="padding: 10px;">Legacy Storage</td>
+                            <td style="padding: 10px;">Scoped Storage (optional)</td>
+                            <td style="padding: 10px;">Scoped Storage (enforced)</td>
+                            <td style="padding: 10px;">Scoped Storage</td>
+                            <td style="padding: 10px;">Scoped Storage</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Permissions</strong></td>
+                            <td style="padding: 10px;">READ/WRITE_EXTERNAL_STORAGE</td>
+                            <td style="padding: 10px;">READ_EXTERNAL_STORAGE</td>
+                            <td style="padding: 10px;">READ_EXTERNAL_STORAGE</td>
+                            <td style="padding: 10px;">READ_EXTERNAL_STORAGE</td>
+                            <td style="padding: 10px;">READ_MEDIA_IMAGES/VIDEO/AUDIO</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>File Access</strong></td>
+                            <td style="padding: 10px;">Direct File API access</td>
+                            <td style="padding: 10px;">MediaStore + File API</td>
+                            <td style="padding: 10px;">MediaStore (recommended)</td>
+                            <td style="padding: 10px;">MediaStore (required)</td>
+                            <td style="padding: 10px;">MediaStore (required)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>FUSE</strong></td>
+                            <td style="padding: 10px;">None</td>
+                            <td style="padding: 10px;">None</td>
+                            <td style="padding: 10px;">FUSE Daemon</td>
+                            <td style="padding: 10px;">FUSE Passthrough</td>
+                            <td style="padding: 10px;">FUSE Passthrough</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Trash & Favorites</strong></td>
+                            <td style="padding: 10px;">None</td>
+                            <td style="padding: 10px;">None</td>
+                            <td style="padding: 10px;">is_trashed, is_favorite</td>
+                            <td style="padding: 10px;">Same</td>
+                            <td style="padding: 10px;">Same</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Modify Other Apps' Files</strong></td>
+                            <td style="padding: 10px;">Freely available</td>
+                            <td style="padding: 10px;">RecoverableSecurityException</td>
+                            <td style="padding: 10px;">RecoverableSecurityException</td>
+                            <td style="padding: 10px;">Same</td>
+                            <td style="padding: 10px;">Same</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Location Redaction</strong></td>
+                            <td style="padding: 10px;">None</td>
+                            <td style="padding: 10px;">ACCESS_MEDIA_LOCATION required</td>
+                            <td style="padding: 10px;">Same</td>
+                            <td style="padding: 10px;">Same</td>
+                            <td style="padding: 10px;">Same</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px;"><strong>MANAGE_EXTERNAL_STORAGE</strong></td>
+                            <td style="padding: 10px;">None</td>
+                            <td style="padding: 10px;">None</td>
+                            <td style="padding: 10px;">Introduced (special permission)</td>
+                            <td style="padding: 10px;">Play Store restrictions tightened</td>
+                            <td style="padding: 10px;">Even stricter restrictions</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔄 Migration Guide
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        Android 9 → 10
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Optional Scoped Storage Introduction</strong></p>
+                        <ul>
+                            <li>Temporarily bypass with <code>requestLegacyExternalStorage=true</code></li>
+                            <li>Start using MediaStore instead of File API</li>
+                            <li>WRITE_EXTERNAL_STORAGE unnecessary (for own media)</li>
+                            <li>Apply ContentValues + OutputStream pattern</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        Android 10 → 11
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Scoped Storage Enforced</strong></p>
+                        <ul>
+                            <li><code>requestLegacyExternalStorage</code> ignored</li>
+                            <li>File API access restricted (getExternalStorageDirectory unavailable)</li>
+                            <li>Real-time permission check with FUSE Daemon</li>
+                            <li>Trash & Favorites features available</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">3️⃣</span>
+                        Android 11 → 12
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>FUSE Passthrough Optimization</strong></p>
+                        <ul>
+                            <li>Significant I/O performance improvement (bypass User-space)</li>
+                            <li>No app code changes needed (automatic)</li>
+                            <li>MANAGE_EXTERNAL_STORAGE policy tightened</li>
+                            <li>Play Store review stricter</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">4️⃣</span>
+                        Android 12 → 13
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Granular Permissions Introduced</strong></p>
+                        <ul>
+                            <li>Split into READ_MEDIA_IMAGES/VIDEO/AUDIO</li>
+                            <li>Users control permissions by media type</li>
+                            <li>Declare 3 permissions in AndroidManifest.xml</li>
+                            <li>Maintain backward compatibility (maxSdkVersion)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ⚠️ Deprecated API Alternatives
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// ❌ Deprecated: Direct File API access (Android 10+)
+val file = File(Environment.getExternalStorageDirectory(), "Pictures/photo.jpg")
+FileOutputStream(file).use { out ->
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+}
+
+// ✅ Recommended: MediaStore API
+val contentValues = ContentValues().apply {
+    put(MediaStore.Images.Media.DISPLAY_NAME, "photo.jpg")
+    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+    put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+}
+
+val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+uri?.let {
+    contentResolver.openOutputStream(it)?.use { out ->
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+    }
+}
+
+// ❌ Deprecated: MediaStore.Images.Thumbnails (Android 10+)
+val thumbnail = MediaStore.Images.Thumbnails.getThumbnail(
+    contentResolver, imageId, MediaStore.Images.Thumbnails.MINI_KIND, null
+)
+
+// ✅ Recommended: loadThumbnail()
+val thumbnail = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    contentResolver.loadThumbnail(imageUri, Size(512, 512), null)
+} else {
+    // Fallback for older versions
+    MediaStore.Images.Thumbnails.getThumbnail(
+        contentResolver, imageId, MediaStore.Images.Thumbnails.MINI_KIND, null
+    )
+}</code></pre>
+        </section>
+
+        <!-- Section 11: Debugging & Troubleshooting -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                Debugging & Troubleshooting
+            </h2>
+            <p class="section-description">
+                Tools and methods for diagnosing and resolving MediaProvider issues.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📊 dumpsys Commands
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># Query MediaProvider status
+adb shell dumpsys media_provider
+
+# Database statistics
+adb shell dumpsys media_provider database
+
+# FUSE status
+adb shell dumpsys media_provider fuse
+
+# Permissions and per-app access records
+adb shell dumpsys media_provider permissions
+
+# Direct MediaStore database query (development builds)
+adb shell sqlite3 /data/data/com.android.providers.media.module/databases/external.db
+> SELECT _id, _display_name, _size FROM files WHERE media_type=1 LIMIT 10;
+> .quit</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔧 adb shell content Commands
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># MediaStore query (image query)
+adb shell content query --uri content://media/external/images/media \
+  --projection _id,_display_name,_size
+
+# Query with specific condition (size > 1MB)
+adb shell content query --uri content://media/external/images/media \
+  --projection _id,_display_name,_size \
+  --where "_size>1048576"
+
+# Insert new record
+adb shell content insert --uri content://media/external/images/media \
+  --bind _display_name:s:test.jpg \
+  --bind mime_type:s:image/jpeg
+
+# Update record (set Favorite)
+adb shell content update --uri content://media/external/images/media/123 \
+  --bind is_favorite:i:1
+
+# Delete record
+adb shell content delete --uri content://media/external/images/media/123
+
+# Trigger MediaScanner (full scan)
+adb shell am broadcast -a android.intent.action.MEDIA_MOUNTED \
+  -d file:///storage/emulated/0</code></pre>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🐛 Troubleshooting Guide
+            </h3>
+
+            <div class="highlight-box">
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent-primary);">
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Symptom</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Cause</th>
+                            <th style="padding: 12px; text-align: left; color: var(--accent-primary);">Solution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>query() result is empty</strong></td>
+                            <td style="padding: 10px;">Insufficient permissions or no actual files</td>
+                            <td style="padding: 10px;">1. Check READ_MEDIA_* permissions<br>2. Check DB with adb shell content query<br>3. Trigger MediaScanner</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>insert() returns null URI</strong></td>
+                            <td style="padding: 10px;">Invalid ContentValues or insufficient permissions</td>
+                            <td style="padding: 10px;">1. Check DISPLAY_NAME, MIME_TYPE are required<br>2. Validate RELATIVE_PATH<br>3. Check Logcat for errors</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>openOutputStream() fails</strong></td>
+                            <td style="padding: 10px;">Invalid URI</td>
+                            <td style="padding: 10px;">1. Check insert() return URI<br>2. Check IS_PENDING flag cleared<br>3. Check storage space</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>RecoverableSecurityException thrown</strong></td>
+                            <td style="padding: 10px;">Attempting to modify other app's file</td>
+                            <td style="padding: 10px;">1. Request user consent via e.userAction.actionIntent<br>2. Retry in onActivityResult<br>3. Check if it's own file</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>New file not visible in gallery</strong></td>
+                            <td style="padding: 10px;">MediaScanner not run</td>
+                            <td style="padding: 10px;">1. Check IS_PENDING=0 is set<br>2. Call MediaScannerConnection.scanFile()<br>3. App restart or device reboot</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>Location info shows null</strong></td>
+                            <td style="padding: 10px;">Location Redaction (auto-deleted)</td>
+                            <td style="padding: 10px;">1. Add ACCESS_MEDIA_LOCATION permission<br>2. Use setRequireOriginal(true)<br>3. Read original with ExifInterface</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;"><strong>FileNotFoundException (Android 10+)</strong></td>
+                            <td style="padding: 10px;">Attempting direct File API access</td>
+                            <td style="padding: 10px;">1. Switch to MediaStore API<br>2. Use SAF<br>3. Use getExternalFilesDir()</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px;"><strong>Performance degradation (slow queries)</strong></td>
+                            <td style="padding: 10px;">Querying all columns or large data</td>
+                            <td style="padding: 10px;">1. Query only needed columns with Projection<br>2. Paginate with LIMIT/OFFSET<br>3. Use Background Thread<br>4. Close Cursor immediately</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📈 Performance Analysis
+            </h3>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"># Logcat filtering
+adb logcat -s MediaProvider FuseDaemon
+
+# Detect main thread I/O with StrictMode
+if (BuildConfig.DEBUG) {
+    StrictMode.setThreadPolicy(
+        StrictMode.ThreadPolicy.Builder()
+            .detectDiskReads()
+            .detectDiskWrites()
+            .penaltyLog()
+            .build()
+    )
+}
+
+// Measure query performance
+val startTime = SystemClock.elapsedRealtime()
+val cursor = contentResolver.query(...)
+val queryTime = SystemClock.elapsedRealtime() - startTime
+Log.d("Performance", "Query took ${queryTime}ms")
+
+cursor?.use {
+    val count = it.count
+    Log.d("Performance", "Returned $count rows")
+}
+
+# Using Android Profiler
+# Android Studio → View → Tool Windows → Profiler
+# - CPU: Track ContentResolver calls
+# - Memory: Check Cursor leaks
+# - Network: Should be none (local DB)</code></pre>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>💡 Debugging Best Practices:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Get overall status with dumpsys media_provider, then identify problem area</li>
+                    <li>Directly manipulate MediaStore DB with adb shell content to reproduce outside app</li>
+                    <li>Detect main thread I/O early with StrictMode</li>
+                    <li>Check detailed RecoverableSecurityException messages in Logcat</li>
+                    <li>Analyze Cursor leaks and performance bottlenecks with Android Profiler</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 12: AOSP Source Code Reference -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                AOSP Source Code Reference
+            </h2>
+            <p class="section-description">
+                AOSP source code locations and core logic for understanding MediaProvider implementation.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-bottom: 20px;">
+                📂 Main Source File Locations
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        MediaProvider (Java)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>ContentProvider Implementation</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>packages/providers/MediaProvider/src/com/android/providers/media/
+├── MediaProvider.java
+├── MediaService.java
+├── MediaVolume.java
+└── DatabaseHelper.java</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        FuseDaemon (C++)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>FUSE File System</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>packages/providers/MediaProvider/jni/
+├── FuseDaemon.cpp
+├── MediaProviderWrapper.cpp
+└── node-inl.h</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📚</span>
+                        MediaStore API
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Framework Contract</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>frameworks/base/core/java/android/provider/
+├── MediaStore.java
+└── MediaStore$*.java (Inner classes)</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🗄️</span>
+                        Database Schema
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>SQLite Schema Definition</strong></p>
+                        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; font-size: 0.75rem; margin-top: 10px;"><code>packages/providers/MediaProvider/src/com/android/providers/media/
+└── DatabaseHelper.java
+  - createFilesTable()
+  - createIndexes()</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                💻 Core Code Snippets
+            </h3>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                1. MediaProvider.java (Query Processing)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// packages/providers/MediaProvider/src/com/android/providers/media/MediaProvider.java
+
+@Override
+public Cursor query(Uri uri, String[] projection, String selection,
+                    String[] selectionArgs, String sortOrder) {
+    // Permission check
+    enforceCallingOrSelfPermissionAndAppOps(uri, callingPackage);
+
+    // URI parsing (determine which table)
+    final int match = matchUri(uri);
+    final DatabaseHelper helper = getDatabaseForUri(uri);
+    final SQLiteDatabase db = helper.getReadableDatabase();
+
+    // Build query
+    SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+    switch (match) {
+        case IMAGES_MEDIA:
+            qb.setTables("files");
+            qb.appendWhere("media_type=" + FileColumns.MEDIA_TYPE_IMAGE);
+            break;
+        case AUDIO_MEDIA:
+            qb.setTables("files");
+            qb.appendWhere("media_type=" + FileColumns.MEDIA_TYPE_AUDIO);
+            break;
+        // ...
+    }
+
+    // Scoped Storage: Filter other apps' files
+    if (!isCallerAllowed(uri)) {
+        qb.appendWhere("_data IS NOT NULL AND owner_package_name=?");
+        selectionArgs = appendSelectionArgs(selectionArgs, callingPackage);
+    }
+
+    // Execute query
+    Cursor c = qb.query(db, projection, selection, selectionArgs,
+                        null, null, sortOrder, limit);
+
+    // Set ContentObserver notification
+    c.setNotificationUri(getContext().getContentResolver(), uri);
+
+    return c;
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                2. FuseDaemon.cpp (File Open Handling)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// packages/providers/MediaProvider/jni/FuseDaemon.cpp
+
+static int fuse_open(const char* path, struct fuse_file_info* fi) {
+    // Request permission check to Java layer via JNI
+    JNIEnv* env = MaybeAttachCurrentThread();
+    jstring j_path = env->NewStringUTF(path);
+
+    // Call MediaProvider.shouldAllowAccess()
+    bool allowed = env->CallBooleanMethod(
+        media_provider_object_,
+        mid_should_allow_access_,
+        j_path,
+        fi->fh,  // File handle
+        uid,     // Caller UID
+        gid
+    );
+
+    if (!allowed) {
+        // Permission denied
+        return -EACCES;
+    }
+
+    // Open actual file
+    int fd = openat(AT_FDCWD, actual_path, fi->flags);
+    if (fd < 0) {
+        return -errno;
+    }
+
+    // Set up FUSE Passthrough (Android 12+)
+    if (supports_passthrough) {
+        struct fuse_passthrough_out passthrough;
+        passthrough.fd = fd;
+        fuse_reply_open_passthrough(req, fi, &passthrough);
+    } else {
+        fi->fh = fd;
+        fuse_reply_open(req, fi);
+    }
+
+    return 0;
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">
+                3. DatabaseHelper.java (Table Creation)
+            </h4>
+
+            <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid var(--accent-primary);"><code style="color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">// packages/providers/MediaProvider/src/com/android/providers/media/DatabaseHelper.java
+
+private void createFilesTable(SQLiteDatabase db) {
+    db.execSQL("CREATE TABLE files (" +
+        "_id INTEGER PRIMARY KEY AUTOINCREMENT," +
+        "_data TEXT UNIQUE COLLATE NOCASE," +
+        "_display_name TEXT," +
+        "_size INTEGER," +
+        "mime_type TEXT," +
+        "date_added INTEGER," +
+        "date_modified INTEGER," +
+        "media_type INTEGER," +
+        "width INTEGER," +
+        "height INTEGER," +
+        "duration INTEGER," +
+        "album TEXT," +
+        "artist TEXT," +
+        "is_trashed INTEGER DEFAULT 0," +
+        "is_favorite INTEGER DEFAULT 0," +
+        "is_pending INTEGER DEFAULT 0," +
+        "date_expires INTEGER," +
+        "owner_package_name TEXT," +
+        // ... more columns
+        ")"
+    );
+
+    // Create indexes (performance optimization)
+    db.execSQL("CREATE INDEX media_type_index ON files(media_type)");
+    db.execSQL("CREATE INDEX date_added_index ON files(date_added)");
+    db.execSQL("CREATE INDEX owner_package_name_index ON files(owner_package_name)");
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔗 AOSP Source Code Links:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:packages/providers/MediaProvider/" target="_blank" style="color: var(--accent-primary);">MediaProvider (Mainline Module)</a></li>
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/provider/MediaStore.java" target="_blank" style="color: var(--accent-primary);">MediaStore API (Framework)</a></li>
+                    <li><a href="https://cs.android.com/android/platform/superproject/+/master:packages/providers/MediaProvider/jni/FuseDaemon.cpp" target="_blank" style="color: var(--accent-primary);">FuseDaemon (Native)</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 13: Related Documentation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                Related Documentation
+            </h2>
+            <p class="section-description">
+                Navigate to other detailed documentation pages related to MediaProvider.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        <p>Explains the overall architecture and layer structure of Android media framework.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>Framework → Native layer interaction</li>
+                            <li>MediaPlayer, MediaRecorder API</li>
+                            <li>Binder IPC communication</li>
+                        </ul>
+                        <a href="media-framework-core.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        MediaExtractor
+                    </h3>
+                    <div class="card-description">
+                        <p>Explains container parsing and demuxing architecture.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>MP4/MKV/WebM Parser</li>
+                            <li>Sample extraction mechanism</li>
+                            <li>Seeking and Metadata</li>
+                        </ul>
+                        <a href="media-extractor.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        Media Playback Pipeline
+                    </h3>
+                    <div class="card-description">
+                        <p>Explains media playback pipeline and NuPlayer.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>NuPlayer architecture</li>
+                            <li>Buffer management and A/V Sync</li>
+                            <li>Streaming pipeline</li>
+                        </ul>
+                        <a href="media-playback.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>Covers AudioFlinger and audio pipeline.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>AudioTrack/AudioRecord</li>
+                            <li>AudioFlinger mixing</li>
+                            <li>Audio routing policy</li>
+                        </ul>
+                        <a href="audio-framework.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        MediaSession
+                    </h3>
+                    <div class="card-description">
+                        <p>Explains media playback control and session management.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>MediaSession framework</li>
+                            <li>Android Auto integration</li>
+                            <li>Media3 vs Legacy</li>
+                        </ul>
+                        <a href="mediasession.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Widevine DRM
+                    </h3>
+                    <div class="card-description">
+                        <p>Explains Widevine DRM architecture and security levels.</p>
+                        <ul style="margin-top: 10px;">
+                            <li>L1/L2/L3 security levels</li>
+                            <li>MediaDrm API</li>
+                            <li>Provisioning & licensing</li>
+                        </ul>
+                        <a href="widevine.html" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 40px;">
+                <h3 style="color: var(--accent-primary); font-size: 1.2rem; margin-bottom: 15px;">
+                    📚 Additional Learning Resources
+                </h3>
+                <ul style="padding-left: 20px;">
+                    <li><strong>Android Developer - Storage</strong>: <a href="https://developer.android.com/training/data-storage" target="_blank" style="color: var(--accent-primary);">developer.android.com/training/data-storage</a></li>
+                    <li><strong>Scoped Storage Guide</strong>: <a href="https://developer.android.com/about/versions/11/privacy/storage" target="_blank" style="color: var(--accent-primary);">developer.android.com/about/versions/11/privacy/storage</a></li>
+                    <li><strong>MediaStore API Reference</strong>: <a href="https://developer.android.com/reference/android/provider/MediaStore" target="_blank" style="color: var(--accent-primary);">developer.android.com/reference/android/provider/MediaStore</a></li>
+                    <li><strong>Storage Access Framework</strong>: <a href="https://developer.android.com/guide/topics/providers/document-provider" target="_blank" style="color: var(--accent-primary);">developer.android.com/guide/topics/providers/document-provider</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 60px;">
+            <p>Android MediaProvider Architecture</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                MediaStore, Scoped Storage & FUSE Daemon Deep Dive
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="index.html" style="color: var(--accent-primary); text-decoration: none;">
+                    ← Back to AOSP Media Framework
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script>
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

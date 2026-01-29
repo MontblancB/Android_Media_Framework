@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dolby Codecs & AOSP Integration | Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← Android Media
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">Dolby Codecs & AOSP Integration</h1>
+            <p class="page-subtitle">Comprehensive guide to Dolby Audio (Atmos, AC-4) and Dolby Vision architecture in
+                Android</p>
+        </header>
+
+        <!-- Section 1: Dolby Audio Codecs -->
+        <section class="section sec-audio">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Dolby Audio Codecs
+            </h2>
+            <p class="section-description">
+                Dolby audio technology has evolved from channel-based to object-based audio.
+            </p>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-cyan); font-size: 1.5rem;">Standard &
+                Broadcast</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Dolby Digital Plus (E-AC-3)
+                    </h3>
+                    <div class="card-description">
+                        <span class="tag tag-audio">Mainstream</span>
+                        <p style="margin-top: 10px;">The most widely used surround sound format for broadcasting, streaming, and cinema.
+                            Supports up to 7.1 channels with high compression efficiency and compatibility. It is the standard audio format in the Android ecosystem.</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-cyan); font-size: 1.5rem;">
+                Next-Generation Audio</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎧</span>
+                        Dolby Atmos (Object-based)
+                    </h3>
+                    <div class="card-description">
+                        <span class="tag tag-new">Immersive</span>
+                        <p style="margin-top: 10px;">Object-based audio technology that precisely places sound in 3D space.
+                            Delivered via E-AC-3 (JOC) or AC-4 codec, providing an immersive experience.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📻</span>
+                        Dolby AC-4
+                    </h3>
+                    <div class="card-description">
+                        <span class="tag tag-new">Next-Gen</span>
+                        <p style="margin-top: 10px;">Next-generation audio codec that provides high quality at low bitrates, supporting object-based audio and personalized audio experiences (Dialogue
+                            Enhancement, etc.).</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; margin-bottom: 20px; color: var(--text-primary); font-size: 1.5rem;">Dolby
+                Audio Comparison</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Dolby Digital (AC-3)</th>
+                        <th>Dolby Digital Plus (E-AC-3)</th>
+                        <th>Dolby AC-4</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Channels</strong></td>
+                        <td>Up to 5.1</td>
+                        <td>Up to 15.1 (Typ. 7.1)</td>
+                        <td>Immersive (7.1.4+)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Object Audio</strong></td>
+                        <td>No</td>
+                        <td>Yes (via Atmos metadata)</td>
+                        <td>Native Support</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Efficiency</strong></td>
+                        <td>Standard</td>
+                        <td>High</td>
+                        <td>Very High (50% > E-AC-3)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Key Use Case</strong></td>
+                        <td>DVD, Legacy Broadcast</td>
+                        <td>Streaming (Netflix), Blu-ray</td>
+                        <td>Next-Gen Broadcast, Streaming</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 2: Dolby Vision -->
+        <section class="section sec-video">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Dolby Vision (HDR)
+            </h2>
+            <p class="section-description">
+                Dolby Vision is an advanced HDR technology that uses dynamic metadata to optimize brightness and color on a scene-by-scene or frame-by-frame basis.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                    Source[Video Source] -- "Base Layer (BL)" --> Decoder[HEVC Decoder]
+                    Source -- "Enhancement Layer (EL)" --> Composer[Dolby Vision Composer]
+                    Source -- "Metadata (RPU)" --> Display[Display Manager]
+
+                    Decoder --> Composer
+                    Composer --> Display
+                    Display --> Screen[HDR Screen]
+
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-pink); font-size: 1.3rem;">Supported
+                Profiles in Android</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📺</span> Profile 5</h3>
+                    <div class="card-description">Primarily used by streaming services (Netflix, etc.). Uses proprietary IPTPQc2 color space.</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔄</span> Profile 8.1</h3>
+                    <div class="card-description">Profile with backward compatibility to HDR10.</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📹</span> Profile 8.4</h3>
+                    <div class="card-description">Based on HLG (Hybrid Log-Gamma), suitable for broadcasting and User Generated Content (UGC).</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: AOSP Audio Integration Architecture -->
+        <section class="section sec-arch">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                AOSP Audio Integration (DAP)
+            </h2>
+            <p class="section-description">
+                To support Dolby Audio in Android, the <strong>Dolby Audio Processing (DAP)</strong> engine must be integrated at the Audio HAL level. Typically, proprietary libraries such as <code>libdolbyms12.so</code> are used.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TD
+                    subgraph Framework
+                    App[Media App] --> AF[AudioFlinger]
+                    AF --> APM[AudioPolicyManager]
+                    end
+
+                    subgraph HAL [Audio HAL Vendor Implementation]
+                    AF -- "AudioTrack (PCM)" --> AudioHAL[Audio HAL Core]
+                    APM -- "Routing / Effects Control" --> AudioHAL
+
+                    subgraph DolbyEngine [Dolby Engine DAP MS12]
+                    Decoder[Dolby Decoder<br />AC-3 / E-AC-3 / AC-4]
+                    PostProc[Post Processing<br />Virtualizer / Vol Leveler]
+                    end
+
+                    AudioHAL -- "Bitstream / PCM" --> Decoder
+                    Decoder --> PostProc
+                    end
+
+                    subgraph Kernel
+                    PostProc --> Driver[ALSA Driver]
+                    end
+
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-purple); font-size: 1.3rem;">
+                Integration Key Points</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🎛️</span> AudioPolicyManager</h3>
+                    <div class="card-description">Requires setting Direct Output flags and modifying routing policies for Dolby formats (AC-3, E-AC-3).</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">🔌</span> Audio HAL (AIDL/HIDL)</h3>
+                    <div class="card-description">Implement to load the <code>libdolbyms12</code> library and bypass or decode audio streams to the Dolby engine.</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title"><span class="card-icon">📦</span> MediaCodec</h3>
+                    <div class="card-description">Expose the Dolby decoder at the framework level so apps can decode through <code>MediaCodec</code> (Software or Hardware Offload).</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: AOSP Video Integration Architecture -->
+        <section class="section sec-video">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                AOSP Video Integration (Dolby Vision)
+            </h2>
+            <p class="section-description">
+                Dolby Vision integration is done through the <strong>MediaCodec</strong> and <strong>Codec2</strong> frameworks.
+                The hardware decoder must support Dolby Vision profiles, and the display pipeline must be able to handle 10/12-bit and HDR metadata.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TD
+                    subgraph Application
+                    Player[ExoPlayer / Media3]
+                    Surface[SurfaceView HDR]
+                    end
+
+                    subgraph Framework
+                    MC[MediaCodec API]
+                    C2[Codec2 Framework]
+                    end
+
+                    subgraph Vendor [Vendor Implementation]
+                    C2Comp[C2 Component<br />c2.vendor.dv.decoder]
+                    HW[Hardware Video Decoder]
+                    Display[Display Processor<br />Tone Mapping]
+                    end
+
+                    Player -- "video/dolby-vision" --> MC
+                    MC --> C2
+                    C2 --> C2Comp
+                    C2Comp -- "Bitstream" --> HW
+                    HW -- "YUV P010 + Metadata" --> Surface
+                    Surface --> Display
+
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        Dolby Vision Capture (Android 13+)
+                    </h3>
+                    <div class="card-description">
+                        <p>
+                            Starting from Android 13, Dolby Vision <strong>Capture</strong> is officially supported.
+                            You can capture 10-bit HDR streams through the Camera2 API and encode them to Dolby Vision Profile 8.4 (HLG compatible) through MediaCodec.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Codec Detailed Specifications -->
+        <section class="section sec-spec">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Codec Detailed Specifications
+            </h2>
+            <p class="section-description">
+                Detailed description of technical specifications and metadata structures for Dolby audio and video codecs.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                🔊 Dolby Audio Technical Specs
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>E-AC-3 (DD+)</th>
+                        <th>AC-4</th>
+                        <th>Dolby Atmos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Bitrate</strong></td>
+                        <td>32-1024 kbps<br/>(Typical: 128-384 kbps)</td>
+                        <td>48-1536 kbps<br/>(50% more efficient than E-AC-3)</td>
+                        <td>Based on E-AC-3 or AC-4<br/>(JOC metadata added)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sample Rate</strong></td>
+                        <td>32, 44.1, 48 kHz</td>
+                        <td>44.1, 48, 96 kHz</td>
+                        <td>48 kHz (recommended)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Channel Configuration</strong></td>
+                        <td>1.0 ~ 7.1 (up to 15.1)</td>
+                        <td>1.0 ~ 7.1.4 (up to 24.1.10)</td>
+                        <td>7.1.4 (Bed: 7.1 + Heights: 4)<br/>+ up to 118 audio objects</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Object-based Audio</strong></td>
+                        <td>No (Channel-based)</td>
+                        <td>Yes (Native Object)</td>
+                        <td>Yes (JOC: Joint Object Coding)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Metadata</strong></td>
+                        <td>Dialogue Normalization<br/>Dynamic Range Control</td>
+                        <td>Dialogue Enhancement<br/>Personalization<br/>Loudness Management</td>
+                        <td>Object Position (3D)<br/>Renderer Instructions<br/>Height Channel Mapping</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Container</strong></td>
+                        <td>MP4, MKV, TS</td>
+                        <td>MP4, MKV, TS</td>
+                        <td>MP4 (via E-AC-3 JOC)<br/>MAT (TrueHD + Atmos)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Primary Use Cases</strong></td>
+                        <td>Netflix, Disney+<br/>Blu-ray</td>
+                        <td>Next-gen broadcast (ATSC 3.0)<br/>Streaming</td>
+                        <td>Cinema, Home Cinema<br/>Premium Streaming</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎧 Dolby Atmos Rendering
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Object-based Audio
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>3D Spatial Audio Placement</strong></p>
+                        <ul>
+                            <li><strong>Bed Channels</strong>: Traditional channel-based (7.1)</li>
+                            <li><strong>Height Channels</strong>: Ceiling speakers (4)</li>
+                            <li><strong>Audio Objects</strong>: Independently positionable (up to 118)</li>
+                            <li><strong>Renderer</strong>: Real-time conversion to match playback environment<br/>(e.g., 7.1.4 → 5.1 or Headphone)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎚️</span>
+                        JOC (Joint Object Coding)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Efficient Object Encoding</strong></p>
+                        <ul>
+                            <li>Metadata embedded in E-AC-3 bitstream</li>
+                            <li>Backward compatible with existing E-AC-3 decoders</li>
+                            <li>Atmos renderer reads metadata to recreate 3D space</li>
+                            <li>Minimal bitrate increase (about 20-50 kbps added)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Binaural Rendering
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Headphone Optimization</strong></p>
+                        <ul>
+                            <li>HRTF (Head-Related Transfer Function) applied</li>
+                            <li>3D spatial recreation with 2-channel stereo</li>
+                            <li>DAP (Dolby Audio Processing) engine required</li>
+                            <li>Provides immersive experience on smartphones and tablets</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📐</span>
+                        Channel Layout
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Standard Atmos Configurations</strong></p>
+                        <ul>
+                            <li><strong>5.1.2</strong>: FL, FR, C, LFE, SL, SR + TFL, TFR</li>
+                            <li><strong>5.1.4</strong>: 5.1 + TFL, TFR, TBL, TBR</li>
+                            <li><strong>7.1.4</strong>: 7.1 + 4 Heights (recommended)</li>
+                            <li><strong>9.1.6</strong>: 9.1 + 6 Heights (cinema)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📺 Dolby Vision Metadata Structure
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph Stream["Dolby Vision Stream"]
+                        BL["Base Layer (BL)<br/>SDR/HDR10 compatible<br/>8/10-bit HEVC"]
+                        EL["Enhancement Layer (EL)<br/>Additional color info<br/>Profile 5/7 only"]
+                        RPU["RPU (Reference Processing Unit)<br/>Dynamic Metadata<br/>Scene/Frame-by-Frame"]
+                    end
+
+                    subgraph Decoder["Dolby Vision Decoder"]
+                        COMPOSER["DV Composer<br/>BL + EL Composition"]
+                        DM["Display Manager<br/>RPU Processing & Tone Mapping"]
+                    end
+
+                    BL --> COMPOSER
+                    EL --> COMPOSER
+                    RPU --> DM
+                    COMPOSER --> DM
+                    DM --> SCREEN["HDR Display<br/>(10/12-bit Panel)"]
+                </div>
+            </div>
+
+            <table class="comparison-table" style="margin-top: 30px;">
+                <thead>
+                    <tr>
+                        <th>Profile</th>
+                        <th>Base Layer</th>
+                        <th>Enhancement Layer</th>
+                        <th>Metadata</th>
+                        <th>Primary Use Cases</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Profile 5</strong></td>
+                        <td>Proprietary IPTPQc2<br/>(10-bit)</td>
+                        <td>Required<br/>(10-bit)</td>
+                        <td>RPU<br/>(Scene/Frame)</td>
+                        <td>Streaming<br/>(Netflix, Apple TV+)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Profile 7</strong></td>
+                        <td>Proprietary IPTPQc2<br/>(10/12-bit)</td>
+                        <td>Optional<br/>(12-bit)</td>
+                        <td>RPU<br/>(Scene)</td>
+                        <td>UHD Blu-ray<br/>(Physical media)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Profile 8.1</strong></td>
+                        <td>HDR10<br/>(10-bit HEVC)</td>
+                        <td>None</td>
+                        <td>RPU<br/>(Frame)</td>
+                        <td>HDR10 backward compatible<br/>Streaming</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Profile 8.4</strong></td>
+                        <td>HLG<br/>(10-bit HEVC)</td>
+                        <td>None</td>
+                        <td>RPU<br/>(Scene)</td>
+                        <td>Broadcast, UGC<br/>(Camera capture)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 RPU (Reference Processing Unit)</strong><br/>
+                The core metadata of Dolby Vision, containing the following information for each scene or frame:
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Target Display</strong>: Display characteristics to optimize for (Peak Brightness, Color Gamut)</li>
+                    <li><strong>Tone Mapping</strong>: HDR → SDR or HDR → different HDR conversion curves</li>
+                    <li><strong>Color Grading</strong>: Color and brightness information intended by the creator</li>
+                    <li><strong>Trim Pass</strong>: Fine-tuning parameters per display</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 6: MediaCodec API Usage Examples -->
+        <section class="section sec-api">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                MediaCodec API Usage Examples
+            </h2>
+            <p class="section-description">
+                Actual code examples for playing Dolby Audio and Dolby Vision in apps.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                🔊 Dolby Audio Passthrough
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        E-AC-3 Passthrough Setup
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Direct Bitstream Output (HDMI)</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Direct output of compressed bitstream without using MediaCodec
+val audioTrack = AudioTrack.Builder()
+    .setAudioAttributes(
+        AudioAttributes.Builder()
+            .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .build()
+    )
+    .setAudioFormat(
+        AudioFormat.Builder()
+            .setEncoding(AudioFormat.ENCODING_E_AC3)
+            .setSampleRate(48000)
+            .setChannelMask(AudioFormat.CHANNEL_OUT_5POINT1)
+            .build()
+    )
+    .setTransferMode(AudioTrack.MODE_STREAM)
+    .setBufferSizeInBytes(bufferSize)
+    .build()
+
+// Directly write compressed E-AC-3 frames
+audioTrack.write(compressedAudioFrame, offset, size)</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎧</span>
+                        E-AC-3 PCM Decoding
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Decoding with MediaCodec</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Create E-AC-3 decoder
+val decoder = MediaCodec.createDecoderByType("audio/eac3")
+
+val format = MediaFormat().apply {
+    setString(MediaFormat.KEY_MIME, "audio/eac3")
+    setInteger(MediaFormat.KEY_SAMPLE_RATE, 48000)
+    setInteger(MediaFormat.KEY_CHANNEL_COUNT, 6) // 5.1
+}
+
+decoder.configure(format, null, null, 0)
+decoder.start()
+
+// Input: Compressed E-AC-3
+// Output: PCM (16-bit Interleaved)</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎼</span>
+                        AC-4 Decoder Usage
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Next-Generation Audio Codec</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// AC-4 decoder (vendor implementation required)
+val decoder = MediaCodec.createDecoderByType("audio/ac4")
+
+val format = MediaFormat.createAudioFormat(
+    "audio/ac4",
+    48000,  // Sample Rate
+    6       // Channel Count (up to 24.1.10)
+)
+
+// AC-4 specific parameters
+format.setInteger("dialog-enhancement", 1)  // Dialogue enhancement
+format.setInteger("presentation-id", 0)      // Presentation selection
+
+decoder.configure(format, null, null, 0)
+decoder.start()</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Dolby Atmos Support Check
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Device Capability Check</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>fun supportsAtmos(): Boolean {
+    val audioManager = getSystemService(AudioManager::class.java)
+
+    // Check E-AC-3 JOC support on HDMI/digital output
+    val encodings = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+        .filter { it.type == AudioDeviceInfo.TYPE_HDMI }
+        .flatMap { it.encodings.toList() }
+
+    return AudioFormat.ENCODING_E_AC3_JOC in encodings ||
+           AudioFormat.ENCODING_DOLBY_TRUEHD in encodings
+}
+
+// Enable Atmos with AudioAttributes
+val attrs = AudioAttributes.Builder()
+    .setSpatializationBehavior(
+        AudioAttributes.SPATIALIZATION_BEHAVIOR_AUTO
+    )
+    .build()</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📺 Dolby Vision Playback
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        ExoPlayer Dolby Vision Setup
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Using Media3 ExoPlayer</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// build.gradle
+implementation("androidx.media3:media3-exoplayer:1.2.0")
+
+// ExoPlayer initialization
+val player = ExoPlayer.Builder(context)
+    .setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT)
+    .build()
+
+// Enable Surface HDR mode
+val surfaceView = findViewById&lt;SurfaceView&gt;(R.id.surface)
+surfaceView.holder.addCallback(object : SurfaceHolder.Callback {
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        // Request HDR mode
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            holder.surface.setFrameRate(
+                60f,
+                Surface.FRAME_RATE_COMPATIBILITY_DEFAULT
+            )
+        }
+    }
+})
+
+player.setVideoSurfaceHolder(surfaceView.holder)</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        MediaCodec Dolby Vision
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Using MediaCodec Directly</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Dolby Vision decoder
+val decoder = MediaCodec.createDecoderByType("video/dolby-vision")
+
+val format = MediaFormat.createVideoFormat(
+    "video/dolby-vision",
+    3840,  // 4K UHD
+    2160
+).apply {
+    setInteger(MediaFormat.KEY_PROFILE,
+        MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheSt)
+    setInteger(MediaFormat.KEY_COLOR_FORMAT,
+        MediaCodecInfo.CodecCapabilities.COLOR_Format32bitABGR2101010)
+    // 10-bit color
+}
+
+// Set HDR Static Metadata
+val hdrStaticInfo = ByteBuffer.allocate(25)
+// ... fill metadata
+format.setByteBuffer("hdr-static-info", hdrStaticInfo)
+
+decoder.configure(format, surface, null, 0)
+decoder.start()</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Surface HDR Capability Check
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Display HDR Support Check</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>fun supportsDolbyVision(): Boolean {
+    val display = (getSystemService(Context.DISPLAY_SERVICE)
+        as DisplayManager).displays[0]
+
+    val hdrCapabilities = display.hdrCapabilities
+
+    return Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION in
+           hdrCapabilities.supportedHdrTypes
+}
+
+// Display Peak Brightness
+val maxLuminance = display.hdrCapabilities
+    .desiredMaxLuminance  // nits (cd/m²)
+
+// Check Profile support
+val codecList = MediaCodecList(MediaCodecList.ALL_CODECS)
+val dvCodecs = codecList.codecInfos.filter {
+    it.supportedTypes.contains("video/dolby-vision")
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎞️</span>
+                        Dolby Vision Capture (Android 13+)
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>10-bit HDR Video Recording</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Camera2 10-bit HLG capture
+val characteristics = cameraManager
+    .getCameraCharacteristics(cameraId)
+
+val capabilities = characteristics.get(
+    CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES
+)
+
+val supports10Bit = CameraCharacteristics
+    .REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT in capabilities!!
+
+// MediaRecorder Dolby Vision encoding
+val recorder = MediaRecorder().apply {
+    setVideoSource(MediaRecorder.VideoSource.SURFACE)
+    setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+    setVideoEncoder(MediaRecorder.VideoEncoder.HEVC)
+    setVideoEncodingProfileLevel(
+        MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10,
+        MediaCodecInfo.CodecProfileLevel.HEVCMainTierLevel5
+    )
+    // Profile 8.4 (HLG based)
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ Important Notes</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Passthrough</strong>: HDMI connection and AVR/soundbar must support Dolby decoding</li>
+                    <li><strong>Dolby Vision</strong>: Display must be HDR10+/Dolby Vision certified</li>
+                    <li><strong>Licensing</strong>: Commercial apps require Dolby license agreement</li>
+                    <li><strong>Testing</strong>: Validation with Dolby-provided sample content recommended</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 7: Vendor Implementation Guide -->
+        <section class="section sec-vendor">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Vendor Implementation Guide
+            </h2>
+            <p class="section-description">
+                How hardware manufacturers integrate Dolby technology into AOSP.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                🔊 Audio HAL - Dolby MS12 Integration
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">1️⃣</span>
+                        libdolbyms12.so Integration
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby Audio Engine Library</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// hardware/[vendor]/[device]/audio/audio_hw.c
+
+#include &lt;dolby_ms12.h&gt;
+
+struct dolby_ms12_context {
+    void *ms12_handle;
+    dolby_ms12_config_t config;
+};
+
+static int init_dolby_ms12(struct audio_device *adev) {
+    adev->dolby_ctx = calloc(1, sizeof(struct dolby_ms12_context));
+
+    // MS12 initialization
+    adev->dolby_ctx->ms12_handle =
+        dolby_ms12_init(&adev->dolby_ctx->config);
+
+    // Config: Enable AC-3, E-AC-3, AC-4 decoders
+    dolby_ms12_set_decoder(adev->dolby_ctx->ms12_handle,
+                           DOLBY_MS12_DEC_AC3 |
+                           DOLBY_MS12_DEC_EAC3 |
+                           DOLBY_MS12_DEC_AC4);
+
+    return 0;
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">2️⃣</span>
+                        audio_policy_configuration.xml
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby Format Routing Configuration</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>&lt;!-- device/[vendor]/[device]/audio/audio_policy_configuration.xml --&gt;
+
+&lt;audioPolicyConfiguration&gt;
+    &lt;modules&gt;
+        &lt;module name="primary" halVersion="AIDL"&gt;
+            &lt;mixPorts&gt;
+                &lt;!-- Direct Output for Dolby Formats --&gt;
+                &lt;mixPort name="dolby_direct" role="source"
+                         flags="AUDIO_OUTPUT_FLAG_DIRECT"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_AC3"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_5POINT1"/&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_E_AC3"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_7POINT1"/&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_AC4"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_7POINT1POINT4"/&gt;
+                &lt;/mixPort&gt;
+            &lt;/mixPorts&gt;
+        &lt;/module&gt;
+    &lt;/modules&gt;
+&lt;/audioPolicyConfiguration&gt;</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">3️⃣</span>
+                        Android.bp Build Configuration
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Audio HAL Build File</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// hardware/[vendor]/[device]/audio/Android.bp
+
+cc_library_shared {
+    name: "audio.primary.[device]",
+    vendor: true,
+
+    srcs: [
+        "audio_hw.c",
+        "dolby_ms12_wrapper.c",
+    ],
+
+    shared_libs: [
+        "libaudioutils",
+        "liblog",
+        "libcutils",
+        "libdolbyms12",  // Dolby proprietary library
+    ],
+
+    cflags: [
+        "-DDOLBY_MS12_ENABLED",
+        "-DDOLBY_ATMOS_ENABLED",
+    ],
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">4️⃣</span>
+                        AudioFlinger Integration
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Audio Data Processing</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// Passthrough vs PCM processing
+static ssize_t out_write(struct audio_stream_out *stream,
+                         const void *buffer, size_t bytes) {
+    struct stream_out *out = (struct stream_out *)stream;
+
+    if (out->format == AUDIO_FORMAT_E_AC3) {
+        // Passthrough: Direct compressed bitstream output to HDMI
+        return write_compressed_data(out, buffer, bytes);
+    } else {
+        // PCM: Output after Dolby MS12 decoding
+        void *pcm_output;
+        size_t pcm_size;
+
+        dolby_ms12_process(out->dolby_handle,
+                          buffer, bytes,
+                          &pcm_output, &pcm_size);
+
+        return pcm_write(out->pcm_device, pcm_output, pcm_size);
+    }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                📺 Video HAL - Dolby Vision Integration
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Codec2 Dolby Vision Component
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>C2Component Implementation</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// vendor/[company]/codec2/DolbyVisionDecoder.cpp
+
+class C2VendorDolbyVisionDecoder : public SimpleC2Component {
+public:
+    void process(const std::unique_ptr&lt;C2Work&gt;& work,
+                 const std::shared_ptr&lt;C2BlockPool&gt;& pool) override {
+
+        C2ReadView rView = work->input.buffers[0]
+            ->data().linearBlocks().front().map().get();
+
+        // Parse Dolby Vision bitstream
+        DolbyVisionFrame dvFrame;
+        parseDolbyVisionStream(rView.data(), rView.capacity(), &dvFrame);
+
+        // Pass BL + EL + RPU to hardware decoder
+        mHwDecoder->decode(dvFrame.baseLayer,
+                          dvFrame.enhancementLayer,
+                          dvFrame.rpu);
+
+        // Output 10-bit P010 or 12-bit P016
+        std::shared_ptr&lt;C2GraphicBlock&gt; block;
+        pool->fetchGraphicBlock(mWidth, mHeight,
+                               HAL_PIXEL_FORMAT_P010, // 10-bit
+                               usage, &block);
+
+        fillOutputBuffer(block, work);
+    }
+};</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📄</span>
+                        media_codecs.xml Declaration
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby Vision Codec Registration</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>&lt;!-- device/[vendor]/[device]/media_codecs.xml --&gt;
+
+&lt;MediaCodecs&gt;
+    &lt;Decoders&gt;
+        &lt;MediaCodec name="c2.vendor.dolby-vision.decoder"
+                    type="video/dolby-vision"&gt;
+            &lt;Limit name="size" min="96x96" max="3840x2160"/&gt;
+            &lt;Limit name="alignment" value="2x2"/&gt;
+            &lt;Limit name="block-size" value="16x16"/&gt;
+            &lt;Limit name="frame-rate" range="1-60"/&gt;
+            &lt;Limit name="bitrate" range="1-120000000"/&gt;
+
+            &lt;!-- Dolby Vision Profiles --&gt;
+            &lt;Feature name="profile-dolby-vision-dvhe-st" /&gt;
+            &lt;Feature name="profile-dolby-vision-dvhe-stn" /&gt;
+            &lt;Feature name="profile-dolby-vision-dvhe-dtr" /&gt;
+
+            &lt;Feature name="adaptive-playback"/&gt;
+            &lt;Feature name="secure-playback" required="true"/&gt;
+        &lt;/MediaCodec&gt;
+
+        &lt;!-- Dolby Audio Codecs --&gt;
+        &lt;MediaCodec name="c2.vendor.ac3.decoder" type="audio/ac3"/&gt;
+        &lt;MediaCodec name="c2.vendor.eac3.decoder" type="audio/eac3"/&gt;
+        &lt;MediaCodec name="c2.vendor.ac4.decoder" type="audio/ac4"/&gt;
+    &lt;/Decoders&gt;
+&lt;/MediaCodecs&gt;</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🖥️</span>
+                        Display Pipeline Configuration
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>HDR Metadata Processing</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// HWComposer HAL - Pass Dolby Vision metadata
+
+struct hwc_layer {
+    buffer_handle_t buffer;  // P010 10-bit YUV
+
+    // Dolby Vision RPU metadata
+    struct dolby_vision_metadata {
+        uint8_t profile;         // 5, 7, 8.1, 8.4
+        uint8_t level;
+        uint32_t rpu_size;
+        uint8_t *rpu_data;       // RPU binary
+
+        // Display Management
+        uint16_t target_max_luminance;  // nits
+        uint16_t target_min_luminance;
+        uint8_t tone_mapping_flag;
+    } dv_metadata;
+};
+
+// RPU processing and Tone Mapping in Display HAL
+int processDolbyVisionFrame(struct hwc_layer *layer) {
+    if (layer->dv_metadata.rpu_data) {
+        applyDolbyVisionToneMapping(
+            layer->buffer,
+            &layer->dv_metadata,
+            mDisplayCapabilities
+        );
+    }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Display Capability Configuration
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>HDR Static Info</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code>// frameworks/native/services/surfaceflinger/DisplayHardware/
+
+// Advertise display HDR capabilities
+HdrCapabilities getHdrCapabilities() {
+    HdrCapabilities caps;
+
+    caps.supportedHdrTypes = {
+        HdrType::HDR10,
+        HdrType::HLG,
+        HdrType::DOLBY_VISION
+    };
+
+    // Panel specs
+    caps.maxLuminance = 1000.0f;      // nits (cd/m²)
+    caps.maxAverageLuminance = 400.0f;
+    caps.minLuminance = 0.0001f;
+
+    return caps;
+}
+
+// Parse Dolby Vision VSVDB from EDID
+bool parseDolbyVisionVSVDB(uint8_t *edid) {
+    // IEEE OUI: 00-D0-46 (Dolby)
+    // Extract Version, DM Version, Target Display info
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ Vendor Implementation Checklist</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>✅ <strong>Dolby License</strong>: Contract and obtain libdolbyms12.so library</li>
+                    <li>✅ <strong>Audio HAL</strong>: Direct Output flag and Passthrough support</li>
+                    <li>✅ <strong>Codec2 HAL</strong>: Dolby Vision profile implementation</li>
+                    <li>✅ <strong>Display HAL</strong>: 10/12-bit pipeline and RPU processing</li>
+                    <li>✅ <strong>EDID</strong>: Dolby Vision VSVDB parsing and capability advertisement</li>
+                    <li>✅ <strong>SELinux</strong>: libdolbyms12 access permission settings</li>
+                    <li>✅ <strong>CTS/VTS</strong>: Pass Dolby-related tests</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 8: Licensing and Certification -->
+        <section class="section sec-license">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Licensing and Certification
+            </h2>
+            <p class="section-description">
+                License procedures and certification requirements for using Dolby technology in commercial products.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                📜 Dolby License Types
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Device License
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>For Hardware Manufacturers</strong></p>
+                        <ul>
+                            <li><strong>Targets</strong>: Smartphones, tablets, TVs, set-top boxes, automotive</li>
+                            <li><strong>Included Technologies</strong>:
+                                <ul style="margin-top: 5px; padding-left: 20px;">
+                                    <li>Dolby Audio (AC-3, E-AC-3, AC-4)</li>
+                                    <li>Dolby Atmos (DAP engine)</li>
+                                    <li>Dolby Vision (Decoder + Display Manager)</li>
+                                </ul>
+                            </li>
+                            <li><strong>Libraries</strong>: libdolbyms12.so, libdv_composer.so</li>
+                            <li><strong>Cost Structure</strong>: Per-device royalty (unit-based)</li>
+                            <li><strong>Contract Entity</strong>: OEM (Samsung, LG, Xiaomi, etc.)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        App License
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>For Software Developers</strong></p>
+                        <ul>
+                            <li><strong>Targets</strong>: Streaming apps, media players, OTT services</li>
+                            <li><strong>Included Technologies</strong>:
+                                <ul style="margin-top: 5px; padding-left: 20px;">
+                                    <li>Dolby Audio SDK (DAP post-processing)</li>
+                                    <li>Dolby Atmos Renderer (software)</li>
+                                </ul>
+                            </li>
+                            <li><strong>Limitations</strong>: Generally cannot use app alone without device license</li>
+                            <li><strong>Cost Structure</strong>: Annual subscription or download-based</li>
+                            <li><strong>Examples</strong>: Netflix, Disney+, Apple TV+ (content encoding)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎞️</span>
+                        Content Encoding License
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>For Content Creators</strong></p>
+                        <ul>
+                            <li><strong>Targets</strong>: Studios, broadcasters, streaming platforms</li>
+                            <li><strong>Tools</strong>:
+                                <ul style="margin-top: 5px; padding-left: 20px;">
+                                    <li>Dolby Atmos Production Suite</li>
+                                    <li>Dolby Vision CMU (Content Mapping Unit)</li>
+                                    <li>Dolby Media Encoder</li>
+                                </ul>
+                            </li>
+                            <li><strong>Cost</strong>: Project-based or annual license</li>
+                            <li><strong>Certification</strong>: Dolby Atmos Mastering studio certification</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔓</span>
+                        Development and Test License
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Free Dev Kit</strong>: Limited features, includes watermark</li>
+                            <li><strong>NDA Required</strong>: Non-disclosure agreement with Dolby</li>
+                            <li><strong>Technical Support</strong>: Includes Dolby engineer consulting</li>
+                            <li><strong>Sample Content</strong>: Atmos/Vision test files provided</li>
+                            <li><strong>Duration Limit</strong>: Typically 6-12 months</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ✅ Certification Process
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TD
+                    START[License Agreement Signed] --> DEV[Receive Dev Kit]
+                    DEV --> IMPL[AOSP Integration Implementation]
+                    IMPL --> SELF[Self-Test<br/>CTS/VTS Pass]
+                    SELF --> DOLBY_TEST[Dolby Certification Test]
+
+                    DOLBY_TEST --> AUDIO{Audio Test}
+                    DOLBY_TEST --> VIDEO{Video Test}
+
+                    AUDIO --> AUDIO_PASS[Passthrough Verification<br/>DAP Processing Verification<br/>Atmos Rendering Verification]
+                    VIDEO --> VIDEO_PASS[Profile 5/8.1 Decoding<br/>RPU Processing Verification<br/>Tone Mapping Verification]
+
+                    AUDIO_PASS --> CERT[Dolby Certificate Issued]
+                    VIDEO_PASS --> CERT
+
+                    CERT --> LOGO[Dolby Logo Usage Approved]
+                    LOGO --> PROD[Product Launch]
+                </div>
+            </div>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧪</span>
+                        Self-Test Items
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Vendor Self-Verification</strong></p>
+                        <ul>
+                            <li>Pass CTS MediaCodec tests</li>
+                            <li>Verify Dolby sample content playback</li>
+                            <li>Confirm HDMI Passthrough operation</li>
+                            <li>Verify Dolby Vision 10-bit output</li>
+                            <li>Log analysis and performance profiling</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏆</span>
+                        Dolby Official Certification Test
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby Lab Verification</strong></p>
+                        <ul>
+                            <li><strong>Audio</strong>: Decoding quality, sync, channel mapping</li>
+                            <li><strong>Atmos</strong>: Object rendering, Binaural output</li>
+                            <li><strong>Vision</strong>: Tone Mapping accuracy, color reproduction</li>
+                            <li><strong>Performance</strong>: Latency, CPU/memory usage</li>
+                            <li><strong>Compatibility</strong>: HDMI CEC, EDID parsing</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        Submission Materials
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Device specification (hardware BOM)</li>
+                            <li>AOSP version and build information</li>
+                            <li>Dolby library version</li>
+                            <li>Self-Test result report</li>
+                            <li>CTS/VTS test results</li>
+                            <li>Sample firmware (for testing)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏱️</span>
+                        Certification Duration and Cost
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Self-Test</strong>: 2-4 weeks (vendor internal)</li>
+                            <li><strong>Dolby Certification</strong>: 4-8 weeks (after submission)</li>
+                            <li><strong>Re-test</strong>: 1-2 additional weeks if issues found</li>
+                            <li><strong>Certification Cost</strong>: Varies by device type (NDA terms)</li>
+                            <li><strong>Annual Renewal</strong>: Re-certification required for new AOSP versions</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 License Inquiries</strong><br/>
+                For Dolby licensing and certification inquiries:
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Official Website</strong>: <a href="https://professional.dolby.com/" target="_blank" style="color: var(--accent-primary);">professional.dolby.com</a></li>
+                    <li><strong>Developer Portal</strong>: <a href="https://developer.dolby.com/" target="_blank" style="color: var(--accent-primary);">developer.dolby.com</a></li>
+                    <li><strong>Contact</strong>: Regional Dolby sales teams</li>
+                    <li><strong>Note</strong>: License costs are negotiated under NDA</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 9: CDD/CTS Requirements -->
+        <section class="section sec-cdd">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                CDD/CTS Requirements
+            </h2>
+            <p class="section-description">
+                Dolby-related items in the Android Compatibility Definition Document (CDD) and Compatibility Test Suite (CTS).
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                📜 Android CDD - Dolby Requirements
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>CDD Section</th>
+                        <th>Requirement</th>
+                        <th>Required/Recommended</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>5.1.3 Video Codecs</strong></td>
+                        <td>Dolby Vision Profile 5, 8.1 decoder support<br/>(4K HDR TV devices)</td>
+                        <td>Recommended (SHOULD)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5.2 Video Encoding</strong></td>
+                        <td>Dolby Vision Profile 8.4 encoder support<br/>(Android 13+ camera)</td>
+                        <td>Optional (MAY)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5.4.1 Audio Codecs</strong></td>
+                        <td>AC-3 (Dolby Digital) decoder<br/>(HDMI output devices)</td>
+                        <td>Recommended (SHOULD)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5.4.1 Audio Codecs</strong></td>
+                        <td>E-AC-3 (Dolby Digital Plus) decoder<br/>(HDMI output devices)</td>
+                        <td>Recommended (SHOULD)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5.8 Secure Media</strong></td>
+                        <td>Dolby Vision Secure Decoder<br/>(with Widevine L1)</td>
+                        <td>Required (MUST)<br/>(when DV supported)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5.10 Audio Output</strong></td>
+                        <td>HDMI Audio Passthrough<br/>(AC-3, E-AC-3, AC-4)</td>
+                        <td>Required (MUST)<br/>(when HDMI present)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>7.7 USB</strong></td>
+                        <td>USB-C Audio (Dolby Atmos support)</td>
+                        <td>Optional (MAY)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>8.3 Display</strong></td>
+                        <td>HDR10+ and Dolby Vision support<br/>(Peak Brightness ≥ 540 nits)</td>
+                        <td>Recommended (SHOULD)<br/>(HDR TV)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🧪 CTS Test Items
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        MediaCodec Tests
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>cts/tests/tests/media/codec/</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Dolby Audio Decoder test
+adb shell am instrument -w -e class \
+  android.media.cts.DecoderTest#testAC3Decode \
+  android.media.cts/.MediaCodecTestRunner
+
+adb shell am instrument -w -e class \
+  android.media.cts.DecoderTest#testEAC3Decode \
+  android.media.cts/.MediaCodecTestRunner
+
+# Dolby Vision Decoder test
+adb shell am instrument -w -e class \
+  android.media.cts.DecoderTest#testDolbyVisionDecode \
+  android.media.cts/.MediaCodecTestRunner</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        AudioTrack Tests
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>cts/tests/tests/media/audio/</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Passthrough support check
+adb shell am instrument -w -e class \
+  android.media.audio.cts.AudioTrackTest#testDirectPlayback \
+  android.media.cts/.AudioTestRunner
+
+# Dolby Atmos Encoding support
+adb shell am instrument -w -e class \
+  android.media.audio.cts.AudioFormatTest#testEAC3JOC \
+  android.media.cts/.AudioTestRunner</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        Display HDR Tests
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>cts/tests/tests/display/</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># HDR Capabilities query
+adb shell am instrument -w -e class \
+  android.display.cts.HdrCapabilitiesTest#testDolbyVision \
+  android.display.cts/.DisplayTestRunner
+
+# 10-bit Surface support
+adb shell am instrument -w -e class \
+  android.view.cts.SurfaceTest#test10BitColorFormat \
+  android.view.cts/.ViewTestRunner</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📹</span>
+                        Camera 10-bit Capture
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>cts/tests/camera/ (Android 13+)</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># 10-bit HDR capture support
+adb shell am instrument -w -e class \
+  android.camera.cts.Camera2Test#test10BitCapture \
+  android.camera.cts/.CameraTestRunner
+
+# Dolby Vision Profile 8.4 encoding
+adb shell am instrument -w -e class \
+  android.camera.cts.RecorderTest#testDolbyVisionRecording \
+  android.camera.cts/.CameraTestRunner</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ✅ Compatibility Matrix
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Device Type</th>
+                        <th>Audio Required</th>
+                        <th>Video Required</th>
+                        <th>CTS Tests</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Handheld (Phone/Tablet)</strong></td>
+                        <td>E-AC-3 decoder<br/>(SHOULD)</td>
+                        <td>Dolby Vision 5/8.1<br/>(MAY)</td>
+                        <td>MediaCodec Audio<br/>Display HDR (optional)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TV / Set-top Box</strong></td>
+                        <td>AC-3, E-AC-3 decoder<br/>Passthrough (MUST)</td>
+                        <td>Dolby Vision 5/8.1<br/>(SHOULD)</td>
+                        <td>MediaCodec Audio/Video<br/>AudioTrack Passthrough<br/>Display HDR</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Automotive (AAOS)</strong></td>
+                        <td>AC-3, E-AC-3<br/>AC-4 (recommended)</td>
+                        <td>Optional (MAY)</td>
+                        <td>MediaCodec Audio<br/>Car Audio Routing</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Wear OS</strong></td>
+                        <td>E-AC-3 decoder<br/>(MAY)</td>
+                        <td>N/A</td>
+                        <td>MediaCodec Audio (optional)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="warning-box" style="margin-top: 30px;">
+                <strong>⚠️ CTS Pass Requirements</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>If Dolby codec is declared in media_codecs.xml, related CTS tests run automatically</li>
+                    <li>Test failure prevents Android compatibility certification (GMS)</li>
+                    <li>Verify Dolby library version compatibility with CTS in advance</li>
+                    <li>Self-Test with CTS tests recommended for pre-verification</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 10: Debugging and Troubleshooting -->
+        <section class="section sec-debug">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                Debugging and Troubleshooting
+            </h2>
+            <p class="section-description">
+                Common issues and solutions during Dolby integration.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                🔍 Debugging Commands
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        adb logcat Filtering
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Extract Dolby-related Logs</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Audio HAL Dolby logs
+adb logcat -s audio_hw_primary DolbyMS12
+
+# MediaCodec Dolby Decoder
+adb logcat -s OMXCodec MediaCodec | grep -i dolby
+
+# AudioFlinger Routing
+adb logcat -s AudioFlinger AudioPolicyManager | grep -i "ac3\|eac3\|ac4"
+
+# Dolby Vision Decoder
+adb logcat -s C2SoftDolbyVisionDec | grep -i "profile\|rpu"
+
+# All Dolby-related logs
+adb logcat | grep -iE "dolby|atmos|vision|ac-3|eac3|ac4"</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        dumpsys Analysis
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>System Status Query</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Audio HAL info
+adb shell dumpsys media.audio_flinger
+
+# Dolby codec registration check
+adb shell dumpsys media.codec | grep -i dolby
+
+# HDMI audio supported formats
+adb shell dumpsys audio | grep -A 20 "HDMI"
+
+# Display HDR capabilities
+adb shell dumpsys display | grep -i hdr
+
+# Active AudioTrack (Passthrough check)
+adb shell dumpsys media.audio_flinger | grep -A 5 "Direct"</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        System Properties
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby Feature Control</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Enable Dolby MS12 debug logs
+adb shell setprop vendor.dolby.ms12.debug 1
+
+# Force disable Dolby Vision (testing)
+adb shell setprop vendor.dolby.vision.disable 1
+
+# Force enable Audio Passthrough
+adb shell setprop ro.vendor.audio.dolby.passthrough true
+
+# Restart Audio service without reboot
+adb shell stop audioserver && adb shell start audioserver</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Test Sample Playback
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby Sample Content Testing</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;"><code># Play E-AC-3 sample
+adb push dolby_atmos_sample.ec3 /sdcard/
+adb shell am start -a android.intent.action.VIEW \
+  -d file:///sdcard/dolby_atmos_sample.ec3
+
+# Play Dolby Vision MP4
+adb push dolby_vision_sample.mp4 /sdcard/
+adb shell am start -a android.intent.action.VIEW \
+  -t video/mp4 \
+  -d file:///sdcard/dolby_vision_sample.mp4</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ⚠️ Common Issues and Solutions
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Cause</th>
+                        <th>Solution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>E-AC-3 audio not playing</strong></td>
+                        <td>Dolby decoder not registered or audio_policy_configuration.xml config error</td>
+                        <td>Check decoder with <code>dumpsys media.codec</code>, set Direct Output flag</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HDMI Passthrough fails</strong></td>
+                        <td>AVR/soundbar doesn't support E-AC-3, EDID parsing error</td>
+                        <td>Check EDID logs, fallback to PCM decoding</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dolby Atmos not rendering</strong></td>
+                        <td>JOC metadata parsing failure, DAP engine not initialized</td>
+                        <td>Check libdolbyms12 loading, analyze metadata logs</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dolby Vision screen corruption</strong></td>
+                        <td>RPU parsing error, Tone Mapping bug, 10-bit pipeline not supported</td>
+                        <td>Check RPU logs, verify Display HAL P010 format support</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Profile 5 not playing</strong></td>
+                        <td>Enhancement Layer decoding failure, Dolby Vision Composer error</td>
+                        <td>Verify BL+EL both decode, check libdv_composer version</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AC-4 decoder crash</strong></td>
+                        <td>Vendor HAL implementation bug, memory shortage</td>
+                        <td>Check AC-4 logs, memory profiling</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CTS test failure</strong></td>
+                        <td>Codec capability declaration mismatch, sample decoding error</td>
+                        <td>Configure media_codecs.xml correctly, manual test with CTS samples</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dolby license error</strong></td>
+                        <td>libdolbyms12.so signature verification failure, expired license</td>
+                        <td>Contact Dolby for latest library</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🎬 Test Sample Content
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Dolby Audio Samples
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>AC-3 (5.1)</strong>: dolby_digital_51.ac3</li>
+                            <li><strong>E-AC-3 (7.1)</strong>: dolby_digital_plus_71.ec3</li>
+                            <li><strong>E-AC-3 JOC (Atmos)</strong>: dolby_atmos_joc.ec3</li>
+                            <li><strong>AC-4 (Atmos)</strong>: dolby_ac4_atmos.ac4</li>
+                            <li><strong>Provided</strong>: Dolby developer portal (NDA required)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        Dolby Vision Samples
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Profile 5 (4K HDR)</strong>: dv_profile5_4k.mp4</li>
+                            <li><strong>Profile 8.1 (HDR10 compatible)</strong>: dv_profile81_uhd.mp4</li>
+                            <li><strong>Profile 8.4 (HLG)</strong>: dv_profile84_hlg.mp4</li>
+                            <li><strong>Test Patterns</strong>: For RPU metadata validation</li>
+                            <li><strong>Provided</strong>: After Dolby license agreement</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        Public Streaming Tests
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Netflix</strong>: Dolby Atmos + Vision content (subscription required)</li>
+                            <li><strong>Disney+</strong>: IMAX Enhanced + Atmos</li>
+                            <li><strong>Apple TV+</strong>: Dolby Vision HDR</li>
+                            <li><strong>YouTube</strong>: Some HDR content (not Dolby Vision)</li>
+                            <li><strong>Note</strong>: For actual service compatibility testing</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧪</span>
+                        Analysis Tools
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>MediaInfo</strong>: Container metadata analysis</li>
+                            <li><strong>ffmpeg/ffprobe</strong>: Bitstream parsing</li>
+                            <li><strong>Dolby Stream Analyzer</strong>: RPU verification (Dolby provided)</li>
+                            <li><strong>Systrace</strong>: Decoding performance profiling</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Debugging Tips</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Verify with Dolby sample content first, then test with actual streaming services</li>
+                    <li>Capture and analyze actual output bitstream with HDMI Analyzer</li>
+                    <li>Include full logcat + dumpsys when providing logs to Dolby technical support</li>
+                    <li>Add detailed logs to vendor HAL code to improve debugging efficiency</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 11: AOSP Source Code Reference -->
+        <section class="section sec-source">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                AOSP Source Code Reference
+            </h2>
+            <p class="section-description">
+                AOSP source code locations and reference implementations related to Dolby integration.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 20px; margin-bottom: 20px;">
+                📂 Key Directories
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/av/media/libaudioclient/</code><br/>
+                            → AudioTrack.cpp (Passthrough logic)</li>
+                            <li><code>frameworks/av/services/audioflinger/</code><br/>
+                            → AudioFlinger.cpp, Tracks.cpp</li>
+                            <li><code>frameworks/av/services/audiopolicy/</code><br/>
+                            → AudioPolicyManager.cpp (routing)</li>
+                            <li><code>hardware/interfaces/audio/</code><br/>
+                            → Audio HAL AIDL/HIDL interfaces</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Video/Codec Framework
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/av/media/libstagefright/</code><br/>
+                            → MediaCodec.cpp, NuPlayer.cpp</li>
+                            <li><code>frameworks/av/media/codec2/</code><br/>
+                            → Codec2 Core, VNDK, Components</li>
+                            <li><code>hardware/interfaces/media/c2/</code><br/>
+                            → Codec2 HAL AIDL/HIDL</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🖥️</span>
+                        Display Framework
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/native/services/surfaceflinger/</code><br/>
+                            → DisplayHardware/ (HDR processing)</li>
+                            <li><code>frameworks/base/core/java/android/view/</code><br/>
+                            → Display.java (HdrCapabilities)</li>
+                            <li><code>hardware/interfaces/graphics/composer/</code><br/>
+                            → HWComposer HAL</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        Configuration Files
+                    </h3>
+                    <div class="card-description">
+                        <ul style="font-size: 0.9rem; line-height: 1.6;">
+                            <li><code>frameworks/av/media/libstagefright/data/</code><br/>
+                            → media_codecs_google_*.xml</li>
+                            <li><code>device/[vendor]/[device]/</code><br/>
+                            → media_codecs.xml (vendor-specific)</li>
+                            <li><code>frameworks/av/services/audiopolicy/config/</code><br/>
+                            → audio_policy_configuration.xml</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                🔬 Reference Implementation Examples
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎚️</span>
+                        AudioPolicyManager - Dolby Routing
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Direct Output Flag Setting</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/av/services/audiopolicy/managerdefault/AudioPolicyManager.cpp
+
+audio_io_handle_t AudioPolicyManager::getOutputForAttr(...) {
+    audio_format_t format = attributes->mFormat;
+
+    // Dolby formats use Direct Output
+    if (format == AUDIO_FORMAT_AC3 ||
+        format == AUDIO_FORMAT_E_AC3 ||
+        format == AUDIO_FORMAT_E_AC3_JOC ||
+        format == AUDIO_FORMAT_AC4) {
+
+        flags |= AUDIO_OUTPUT_FLAG_DIRECT;
+
+        // Find Passthrough-capable device
+        DeviceVector devices = getAvailableOutputDevices();
+        for (const auto& device : devices) {
+            if (device->supportedFormats().count(format) &&
+                device->type() == AUDIO_DEVICE_OUT_HDMI) {
+                return openDirectOutput(device, format, ...);
+            }
+        }
+    }
+
+    // Fallback: PCM decoding
+    return openMixedOutput(...);
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        Display - HDR Capability Advertisement
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Dolby Vision Support Advertisement</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/native/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+
+void HWComposer::getCapabilities(Display display) {
+    // Parse Dolby Vision VSVDB from EDID
+    auto edid = mDisplays[display]->getEdid();
+
+    std::vector&lt;ui::Hdr&gt; hdrTypes;
+    if (edid.supportsDolbyVision()) {
+        hdrTypes.push_back(ui::Hdr::DOLBY_VISION);
+    }
+    if (edid.supportsHDR10()) {
+        hdrTypes.push_back(ui::Hdr::HDR10);
+    }
+
+    mDisplays[display]->setHdrCapabilities(
+        HdrCapabilities(hdrTypes,
+                       edid.getMaxLuminance(),
+                       edid.getMaxAverageLuminance(),
+                       edid.getMinLuminance())
+    );
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        MediaCodec - Dolby Vision Configuration
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>HDR Static Metadata Passing</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/av/media/libstagefright/MediaCodec.cpp
+
+status_t MediaCodec::configure(...) {
+    if (mime == "video/dolby-vision") {
+        // Set HDR Static Info
+        sp&lt;ABuffer&gt; hdrStaticInfo;
+        if (format->findBuffer("hdr-static-info", &hdrStaticInfo)) {
+            mCodec->setParameters({
+                {"vendor.dolby-vision.static-metadata", hdrStaticInfo}
+            });
+        }
+
+        // Check Profile
+        int32_t profile;
+        if (format->findInt32(KEY_PROFILE, &profile)) {
+            // Profile 5, 7, 8.1, 8.4, etc.
+            mCodec->setProfile(profile);
+        }
+    }
+
+    return mCodec->configure(format, ...);
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📄</span>
+                        media_codecs.xml Parsing
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Codec Capability Loading</strong></p>
+                        <pre style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;"><code>// frameworks/av/media/libstagefright/omx/SoftwareRenderer.cpp
+
+// Load Dolby codec from media_codecs.xml
+MediaCodecList::getInstance()->findCodecByType(
+    "video/dolby-vision", false, MediaCodecList::kPreferSoftwareCodecs
+);
+
+// Query supported profiles
+const sp&lt;MediaCodecInfo&gt; info = ...;
+const sp&lt;MediaCodecInfo::Capabilities&gt; caps =
+    info->getCapabilitiesFor("video/dolby-vision");
+
+auto profiles = caps->getSupportedProfileLevels();
+for (const auto& pl : profiles) {
+    if (pl.mProfile == DolbyVisionProfileDvheSt) {
+        // Profile 5 supported
+    }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>🔗 Useful AOSP Links</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li><strong>AOSP Source Browser</strong>: <a href="https://cs.android.com/" target="_blank" style="color: var(--accent-primary);">cs.android.com</a></li>
+                    <li><strong>Audio Official Documentation</strong>: <a href="https://source.android.com/docs/core/audio" target="_blank" style="color: var(--accent-primary);">source.android.com/audio</a></li>
+                    <li><strong>Media Official Documentation</strong>: <a href="https://source.android.com/docs/core/media" target="_blank" style="color: var(--accent-primary);">source.android.com/media</a></li>
+                    <li><strong>CDD Documentation</strong>: <a href="https://source.android.com/docs/compatibility/cdd" target="_blank" style="color: var(--accent-primary);">Android CDD</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 12: Related Pages -->
+        <section class="section sec-related">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                Related Documentation
+            </h2>
+            <p class="section-description">
+                Explore other topics in the Android media framework related to Dolby technology.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Codec 2.0
+                    </h3>
+                    <div class="card-description">
+                        <p>Next-generation codec framework</p>
+                        <ul>
+                            <li>Dolby Vision C2Component implementation</li>
+                            <li>C2Allocator Zero-Copy buffer</li>
+                            <li>HAL interface (HIDL/AIDL)</li>
+                            <li>Vendor implementation guide</li>
+                        </ul>
+                        <a href="codec2.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        <p>Audio processing pipeline</p>
+                        <ul>
+                            <li>AudioFlinger mixing engine</li>
+                            <li>AudioPolicyManager routing</li>
+                            <li>Audio HAL Dolby integration</li>
+                            <li>Passthrough vs PCM decoding</li>
+                        </ul>
+                        <a href="audio-framework.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        <p>Overall media architecture</p>
+                        <ul>
+                            <li>AOSP 5-Layer structure</li>
+                            <li>MediaCodec API location</li>
+                            <li>Framework → HAL data flow</li>
+                            <li>Dolby's role in the overall structure</li>
+                        </ul>
+                        <a href="media-framework-core.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Widevine DRM
+                    </h3>
+                    <div class="card-description">
+                        <p>DRM protected content playback</p>
+                        <ul>
+                            <li>Dolby Vision + Widevine L1</li>
+                            <li>Secure Decoder (TEE)</li>
+                            <li>Protected Surface</li>
+                            <li>Netflix 4K HDR requirements</li>
+                        </ul>
+                        <a href="widevine.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Media Playback Pipeline
+                    </h3>
+                    <div class="card-description">
+                        <p>Media playback pipeline</p>
+                        <ul>
+                            <li>NuPlayer's Dolby integration</li>
+                            <li>End-to-End data flow</li>
+                            <li>A/V synchronization</li>
+                            <li>Buffer management and performance optimization</li>
+                        </ul>
+                        <a href="media-playback.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Learn More →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Dolby Porting Guides
+                    </h3>
+                    <div class="card-description">
+                        <p>Detailed Dolby porting guides</p>
+                        <ul>
+                            <li>Dolby Digital Plus porting (E-AC-3)</li>
+                            <li>Dolby Vision porting</li>
+                            <li>Vendor-specific implementation cases</li>
+                            <li>Certification checklist</li>
+                        </ul>
+                        <a href="dolby-ddp-porting.html" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            DDP Porting →
+                        </a>
+                        <a href="dolby-vision-porting.html" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(245, 158, 11, 0.2)); border: 1px solid #8b5cf6; border-radius: 8px; color: #a78bfa; text-decoration: none; font-weight: 600;">
+                            Vision Porting →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

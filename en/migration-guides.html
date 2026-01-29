@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migration Guides</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="../index.html" class="nav-button">
+            ← Android Media Framework
+        </a>
+    </nav>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Migration Guides</h1>
+            <p class="page-subtitle">Migration guides from legacy APIs to modern APIs</p>
+        </header>
+
+
+
+        <!-- TOC -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">01</span>Table of Contents</h2>
+            <ol>
+                <li><a href="#mediaplayer-to-exoplayer">MediaPlayer to ExoPlayer Migration</a></li>
+                <li><a href="#exoplayer-to-media3">ExoPlayer 2.x to Media3 Migration</a></li>
+                <li><a href="#audio-focus">Legacy Audio Focus to AudioFocusRequest</a></li>
+                <li><a href="#mediasession">MediaSession to MediaBrowserService</a></li>
+                <li><a href="#android-versions">Major Changes by Android Version</a></li>
+                <li><a href="#deprecated-apis">Deprecated API Replacement Guide</a></li>
+            </ol>
+        </section>
+
+        <!-- Section 1: MediaPlayer to ExoPlayer -->
+        <section id="mediaplayer-to-exoplayer" class="content-section section">
+            <h2 class="section-title"><span class="section-number">02</span>1. MediaPlayer to ExoPlayer Migration</h2>
+
+            <div class="info-box">
+                <strong>Why migrate to ExoPlayer?</strong>
+                <ul>
+                    <li><strong>Flexibility</strong>: Custom renderers, data sources, DRM support</li>
+                    <li><strong>Modern features</strong>: DASH/HLS/SmoothStreaming, ABR (Adaptive Bitrate)</li>
+                    <li><strong>Debugging</strong>: Detailed event callbacks and logging</li>
+                    <li><strong>Performance</strong>: Efficient buffer management and preloading</li>
+                    <li><strong>Extensibility</strong>: Plugin architecture</li>
+                </ul>
+            </div>
+
+            <h3>1.1 Basic Playback Migration</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>MediaPlayer (Legacy)</h4>
+                    <pre><code class="language-kotlin">// MediaPlayer
+val mediaPlayer = MediaPlayer().apply {
+    setDataSource(context, uri)
+    setOnPreparedListener { mp ->
+        mp.start()
+    }
+    setOnCompletionListener { mp ->
+        Log.d(TAG, "Playback complete")
+    }
+    setOnErrorListener { mp, what, extra ->
+        Log.e(TAG, "Error: $what")
+        true
+    }
+    prepareAsync()
+}
+
+// Pause
+mediaPlayer.pause()
+
+// Seek
+mediaPlayer.seekTo(30000)
+
+// Release resources
+mediaPlayer.release()</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>ExoPlayer / Media3 (New)</h4>
+                    <pre><code class="language-kotlin">// ExoPlayer (Media3)
+val player = ExoPlayer.Builder(context).build()
+
+player.addListener(object : Player.Listener {
+    override fun onPlaybackStateChanged(state: Int) {
+        when (state) {
+            Player.STATE_READY -> Log.d(TAG, "Ready")
+            Player.STATE_ENDED -> Log.d(TAG, "Playback complete")
+        }
+    }
+
+    override fun onPlayerError(error: PlaybackException) {
+        Log.e(TAG, "Error: ${error.errorCode}", error)
+    }
+})
+
+val mediaItem = MediaItem.fromUri(uri)
+player.setMediaItem(mediaItem)
+player.prepare()
+player.play()
+
+// Pause
+player.pause()
+
+// Seek
+player.seekTo(30_000)
+
+// Release resources
+player.release()</code></pre>
+                </div>
+            </div>
+
+            <h3>1.2 Listener Mapping</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>MediaPlayer</th>
+                        <th>ExoPlayer / Media3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>OnPreparedListener</code></td>
+                        <td><code>Player.Listener.onPlaybackStateChanged(STATE_READY)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>OnCompletionListener</code></td>
+                        <td><code>Player.Listener.onPlaybackStateChanged(STATE_ENDED)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>OnErrorListener</code></td>
+                        <td><code>Player.Listener.onPlayerError()</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>OnSeekCompleteListener</code></td>
+                        <td><code>Player.Listener.onPositionDiscontinuity()</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>OnBufferingUpdateListener</code></td>
+                        <td><code>Player.Listener.onPlaybackStateChanged(STATE_BUFFERING)</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>1.3 Playlist Migration</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>MediaPlayer (Legacy)</h4>
+                    <pre><code class="language-kotlin">// MediaPlayer doesn't support playlists
+// Manual management required
+val playlist = listOf(uri1, uri2, uri3)
+var currentIndex = 0
+
+fun playNext() {
+    if (currentIndex < playlist.size - 1) {
+        currentIndex++
+        mediaPlayer.reset()
+        mediaPlayer.setDataSource(context, playlist[currentIndex])
+        mediaPlayer.prepareAsync()
+    }
+}
+
+mediaPlayer.setOnCompletionListener {
+    playNext()
+}</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>ExoPlayer / Media3 (New)</h4>
+                    <pre><code class="language-kotlin">// ExoPlayer has native playlist support
+val mediaItems = listOf(
+    MediaItem.fromUri(uri1),
+    MediaItem.fromUri(uri2),
+    MediaItem.fromUri(uri3)
+)
+
+player.setMediaItems(mediaItems)
+player.prepare()
+player.play()
+
+// Automatic next track playback
+// Or manual control
+player.seekToNext()
+player.seekToPrevious()</code></pre>
+                </div>
+            </div>
+
+            <h3>1.4 DRM Migration</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>MediaPlayer (Legacy)</h4>
+                    <pre><code class="language-kotlin">// MediaPlayer DRM (complex)
+val mediaDrm = MediaDrm(C.WIDEVINE_UUID)
+val sessionId = mediaDrm.openSession()
+
+mediaDrm.setOnEventListener { drm, sessionId, event, extra, data ->
+    // Manual license handling
+}
+
+val mediaCrypto = MediaCrypto(C.WIDEVINE_UUID, sessionId)
+
+// Pass directly to MediaCodec
+decoder.configure(format, surface, mediaCrypto, 0)</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>ExoPlayer / Media3 (New)</h4>
+                    <pre><code class="language-kotlin">// ExoPlayer DRM (simple)
+val mediaItem = MediaItem.Builder()
+    .setUri(videoUri)
+    .setDrmConfiguration(
+        MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
+            .setLicenseUri("https://license.example.com/widevine")
+            .build()
+    )
+    .build()
+
+player.setMediaItem(mediaItem)
+player.prepare()
+player.play()
+
+// DRM session automatically managed!</code></pre>
+                </div>
+            </div>
+
+            <h3>1.5 UI Integration</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>MediaPlayer (Legacy)</h4>
+                    <pre><code class="language-xml">&lt;!-- VideoView (limited customization) --&gt;
+&lt;VideoView
+    android:id="@+id/video_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" /&gt;</code></pre>
+                    <pre><code class="language-kotlin">val videoView = findViewById&lt;VideoView&gt;(R.id.video_view)
+videoView.setVideoURI(uri)
+videoView.start()</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>ExoPlayer / Media3 (New)</h4>
+                    <pre><code class="language-xml">&lt;!-- PlayerView (fully customizable) --&gt;
+&lt;androidx.media3.ui.PlayerView
+    android:id="@+id/player_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:show_buffering="when_playing"
+    app:resize_mode="fit"
+    app:controller_layout_id="@layout/custom_controls" /&gt;</code></pre>
+                    <pre><code class="language-kotlin">val playerView = findViewById&lt;PlayerView&gt;(R.id.player_view)
+playerView.player = player</code></pre>
+                </div>
+            </div>
+
+            <div class="success-box">
+                <strong>Migration Checklist</strong>
+                <ol>
+                    <li>Add Gradle dependency: <code>androidx.media3:media3-exoplayer:1.2.0</code></li>
+                    <li>Convert MediaPlayer listeners to Player.Listener</li>
+                    <li>prepare()/prepareAsync() to prepare() + play()</li>
+                    <li>VideoView to PlayerView</li>
+                    <li>Simplify DRM setup with MediaItem.DrmConfiguration</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- Section 2: ExoPlayer to Media3 -->
+        <section id="exoplayer-to-media3" class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>2. ExoPlayer 2.x to Media3 Migration</h2>
+
+            <div class="info-box">
+                <strong>What is Media3?</strong>
+                <p>Media3 is the <strong>AndroidX migration</strong> of ExoPlayer 2.x. Package names and some APIs have changed, but most functionality remains the same.</p>
+            </div>
+
+            <h3>2.1 Package Name Changes</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ExoPlayer 2.x</th>
+                        <th>Media3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>com.google.android.exoplayer2.*</code></td>
+                        <td><code>androidx.media3.*</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>com.google.android.exoplayer2.ExoPlayer</code></td>
+                        <td><code>androidx.media3.exoplayer.ExoPlayer</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>com.google.android.exoplayer2.ui.PlayerView</code></td>
+                        <td><code>androidx.media3.ui.PlayerView</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>com.google.android.exoplayer2.source.MediaSource</code></td>
+                        <td><code>androidx.media3.exoplayer.source.MediaSource</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>2.2 Gradle Dependency Changes</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>ExoPlayer 2.x (Legacy)</h4>
+                    <pre><code class="language-groovy">// build.gradle
+dependencies {
+    implementation 'com.google.android.exoplayer:exoplayer:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-dash:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-hls:2.18.7'
+}</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>Media3 (New)</h4>
+                    <pre><code class="language-groovy">// build.gradle
+dependencies {
+    implementation 'androidx.media3:media3-exoplayer:1.2.0'
+    implementation 'androidx.media3:media3-ui:1.2.0'
+    implementation 'androidx.media3:media3-exoplayer-dash:1.2.0'
+    implementation 'androidx.media3:media3-exoplayer-hls:1.2.0'
+    implementation 'androidx.media3:media3-session:1.2.0'  // NEW!
+}</code></pre>
+                </div>
+            </div>
+
+            <h3>2.3 SimpleExoPlayer to ExoPlayer</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>ExoPlayer 2.x (Legacy)</h4>
+                    <pre><code class="language-kotlin">import com.google.android.exoplayer2.SimpleExoPlayer
+
+val player = SimpleExoPlayer.Builder(context).build()</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>Media3 (New)</h4>
+                    <pre><code class="language-kotlin">import androidx.media3.exoplayer.ExoPlayer
+
+val player = ExoPlayer.Builder(context).build()
+// SimpleExoPlayer merged into ExoPlayer</code></pre>
+                </div>
+            </div>
+
+            <h3>2.4 MediaSource to MediaItem</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>ExoPlayer 2.x (Legacy)</h4>
+                    <pre><code class="language-kotlin">// Manual MediaSource creation
+val dataSourceFactory = DefaultHttpDataSource.Factory()
+val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+    .createMediaSource(MediaItem.fromUri(uri))
+
+player.setMediaSource(mediaSource)
+player.prepare()</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>Media3 (New)</h4>
+                    <pre><code class="language-kotlin">// Simplified with MediaItem (auto MediaSource creation)
+val mediaItem = MediaItem.fromUri(uri)
+player.setMediaItem(mediaItem)
+player.prepare()
+
+// Or continue using custom MediaSource
+val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+    .createMediaSource(MediaItem.fromUri(uri))
+player.setMediaSource(mediaSource)</code></pre>
+                </div>
+            </div>
+
+            <h3>2.5 EventListener to Player.Listener</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>ExoPlayer 2.x (Legacy)</h4>
+                    <pre><code class="language-kotlin">import com.google.android.exoplayer2.Player
+
+player.addListener(object : Player.EventListener {
+    override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
+        // Handle
+    }
+})</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>Media3 (New)</h4>
+                    <pre><code class="language-kotlin">import androidx.media3.common.Player
+
+player.addListener(object : Player.Listener {
+    override fun onPlaybackStateChanged(playbackState: Int) {
+        // onPlayerStateChanged -> onPlaybackStateChanged
+        // playWhenReady separated to onPlayWhenReadyChanged
+    }
+
+    override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+        // New callback
+    }
+})</code></pre>
+                </div>
+            </div>
+
+            <h3>2.6 Automated Migration Script</h3>
+
+            <pre><code class="language-bash"># Android Studio: Replace in Path (Ctrl+Shift+R / Cmd+Shift+R)
+
+# 1. Package name change
+com.google.android.exoplayer2 -> androidx.media3
+
+# 2. SimpleExoPlayer -> ExoPlayer
+SimpleExoPlayer.Builder -> ExoPlayer.Builder
+
+# 3. EventListener -> Listener
+Player.EventListener -> Player.Listener
+
+# 4. onPlayerStateChanged -> onPlaybackStateChanged
+onPlayerStateChanged -> onPlaybackStateChanged</code></pre>
+
+            <div class="warning-box">
+                <strong>Breaking Changes</strong>
+                <ul>
+                    <li>Some <code>Player.EventListener</code> method signatures changed</li>
+                    <li><code>SimpleExoPlayer</code> class removed (merged into ExoPlayer)</li>
+                    <li>Some deprecated APIs removed</li>
+                </ul>
+            </div>
+
+            <div class="success-box">
+                <strong>Migration Steps</strong>
+                <ol>
+                    <li>Change Gradle dependencies to <code>androidx.media3:media3-*</code></li>
+                    <li>Use Android Studio "Replace in Path" for bulk package name changes</li>
+                    <li><code>SimpleExoPlayer</code> to <code>ExoPlayer</code></li>
+                    <li><code>Player.EventListener</code> to <code>Player.Listener</code></li>
+                    <li>Fix compile errors and test</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- Section 3: Audio Focus -->
+        <section id="audio-focus" class="content-section section">
+            <h2 class="section-title"><span class="section-number">04</span>3. Legacy Audio Focus to AudioFocusRequest</h2>
+
+            <div class="info-box">
+                <strong>AudioFocusRequest recommended from Android 8.0 (API 26)</strong>
+                <p>Legacy <code>requestAudioFocus(OnAudioFocusChangeListener, int, int)</code> is deprecated.</p>
+            </div>
+
+            <h3>3.1 Basic Audio Focus Migration</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>Legacy</h4>
+                    <pre><code class="language-kotlin">val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+val focusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+    when (focusChange) {
+        AudioManager.AUDIOFOCUS_GAIN -> player.play()
+        AudioManager.AUDIOFOCUS_LOSS -> player.pause()
+    }
+}
+
+val result = audioManager.requestAudioFocus(
+    focusChangeListener,
+    AudioManager.STREAM_MUSIC,
+    AudioManager.AUDIOFOCUS_GAIN
+)
+
+if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+    player.play()
+}</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>AudioFocusRequest (New)</h4>
+                    <pre><code class="language-kotlin">val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+val audioAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_MEDIA)
+    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+    .build()
+
+val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+    .setAudioAttributes(audioAttributes)
+    .setAcceptsDelayedFocusGain(true)  // NEW!
+    .setWillPauseWhenDucked(false)     // NEW!
+    .setOnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> player.play()
+            AudioManager.AUDIOFOCUS_LOSS -> player.pause()
+        }
+    }
+    .build()
+
+val result = audioManager.requestAudioFocus(focusRequest)
+if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+    player.play()
+}</code></pre>
+                </div>
+            </div>
+
+            <h3>3.2 AudioAttributes Mapping</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Legacy StreamType</th>
+                        <th>AudioAttributes.USAGE_*</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>STREAM_MUSIC</code></td>
+                        <td><code>USAGE_MEDIA</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>STREAM_ALARM</code></td>
+                        <td><code>USAGE_ALARM</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>STREAM_NOTIFICATION</code></td>
+                        <td><code>USAGE_NOTIFICATION</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>STREAM_VOICE_CALL</code></td>
+                        <td><code>USAGE_VOICE_COMMUNICATION</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>STREAM_RING</code></td>
+                        <td><code>USAGE_NOTIFICATION_RINGTONE</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>3.3 Delayed Focus Gain (New Feature)</h3>
+
+            <pre><code class="language-kotlin">// API 26+: Delayed Focus support
+val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+    .setAudioAttributes(audioAttributes)
+    .setAcceptsDelayedFocusGain(true)  // Can receive focus later
+    .setOnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                // Immediate or delayed focus gained
+                player.play()
+            }
+        }
+    }
+    .build()
+
+val result = audioManager.requestAudioFocus(focusRequest)
+when (result) {
+    AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> {
+        // Immediate focus gained
+        player.play()
+    }
+    AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> {
+        // Focus will be gained later (OnAudioFocusChangeListener receives GAIN)
+        showBuffering()
+    }
+    AudioManager.AUDIOFOCUS_REQUEST_FAILED -> {
+        // Failed
+        showError()
+    }
+}</code></pre>
+
+            <h3>3.4 Compatibility Code</h3>
+
+            <pre><code class="language-kotlin">fun requestAudioFocusCompat(audioManager: AudioManager): Int {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        // API 26+: AudioFocusRequest
+        val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(audioAttributes)
+            .setOnAudioFocusChangeListener(focusChangeListener)
+            .build()
+        audioManager.requestAudioFocus(focusRequest)
+    } else {
+        // API 25 and below: Legacy
+        @Suppress("DEPRECATION")
+        audioManager.requestAudioFocus(
+            focusChangeListener,
+            AudioManager.STREAM_MUSIC,
+            AudioManager.AUDIOFOCUS_GAIN
+        )
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 4: MediaSession -->
+        <section id="mediasession" class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>4. MediaSession to MediaBrowserService</h2>
+
+            <div class="info-box">
+                <strong>Car Media / Wear OS Integration</strong>
+                <p>Implementing <code>MediaBrowserService</code> allows Android Auto, Wear OS, and Google Assistant to automatically recognize your media app.</p>
+            </div>
+
+            <h3>4.1 Basic MediaSession to MediaBrowserService</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>MediaSession only (Legacy)</h4>
+                    <pre><code class="language-kotlin">// Activity only
+class MusicPlayerActivity : AppCompatActivity() {
+    private lateinit var mediaSession: MediaSession
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        mediaSession = MediaSession(this, "MyMediaSession")
+        mediaSession.isActive = true
+
+        mediaSession.setCallback(object : MediaSession.Callback() {
+            override fun onPlay() {
+                player.play()
+            }
+        })
+    }
+}</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>MediaBrowserService (New)</h4>
+                    <pre><code class="language-kotlin">// Separated into Service (background playback)
+class MusicService : MediaBrowserServiceCompat() {
+    private lateinit var mediaSession: MediaSessionCompat
+
+    override fun onCreate() {
+        super.onCreate()
+
+        mediaSession = MediaSessionCompat(this, "MusicService")
+        mediaSession.isActive = true
+        sessionToken = mediaSession.sessionToken
+
+        mediaSession.setCallback(object : MediaSessionCompat.Callback() {
+            override fun onPlay() {
+                player.play()
+            }
+        })
+    }
+
+    override fun onGetRoot(
+        clientPackageName: String,
+        clientUid: Int,
+        rootHints: Bundle?
+    ): BrowserRoot? {
+        return BrowserRoot("root", null)
+    }
+
+    override fun onLoadChildren(
+        parentId: String,
+        result: Result&lt;List&lt;MediaBrowserCompat.MediaItem&gt;&gt;
+    ) {
+        val mediaItems = buildMediaItems()
+        result.sendResult(mediaItems)
+    }
+}</code></pre>
+                </div>
+            </div>
+
+            <h3>4.2 AndroidManifest.xml Configuration</h3>
+
+            <pre><code class="language-xml">&lt;service
+    android:name=".MusicService"
+    android:exported="true"&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="android.media.browse.MediaBrowserService" /&gt;
+    &lt;/intent-filter&gt;
+&lt;/service&gt;</code></pre>
+
+            <h3>4.3 MediaBrowser Client (Activity)</h3>
+
+            <pre><code class="language-kotlin">class MusicPlayerActivity : AppCompatActivity() {
+    private lateinit var mediaBrowser: MediaBrowserCompat
+    private lateinit var mediaController: MediaControllerCompat
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        mediaBrowser = MediaBrowserCompat(
+            this,
+            ComponentName(this, MusicService::class.java),
+            object : MediaBrowserCompat.ConnectionCallback() {
+                override fun onConnected() {
+                    val sessionToken = mediaBrowser.sessionToken
+                    mediaController = MediaControllerCompat(this@MusicPlayerActivity, sessionToken)
+                    MediaControllerCompat.setMediaController(this@MusicPlayerActivity, mediaController)
+
+                    buildTransportControls()
+                }
+            },
+            null
+        )
+
+        mediaBrowser.connect()
+    }
+
+    private fun buildTransportControls() {
+        val transportControls = mediaController.transportControls
+
+        findViewById&lt;Button&gt;(R.id.play_button).setOnClickListener {
+            transportControls.play()
+        }
+
+        findViewById&lt;Button&gt;(R.id.pause_button).setOnClickListener {
+            transportControls.pause()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaBrowser.disconnect()
+    }
+}</code></pre>
+
+            <h3>4.4 Media3 MediaSession (Latest)</h3>
+
+            <div class="success-box">
+                <strong>New MediaSession API from Media3 1.x</strong>
+                <pre><code class="language-kotlin">import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSessionService
+
+class MusicService : MediaSessionService() {
+    private var mediaSession: MediaSession? = null
+
+    override fun onCreate() {
+        super.onCreate()
+
+        val player = ExoPlayer.Builder(this).build()
+        mediaSession = MediaSession.Builder(this, player).build()
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
+        return mediaSession
+    }
+
+    override fun onDestroy() {
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
+        }
+        super.onDestroy()
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 5: Android Versions -->
+        <section id="android-versions" class="content-section section">
+            <h2 class="section-title"><span class="section-number">06</span>5. Major Changes by Android Version</h2>
+
+            <h3>5.1 Android 14 (API 34)</h3>
+            <ul>
+                <li><span class="badge badge-new">NEW</span> <strong>Ultra HDR</strong>: 10-bit HDR image support</li>
+                <li><span class="badge badge-new">NEW</span> <strong>Lossless USB Audio</strong>: Lossless USB audio transmission</li>
+                <li><span class="badge badge-breaking">BREAKING</span> <strong>Foreground Service permission</strong>: <code>FOREGROUND_SERVICE_MEDIA_PLAYBACK</code> permission required for media playback</li>
+            </ul>
+
+            <pre><code class="language-xml">&lt;!-- AndroidManifest.xml --&gt;
+&lt;uses-permission android:name="android.permission.FOREGROUND_SERVICE" /&gt;
+&lt;uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" /&gt;
+
+&lt;service
+    android:name=".MusicService"
+    android:foregroundServiceType="mediaPlayback" /&gt;</code></pre>
+
+            <h3>5.2 Android 13 (API 33)</h3>
+            <ul>
+                <li><span class="badge badge-new">NEW</span> <strong>POST_NOTIFICATIONS permission</strong>: Runtime permission required for notifications</li>
+                <li><span class="badge badge-new">NEW</span> <strong>Photo Picker</strong>: Improved media selection UI</li>
+            </ul>
+
+            <pre><code class="language-kotlin">// Android 13+: Request notification permission
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+        != PackageManager.PERMISSION_GRANTED) {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+            REQUEST_CODE
+        )
+    }
+}</code></pre>
+
+            <h3>5.3 Android 12 (API 31)</h3>
+            <ul>
+                <li><span class="badge badge-new">NEW</span> <strong>Performance Class</strong>: Media performance grades (Class 11/12/13/14)</li>
+                <li><span class="badge badge-new">NEW</span> <strong>Transcoding</strong>: Automatic HEVC to AVC conversion</li>
+                <li><span class="badge badge-new">NEW</span> <strong>Compat Media Transcoding</strong>: Legacy app compatibility</li>
+            </ul>
+
+            <pre><code class="language-kotlin">// Check Performance Class
+val perfClass = Build.VERSION.MEDIA_PERFORMANCE_CLASS
+when {
+    perfClass >= 31 -> enableHighEndFeatures()  // Class 11+
+    perfClass >= 32 -> enableUltraHighEndFeatures()  // Class 12+
+}</code></pre>
+
+            <h3>5.4 Android 11 (API 30)</h3>
+            <ul>
+                <li><span class="badge badge-new">NEW</span> <strong>Scoped Storage enforced</strong>: <code>MANAGE_EXTERNAL_STORAGE</code> permission required</li>
+                <li><span class="badge badge-new">NEW</span> <strong>Auto-resume on Bluetooth</strong>: Auto-play on Bluetooth reconnection</li>
+            </ul>
+
+            <h3>5.5 Android 10 (API 29)</h3>
+            <ul>
+                <li><span class="badge badge-new">NEW</span> <strong>Scoped Storage</strong>: MediaStore API mandatory</li>
+                <li><span class="badge badge-new">NEW</span> <strong>AV1 Codec</strong>: AV1 decoder support</li>
+                <li><span class="badge badge-deprecated">DEPRECATED</span> <code>ACTION_OPEN_DOCUMENT</code> instead of <code>ACTION_GET_CONTENT</code></li>
+            </ul>
+
+            <h3>5.6 Android 9 (API 28)</h3>
+            <ul>
+                <li><span class="badge badge-new">NEW</span> <strong>HDR VP9 Video</strong>: VP9 Profile 2 (10-bit)</li>
+                <li><span class="badge badge-new">NEW</span> <strong>HEIF Image</strong>: HEIF/HEIC format support</li>
+                <li><span class="badge badge-breaking">BREAKING</span> <strong>Clear-text Traffic blocked</strong>: HTTPS enforced (HTTP to HTTPS)</li>
+            </ul>
+
+            <pre><code class="language-xml">&lt;!-- Allow HTTP (development only) --&gt;
+&lt;application
+    android:usesCleartextTraffic="true"&gt;</code></pre>
+
+            <h3>5.7 Android 8.0 (API 26)</h3>
+            <ul>
+                <li><span class="badge badge-new">NEW</span> <strong>AudioFocusRequest</strong>: New Audio Focus API</li>
+                <li><span class="badge badge-new">NEW</span> <strong>Notification Channels</strong>: Notification channels required</li>
+                <li><span class="badge badge-breaking">BREAKING</span> <strong>Background Service restrictions</strong>: Foreground Service required</li>
+            </ul>
+
+            <pre><code class="language-kotlin">// Create Notification Channel (Android 8.0+)
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    val channel = NotificationChannel(
+        CHANNEL_ID,
+        "Music Playback",
+        NotificationManager.IMPORTANCE_LOW
+    )
+    val notificationManager = getSystemService(NotificationManager::class.java)
+    notificationManager.createNotificationChannel(channel)
+}</code></pre>
+        </section>
+
+        <!-- Section 6: Deprecated APIs -->
+        <section id="deprecated-apis" class="content-section section">
+            <h2 class="section-title"><span class="section-number">07</span>6. Deprecated API Replacement Guide</h2>
+
+            <h3>6.1 MediaPlayer Deprecated Methods</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Deprecated</th>
+                        <th>Replacement</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>setAudioStreamType(int)</code></td>
+                        <td><code>setAudioAttributes(AudioAttributes)</code></td>
+                        <td>API 21+</td>
+                    </tr>
+                    <tr>
+                        <td><code>attachAuxEffect(int)</code></td>
+                        <td><code>AudioEffect API</code></td>
+                        <td>Use AudioEffect directly</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>Deprecated</h4>
+                    <pre><code class="language-kotlin">mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC)</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>Replacement</h4>
+                    <pre><code class="language-kotlin">val audioAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_MEDIA)
+    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+    .build()
+
+mediaPlayer.setAudioAttributes(audioAttributes)</code></pre>
+                </div>
+            </div>
+
+            <h3>6.2 AudioManager Deprecated Methods</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Deprecated</th>
+                        <th>Replacement</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>requestAudioFocus(OnAudioFocusChangeListener, int, int)</code></td>
+                        <td><code>requestAudioFocus(AudioFocusRequest)</code></td>
+                        <td>API 26+</td>
+                    </tr>
+                    <tr>
+                        <td><code>abandonAudioFocus(OnAudioFocusChangeListener)</code></td>
+                        <td><code>abandonAudioFocus(AudioFocusRequest)</code></td>
+                        <td>API 26+</td>
+                    </tr>
+                    <tr>
+                        <td><code>setStreamVolume(int, int, int)</code></td>
+                        <td><code>Use AudioAttributes</code></td>
+                        <td>Avoid direct control</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>6.3 MediaCodec Deprecated Constants</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Deprecated</th>
+                        <th>Replacement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>INFO_OUTPUT_BUFFERS_CHANGED</code></td>
+                        <td>Use <code>getOutputBuffer(index)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>INFO_OUTPUT_FORMAT_CHANGED</code></td>
+                        <td><code>getOutputFormat()</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>6.4 Scoped Storage Migration</h3>
+
+            <div class="code-comparison">
+                <div class="code-block-before">
+                    <h4>Legacy (Android 9 and below)</h4>
+                    <pre><code class="language-kotlin">// Direct file path access
+val file = File("/sdcard/Music/song.mp3")
+val uri = Uri.fromFile(file)
+mediaPlayer.setDataSource(uri.toString())</code></pre>
+                </div>
+
+                <div class="code-block-after">
+                    <h4>Scoped Storage (Android 10+)</h4>
+                    <pre><code class="language-kotlin">// Access through MediaStore
+val projection = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.DATA)
+val cursor = contentResolver.query(
+    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+    projection,
+    "${MediaStore.Audio.Media.TITLE} = ?",
+    arrayOf("song"),
+    null
+)
+
+cursor?.use {
+    if (it.moveToFirst()) {
+        val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
+        val uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
+        mediaPlayer.setDataSource(applicationContext, uri)
+    }
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>Scoped Storage enforced from Android 11</strong>
+                <p><code>requestLegacyExternalStorage</code> flag is ignored. All file access must go through MediaStore or SAF (Storage Access Framework).</p>
+            </div>
+        </section>
+
+        <!-- Back to Home -->
+        <section style="text-align: center; padding: 3rem;" class="content-section section">
+            <a href="../index.html" style="display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; transition: transform 0.3s ease;">
+                ← Back to Main Page
+            </a>
+        </section>
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+</html>

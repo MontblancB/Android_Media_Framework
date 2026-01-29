@@ -1,0 +1,2298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media App Layer & APIs</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+        <style>
+        /* Page-specific styles loaded from design-system.css */
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">Media App Layer & APIs</h1>
+            <p class="page-subtitle">API Guide for Android Media App Development</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Media App Layer Overview
+            </h2>
+            <p class="section-description">
+                Android provides media APIs at various abstraction levels, allowing developers to choose the appropriate tools for their needs.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Core Principle:</strong> Android media APIs are organized in layers, ranging from high-level simple APIs to low-level fine-grained control APIs.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        High-Level APIs
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Media3</strong>: Latest unified media library</li>
+                            <li><strong>MediaPlayer</strong>: For simple playback</li>
+                            <li><strong>MediaSession</strong>: Standardized media control</li>
+                            <li>Rapid development, less code</li>
+                            <li>Optimized for common use cases</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Mid-Level APIs
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>ExoPlayer</strong>: Advanced media player</li>
+                            <li><strong>Camera2</strong>: Modern camera API</li>
+                            <li>Customizable</li>
+                            <li>Advanced features support</li>
+                            <li>Adaptive streaming, DRM</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        Low-Level APIs
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>AudioTrack</strong>: Raw audio playback</li>
+                            <li><strong>AudioRecord</strong>: Raw audio recording</li>
+                            <li><strong>MediaCodec</strong>: Direct codec control</li>
+                            <li>Maximum control</li>
+                            <li>Audio synthesis, DSP processing</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Media App Architecture
+            </h2>
+            <p class="section-description">
+                Understanding the overall layer structure of Android media apps.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    subgraph APP["App Layer"]
+                    MEDIA3[Media3<br />ExoPlayer]
+                    MEDIAPLAYER[MediaPlayer]
+                    CAMERA[Camera2]
+                    end
+
+                    subgraph SESSION["MediaSession Layer"]
+                    MSESSION[MediaSession]
+                    MCONTROLLER[MediaController]
+                    end
+
+                    subgraph FW["Framework Layer"]
+                    AUDIOMANAGER[AudioManager]
+                    MEDIASERVICE[MediaService]
+                    end
+
+                    subgraph NATIVE["Native Layer"]
+                    AUDIOTRACK[AudioTrack]
+                    AUDIORECORD[AudioRecord]
+                    MEDIACODEC[MediaCodec]
+                    end
+
+                    subgraph HAL["HAL Layer"]
+                    AUDIOHAL[Audio HAL]
+                    CAMERAHAL[Camera HAL]
+                    end
+
+                    MEDIA3 --> MSESSION
+                    MEDIAPLAYER --> MSESSION
+                    MSESSION <--> MCONTROLLER
+                        MSESSION --> AUDIOTRACK
+                        MEDIASERVICE --> MEDIACODEC
+                        AUDIOTRACK --> AUDIOHAL
+                        AUDIORECORD --> AUDIOHAL
+                        CAMERA --> CAMERAHAL
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: MediaPlayer -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                MediaPlayer API
+                <span class="tag tag-legacy">Legacy</span>
+            </h2>
+            <p class="section-description">
+                The default media player built into the Android Framework.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        Advantages
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Simple API, quick implementation</li>
+                            <li>Built into Framework, no additional dependencies</li>
+                            <li>Common format support</li>
+                            <li>Suitable for simple playback</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        Disadvantages
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Limited customization</li>
+                            <li>Lack of DASH/HLS support</li>
+                            <li>Complex DRM handling</li>
+                            <li>Android version dependent</li>
+                            <li>Lack of advanced features</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Use Cases
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Local file playback</li>
+                            <li>Simple streaming</li>
+                            <li>Quick prototyping</li>
+                            <li>Educational apps</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>Recommendation:</strong> Media3 is recommended for new projects. Use MediaPlayer only for simple use cases or legacy support.
+            </div>
+        </section>
+
+        <!-- Section 4: ExoPlayer -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                ExoPlayer
+                <span class="tag tag-advanced">Advanced</span>
+            </h2>
+            <p class="section-description">
+                An application-level media player library developed by Google.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚀</span>
+                        Key Features
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Adaptive Streaming</strong>: DASH, HLS, SmoothStreaming</li>
+                            <li><strong>DRM</strong>: Widevine, PlayReady</li>
+                            <li><strong>Customization</strong>: All components replaceable</li>
+                            <li><strong>Independent Updates</strong>: OS version independent</li>
+                            <li><strong>Open Source</strong>: Community contributions</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧩</span>
+                        Modular Architecture
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>MediaSource</strong>: Media content provider</li>
+                            <li><strong>Renderer</strong>: Video/audio rendering</li>
+                            <li><strong>TrackSelector</strong>: Track selection logic</li>
+                            <li><strong>LoadControl</strong>: Buffering control</li>
+                            <li>Each component independently replaceable</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        Use Cases
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>OTT streaming services</li>
+                            <li>Live broadcasting</li>
+                            <li>Premium video apps</li>
+                            <li>Custom playback UI requirements</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                    UI[UI Layer]
+                    PLAYER[ExoPlayer]
+                    MS[MediaSource]
+                    RENDERER[Renderer]
+                    TRACK[TrackSelector]
+                    LOAD[LoadControl]
+
+                    UI --> PLAYER
+                    PLAYER --> MS
+                    PLAYER --> RENDERER
+                    PLAYER --> TRACK
+                    PLAYER --> LOAD
+                    MS -->|Media Data| RENDERER
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Media3 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Media3 Library
+                <span class="tag tag-recommended">Recommended</span>
+            </h2>
+            <p class="section-description">
+                Jetpack Media3 is the new unified version of Android media support libraries.
+            </p>
+
+            <div class="highlight-box">
+                <strong>What is Media3?</strong> It is the latest library that unifies and simplifies all media APIs including ExoPlayer.
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Key Improvements
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Unified Player Interface</strong>: Consistent API</li>
+                            <li><strong>ExoPlayer Built-in</strong>: Default implementation provided</li>
+                            <li><strong>Simplified Architecture</strong>: No adapters needed</li>
+                            <li><strong>MediaSession Integration</strong>: Automatic connection</li>
+                            <li><strong>UI Module</strong>: Player controls provided</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Main Modules
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>media3-exoplayer</code>: ExoPlayer implementation</li>
+                            <li><code>media3-session</code>: MediaSession support</li>
+                            <li><code>media3-ui</code>: UI components</li>
+                            <li><code>media3-common</code>: Common interfaces</li>
+                            <li><code>media3-datasource</code>: Data sources</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✨</span>
+                        Advantages
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Reflects latest best practices</li>
+                            <li>Jetpack integration</li>
+                            <li>Continuous updates</li>
+                            <li>Simple migration path</li>
+                            <li>Rich documentation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: MediaSession -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                MediaSession & MediaController
+            </h2>
+            <p class="section-description">
+                Core components for standardized media control.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎛️</span>
+                        MediaSession
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Manages actual media player</li>
+                            <li>Maintains playback state</li>
+                            <li>Provides metadata</li>
+                            <li>Receives playback commands</li>
+                            <li>Communicates with multiple Controllers</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎮</span>
+                        MediaController
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Controls Session from UI</li>
+                            <li>Sends playback commands (play, pause, skip)</li>
+                            <li>Queries playback info</li>
+                            <li>Usable from multiple locations</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🌐</span>
+                        External Control
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Lock Screen</strong>: Lock screen controls</li>
+                            <li><strong>Notification</strong>: Notification media controls</li>
+                            <li><strong>Android Auto</strong>: Vehicle infotainment</li>
+                            <li><strong>Wear OS</strong>: Wearable control</li>
+                            <li><strong>Google Assistant</strong>: Voice commands</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                    PLAYER[Media Player<br />ExoPlayer]
+                    SESSION[MediaSession]
+
+                    subgraph Controllers["MediaControllers"]
+                    APP_UI[App UI]
+                    LOCKSCREEN[Lock Screen]
+                    AUTO[Android Auto]
+                    WEAR[Wear OS]
+                    ASSISTANT[Assistant]
+                    end
+
+                    PLAYER <--> SESSION
+                        SESSION <--> APP_UI
+                            SESSION <--> LOCKSCREEN
+                                SESSION <--> AUTO
+                                    SESSION <--> WEAR
+                                        SESSION <--> ASSISTANT
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: AudioTrack & AudioRecord -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                AudioTrack & AudioRecord
+            </h2>
+            <p class="section-description">
+                Low-level audio APIs for direct control of PCM audio data.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        AudioTrack
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Raw PCM Audio Playback</strong></p>
+                        <ul>
+                            <li><strong>MODE_STREAM</strong>: Continuous streaming<br />- Large audio data<br />- Real-time generation</li>
+                            <li><strong>MODE_STATIC</strong>: Load at once<br />- Short sounds<br />- Low latency</li>
+                            <li>Audio synthesis</li>
+                            <li>DSP processing</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎤</span>
+                        AudioRecord
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Raw PCM Audio Recording</strong></p>
+                        <ul>
+                            <li>Direct recording from microphone</li>
+                            <li>Real-time audio processing</li>
+                            <li>Audio analysis</li>
+                            <li>Speech recognition preprocessing</li>
+                            <li>RECORD_AUDIO permission required</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Use Cases
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>AudioTrack</strong>:
+                                <ul>
+                                    <li>Music synthesizers</li>
+                                    <li>Game sound effects</li>
+                                    <li>VoIP apps</li>
+                                </ul>
+                            </li>
+                            <li><strong>AudioRecord</strong>:
+                                <ul>
+                                    <li>Voice analysis</li>
+                                    <li>Real-time effects</li>
+                                    <li>Audio visualization</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Camera2 -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Camera2 API
+            </h2>
+            <p class="section-description">
+                A modern and powerful camera control API.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📷</span>
+                        Core Components
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>CameraManager</strong>: Camera device management</li>
+                            <li><strong>CameraDevice</strong>: Individual camera control</li>
+                            <li><strong>CameraCaptureSession</strong>: Capture session</li>
+                            <li><strong>CaptureRequest</strong>: Capture settings</li>
+                            <li><strong>TextureView</strong>: Preview display</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        Advanced Control
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Manual exposure control</li>
+                            <li>ISO settings</li>
+                            <li>White balance</li>
+                            <li>RAW capture</li>
+                            <li>Lens/flash control</li>
+                            <li>Burst capture</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🆚</span>
+                        Camera2 vs CameraX
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Camera2</strong>:
+                                <ul>
+                                    <li>Maximum control</li>
+                                    <li>Complex API</li>
+                                    <li>Pro camera apps</li>
+                                </ul>
+                            </li>
+                            <li><strong>CameraX</strong>:
+                                <ul>
+                                    <li>Simple API</li>
+                                    <li>Common use cases</li>
+                                    <li>Recommended</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 9: API Comparison -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                API Comparison & Selection Guide
+            </h2>
+            <p class="section-description">
+                A guide to selecting the appropriate API based on use cases.
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>API</th>
+                        <th>Features</th>
+                        <th>Recommended Use Cases</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Media3</strong></td>
+                        <td>Streaming, DRM, advanced features</td>
+                        <td>New media apps (Recommended)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ExoPlayer</strong></td>
+                        <td>Customization, DASH/HLS</td>
+                        <td>Advanced streaming requirements</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MediaPlayer</strong></td>
+                        <td>Basic playback</td>
+                        <td>Simple local playback</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MediaSession</strong></td>
+                        <td>External control, background</td>
+                        <td>All media apps (Required)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AudioTrack</strong></td>
+                        <td>PCM playback, DSP</td>
+                        <td>Audio synthesis, games</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AudioRecord</strong></td>
+                        <td>PCM recording, analysis</td>
+                        <td>Voice processing, analysis</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Camera2</strong></td>
+                        <td>Manual control, RAW</td>
+                        <td>Pro camera apps</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CameraX</strong></td>
+                        <td>Easy camera</td>
+                        <td>General camera features</td>
+                    </tr>
+                </tbody>
+            </table>
+
+
+        </section>
+
+        <!-- Section 10: MediaPlayer Code Examples -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                MediaPlayer Code Examples
+            </h2>
+            <p class="section-description">
+                Explains basic media playback implementation using the MediaPlayer API with code.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Basic Usage
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// MainActivity.kt - Basic MediaPlayer usage
+class MainActivity : AppCompatActivity() {
+    private var mediaPlayer: MediaPlayer? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        // Play local file
+        playLocalFile()
+
+        // Or play streaming URL
+        // playStreamUrl("https://example.com/audio.mp3")
+    }
+
+    private fun playLocalFile() {
+        mediaPlayer = MediaPlayer.create(this, R.raw.sample_audio)
+
+        mediaPlayer?.apply {
+            setOnPreparedListener {
+                start() // Start playback
+                Log.d("MediaPlayer", "Duration: ${duration}ms")
+            }
+
+            setOnCompletionListener {
+                Log.d("MediaPlayer", "Playback complete")
+            }
+
+            setOnErrorListener { mp, what, extra ->
+                Log.e("MediaPlayer", "Error: what=$what, extra=$extra")
+                true // Error handled
+            }
+        }
+    }
+
+    private fun playStreamUrl(url: String) {
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(url)
+            setOnPreparedListener {
+                start()
+            }
+            prepareAsync() // Async preparation (for network files)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mediaPlayer?.pause()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer?.release()
+        mediaPlayer = null
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                State Machine Management
+            </h3>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    stateDiagram-v2
+                    [*] --> Idle
+                    Idle --> Initialized: setDataSource()
+                    Initialized --> Preparing: prepareAsync()
+                    Initialized --> Prepared: prepare()
+                    Preparing --> Prepared: onPrepared()
+                    Prepared --> Started: start()
+                    Started --> Paused: pause()
+                    Paused --> Started: start()
+                    Started --> PlaybackCompleted: Playback Complete
+                    Started --> Stopped: stop()
+                    Paused --> Stopped: stop()
+                    Stopped --> Prepared: prepare()
+                    PlaybackCompleted --> [*]: release()
+                    Stopped --> [*]: release()
+                </div>
+            </div>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Check allowed methods per state
+private fun safePlay() {
+    mediaPlayer?.let { mp ->
+        if (!mp.isPlaying) {
+            mp.start()
+        }
+    }
+}
+
+private fun safePause() {
+    mediaPlayer?.let { mp ->
+        if (mp.isPlaying) {
+            mp.pause()
+        }
+    }
+}
+
+private fun safeSeekTo(position: Int) {
+    mediaPlayer?.let { mp ->
+        // Only available in Prepared, Started, Paused, PlaybackCompleted states
+        try {
+            mp.seekTo(position)
+        } catch (e: IllegalStateException) {
+            Log.e("MediaPlayer", "Cannot seek in current state")
+        }
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        Cautions
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Always call <code>release()</code></li>
+                            <li>Follow state transition order</li>
+                            <li>Use <code>prepareAsync()</code> for network files</li>
+                            <li>Always set error listener</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚫</span>
+                        Limitations
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>No DASH/HLS support</li>
+                            <li>Difficult complex DRM handling</li>
+                            <li>Limited customization</li>
+                            <li>Behavior varies by Android version</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 11: ExoPlayer Detailed Implementation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                ExoPlayer Detailed Implementation
+            </h2>
+            <p class="section-description">
+                Step-by-step explanation of advanced media playback implementation using ExoPlayer.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Gradle Dependencies
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-groovy">// build.gradle (app level)
+dependencies {
+    // ExoPlayer (legacy)
+    implementation 'com.google.android.exoplayer:exoplayer:2.19.1'
+
+    // Or specific modules only
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.19.1'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.19.1'
+    implementation 'com.google.android.exoplayer:exoplayer-dash:2.19.1'
+    implementation 'com.google.android.exoplayer:exoplayer-hls:2.19.1'
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Basic ExoPlayer Implementation
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// PlayerActivity.kt
+class PlayerActivity : AppCompatActivity() {
+    private lateinit var player: ExoPlayer
+    private lateinit var playerView: PlayerView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_player)
+
+        playerView = findViewById(R.id.player_view)
+
+        // Initialize ExoPlayer
+        player = ExoPlayer.Builder(this)
+            .setLoadControl(
+                DefaultLoadControl.Builder()
+                    .setBufferDurationsMs(
+                        15000, // minBufferMs
+                        50000, // maxBufferMs
+                        1500,  // bufferForPlaybackMs
+                        5000   // bufferForPlaybackAfterRebufferMs
+                    )
+                    .build()
+            )
+            .build()
+
+        playerView.player = player
+
+        // Prepare MediaItem
+        val mediaItem = MediaItem.fromUri("https://example.com/video.mp4")
+        player.setMediaItem(mediaItem)
+
+        // Event listener
+        player.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                when (playbackState) {
+                    Player.STATE_IDLE -> Log.d("ExoPlayer", "IDLE")
+                    Player.STATE_BUFFERING -> Log.d("ExoPlayer", "BUFFERING")
+                    Player.STATE_READY -> Log.d("ExoPlayer", "READY")
+                    Player.STATE_ENDED -> Log.d("ExoPlayer", "ENDED")
+                }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                Log.e("ExoPlayer", "Error: ${error.message}")
+            }
+        })
+
+        // Start playback
+        player.prepare()
+        player.play()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        player.release()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                DASH/HLS Adaptive Streaming
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// DASH playback
+private fun playDash(url: String) {
+    val dataSourceFactory = DefaultHttpDataSource.Factory()
+
+    val dashMediaSource = DashMediaSource.Factory(dataSourceFactory)
+        .createMediaSource(MediaItem.fromUri(url))
+
+    player.setMediaSource(dashMediaSource)
+    player.prepare()
+    player.play()
+}
+
+// HLS playback
+private fun playHls(url: String) {
+    val dataSourceFactory = DefaultHttpDataSource.Factory()
+
+    val hlsMediaSource = HlsMediaSource.Factory(dataSourceFactory)
+        .createMediaSource(MediaItem.fromUri(url))
+
+    player.setMediaSource(hlsMediaSource)
+    player.prepare()
+    player.play()
+}
+
+// Playlist
+private fun playPlaylist(urls: List&lt;String&gt;) {
+    val mediaItems = urls.map { MediaItem.fromUri(it) }
+
+    player.setMediaItems(mediaItems)
+    player.prepare()
+    player.play()
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Custom TrackSelector
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Select specific quality
+private fun setupCustomTrackSelector() {
+    val trackSelector = DefaultTrackSelector(this).apply {
+        parameters = buildUponParameters()
+            // Limit to max 720p
+            .setMaxVideoSizeSd()
+            // Play HD only on Wi-Fi
+            .setForceHighestSupportedBitrate(isWifi())
+            .build()
+    }
+
+    player = ExoPlayer.Builder(this)
+        .setTrackSelector(trackSelector)
+        .build()
+}
+
+private fun isWifi(): Boolean {
+    val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE)
+        as ConnectivityManager
+    val network = connectivityManager.activeNetwork ?: return false
+    val capabilities = connectivityManager.getNetworkCapabilities(network)
+    return capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✨</span>
+                        ExoPlayer Advantages
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>DASH, HLS, SmoothStreaming support</li>
+                            <li>Modular architecture</li>
+                            <li>OS version independent</li>
+                            <li>Rich customization</li>
+                            <li>Easy DRM integration</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Performance Optimization
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Adjust buffering with LoadControl</li>
+                            <li>Limit bitrate with TrackSelector</li>
+                            <li>Reduce network usage with cache</li>
+                            <li>Enable offload decoding</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 12: Media3 Detailed Implementation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                Media3 Detailed Implementation
+            </h2>
+            <p class="section-description">
+                Explains modern media app development using the Media3 library.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Gradle Dependencies
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-groovy">// build.gradle (app level)
+dependencies {
+    // Media3 (Recommended)
+    def media3_version = "1.2.0"
+
+    implementation "androidx.media3:media3-exoplayer:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-dash:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-hls:$media3_version"
+    implementation "androidx.media3:media3-ui:$media3_version"
+    implementation "androidx.media3:media3-session:$media3_version"
+    implementation "androidx.media3:media3-common:$media3_version"
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Media3 ExoPlayer Implementation
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// PlayerActivity.kt - Media3
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
+
+class PlayerActivity : AppCompatActivity() {
+    private lateinit var player: ExoPlayer
+    private lateinit var playerView: PlayerView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_player)
+
+        playerView = findViewById(R.id.player_view)
+
+        // Initialize Media3 ExoPlayer
+        player = ExoPlayer.Builder(this)
+            .build()
+            .also { exoPlayer ->
+                playerView.player = exoPlayer
+
+                // Create MediaItem
+                val mediaItem = MediaItem.Builder()
+                    .setUri("https://example.com/video.mp4")
+                    .setMediaMetadata(
+                        androidx.media3.common.MediaMetadata.Builder()
+                            .setTitle("Sample Video")
+                            .setArtist("Artist Name")
+                            .build()
+                    )
+                    .build()
+
+                exoPlayer.setMediaItem(mediaItem)
+                exoPlayer.prepare()
+                exoPlayer.playWhenReady = true
+            }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        player.pause()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        player.release()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Automatic MediaSession Integration
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// PlaybackService.kt - Media3 MediaSession
+import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSessionService
+
+class PlaybackService : MediaSessionService() {
+    private var mediaSession: MediaSession? = null
+
+    override fun onCreate() {
+        super.onCreate()
+
+        val player = ExoPlayer.Builder(this).build()
+
+        mediaSession = MediaSession.Builder(this, player)
+            .build()
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
+        return mediaSession
+    }
+
+    override fun onDestroy() {
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
+        }
+        super.onDestroy()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                ExoPlayer to Media3 Migration
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>ExoPlayer (Old)</th>
+                        <th>Media3 (New)</th>
+                        <th>Changes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>com.google.android.exoplayer2</code></td>
+                        <td><code>androidx.media3</code></td>
+                        <td>Package name change</td>
+                    </tr>
+                    <tr>
+                        <td><code>SimpleExoPlayer</code></td>
+                        <td><code>ExoPlayer</code></td>
+                        <td>Class consolidation</td>
+                    </tr>
+                    <tr>
+                        <td><code>MediaSource</code></td>
+                        <td><code>MediaItem</code></td>
+                        <td>Simplified API</td>
+                    </tr>
+                    <tr>
+                        <td>Manual MediaSession connection</td>
+                        <td>Automatic integration</td>
+                        <td>Boilerplate removed</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        Why Choose Media3
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Simplified API</li>
+                            <li>Jetpack integration</li>
+                            <li>Automatic MediaSession connection</li>
+                            <li>UI components provided</li>
+                            <li>Continuous updates</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Recommendations
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Use Media3 for new projects</li>
+                            <li>Gradual migration for existing ExoPlayer apps</li>
+                            <li>MediaSession implementation required</li>
+                            <li>Jetpack Compose compatible</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 13: MediaSession Complete Guide -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">13</span>
+                MediaSession Complete Guide
+            </h2>
+            <p class="section-description">
+                Detailed explanation of background playback and external control implementation using MediaSession.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                MediaSessionService Implementation
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// MusicService.kt - MediaSession Service
+import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSessionService
+import androidx.media3.exoplayer.ExoPlayer
+
+class MusicService : MediaSessionService() {
+    private var mediaSession: MediaSession? = null
+
+    override fun onCreate() {
+        super.onCreate()
+
+        val player = ExoPlayer.Builder(this).build()
+
+        mediaSession = MediaSession.Builder(this, player)
+            .setCallback(MediaSessionCallback())
+            .build()
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
+        return mediaSession
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        val player = mediaSession?.player
+        if (player?.playWhenReady == false) {
+            // Stop service if not playing
+            stopSelf()
+        }
+    }
+
+    override fun onDestroy() {
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
+        }
+        super.onDestroy()
+    }
+
+    // MediaSession Callback
+    private inner class MediaSessionCallback : MediaSession.Callback {
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): MediaSession.ConnectionResult {
+            val sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
+                // Add custom commands if needed
+                .build()
+
+            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                .setAvailableSessionCommands(sessionCommands)
+                .build()
+        }
+
+        override fun onAddMediaItems(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: List&lt;MediaItem&gt;
+        ): ListenableFuture&lt;List&lt;MediaItem&gt;&gt; {
+            val updatedMediaItems = mediaItems.map { mediaItem ->
+                mediaItem.buildUpon()
+                    .setUri(mediaItem.requestMetadata.mediaUri)
+                    .build()
+            }
+            return Futures.immediateFuture(updatedMediaItems)
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Notification MediaStyle
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-xml">&lt;!-- AndroidManifest.xml --&gt;
+&lt;service
+    android:name=".MusicService"
+    android:foregroundServiceType="mediaPlayback"
+    android:exported="true"&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="androidx.media3.session.MediaSessionService" /&gt;
+    &lt;/intent-filter&gt;
+&lt;/service&gt;</code></pre>
+            </div>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Notification is auto-generated by Media3 but can be customized
+private fun createNotification(): Notification {
+    val channelId = "music_playback"
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(
+            channelId,
+            "Music Playback",
+            NotificationManager.IMPORTANCE_LOW
+        )
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    return NotificationCompat.Builder(this, channelId)
+        .setContentTitle("Now Playing")
+        .setContentText(currentSong.title)
+        .setSmallIcon(R.drawable.ic_music_note)
+        .setStyle(
+            androidx.media.app.NotificationCompat.MediaStyle()
+                .setMediaSession(mediaSession.sessionCompatToken)
+                .setShowActionsInCompactView(0, 1, 2)
+        )
+        .addAction(R.drawable.ic_skip_previous, "Previous", previousPendingIntent)
+        .addAction(R.drawable.ic_pause, "Pause", pausePendingIntent)
+        .addAction(R.drawable.ic_skip_next, "Next", nextPendingIntent)
+        .build()
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Connecting MediaController from Activity
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// MainActivity.kt - MediaController Connection
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+
+class MainActivity : AppCompatActivity() {
+    private var mediaController: MediaController? = null
+
+    override fun onStart() {
+        super.onStart()
+
+        val sessionToken = SessionToken(
+            this,
+            ComponentName(this, MusicService::class.java)
+        )
+
+        val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
+
+        controllerFuture.addListener({
+            mediaController = controllerFuture.get()
+
+            // Playback state listener
+            mediaController?.addListener(object : Player.Listener {
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    updatePlayPauseButton(isPlaying)
+                }
+
+                override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+                    updateUI(mediaMetadata)
+                }
+            })
+        }, MoreExecutors.directExecutor())
+    }
+
+    private fun playPause() {
+        mediaController?.let { controller ->
+            if (controller.isPlaying) {
+                controller.pause()
+            } else {
+                controller.play()
+            }
+        }
+    }
+
+    private fun skipToNext() {
+        mediaController?.seekToNext()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        mediaController?.release()
+        mediaController = null
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        Why MediaSession is Essential
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Background playback</li>
+                            <li>Lock screen controls</li>
+                            <li>Notification media buttons</li>
+                            <li>Android Auto/Wear OS support</li>
+                            <li>Google Assistant voice control</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        Implementation Checklist
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Extend MediaSessionService</li>
+                            <li>Register Foreground Service</li>
+                            <li>Set MediaMetadata</li>
+                            <li>Handle onTaskRemoved</li>
+                            <li>Ensure release() is called</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 14: AudioTrack/AudioRecord Practice -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
+                AudioTrack/AudioRecord Practice
+            </h2>
+            <p class="section-description">
+                Explains PCM audio playback and recording implementation using low-level audio APIs.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                AudioTrack Playback
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// AudioTrackPlayer.kt - PCM Audio Playback
+class AudioTrackPlayer {
+    private var audioTrack: AudioTrack? = null
+    private var playbackThread: Thread? = null
+
+    fun start() {
+        val sampleRate = 44100
+        val channelConfig = AudioFormat.CHANNEL_OUT_STEREO
+        val audioFormat = AudioFormat.ENCODING_PCM_16BIT
+
+        val bufferSize = AudioTrack.getMinBufferSize(
+            sampleRate,
+            channelConfig,
+            audioFormat
+        )
+
+        audioTrack = AudioTrack.Builder()
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            )
+            .setAudioFormat(
+                AudioFormat.Builder()
+                    .setSampleRate(sampleRate)
+                    .setChannelMask(channelConfig)
+                    .setEncoding(audioFormat)
+                    .build()
+            )
+            .setBufferSizeInBytes(bufferSize)
+            .setTransferMode(AudioTrack.MODE_STREAM)
+            .build()
+
+        audioTrack?.play()
+
+        // Write audio data in separate thread
+        playbackThread = Thread {
+            val buffer = ShortArray(bufferSize / 2)
+
+            while (!Thread.currentThread().isInterrupted) {
+                // Generate PCM data (e.g., sine wave)
+                generateSineWave(buffer, 440.0) // 440Hz A note
+
+                audioTrack?.write(buffer, 0, buffer.size)
+            }
+        }
+        playbackThread?.start()
+    }
+
+    private fun generateSineWave(buffer: ShortArray, frequency: Double) {
+        val sampleRate = 44100.0
+        for (i in buffer.indices) {
+            val value = (Math.sin(2.0 * Math.PI * i * frequency / sampleRate) * 32767).toInt()
+            buffer[i] = value.toShort()
+        }
+    }
+
+    fun stop() {
+        playbackThread?.interrupt()
+        audioTrack?.stop()
+        audioTrack?.release()
+        audioTrack = null
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                AudioRecord Recording
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// AudioRecorder.kt - PCM Audio Recording
+class AudioRecorder {
+    private var audioRecord: AudioRecord? = null
+    private var recordingThread: Thread? = null
+    private var isRecording = false
+
+    fun startRecording() {
+        val sampleRate = 44100
+        val channelConfig = AudioFormat.CHANNEL_IN_MONO
+        val audioFormat = AudioFormat.ENCODING_PCM_16BIT
+
+        val bufferSize = AudioRecord.getMinBufferSize(
+            sampleRate,
+            channelConfig,
+            audioFormat
+        )
+
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // Request permission
+            return
+        }
+
+        audioRecord = AudioRecord(
+            MediaRecorder.AudioSource.MIC,
+            sampleRate,
+            channelConfig,
+            audioFormat,
+            bufferSize
+        )
+
+        audioRecord?.startRecording()
+        isRecording = true
+
+        recordingThread = Thread {
+            val buffer = ShortArray(bufferSize / 2)
+            val outputStream = FileOutputStream("/sdcard/recorded_audio.pcm")
+
+            while (isRecording) {
+                val readSize = audioRecord?.read(buffer, 0, buffer.size) ?: 0
+
+                if (readSize > 0) {
+                    // Save PCM data to file
+                    val byteBuffer = ByteBuffer.allocate(readSize * 2)
+                    byteBuffer.order(ByteOrder.LITTLE_ENDIAN)
+                    for (i in 0 until readSize) {
+                        byteBuffer.putShort(buffer[i])
+                    }
+                    outputStream.write(byteBuffer.array())
+
+                    // Real-time audio analysis possible
+                    analyzeAudio(buffer, readSize)
+                }
+            }
+
+            outputStream.close()
+        }
+        recordingThread?.start()
+    }
+
+    private fun analyzeAudio(buffer: ShortArray, size: Int) {
+        // Calculate RMS (Root Mean Square) - Volume level
+        var sum = 0.0
+        for (i in 0 until size) {
+            sum += buffer[i] * buffer[i]
+        }
+        val rms = Math.sqrt(sum / size)
+        val db = 20 * Math.log10(rms)
+
+        Log.d("AudioRecord", "Volume: ${db}dB")
+    }
+
+    fun stopRecording() {
+        isRecording = false
+        recordingThread?.join()
+        audioRecord?.stop()
+        audioRecord?.release()
+        audioRecord = null
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Use Cases
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>AudioTrack:</strong> Music synthesis, game sound effects, VoIP</li>
+                            <li><strong>AudioRecord:</strong> Voice analysis, real-time effects, visualization</li>
+                            <li>When low-latency audio is needed</li>
+                            <li>When DSP processing is required</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚠️</span>
+                        Cautions
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Must process in separate thread</li>
+                            <li>Set appropriate buffer size</li>
+                            <li>Prevent underrun/overrun</li>
+                            <li>Check permission (RECORD_AUDIO)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 15: Camera2 Practice -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">15</span>
+                Camera2 Practice
+            </h2>
+            <p class="section-description">
+                Explains advanced camera control implementation using the Camera2 API.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Camera Initialization
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// CameraActivity.kt - Basic Camera2 Usage
+class CameraActivity : AppCompatActivity() {
+    private lateinit var cameraManager: CameraManager
+    private var cameraDevice: CameraDevice? = null
+    private var captureSession: CameraCaptureSession? = null
+    private lateinit var textureView: TextureView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_camera)
+
+        textureView = findViewById(R.id.texture_view)
+        cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+
+        textureView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+            override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
+                openCamera()
+            }
+
+            override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {}
+            override fun onSurfaceTextureDestroyed(surface: SurfaceTexture) = true
+            override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
+        }
+    }
+
+    private fun openCamera() {
+        val cameraId = cameraManager.cameraIdList[0] // Rear camera
+
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.CAMERA
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // Request permission
+            return
+        }
+
+        cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
+            override fun onOpened(camera: CameraDevice) {
+                cameraDevice = camera
+                startPreview()
+            }
+
+            override fun onDisconnected(camera: CameraDevice) {
+                camera.close()
+                cameraDevice = null
+            }
+
+            override fun onError(camera: CameraDevice, error: Int) {
+                camera.close()
+                cameraDevice = null
+                Log.e("Camera2", "Error: $error")
+            }
+        }, null)
+    }
+
+    private fun startPreview() {
+        val surfaceTexture = textureView.surfaceTexture
+        val surface = Surface(surfaceTexture)
+
+        val captureRequestBuilder = cameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+        captureRequestBuilder?.addTarget(surface)
+
+        cameraDevice?.createCaptureSession(
+            listOf(surface),
+            object : CameraCaptureSession.StateCallback() {
+                override fun onConfigured(session: CameraCaptureSession) {
+                    captureSession = session
+
+                    // Continuous preview
+                    val captureRequest = captureRequestBuilder?.build()
+                    session.setRepeatingRequest(
+                        captureRequest!!,
+                        null,
+                        null
+                    )
+                }
+
+                override fun onConfigureFailed(session: CameraCaptureSession) {
+                    Log.e("Camera2", "Configuration failed")
+                }
+            },
+            null
+        )
+    }
+
+    override fun onPause() {
+        super.onPause()
+        captureSession?.close()
+        cameraDevice?.close()
+    }
+}</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Photo Capture
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// Photo capture implementation
+private fun capturePhoto() {
+    val imageReader = ImageReader.newInstance(
+        1920, 1080,
+        ImageFormat.JPEG,
+        1
+    )
+
+    imageReader.setOnImageAvailableListener({ reader ->
+        val image = reader.acquireLatestImage()
+        val buffer = image.planes[0].buffer
+        val bytes = ByteArray(buffer.remaining())
+        buffer.get(bytes)
+
+        // Save to file
+        val file = File(getExternalFilesDir(null), "photo.jpg")
+        FileOutputStream(file).use { it.write(bytes) }
+
+        image.close()
+        Log.d("Camera2", "Photo saved: ${file.absolutePath}")
+    }, null)
+
+    val captureRequestBuilder = cameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
+    captureRequestBuilder?.addTarget(imageReader.surface)
+
+    // Autofocus settings
+    captureRequestBuilder?.set(
+        CaptureRequest.CONTROL_AF_MODE,
+        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+    )
+
+    // Auto flash
+    captureRequestBuilder?.set(
+        CaptureRequest.CONTROL_AE_MODE,
+        CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH
+    )
+
+    captureSession?.capture(
+        captureRequestBuilder!!.build(),
+        object : CameraCaptureSession.CaptureCallback() {
+            override fun onCaptureCompleted(
+                session: CameraCaptureSession,
+                request: CaptureRequest,
+                result: TotalCaptureResult
+            ) {
+                Log.d("Camera2", "Capture completed")
+            }
+        },
+        null
+    )
+}</code></pre>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>CameraX Recommended:</strong> CameraX is recommended for common use cases.
+                Use Camera2 only for pro camera apps or when maximum control is needed.
+            </div>
+        </section>
+
+        <!-- Section 16: DRM Integration (Widevine) -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">16</span>
+                DRM Integration (Widevine)
+            </h2>
+            <p class="section-description">
+                Explains how to play Widevine DRM content in ExoPlayer/Media3.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Media3 DRM Configuration
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-kotlin">// DRM Content Playback
+import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
+import androidx.media3.exoplayer.drm.FrameworkMediaDrm
+import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
+
+class DrmPlayerActivity : AppCompatActivity() {
+    private lateinit var player: ExoPlayer
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val licenseUrl = "https://license.widevine.com/cenc/getlicense"
+        val drmCallback = HttpMediaDrmCallback(licenseUrl, DefaultHttpDataSource.Factory())
+
+        val drmSessionManager = DefaultDrmSessionManager.Builder()
+            .setUuidAndExoMediaDrmProvider(
+                C.WIDEVINE_UUID,
+                FrameworkMediaDrm.DEFAULT_PROVIDER
+            )
+            .build(drmCallback)
+
+        player = ExoPlayer.Builder(this)
+            .setDrmSessionManager(drmSessionManager)
+            .build()
+
+        val mediaItem = MediaItem.Builder()
+            .setUri("https://example.com/encrypted_video.mpd")
+            .setDrmConfiguration(
+                MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
+                    .setLicenseUri(licenseUrl)
+                    .build()
+            )
+            .build()
+
+        player.setMediaItem(mediaItem)
+        player.prepare()
+        player.play()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        player.release()
+    }
+}</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔑</span>
+                        DRM Systems
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Widevine:</strong> Google (Android standard)</li>
+                            <li><strong>PlayReady:</strong> Microsoft</li>
+                            <li><strong>FairPlay:</strong> Apple (iOS/tvOS)</li>
+                            <li><strong>ClearKey:</strong> For testing</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Widevine Levels
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>L1:</strong> Hardware-based (highest security)</li>
+                            <li><strong>L2:</strong> Hybrid</li>
+                            <li><strong>L3:</strong> Software-based (SD quality limit)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 17: Android Version Changes -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">17</span>
+                Android Version Changes
+            </h2>
+            <p class="section-description">
+                Summary of the evolution of Android media APIs across versions.
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Android Version</th>
+                        <th>Major Changes</th>
+                        <th>Recommended API</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Android 5.0 (Lollipop)</td>
+                        <td>Camera2 API introduction, MediaSession added</td>
+                        <td>MediaPlayer, Camera2</td>
+                    </tr>
+                    <tr>
+                        <td>Android 7.0 (Nougat)</td>
+                        <td>ExoPlayer popularity rise</td>
+                        <td>ExoPlayer, MediaSession</td>
+                    </tr>
+                    <tr>
+                        <td>Android 8.0 (Oreo)</td>
+                        <td>AudioFocus improvements, AAudio introduction</td>
+                        <td>ExoPlayer, AAudio</td>
+                    </tr>
+                    <tr>
+                        <td>Android 10 (Q)</td>
+                        <td>Scoped Storage, MediaStore improvements</td>
+                        <td>ExoPlayer, CameraX</td>
+                    </tr>
+                    <tr>
+                        <td>Android 11 (R)</td>
+                        <td>Media controls improvements, ML Kit</td>
+                        <td>ExoPlayer, Media3 (beta)</td>
+                    </tr>
+                    <tr>
+                        <td>Android 12 (S)</td>
+                        <td>Media3 official release, Transcoding API</td>
+                        <td>Media3, CameraX</td>
+                    </tr>
+                    <tr>
+                        <td>Android 13 (T)</td>
+                        <td>Photo Picker, Granular permissions</td>
+                        <td>Media3 (Recommended), Jetpack</td>
+                    </tr>
+                    <tr>
+                        <td>Android 14 (U)</td>
+                        <td>Ultra HDR, Enhanced codec support</td>
+                        <td>Media3, CameraX</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>Trend:</strong> Evolution from MediaPlayer to ExoPlayer to Media3,
+                and Media3 is strongly recommended for new projects.
+            </div>
+        </section>
+
+        <!-- Section 18: Debugging & Troubleshooting -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">18</span>
+                Debugging & Troubleshooting
+            </h2>
+            <p class="section-description">
+                Summary of common problems and solutions in media app development.
+            </p>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Common Problem Solving
+            </h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Problem</th>
+                        <th>Cause</th>
+                        <th>Solution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Not playing (MediaPlayer)</td>
+                        <td>State transition error</td>
+                        <td>Check state machine, start() after prepare()</td>
+                    </tr>
+                    <tr>
+                        <td>Continuous buffering (ExoPlayer)</td>
+                        <td>Improper LoadControl settings</td>
+                        <td>Adjust buffer size, check network</td>
+                    </tr>
+                    <tr>
+                        <td>DRM playback failure</td>
+                        <td>License server error</td>
+                        <td>Check license URL, analyze logs</td>
+                    </tr>
+                    <tr>
+                        <td>Background playback not working</td>
+                        <td>MediaSession not implemented</td>
+                        <td>Implement MediaSessionService</td>
+                    </tr>
+                    <tr>
+                        <td>AudioTrack stuttering</td>
+                        <td>Buffer underrun</td>
+                        <td>Increase buffer size, adjust thread priority</td>
+                    </tr>
+                    <tr>
+                        <td>Camera2 preview lag</td>
+                        <td>Resolution too high</td>
+                        <td>Select appropriate preview size</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                logcat Filtering
+            </h3>
+
+            <div class="code-block">
+                <pre><code class="language-bash"># ExoPlayer logs
+adb logcat | grep "ExoPlayer"
+
+# MediaPlayer logs
+adb logcat | grep "MediaPlayer"
+
+# MediaSession logs
+adb logcat | grep "MediaSession"
+
+# AudioTrack logs
+adb logcat | grep "AudioTrack"
+
+# Camera2 logs
+adb logcat | grep "CameraDevice"
+
+# DRM logs
+adb logcat | grep -E "MediaDrm|Widevine"</code></pre>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛠️</span>
+                        Debug Tools
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Android Profiler:</strong> CPU, memory, network</li>
+                            <li><strong>Logcat:</strong> Runtime logs</li>
+                            <li><strong>Network Profiler:</strong> Streaming analysis</li>
+                            <li><strong>Battery Profiler:</strong> Battery consumption</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Performance Optimization
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Set appropriate buffer size</li>
+                            <li>Utilize hardware acceleration</li>
+                            <li>Use background threads</li>
+                            <li>Prevent memory leaks (call release)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 19: AOSP Source Code Reference -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">19</span>
+                AOSP Source Code Reference
+            </h2>
+            <p class="section-description">
+                Summary of AOSP source code paths and reference documentation for media APIs.
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Path</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>MediaPlayer</td>
+                        <td>frameworks/base/media/java/android/media/MediaPlayer.java</td>
+                        <td>MediaPlayer API</td>
+                    </tr>
+                    <tr>
+                        <td>MediaSession</td>
+                        <td>frameworks/base/media/java/android/media/session/</td>
+                        <td>MediaSession/Controller</td>
+                    </tr>
+                    <tr>
+                        <td>AudioTrack</td>
+                        <td>frameworks/base/media/java/android/media/AudioTrack.java</td>
+                        <td>AudioTrack API</td>
+                    </tr>
+                    <tr>
+                        <td>Camera2</td>
+                        <td>frameworks/base/core/java/android/hardware/camera2/</td>
+                        <td>Camera2 API</td>
+                    </tr>
+                    <tr>
+                        <td>ExoPlayer (GitHub)</td>
+                        <td>github.com/google/ExoPlayer</td>
+                        <td>ExoPlayer open source</td>
+                    </tr>
+                    <tr>
+                        <td>Media3 (AndroidX)</td>
+                        <td>androidx.dev/media3</td>
+                        <td>Media3 library</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
+                Official Documentation
+            </h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📖</span>
+                        Android Developers
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><a href="https://developer.android.com/guide/topics/media" style="color: var(--accent-primary);">Media Guide</a></li>
+                            <li><a href="https://developer.android.com/media/media3" style="color: var(--accent-primary);">Media3 Documentation</a></li>
+                            <li><a href="https://exoplayer.dev/" style="color: var(--accent-primary);">ExoPlayer.dev</a></li>
+                            <li><a href="https://developer.android.com/training/camera2" style="color: var(--accent-primary);">Camera2 Guide</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎓</span>
+                        Learning Resources
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Android Codelabs (Media3)</li>
+                            <li>GitHub Samples</li>
+                            <li>Stack Overflow</li>
+                            <li>YouTube: Android Developers</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 20: Related Documentation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">20</span>
+                Related Documentation
+            </h2>
+            <p class="section-description">
+                Links to other documents related to media app development.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎬</span>
+                        Media Framework Core
+                    </h3>
+                    <div class="card-description">
+                        Explains the overall architecture of Android Media Framework (Framework↔Native).
+                    </div>
+                    <a href="media-framework-core.html" style="color: var(--accent-primary); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎥</span>
+                        Codec 2.0 & Media HAL
+                    </h3>
+                    <div class="card-description">
+                        Covers Codec 2.0 architecture and HAL interfaces.
+                    </div>
+                    <a href="codec2.html" style="color: var(--accent-primary); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">▶️</span>
+                        Media Playback Pipeline
+                    </h3>
+                    <div class="card-description">
+                        Explains data flow in the media playback pipeline.
+                    </div>
+                    <a href="media-playback.html" style="color: var(--accent-primary); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        MediaSession Framework
+                    </h3>
+                    <div class="card-description">
+                        Covers MediaSession's detailed architecture and flow.
+                    </div>
+                    <a href="mediasession.html" style="color: var(--accent-primary); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔊</span>
+                        Audio Framework
+                    </h3>
+                    <div class="card-description">
+                        Explains the audio system including AudioFlinger, AudioPolicyService.
+                    </div>
+                    <a href="audio-framework.html" style="color: var(--accent-primary); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔐</span>
+                        Widevine DRM
+                    </h3>
+                    <div class="card-description">
+                        Detailed coverage of Widevine DRM architecture and integration methods.
+                    </div>
+                    <a href="widevine.html" style="color: var(--accent-primary); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Car Media Service
+                    </h3>
+                    <div class="card-description">
+                        Explains the media management service of AAOS.
+                    </div>
+                    <a href="carmedia.html" style="color: var(--accent-primary); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📱</span>
+                        Car Ready Mobile Apps
+                    </h3>
+                    <div class="card-description">
+                        Covers the CarMa program for extending mobile apps to vehicles.
+                    </div>
+                    <a href="carma.html" style="color: var(--accent-primary); text-decoration: none;">
+                        View Details →
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <!-- Navigation & Copy Features -->
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <!-- Interactive Diagram Features -->
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>
