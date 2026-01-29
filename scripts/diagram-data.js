@@ -12732,9 +12732,8717 @@ adb shell am bug-report
 // ========================================
 // TODO: Phase 2에서 번역 데이터 추가
 const DIAGRAM_NODE_DATA_EN = {
-    // 현재 비어있음 - 한글 데이터만 사용 중
-    // Phase 2에서 AI 번역 또는 수동 번역으로 채워질 예정
+    'System Apps': {
+        title: 'System Apps',
+        layer: 'Application Layer',
+        description: 'Pre-installed system applications in Android. Includes Phone, Contacts, Settings, Email, Camera, and more.',
+        components: [
+            'Phone (Phone app)',
+            'Contacts',
+            'Settings',
+            'Email',
+            'Camera',
+            'Browser'
+        ],
+        path: 'packages/apps/',
+        doc: 'https://source.android.com/docs/core/architecture',
+        relatedSections: ['section-1', 'section-2']
+    },
+
+    'Framework': {
+        title: 'Java API Framework',
+        layer: 'Framework Layer',
+        description: 'Java/Kotlin API framework for Android app development. Includes View System, Activity Manager, Package Manager, and more.',
+        components: [
+            'View System - UI rendering',
+            'Activity Manager - Activity lifecycle',
+            'Package Manager - App installation/management',
+            'Window Manager - Window management',
+            'Notification Manager - Notifications',
+            'Content Providers - Data sharing'
+        ],
+        path: 'frameworks/base/core/java/android/',
+        doc: 'https://developer.android.com/reference',
+        codeExample: `
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+    }
+}
+        `.trim()
+    },
+
+    'Android Runtime': {
+        title: 'Android Runtime (ART)',
+        layer: 'Runtime',
+        description: 'Runtime environment for executing Android apps. Handles AOT compilation, garbage collection, and JIT compilation.',
+        components: [
+            'AOT (Ahead-of-Time) Compilation',
+            'JIT (Just-in-Time) Compilation',
+            'Garbage Collection (GC)',
+            'Core Libraries',
+            'DEX Bytecode Execution'
+        ],
+        path: 'art/',
+        doc: 'https://source.android.com/docs/core/runtime',
+        codeExample: `
+# Check ART info
+adb shell getprop dalvik.vm.heapsize
+adb shell dumpsys meminfo com.example.app
+
+# Check compilation mode
+adb shell cmd package compile -m speed -f com.example.app
+        `.trim()
+    },
+
+    'Native Libraries': {
+        title: 'Native C/C++ Libraries',
+        layer: 'Native Layer',
+        description: 'Native C/C++ libraries providing core functionality for Android. Includes Media, Graphics, Audio, and more.',
+        components: [
+            'Media Framework (libstagefright)',
+            'SurfaceFlinger - Screen composition',
+            'AudioFlinger - Audio mixing',
+            'libc (Bionic) - C standard library',
+            'WebView (Chromium)',
+            'SSL/Crypto libraries'
+        ],
+        path: 'frameworks/native/',
+        doc: 'https://source.android.com/docs/core',
+        codeExample: `
+class NativeLib {
+    external fun processAudio(): Int
+
+    companion object {
+        init {
+            System.loadLibrary("native-lib")
+        }
+    }
+}
+        `.trim()
+    },
+
+    'Hardware Abstraction Layer': {
+        title: 'Hardware Abstraction Layer (HAL)',
+        layer: 'HAL',
+        description: 'Hardware abstraction layer. Standardized through HIDL/AIDL interfaces.',
+        components: [
+            'Audio HAL - Audio hardware',
+            'Camera HAL - Camera sensors',
+            'Codec HAL - Hardware codecs',
+            'Graphics HAL - GPU',
+            'Sensor HAL - Sensors',
+            'Vehicle HAL - Vehicle control (AAOS)'
+        ],
+        path: 'hardware/interfaces/',
+        doc: 'https://source.android.com/docs/core/architecture/hal',
+        codeExample: `
+adb shell lshal
+
+# Specific HAL info
+adb shell dumpsys android.hardware.audio@7.0::IDevicesFactory/default
+        `.trim()
+    },
+
+    'View System': {
+        title: 'View System',
+        layer: 'Framework Layer',
+        description: 'Core system for Android UI rendering. Manages View, ViewGroup, and Window.',
+        components: [
+            'View - Base class for UI components',
+            'ViewGroup - Layout container',
+            'WindowManager - Window management',
+            'Canvas/Paint - Drawing API'
+        ],
+        path: 'frameworks/base/core/java/android/view/',
+        doc: 'https://developer.android.com/reference/android/view/View',
+        codeExample: `
+class MyView(context: Context) : View(context) {
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        canvas.drawText("Hello", 50f, 50f, paint)
+    }
+}
+        `.trim()
+    },
+
+    'Activity Manager': {
+        title: 'Activity Manager',
+        layer: 'Framework Layer',
+        description: 'Core system service managing activity lifecycle, back stack, and tasks.',
+        components: [
+            'ActivityManagerService (AMS)',
+            'Activity Stack management',
+            'Task management',
+            'Process lifecycle'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/am/',
+        doc: 'https://developer.android.com/guide/components/activities',
+        codeExample: `
+val intent = Intent(this, DetailActivity::class.java)
+startActivity(intent)
+        `.trim()
+    },
+
+    'MediaPlayer': {
+        title: 'MediaPlayer',
+        layer: 'Framework API',
+        description: 'Basic media playback API in Android SDK. Can play audio and video files.',
+        components: [
+            'setDataSource() - Set media source',
+            'prepare() - Prepare playback',
+            'start() / pause() / stop()',
+            'seekTo() - Seek',
+            'release() - Release resources'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaPlayer.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaPlayer',
+        codeExample: `
+val mediaPlayer = MediaPlayer().apply {
+    setDataSource("https://example.com/music.mp3")
+    prepare()
+    start()
+}
+        `.trim(),
+        relatedIssues: [
+            { id: 'issue-buffering', title: 'Video keeps buffering' },
+            { id: 'issue-av-sync', title: 'Audio-video sync mismatch' },
+            { id: 'issue-seek-slow', title: 'Seek operation is slow' },
+            { id: 'issue-cold-start', title: 'Slow playback start' }
+        ]
+    },
+
+    'ExoPlayer': {
+        title: 'ExoPlayer (Media3)',
+        layer: 'Framework API',
+        description: 'Advanced media playback library by Google. Supports adaptive streaming like DASH and HLS.',
+        components: [
+            'Player - Playback control',
+            'MediaSource - Media source abstraction',
+            'Renderer - Rendering pipeline',
+            'TrackSelector - Track selection'
+        ],
+        path: 'androidx.media3',
+        doc: 'https://developer.android.com/guide/topics/media/media3/exoplayer',
+        codeExample: `
+val player = ExoPlayer.Builder(context).build()
+val mediaItem = MediaItem.fromUri(videoUri)
+player.setMediaItem(mediaItem)
+player.prepare()
+player.play()
+        `.trim(),
+        relatedIssues: [
+            { id: 'issue-buffering', title: 'Video keeps buffering' },
+            { id: 'issue-av-sync', title: 'Audio-video sync mismatch' },
+            { id: 'issue-seek-slow', title: 'Seek operation is slow' },
+            { id: 'issue-frame-drop', title: 'Frame drops occur' }
+        ]
+    },
+
+    'MediaCodec': {
+        title: 'MediaCodec',
+        layer: 'Framework API',
+        description: 'Low-level API for hardware/software codecs. Allows direct control of encoding/decoding.',
+        components: [
+            'configure() - Configure codec',
+            'dequeueInputBuffer() - Input buffer',
+            'queueInputBuffer() - Send data',
+            'dequeueOutputBuffer() - Decoded result'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaCodec.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaCodec',
+        codeExample: `
+val codec = MediaCodec.createDecoderByType("video/avc")
+codec.configure(format, surface, null, 0)
+codec.start()
+        `.trim(),
+        relatedIssues: [
+            { id: 'issue-codec-configure', title: 'MediaCodec.configure() fails' },
+            { id: 'issue-dequeue-timeout', title: 'dequeueOutputBuffer() timeout' },
+            { id: 'issue-resolution-unsupported', title: 'Resolution/framerate not supported' }
+        ]
+    },
+
+    'MediaCodecService': {
+        title: 'MediaCodecService',
+        layer: 'Native Layer',
+        description: 'Native implementation of MediaCodec. Communicates with Codec 2.0 HAL.',
+        components: [
+            'IMediaCodecService',
+            'MediaCodec instance management',
+            'Codec 2.0 HAL interface',
+            'Buffer management'
+        ],
+        path: 'frameworks/av/media/libmediaplayerservice/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        relatedSections: ['section-4']
+    },
+
+    'AudioFlinger': {
+        title: 'AudioFlinger',
+        layer: 'Native Layer',
+        description: 'Audio mixing and output engine in Android. Mixes all audio streams and sends to HAL.',
+        components: [
+            'AudioMixer - Multi-stream mixing',
+            'PlaybackThread - Playback thread',
+            'AudioTrack management',
+            'Audio Policy enforcement'
+        ],
+        path: 'frameworks/av/services/audioflinger/',
+        doc: 'https://source.android.com/docs/core/audio/audioflinger',
+        codeExample: `
+val audioTrack = AudioTrack(...)
+audioTrack.write(pcmData, 0, pcmData.size)
+audioTrack.play()
+        `.trim()
+    },
+
+    'Camera HAL': {
+        title: 'Camera HAL',
+        layer: 'HAL Layer',
+        description: 'Camera hardware abstraction layer. Connects camera sensors with Framework.',
+        components: [
+            'Camera3Device',
+            'Capture Request/Result',
+            'Stream Configuration',
+            'Metadata processing'
+        ],
+        path: 'hardware/interfaces/camera/',
+        doc: 'https://source.android.com/docs/core/camera/camera3',
+        relatedSections: ['section-3']
+    },
+
+    'Audio HAL': {
+        title: 'Audio HAL',
+        layer: 'HAL Layer',
+        description: 'Audio hardware abstraction layer. Connects audio drivers with AudioFlinger.',
+        components: [
+            'IDevice - Audio device interface',
+            'IStream - Audio stream',
+            'StreamOut/StreamIn',
+            'Audio Effects HAL'
+        ],
+        path: 'hardware/interfaces/audio/',
+        doc: 'https://source.android.com/docs/core/audio/implement',
+        relatedSections: ['section-4'],
+        codeExample: `
+class StreamOut : public BnStreamOut {
+public:
+    Status getBufferSizeFrames(int32_t* _aidl_return) override {
+        *_aidl_return = mFrameCount;
+        return Status::ok();
+    }
+
+    Status write(const std::vector<int8_t>& data,
+                 WriteStatus* _aidl_return) override {
+        return Status::ok();
+    }
 };
+        `.trim()
+    },
+
+    'Linux Kernel': {
+        title: 'Linux Kernel',
+        layer: 'Kernel Layer',
+        description: 'Linux kernel underlying Android. Handles device drivers, memory management, and process scheduling.',
+        components: [
+            'Process Scheduler',
+            'Memory Management (Low Memory Killer)',
+            'Binder Driver',
+            'Device Drivers (Display, Audio, Camera)',
+            'Power Management'
+        ],
+        path: 'kernel/',
+        doc: 'https://source.android.com/docs/core/architecture/kernel',
+        codeExample: `
+# Check kernel logs
+adb shell dmesg
+
+# Binder statistics
+adb shell cat /proc/binder/stats
+        `.trim()
+    },
+
+    'Binder Driver': {
+        title: 'Binder Driver',
+        layer: 'Kernel',
+        description: 'Inter-process communication (IPC) mechanism in Android. Implemented as /dev/binder device.',
+        components: [
+            'Transaction management',
+            'Reference Counting',
+            'Death Notification',
+            'Memory Mapping (mmap)'
+        ],
+        path: 'kernel/drivers/android/binder.c',
+        doc: 'https://source.android.com/docs/core/architecture/hidl/binder-ipc',
+        codeExample: `
+# Check Binder info
+adb shell cat /sys/kernel/debug/binder/stats
+adb shell dumpsys activity services
+        `.trim()
+    },
+
+    'Service Manager': {
+        title: 'Service Manager',
+        layer: 'Native',
+        description: 'Binder service registry. Central directory where all system services are registered.',
+        components: [
+            'Service registration/lookup',
+            'Service lifecycle management',
+            'Context Manager'
+        ],
+        path: 'frameworks/native/cmds/servicemanager/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl/service-manager',
+        codeExample: `
+# List registered services
+adb shell service list
+
+# Specific service info
+adb shell dumpsys media.player
+        `.trim()
+    },
+
+    'SurfaceFlinger': {
+        title: 'SurfaceFlinger',
+        layer: 'Native',
+        description: 'Compositor that composites all Surfaces displayed on screen.',
+        components: [
+            'Layer management',
+            'BufferQueue consumption',
+            'Vsync synchronization',
+            'Hardware Composer (HWC) integration'
+        ],
+        path: 'frameworks/native/services/surfaceflinger/',
+        doc: 'https://source.android.com/docs/core/graphics/surfaceflinger-windowmanager',
+        codeExample: `
+# Check SurfaceFlinger info
+adb shell dumpsys SurfaceFlinger
+
+# Layer info
+adb shell dumpsys SurfaceFlinger --list
+        `.trim()
+    },
+
+    'BufferQueue': {
+        title: 'BufferQueue',
+        layer: 'Native',
+        description: 'Producer-Consumer pattern buffer queue. Supports Triple Buffering.',
+        components: [
+            'BufferQueueProducer - Buffer creation',
+            'BufferQueueConsumer - Buffer consumption',
+            'Triple Buffering',
+            'Fence synchronization'
+        ],
+        path: 'frameworks/native/libs/gui/',
+        doc: 'https://source.android.com/docs/core/graphics/arch-bq-gralloc'
+    },
+
+    'Zygote': {
+        title: 'Zygote',
+        layer: 'Runtime',
+        description: 'Parent process for all Android app processes. Forks preloaded classes and resources to quickly start apps.',
+        components: [
+            'Preload Classes/Resources',
+            'Fork App Process',
+            'JNI library loading',
+            'SELinux Context setup'
+        ],
+        path: 'frameworks/base/core/java/com/android/internal/os/ZygoteInit.java',
+        doc: 'https://source.android.com/docs/core/runtime/zygote',
+        codeExample: `
+# Check Zygote process
+adb shell ps | grep zygote
+
+# 64bit/32bit Zygote
+zygote64
+zygote
+        `.trim()
+    },
+
+    'System Server': {
+        title: 'System Server',
+        layer: 'Framework',
+        description: 'Process hosting core Android system services. Runs 60+ services.',
+        components: [
+            'ActivityManagerService',
+            'PackageManagerService',
+            'WindowManagerService',
+            'PowerManagerService',
+            'MediaSessionService',
+            '60+ other services'
+        ],
+        path: 'frameworks/base/services/java/com/android/server/SystemServer.java',
+        doc: 'https://source.android.com/docs/core/architecture',
+        codeExample: `
+# System Server info
+adb shell ps | grep system_server
+
+# Service list
+adb shell service list
+        `.trim()
+    },
+
+    'Media APIs': {
+        title: 'Media APIs',
+        layer: 'Application Framework',
+        description: 'Collection of media-related APIs used in Android apps.',
+        components: [
+            'MediaPlayer - Basic playback',
+            'ExoPlayer - Advanced playback',
+            'MediaRecorder - Recording',
+            'Camera2 API - Camera',
+            'AudioTrack - Audio output',
+            'AudioRecord - Audio input'
+        ],
+        path: 'frameworks/base/media/java/android/media/',
+        doc: 'https://developer.android.com/guide/topics/media'
+    },
+
+    'MediaSession': {
+        title: 'MediaSession',
+        layer: 'Framework',
+        description: 'Manages media playback sessions and standardizes media controls.',
+        components: [
+            'MediaSession - Session creation',
+            'MediaController - Remote control',
+            'PlaybackState - Playback state',
+            'Metadata - Media information'
+        ],
+        path: 'frameworks/base/media/java/android/media/session/',
+        doc: 'https://developer.android.com/guide/topics/media-apps/working-with-a-media-session',
+        codeExample: `
+val session = MediaSession(context, "MusicService").apply {
+    setCallback(object : MediaSession.Callback() {
+        override fun onPlay() { /* Start playback */ }
+        override fun onPause() { /* Pause */ }
+        override fun onSkipToNext() { /* Next track */ }
+    })
+    setFlags(MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS)
+    isActive = true
+}
+session.setPlaybackState(PlaybackState.Builder()
+    .setState(PlaybackState.STATE_PLAYING, position, 1f)
+    .setActions(PlaybackState.ACTION_PAUSE or PlaybackState.ACTION_SKIP_TO_NEXT)
+    .build())
+        `.trim()
+    },
+
+    'MediaRouter': {
+        title: 'MediaRouter',
+        layer: 'Framework',
+        description: 'Selects and routes audio/video output devices.',
+        components: [
+            'Route Discovery',
+            'Output Device Selection',
+            'Chromecast support',
+            'Bluetooth Audio'
+        ],
+        path: 'frameworks/base/media/java/android/media/',
+        doc: 'https://developer.android.com/guide/topics/media/mediarouteProvider',
+        codeExample: `
+val mediaRouter = MediaRouter2.getInstance(context)
+val routingController = mediaRouter.systemController
+val routes = routingController.selectableRoutes
+mediaRouter.transferTo(selectedRoute)
+mediaRouter.registerControllerCallback(executor, object : MediaRouter2.ControllerCallback() {
+    override fun onControllerUpdated(controller: RoutingController) { }
+})
+        `.trim()
+    },
+
+    'Media Framework': {
+        title: 'Media Framework (libstagefright)',
+        layer: 'Native',
+        description: 'Native media pipeline implementation in Android.',
+        components: [
+            'Container Parsing',
+            'Codec Pipeline',
+            'Buffer Management',
+            'Sync handling'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'CameraService': {
+        title: 'CameraService',
+        layer: 'Native',
+        description: 'System service managing camera hardware.',
+        components: [
+            'Camera Device management',
+            'Capture Session',
+            'Stream Configuration',
+            'Metadata processing'
+        ],
+        path: 'frameworks/av/services/camera/',
+        doc: 'https://source.android.com/docs/core/camera'
+    },
+
+    'Surface': {
+        title: 'Surface',
+        layer: 'Framework',
+        description: 'Screen buffer acting as producer for BufferQueue.',
+        components: [
+            'Buffer Producer',
+            'Canvas Drawing',
+            'Hardware Acceleration',
+            'Fence Synchronization'
+        ],
+        path: 'frameworks/native/libs/gui/',
+        doc: 'https://source.android.com/docs/core/graphics/arch-sv',
+        codeExample: `
+class VideoSurfaceView(context: Context) : SurfaceView(context),
+    SurfaceHolder.Callback {
+
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        codec.configure(format, holder.surface, null, 0)
+        codec.start()
+    }
+
+    override fun surfaceChanged(holder: SurfaceHolder, format: Int,
+        width: Int, height: Int) { }
+
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
+        codec.stop()
+    }
+}
+        `.trim()
+    },
+
+    'Hardware Composer': {
+        title: 'Hardware Composer (HWC)',
+        layer: 'HAL',
+        description: 'HAL handling hardware-level screen composition.',
+        components: [
+            'Layer Composition',
+            'Display Configuration',
+            'VSync management',
+            'Overlay Plane control'
+        ],
+        path: 'hardware/interfaces/graphics/composer/',
+        doc: 'https://source.android.com/docs/core/graphics/implement-hwc'
+    },
+
+    'Display Driver': {
+        title: 'Display Driver',
+        layer: 'Kernel',
+        description: 'Kernel driver controlling display hardware.',
+        components: [
+            'Frame Buffer management',
+            'Panel initialization',
+            'Backlight control',
+            'HDMI/DP output'
+        ],
+        path: 'kernel/drivers/video/',
+        doc: 'https://source.android.com/docs/core/graphics'
+    },
+
+    'Boot ROM': {
+        title: 'Boot ROM',
+        layer: 'Hardware',
+        description: 'Read-only boot code embedded in SoC. First code executed on power-on.',
+        components: [
+            'Hardware initialization',
+            'Bootloader verification',
+            'Secure Boot',
+            'Recovery Mode detection'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture/bootloader'
+    },
+
+    'Bootloader': {
+        title: 'Bootloader',
+        layer: 'Firmware',
+        description: 'Bootloader that loads kernel into memory and executes it.',
+        components: [
+            'U-Boot/Fastboot',
+            'Kernel loading',
+            'Device Tree passing',
+            'Fastboot Mode'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture/bootloader',
+        codeExample: `
+# Enter Fastboot mode
+adb reboot bootloader
+
+# Flash boot image
+fastboot flash boot boot.img
+        `.trim()
+    },
+
+    'Init Process': {
+        title: 'Init Process (PID 1)',
+        layer: 'System',
+        description: 'First process executed after Linux kernel boot.',
+        components: [
+            'init.rc parsing',
+            'Property Service',
+            'Service startup',
+            'SELinux setup'
+        ],
+        path: 'system/core/init/',
+        doc: 'https://source.android.com/docs/core/architecture/configuration/add-system-properties',
+        codeExample: `
+# Check init logs
+adb shell dmesg | grep init
+
+# Check property
+adb shell getprop ro.build.version.release
+        `.trim()
+    },
+
+    'Native Daemons': {
+        title: 'Native Daemons',
+        layer: 'System',
+        description: 'Native daemon processes running at system level.',
+        components: [
+            'servicemanager - Binder registry',
+            'vold - Volume management',
+            'netd - Network management',
+            'logd - Log collection'
+        ],
+        path: 'system/core/',
+        doc: 'https://source.android.com/docs/core/architecture'
+    },
+
+    'Launcher': {
+        title: 'Launcher (Home Screen)',
+        layer: 'Application',
+        description: 'Android home screen app. Final stage of boot completion.',
+        components: [
+            'App Grid',
+            'Widgets',
+            'Wallpaper',
+            'App Shortcuts'
+        ],
+        path: 'packages/apps/Launcher3/',
+        doc: 'https://source.android.com/docs/core'
+    },
+
+    'Binder Proxy': {
+        title: 'Binder Proxy',
+        layer: 'Framework',
+        description: 'Client-side proxy auto-generated from AIDL.',
+        components: [
+            'Remote Method Call',
+            'Parameter Marshalling',
+            'Transaction creation',
+            'Death Recipient'
+        ],
+        path: 'frameworks/base/core/java/android/os/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl'
+    },
+
+    'Binder Stub': {
+        title: 'Binder Stub',
+        layer: 'Framework',
+        description: 'Server-side stub auto-generated from AIDL.',
+        components: [
+            'Transaction reception',
+            'Parameter Unmarshalling',
+            'Method Dispatch',
+            'Result return'
+        ],
+        path: 'frameworks/base/core/java/android/os/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl'
+    },
+
+    'System Service': {
+        title: 'System Service',
+        layer: 'Framework',
+        description: 'System service running in System Server.',
+        components: [
+            'AIDL interface implementation',
+            'Binder registration',
+            'Permission check',
+            'Callback management'
+        ],
+        path: 'frameworks/base/services/',
+        doc: 'https://source.android.com/docs/core/architecture'
+    },
+
+    'Android Framework': {
+        title: 'Android Framework (Treble)',
+        layer: 'System Partition',
+        description: 'Framework in System Partition managed by Google.',
+        components: [
+            'Framework Services',
+            'VNDK Libraries',
+            'System Apps',
+            'Updatable via OTA'
+        ],
+        path: 'frameworks/',
+        doc: 'https://source.android.com/docs/core/architecture/treble'
+    },
+
+    'Vendor NDK': {
+        title: 'VNDK (Vendor NDK)',
+        layer: 'System',
+        description: 'Stabilized set of NDK libraries available to vendors.',
+        components: [
+            'Stable ABI',
+            'libc, libm, etc.',
+            'Vendor access allowed',
+            'Version management'
+        ],
+        path: 'frameworks/native/vndk/',
+        doc: 'https://source.android.com/docs/core/architecture/vndk'
+    },
+
+    'Vendor Implementation': {
+        title: 'Vendor Implementation',
+        layer: 'Vendor Partition',
+        description: 'HAL and drivers implemented by OEM/vendor.',
+        components: [
+            'HAL Implementation',
+            'Kernel Modules',
+            'Vendor Libraries',
+            'Device-specific Code'
+        ],
+        path: 'vendor/',
+        doc: 'https://source.android.com/docs/core/architecture/treble'
+    },
+
+    'Vendor Libraries': {
+        title: 'Vendor Libraries',
+        layer: 'Vendor',
+        description: 'Vendor-specific native libraries.',
+        components: [
+            'Camera ISP Library',
+            'Audio DSP Library',
+            'Codec Library',
+            'GPU Driver'
+        ],
+        path: 'vendor/lib/',
+        doc: 'https://source.android.com/docs/core/architecture/treble'
+    },
+
+    'HIDL Interface': {
+        title: 'HIDL (Hardware Interface Definition Language)',
+        layer: 'HAL',
+        description: 'HAL interface definition language used in Android 8.0~10.',
+        components: [
+            'HAL Interface definition',
+            'Binder-based IPC',
+            'Versioned Interface',
+            'Code Generation'
+        ],
+        path: 'hardware/interfaces/',
+        doc: 'https://source.android.com/docs/core/architecture/hidl',
+        codeExample: `
+# Check HIDL services
+adb shell lshal
+
+# Specific HAL info
+adb shell lshal | grep audio
+        `.trim()
+    },
+
+    'Stable AIDL': {
+        title: 'Stable AIDL',
+        layer: 'HAL',
+        description: 'Stabilized AIDL HAL interface used in Android 11+.',
+        components: [
+            'Stable ABI',
+            'Backward Compatibility',
+            'Binder IPC',
+            'Versioning'
+        ],
+        path: 'hardware/interfaces/aidl/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl/stable-aidl',
+        codeExample: `
+# Check AIDL services
+adb shell dumpsys -l | grep aidl
+
+# AIDL HAL version
+adb shell service list | grep android.hardware
+        `.trim()
+    },
+
+    'Media App': {
+        title: 'Media Application',
+        layer: 'Application',
+        description: 'Application using media codecs. Performs encoding/decoding through MediaCodec API.',
+        components: [
+            'Video Player',
+            'Camera App',
+            'Video Editor',
+            'Streaming App'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media/mediacodec'
+    },
+
+    'CCodec': {
+        title: 'CCodec',
+        layer: 'Framework',
+        description: 'Framework-level entry point for Codec 2.0. Connects MediaCodec API to Codec2 HAL.',
+        components: [
+            'Entry Point',
+            'Buffer Management',
+            'State Machine',
+            'Error Handling'
+        ],
+        path: 'frameworks/av/media/codec2/sfplugin/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+std::shared_ptr<C2ComponentStore> store = GetCodec2PlatformStore();
+std::vector<std::shared_ptr<const C2Component::Traits>> traits;
+store->listComponents(&traits);
+
+for (const auto& trait : traits) {
+    ALOGD("Component: %s, Domain: %d", trait->name.c_str(), trait->domain);
+}
+        `.trim()
+    },
+
+    'CCodecBufferChannel': {
+        title: 'CCodecBufferChannel',
+        layer: 'Framework',
+        description: 'Handles zero-copy buffer delivery. Efficiently manages buffers between app and codec.',
+        components: [
+            'Zero-Copy Buffer',
+            'Input Queue',
+            'Output Queue',
+            'Buffer Synchronization'
+        ],
+        path: 'frameworks/av/media/codec2/sfplugin/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'Codec2Client': {
+        title: 'Codec2Client',
+        layer: 'Native',
+        description: 'Client communicating with Codec2 HAL. Uses HIDL/AIDL IPC.',
+        components: [
+            'HAL Communication',
+            'Component Discovery',
+            'Service Connection',
+            'IPC Management'
+        ],
+        path: 'frameworks/av/media/codec2/core/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'C2ComponentStore': {
+        title: 'C2ComponentStore',
+        layer: 'HAL',
+        description: 'Factory creating and managing Codec2 components.',
+        components: [
+            'Component Factory',
+            'Library Loading',
+            'Capability Query',
+            'Parameter Support'
+        ],
+        path: 'hardware/interfaces/media/c2/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'C2Component': {
+        title: 'C2Component',
+        layer: 'HAL',
+        description: 'Codec component performing actual encoding/decoding.',
+        components: [
+            'Encoder/Decoder Logic',
+            'Buffer Processing',
+            'Configuration',
+            'State Management'
+        ],
+        path: 'hardware/google/av/codec2/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+val codec = MediaCodec.createDecoderByType("video/avc")
+val format = MediaFormat.createVideoFormat("video/avc", 1920, 1080)
+codec.configure(format, surface, null, 0)
+codec.start()
+        `.trim()
+    },
+
+    'C2Component Interface': {
+        title: 'C2Component Interface',
+        layer: 'HAL',
+        description: 'Interface for setting and querying codec parameters.',
+        components: [
+            'Parameter Setting',
+            'Capability Query',
+            'Configuration',
+            'Supported Formats'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'C2Allocator': {
+        title: 'C2Allocator',
+        layer: 'HAL',
+        description: 'Allocates memory for codec buffers.',
+        components: [
+            'ION Memory',
+            'Gralloc Buffer',
+            'Linear Buffer',
+            'Graphic Buffer'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'C2BlockPool': {
+        title: 'C2BlockPool',
+        layer: 'HAL',
+        description: 'Manages reusable buffer pool.',
+        components: [
+            'Buffer Pool',
+            'Memory Reuse',
+            'Allocation Cache',
+            'Pool Management'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'Hardware Codec': {
+        title: 'Hardware Codec (DSP/GPU)',
+        layer: 'Hardware',
+        description: 'Hardware-accelerated codec. Performs encoding/decoding using DSP or GPU.',
+        components: [
+            'Hardware Decoder',
+            'Hardware Encoder',
+            'DSP Acceleration',
+            'GPU Processing'
+        ],
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'ION Allocator': {
+        title: 'ION Memory Allocator',
+        layer: 'Kernel',
+        description: 'Kernel driver allocating shared memory for multimedia.',
+        components: [
+            'Shared Memory',
+            'DMA Buffer',
+            'Heap Management',
+            'Zero-Copy'
+        ],
+        path: 'kernel/drivers/staging/android/ion/',
+        doc: 'https://source.android.com/docs/core/architecture/hidl/memoryblock'
+    },
+
+    'Gralloc': {
+        title: 'Gralloc (Graphics Allocator)',
+        layer: 'HAL',
+        description: 'HAL allocating graphics buffers.',
+        components: [
+            'Graphics Buffer',
+            'Hardware Buffer',
+            'Buffer Metadata',
+            'Lock/Unlock'
+        ],
+        path: 'hardware/interfaces/graphics/allocator/',
+        doc: 'https://source.android.com/docs/core/graphics/arch-bq-gralloc'
+    },
+
+    'HIDL/AIDL IPC': {
+        title: 'HIDL/AIDL IPC Layer',
+        layer: 'HAL Interface',
+        description: 'HAL interface handling inter-process communication (IPC) between Framework and Vendor.',
+        components: [
+            'HIDL (Hardware Interface Definition Language)',
+            'AIDL (Android Interface Definition Language)',
+            'Binder IPC',
+            'Data Serialization'
+        ],
+        path: 'hardware/interfaces/media/c2/',
+        doc: 'https://source.android.com/docs/core/architecture/hidl',
+        codeExample: `
+using android::hardware::media::c2::V1_0::IComponentStore;
+sp<IComponentStore> store = new MyComponentStore();
+status_t status = store->registerAsService("default");
+using aidl::android::hardware::media::c2::IComponentStore;
+std::shared_ptr<IComponentStore> store = ndk::SharedRefBase::make<MyComponentStore>();
+const std::string name = IComponentStore::descriptor + "/default";
+binder_status_t status = AServiceManager_addService(store->asBinder().get(), name.c_str());
+        `.trim()
+    },
+
+    'ClientListener': {
+        title: 'Client Listener (mClientListener)',
+        layer: 'Framework',
+        description: 'Listener receiving callbacks from component in Codec2Client.',
+        components: [
+            'onWorkDone() callback',
+            'onTriggered() callback',
+            'onError() callback',
+            'onFramesRendered() callback'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'Component Implementation': {
+        title: 'C2Component Implementation',
+        layer: 'Vendor',
+        description: 'Vendor code implementing actual encoding/decoding logic.',
+        components: [
+            'Hardware Codec Driver',
+            'DSP/GPU Integration',
+            'Buffer Processing',
+            'Error Handling'
+        ],
+        path: 'vendor/<company>/codec2/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+class MyAvcDecoder : public SimpleC2Component {
+    void process(
+        const std::unique_ptr<C2Work>& work,
+        const std::shared_ptr<C2BlockPool>& pool) override {
+        C2ReadView rView = work->input.buffers[0]->data()
+            .linearBlocks().front().map().get();
+        mHwDecoder->decode(rView.data(), rView.capacity());
+        std::shared_ptr<C2GraphicBlock> block;
+        pool->fetchGraphicBlock(mWidth, mHeight, format, usage, &block);
+        work->worklets.front()->output.buffers.push_back(
+            createGraphicBuffer(block)
+        );
+    }
+};
+        `.trim()
+    },
+
+    'C2Param': {
+        title: 'C2Param (Configuration Parameters)',
+        layer: 'HAL',
+        description: 'Type defining codec configuration parameters.',
+        components: [
+            'Bitrate Parameters',
+            'Resolution Parameters',
+            'Frame Rate Parameters',
+            'Profile/Level Parameters',
+            'Color Format Parameters'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/include/C2Param.h',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+std::vector<std::unique_ptr<C2Param>> params;
+params.push_back(std::make_unique<C2StreamBitrateInfo::output>(
+    0u, 6000000  // 6 Mbps
+));
+params.push_back(std::make_unique<C2StreamFrameRateInfo::output>(
+    0u, 30.0  // 30 fps
+));
+params.push_back(std::make_unique<C2StreamPictureSizeInfo::input>(
+    0u, 1920, 1080
+));
+
+c2_status_t err = component->config(params, C2_MAY_BLOCK, &failures);
+        `.trim()
+    },
+
+    'Query': {
+        title: 'Query (Capability Query)',
+        layer: 'HAL',
+        description: 'Interface querying component support capabilities and parameter ranges.',
+        components: [
+            'Supported Parameters',
+            'Value Ranges',
+            'Profile/Level Support',
+            'Color Format Support'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+std::vector<std::shared_ptr<C2ParamDescriptor>> params;
+c2_status_t err = component->querySupportedParams(&params);
+
+for (auto& param : params) {
+    ALOGD("Supported param: %s", param->name().c_str());
+}
+C2FieldSupportedValuesQuery query = C2FieldSupportedValuesQuery::Current(
+    C2ParamField(&C2StreamBitrateInfo::output::value)
+);
+std::vector<C2FieldSupportedValuesQuery> queries = { query };
+err = component->querySupportedValues(queries, C2_MAY_BLOCK);
+
+ALOGD("Bitrate range: %d - %d",
+    queries[0].values.range.min.u32,
+    queries[0].values.range.max.u32);
+        `.trim()
+    },
+
+    'Tuning': {
+        title: 'Tuning (Dynamic Adjustment)',
+        layer: 'HAL',
+        description: 'Feature for dynamically adjusting codec parameters at runtime.',
+        components: [
+            'Bitrate Adaptation',
+            'Frame Rate Adjustment',
+            'Quality Tuning',
+            'Performance Optimization'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+std::vector<std::unique_ptr<C2Param>> params;
+params.push_back(std::make_unique<C2StreamBitrateInfo::output>(
+    0u, 4000000  // Reduce from 6 Mbps to 4 Mbps
+));
+
+std::vector<std::unique_ptr<C2SettingResult>> failures;
+c2_status_t err = component->config(params, C2_MAY_BLOCK, &failures);
+
+if (err == C2_OK) {
+    ALOGD("Bitrate adjusted successfully");
+}
+        `.trim()
+    },
+
+    'Input Queue': {
+        title: 'Input Queue',
+        layer: 'HAL',
+        description: 'Queue holding compressed data to be passed to encoder/decoder.',
+        components: [
+            'Work Queue',
+            'Priority Handling',
+            'Queue Management',
+            'Buffer Ordering'
+        ],
+        path: 'frameworks/av/media/codec2/components/base/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'Output Queue': {
+        title: 'Output Queue',
+        layer: 'HAL',
+        description: 'Queue holding encoded/decoded data before returning.',
+        components: [
+            'Output Buffer Queue',
+            'Frame Ordering',
+            'Timestamp Management',
+            'Buffer Release'
+        ],
+        path: 'frameworks/av/media/codec2/components/base/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'Work Processor': {
+        title: 'Work Processor',
+        layer: 'HAL',
+        description: 'Actual worker thread processing C2Work.',
+        components: [
+            'Work Thread',
+            'Processing Loop',
+            'Codec Operation',
+            'Buffer Handling'
+        ],
+        path: 'frameworks/av/media/codec2/components/base/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+void SimpleC2Component::processLoop() {
+    while (mRunning) {
+        std::unique_ptr<C2Work> work;
+        {
+            std::unique_lock<std::mutex> lock(mQueueLock);
+            if (mQueue.empty()) {
+                mQueueCondition.wait(lock);
+                continue;
+            }
+            work = std::move(mQueue.front());
+            mQueue.pop_front();
+        }
+        process(work, mBlockPool);
+        mListener->onWorkDone_nb(shared_from_this(), work);
+    }
+}
+        `.trim()
+    },
+
+    'onWorkDone': {
+        title: 'onWorkDone Callback',
+        layer: 'Framework',
+        description: 'Callback invoked when C2Work processing is completed.',
+        components: [
+            'Completion Notification',
+            'Output Buffer Delivery',
+            'Error Reporting',
+            'Timestamp Info'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+void MyCodec2Listener::onWorkDone_nb(
+    const std::weak_ptr<C2Component>& comp,
+    std::list<std::unique_ptr<C2Work>>& workItems) {
+
+    for (auto& work : workItems) {
+        if (work->result == C2_OK) {
+            deliverOutputBuffer(work->worklets.front()->output.buffers[0]);
+        } else {
+            ALOGE("Work failed: %d", work->result);
+        }
+    }
+}
+        `.trim()
+    },
+
+    'onTriggered': {
+        title: 'onTriggered Callback',
+        layer: 'Framework',
+        description: 'Callback invoked when specific events occur.',
+        components: [
+            'Event Notification',
+            'Configuration Change',
+            'Stream Event',
+            'Component State'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+void MyCodec2Listener::onTriggered_nb(
+    const std::weak_ptr<C2Component>& comp,
+    const std::vector<std::shared_ptr<C2Param>>& params) {
+
+    for (auto& param : params) {
+        switch (param->coreIndex().coreIndex()) {
+            case C2StreamPictureSizeInfo::CORE_INDEX:
+                handleResolutionChange(param);
+                break;
+            case C2StreamFrameRateInfo::CORE_INDEX:
+                handleFrameRateChange(param);
+                break;
+        }
+    }
+}
+        `.trim()
+    },
+
+    'onError': {
+        title: 'onError Callback',
+        layer: 'Framework',
+        description: 'Callback invoked when codec error occurs.',
+        components: [
+            'Error Code',
+            'Error Recovery',
+            'Component Reset',
+            'Failure Notification'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+void MyCodec2Listener::onError_nb(
+    const std::weak_ptr<C2Component>& comp,
+    uint32_t errorCode) {
+
+    ALOGE("Codec error: 0x%x", errorCode);
+
+    switch (errorCode) {
+        case C2_CORRUPTED:
+            ALOGE("Corrupted data detected");
+            break;
+        case C2_NO_MEMORY:
+            ALOGE("Out of memory");
+            break;
+        case C2_BAD_VALUE:
+            ALOGE("Invalid parameter");
+            break;
+        default:
+            ALOGE("Unknown error");
+            break;
+    }
+    handleCodecError(errorCode);
+}
+        `.trim()
+    },
+
+    'Flow Start': {
+        title: 'Buffer Flow Start',
+        layer: 'Framework',
+        description: 'Point when app initiates encoding/decoding request.',
+        components: [
+            'queueInputBuffer()',
+            'Buffer Request',
+            'Flow Initiation'
+        ]
+    },
+
+    'C2Buffer': {
+        title: 'C2Buffer',
+        layer: 'HAL',
+        description: 'Codec 2.0 buffer container holding media data.',
+        components: [
+            'Linear Buffer (Audio/Compressed)',
+            'Graphic Buffer (Video/YUV)',
+            'Buffer Metadata',
+            'Data Blocks'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/include/C2Buffer.h',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+std::shared_ptr<C2LinearBlock> block;
+c2_status_t err = pool->fetchLinearBlock(size, usage, &block);
+
+std::shared_ptr<C2Buffer> buffer = C2Buffer::CreateLinearBuffer(
+    block->share(0, size, C2Fence())
+);
+work->input.buffers.clear();
+work->input.buffers.push_back(buffer);
+        `.trim()
+    },
+
+    'C2Work': {
+        title: 'C2Work',
+        layer: 'HAL',
+        description: 'Unit of work passed to codec. Contains input/output buffers and metadata.',
+        components: [
+            'Input Buffers',
+            'Output Buffers',
+            'Worklets',
+            'Timestamp & Flags'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/include/C2Work.h',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+std::unique_ptr<C2Work> work = std::make_unique<C2Work>();
+work->input.ordinal.frameIndex = frameIndex;
+work->input.ordinal.timestamp = timestampUs;
+work->input.buffers.push_back(inputBuffer);
+work->input.flags = (C2FrameData::flags_t)0;
+
+std::list<std::unique_ptr<C2Work>> workList;
+workList.push_back(std::move(work));
+
+c2_status_t err = component->queue_nb(&workList);
+        `.trim()
+    },
+
+    'Block Pool': {
+        title: 'Block Pool',
+        layer: 'HAL',
+        description: 'Memory manager that pools and reuses buffer blocks.',
+        components: [
+            'Buffer Allocation Pool',
+            'Memory Recycling',
+            'Fast Allocation',
+            'Pool Management'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/C2BlockPool.cpp'
+    },
+
+    'Buffer Type': {
+        title: 'Buffer Type Decision',
+        layer: 'HAL',
+        description: 'Decision point that determines buffer type (Linear or Graphic).',
+        components: [
+            'Linear Buffer (Audio, Compressed Video)',
+            'Graphic Buffer (Raw YUV, RGB)'
+        ]
+    },
+
+    'ION Allocation': {
+        title: 'ION Memory Allocation',
+        layer: 'Kernel',
+        description: 'Allocates contiguous memory through the ION driver.',
+        components: [
+            'ION Heap Selection',
+            'DMA-BUF Allocation',
+            'Shared Memory',
+            'File Descriptor'
+        ],
+        path: 'kernel/drivers/staging/android/ion/',
+        doc: 'https://source.android.com/docs/core/architecture/hidl/memoryblock'
+    },
+
+    'Gralloc Allocation': {
+        title: 'Gralloc Buffer Allocation',
+        layer: 'HAL',
+        description: 'Allocates graphics buffers through Gralloc HAL.',
+        components: [
+            'Graphics Buffer Allocation',
+            'Format Negotiation',
+            'Hardware Buffer',
+            'Usage Flags'
+        ],
+        path: 'hardware/interfaces/graphics/allocator/',
+        doc: 'https://source.android.com/docs/core/graphics/arch-bq-gralloc'
+    },
+
+    'Queue to Component': {
+        title: 'Queue Work to Component',
+        layer: 'HAL',
+        description: 'Submits C2Work to the component\'s input queue.',
+        components: [
+            'queue_nb() Call',
+            'Work Submission',
+            'Input Queue'
+        ]
+    },
+
+    'Processing': {
+        title: 'Codec Processing',
+        layer: 'HAL/Hardware',
+        description: 'Stage where actual encoding or decoding is performed.',
+        components: [
+            'Hardware Codec Processing',
+            'Software Codec Processing',
+            'Data Transform',
+            'Buffer Management'
+        ]
+    },
+
+    'Zero-Copy Check': {
+        title: 'Zero-Copy Possible?',
+        layer: 'HAL',
+        description: 'Decision point that checks whether buffers can be passed with zero-copy.',
+        components: [
+            'Memory Mapping Check',
+            'Buffer Compatibility',
+            'Direct Access Possibility'
+        ]
+    },
+
+    'Direct Access': {
+        title: 'Direct Memory Access',
+        layer: 'HAL',
+        description: 'Directly accesses buffers without copying (Zero-Copy).',
+        components: [
+            'Pointer Sharing',
+            'No Data Copy',
+            'Memory Mapping',
+            'Performance Optimization'
+        ]
+    },
+
+    'Copy Operation': {
+        title: 'Buffer Copy',
+        layer: 'HAL',
+        description: 'Copies buffers when zero-copy is not possible.',
+        components: [
+            'Memory Copy',
+            'Format Conversion',
+            'Data Transfer'
+        ]
+    },
+
+    'Output Buffer': {
+        title: 'Output Buffer Creation',
+        layer: 'HAL',
+        description: 'Creates output buffer to contain processed data.',
+        components: [
+            'C2Buffer Creation',
+            'Output Queue',
+            'Buffer Metadata'
+        ]
+    },
+
+    'Return to App': {
+        title: 'Return Buffer to Application',
+        layer: 'Framework',
+        description: 'Returns processed buffer to the application.',
+        components: [
+            'dequeueOutputBuffer()',
+            'Callback Notification',
+            'Buffer Delivery'
+        ]
+    },
+
+    'Recycle Buffer': {
+        title: 'Recycle Buffer to Pool',
+        layer: 'HAL',
+        description: 'Returns used buffers to the pool for reuse.',
+        components: [
+            'Buffer Release',
+            'Pool Return',
+            'Memory Reuse'
+        ]
+    },
+
+    'Flow End': {
+        title: 'Buffer Flow End',
+        layer: 'Framework',
+        description: 'Point where buffer processing flow completes.',
+        components: [
+            'Flow Completion',
+            'Resource Cleanup'
+        ]
+    },
+
+    'Allocation Decision': {
+        title: 'Buffer Allocation Decision',
+        layer: 'HAL',
+        description: 'Decision point that determines whether new buffer allocation is needed.',
+        components: [
+            'Pool Check',
+            'Allocation Need',
+            'Buffer Reuse Check'
+        ]
+    },
+
+    'Android.bp': {
+        title: 'Android.bp Build File',
+        layer: 'Build System',
+        description: 'Soong build file for building vendor codecs.',
+        components: [
+            'cc_library_shared',
+            'Shared Libraries',
+            'Source Files',
+            'Compiler Flags'
+        ],
+        path: 'vendor/<company>/codec2/Android.bp',
+        doc: 'https://source.android.com/docs/setup/build',
+        codeExample: `
+cc_library_shared {
+    name: "libcodec2_vendor_mycompany",
+    vendor: true,
+
+    srcs: [
+        "MyAvcDecoder.cpp",
+        "MyComponentStore.cpp",
+    ],
+
+    shared_libs: [
+        "libcodec2",
+        "libcodec2_vndk",
+        "libcodec2_soft_common",
+        "liblog",
+        "libutils",
+    ],
+
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-DLOG_TAG=\\"MyCodec\\"",
+    ],
+}
+        `.trim()
+    },
+
+    'media_codecs.xml': {
+        title: 'media_codecs.xml Configuration',
+        layer: 'HAL Configuration',
+        description: 'XML file that declares codec capabilities and supported formats.',
+        components: [
+            'Codec Declaration',
+            'Supported MIME Types',
+            'Resolution Limits',
+            'Feature Support'
+        ],
+        path: 'device/<company>/<device>/media_codecs.xml',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+<!-- media_codecs.xml example -->
+<MediaCodecs>
+    <Decoders>
+        <MediaCodec name="c2.vendor.avc.decoder" type="video/avc">
+            <Limit name="size" min="64x64" max="3840x2160"/>
+            <Limit name="alignment" value="2x2"/>
+            <Limit name="block-size" value="16x16"/>
+            <Limit name="frame-rate" range="1-60"/>
+            <Limit name="bitrate" range="1-120000000"/>
+            <Feature name="adaptive-playback"/>
+            <Feature name="secure-playback"/>
+        </MediaCodec>
+    </Decoders>
+</MediaCodecs>
+        `.trim()
+    },
+
+    'manifest.xml': {
+        title: 'HAL Manifest',
+        layer: 'HAL Configuration',
+        description: 'Manifest file that registers HAL services to the system.',
+        components: [
+            'HAL Service Declaration',
+            'Interface Version',
+            'Service Name',
+            'Transport Type'
+        ],
+        path: 'device/<company>/<device>/manifest.xml',
+        doc: 'https://source.android.com/docs/core/architecture/vintf/objects',
+        codeExample: `
+<!-- manifest.xml example -->
+<hal format="hidl">
+    <name>android.hardware.media.c2</name>
+    <transport>hwbinder</transport>
+    <version>1.0</version>
+    <interface>
+        <name>IComponentStore</name>
+        <instance>vendor</instance>
+    </interface>
+</hal>
+
+<!-- AIDL version -->
+<hal format="aidl">
+    <name>android.hardware.media.c2</name>
+    <fqname>IComponentStore/vendor</fqname>
+</hal>
+        `.trim()
+    },
+
+    'hwservicemanager': {
+        title: 'HW Service Manager',
+        layer: 'System Service',
+        description: 'System service that registers and discovers HAL services.',
+        components: [
+            'Service Registry',
+            'Service Discovery',
+            'Binder Communication',
+            'Service Lookup'
+        ],
+        path: 'system/hwservicemanager/',
+        doc: 'https://source.android.com/docs/core/architecture/hidl/services',
+        codeExample: `
+adb shell lshal | grep android.hardware.media.c2
+adb shell dumpsys -l | grep hwservicemanager
+        `.trim()
+    },
+
+    'Store Implementation': {
+        title: 'C2ComponentStore Implementation',
+        layer: 'Vendor',
+        description: 'Vendor-implemented C2ComponentStore factory class.',
+        components: [
+            'Component Factory',
+            'createComponent()',
+            'listComponents()',
+            'Parameter Support'
+        ],
+        path: 'vendor/<company>/codec2/',
+        doc: 'https://source.android.com/docs/core/media/codec',
+        codeExample: `
+class MyComponentStore : public C2ComponentStore {
+public:
+    MyComponentStore()
+        : mReflector(std::make_shared<C2ReflectorHelper>()) {}
+
+    c2_status_t createComponent(
+        c2_node_id_t id,
+        std::shared_ptr<C2Component>* component,
+        ComponentDeleter* deleter) override {
+
+        *deleter = [](C2Component* p) { delete p; };
+
+        if (name == "c2.vendor.avc.decoder") {
+            *component = std::make_shared<MyAvcDecoder>(
+                name, id, std::make_shared<IntfImpl>()
+            );
+            return C2_OK;
+        }
+        return C2_NOT_FOUND;
+    }
+
+    std::vector<std::shared_ptr<const C2Component::Traits>>
+    listComponents() override {
+        return {
+            std::make_shared<MyAvcDecoder::Traits>(),
+            std::make_shared<MyHevcDecoder::Traits>()
+        };
+    }
+};
+        `.trim()
+    },
+
+    'AudioPolicyManager': {
+        title: 'AudioPolicyManager (APM)',
+        layer: 'Framework',
+        description: 'Manages audio routing policy and configures Direct Output for Dolby formats.',
+        components: [
+            'Audio Routing Policy',
+            'Direct Output Flag',
+            'Device Selection',
+            'Stream Management'
+        ],
+        path: 'frameworks/av/services/audiopolicy/',
+        doc: 'https://source.android.com/docs/core/audio',
+        codeExample: `
+if (format == AUDIO_FORMAT_AC3 ||
+    format == AUDIO_FORMAT_E_AC3 ||
+    format == AUDIO_FORMAT_AC4) {
+    flags = (audio_output_flags_t)(
+        AUDIO_OUTPUT_FLAG_DIRECT |
+        AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD
+    );
+}
+if (hasAtmosMetadata(metadata)) {
+    applyAtmosRouting(output, device);
+}
+        `.trim()
+    },
+
+    'Post Processing': {
+        title: 'Dolby Audio Post Processing',
+        layer: 'HAL',
+        description: 'Audio post-processing using Dolby MS12 engine.',
+        components: [
+            'Virtualizer (Headphone Atmos)',
+            'Volume Leveler (Loudness)',
+            'Dialogue Enhancement',
+            'Bass Enhancement',
+            'Surround Decoder'
+        ],
+        path: 'vendor/<company>/audio/dolby/',
+        doc: 'https://professional.dolby.com/product/dolby-ms12/',
+        codeExample: `
+dolby_ms12_config_t config = {
+    .dap_virtualizer_enable = true,    // Headphone Atmos
+    .dap_mi_ieq_enable = true,         // Intelligent EQ
+    .dap_dialogue_enhancer = 5,        // Dialogue Enhancement (0-16)
+    .dap_bass_enhancer = 6,            // Bass Enhancement (0-10)
+    .dap_volume_leveler_enable = true  // Volume Leveling
+};
+
+dolby_ms12_set_params(mDolbyHandle, &config);
+dolby_ms12_process(mDolbyHandle, inputPCM, outputPCM, frameCount);
+        `.trim()
+    },
+
+    'ALSA Driver': {
+        title: 'ALSA Driver',
+        layer: 'Kernel',
+        description: 'Advanced Linux Sound Architecture audio kernel driver.',
+        components: [
+            'PCM Playback',
+            'Hardware Buffer',
+            'DMA Transfer',
+            'Audio Device Interface'
+        ],
+        path: 'kernel/sound/soc/',
+        doc: 'https://www.alsa-project.org/'
+    },
+
+    'Base Layer': {
+        title: 'Dolby Vision Base Layer (BL)',
+        layer: 'Video Stream',
+        description: 'SDR/HDR10 compatible base video layer. Encoded as 8/10-bit HEVC.',
+        components: [
+            'HEVC Video Stream',
+            'SDR Compatibility',
+            'HDR10 Fallback',
+            '8-bit or 10-bit'
+        ],
+        doc: 'https://professional.dolby.com/tv/dolby-vision/'
+    },
+
+    'Enhancement Layer': {
+        title: 'Dolby Vision Enhancement Layer (EL)',
+        layer: 'Video Stream',
+        description: 'Enhancement layer containing additional color information. Used in Profile 5/7.',
+        components: [
+            'Additional Color Info',
+            'Residual Data',
+            'Profile 5/7 Only',
+            'Optional Layer'
+        ],
+        doc: 'https://professional.dolby.com/tv/dolby-vision/'
+    },
+
+    'Reference Processing Unit': {
+        title: 'RPU (Reference Processing Unit)',
+        layer: 'Metadata',
+        description: 'Dynamic metadata for Dolby Vision containing scene/frame-level tone mapping information.',
+        components: [
+            'Dynamic Metadata',
+            'Scene-by-Scene',
+            'Frame-by-Frame',
+            'Tone Mapping Parameters',
+            'Color Volume',
+            'Brightness Levels'
+        ],
+        doc: 'https://professional.dolby.com/tv/dolby-vision/',
+        codeExample: `
+typedef struct {
+    uint8_t rpu_type;                    // 0: Frame-level, 1: Scene-level
+    uint16_t target_max_luminance;       // nits (peak brightness)
+    uint16_t target_min_luminance;       // nits (minimum brightness)
+    uint16_t source_max_luminance;       // Content Mastering
+    uint16_t source_min_luminance;
+    uint8_t num_pivots;
+    uint16_t pivots[9];
+    uint16_t mapping[9];
+    int16_t color_matrix[3][3];
+
+} dolby_vision_rpu_t;
+        `.trim()
+    },
+
+    'DV Composer': {
+        title: 'Dolby Vision Composer',
+        layer: 'Decoder',
+        description: 'Composer that combines Base Layer and Enhancement Layer.',
+        components: [
+            'BL + EL Composition',
+            'Residual Processing',
+            '12-bit Internal Pipeline',
+            'Color Space Conversion'
+        ],
+        path: 'vendor/<company>/codec2/dolby-vision/',
+        doc: 'https://professional.dolby.com/tv/dolby-vision/'
+    },
+
+    'Display Manager': {
+        title: 'Dolby Vision Display Manager',
+        layer: 'HAL',
+        description: 'Performs tone mapping adapted to the display based on RPU metadata.',
+        components: [
+            'RPU Metadata Parsing',
+            'Tone Mapping',
+            'Color Volume Mapping',
+            'Target Display Adaptation',
+            'Brightness/Contrast Adjustment'
+        ],
+        path: 'vendor/<company>/display/dolby/',
+        doc: 'https://professional.dolby.com/tv/dolby-vision/',
+        codeExample: `
+void DolbyVisionDisplayManager::applyToneMapping(
+    const dolby_vision_rpu_t* rpu,
+    const display_panel_info_t* panel,
+    uint16_t* yuv_p010_frame) {
+    uint16_t target_max = panel->peak_luminance;  // e.g., 800 nits
+    uint16_t target_min = panel->black_level;     // e.g., 0.05 nits
+    for (int i = 0; i < rpu->num_pivots; i++) {
+        applyPivot(rpu->pivots[i], rpu->mapping[i]);
+    }
+    transformColorVolume(rpu->color_matrix, yuv_p010_frame);
+    generateHDR10PlusMetadata(rpu, metadata);
+}
+        `.trim()
+    },
+
+    'HDR Screen': {
+        title: 'HDR Display Panel',
+        layer: 'Hardware',
+        description: '10-bit or 12-bit HDR display panel.',
+        components: [
+            '10/12-bit Panel',
+            'Wide Color Gamut (P3/BT.2020)',
+            'High Peak Luminance (400-1000+ nits)',
+            'Local Dimming Support'
+        ],
+        doc: 'https://en.wikipedia.org/wiki/High-dynamic-range_video'
+    },
+
+    'Development Kit': {
+        title: 'Dolby Development Kit',
+        layer: 'Development',
+        description: 'Development kit and libraries provided by Dolby.',
+        components: [
+            'libdolbyms12.so (Audio Engine)',
+            'Dolby Vision Decoder Library',
+            'Sample Code & Documentation',
+            'Test Streams',
+            'Certification Tools'
+        ],
+        doc: 'https://professional.dolby.com/'
+    },
+
+    'AOSP Integration': {
+        title: 'AOSP Integration Implementation',
+        layer: 'Development',
+        description: 'Implementation stage integrating Dolby libraries into AOSP.',
+        components: [
+            'Audio HAL Integration',
+            'Codec2 DV Decoder',
+            'AudioPolicyManager Modification',
+            'media_codecs.xml Configuration',
+            'Build System (Android.bp)'
+        ],
+        path: 'vendor/<company>/dolby/'
+    },
+
+    'Self-Test': {
+        title: 'Vendor Self-Test',
+        layer: 'Testing',
+        description: 'Testing stage performed by vendor internally.',
+        components: [
+            'CTS MediaCodec Tests',
+            'Dolby Sample Content Playback',
+            'HDMI Passthrough Verification',
+            'Dolby Vision 10-bit Output Check',
+            'Performance Profiling'
+        ]
+    },
+
+    'Dolby Certification Test': {
+        title: 'Dolby Official Certification',
+        layer: 'Testing',
+        description: 'Dolby official certification test process.',
+        components: [
+            'Audio Quality Test',
+            'Video Quality Test',
+            'Performance Test',
+            'Compliance Test'
+        ],
+        doc: 'https://professional.dolby.com/certification/'
+    },
+
+    'Audio Test': {
+        title: 'Dolby Audio Certification Test',
+        layer: 'Testing',
+        description: 'Dolby audio codec and processing quality test.',
+        components: [
+            'AC-3/E-AC-3/AC-4 Decoding',
+            'Atmos Rendering Accuracy',
+            'Channel Mapping Verification',
+            'Synchronization Test',
+            'Dialogue Enhancement Test'
+        ]
+    },
+
+    'Video Test': {
+        title: 'Dolby Vision Certification Test',
+        layer: 'Testing',
+        description: 'Dolby Vision video quality and tone mapping test.',
+        components: [
+            'Profile 5/8.1 Decoding',
+            'RPU Processing Verification',
+            'Tone Mapping Accuracy',
+            'Color Reproduction Test',
+            'Peak Luminance Validation'
+        ]
+    },
+
+    'Audio Test Pass': {
+        title: 'Audio Test Passed',
+        layer: 'Testing',
+        description: 'Status indicating Dolby audio certification test has passed.',
+        components: [
+            'Passthrough Verified',
+            'DAP Processing Verified',
+            'Atmos Rendering Verified'
+        ]
+    },
+
+    'Video Test Pass': {
+        title: 'Video Test Passed',
+        layer: 'Testing',
+        description: 'Status indicating Dolby Vision certification test has passed.',
+        components: [
+            'Profile Support Verified',
+            'RPU Processing Verified',
+            'Tone Mapping Verified'
+        ]
+    },
+
+    'Certificate': {
+        title: 'Dolby Certification Certificate',
+        layer: 'Certification',
+        description: 'Official certificate issued by Dolby.',
+        components: [
+            'Dolby Atmos Certification',
+            'Dolby Vision Certification',
+            'Device Model Approval',
+            'Firmware Version Approval'
+        ]
+    },
+
+    'Dolby Logo': {
+        title: 'Dolby Logo Usage Approval',
+        layer: 'Marketing',
+        description: 'Approval to use Dolby logo on products.',
+        components: [
+            'Dolby Atmos Logo',
+            'Dolby Vision Logo',
+            'Marketing Material Guidelines',
+            'Logo Placement Rules'
+        ]
+    },
+
+    'Product Launch': {
+        title: 'Product Launch with Dolby',
+        layer: 'Production',
+        description: 'Market launch of Dolby-certified product.',
+        components: [
+            'Mass Production',
+            'Retail Distribution',
+            'Marketing Campaign',
+            'Dolby Branding'
+        ]
+    },
+
+    'Audio Decoder': {
+        title: 'Audio Decoder (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer/Media3 audio decoder component.',
+        components: [
+            'MediaCodec Decoder',
+            'Format Support',
+            'Buffer Management',
+            'Decoder Output'
+        ],
+        path: 'androidx.media3.exoplayer.audio',
+        doc: 'https://developer.android.com/media/media3/exoplayer',
+        codeExample: `
+val audioRenderer = MediaCodecAudioRenderer(
+    context,
+    MediaCodecSelector.DEFAULT,
+    eventHandler,
+    audioSink
+)
+val player = ExoPlayer.Builder(context)
+    .setRenderersFactory(DefaultRenderersFactory(context))
+    .build()
+        `.trim()
+    },
+
+    'Audio Renderer': {
+        title: 'Audio Renderer (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer audio renderer that passes decoded audio to AudioTrack.',
+        components: [
+            'AudioTrack Integration',
+            'Audio Sink',
+            'Volume Control',
+            'Playback Speed'
+        ],
+        path: 'androidx.media3.exoplayer.audio',
+        doc: 'https://developer.android.com/media/media3/exoplayer'
+    },
+
+    'Video Decoder': {
+        title: 'Video Decoder (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer/Media3 video decoder component.',
+        components: [
+            'MediaCodec Decoder',
+            'Surface Rendering',
+            'Codec Configuration',
+            'DRM Support'
+        ],
+        path: 'androidx.media3.exoplayer.video',
+        doc: 'https://developer.android.com/media/media3/exoplayer',
+        codeExample: `
+val videoRenderer = MediaCodecVideoRenderer(
+    context,
+    MediaCodecSelector.DEFAULT,
+    allowedVideoJoiningTimeMs,
+    eventHandler,
+    videoSink,
+    maxDroppedFramesToNotify
+)
+player.setVideoSurface(surface)
+        `.trim()
+    },
+
+    'Video Renderer': {
+        title: 'Video Renderer (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer video renderer that renders decoded frames to Surface.',
+        components: [
+            'Surface Rendering',
+            'Frame Drop Logic',
+            'Video Scaling',
+            'Color Space Handling'
+        ],
+        path: 'androidx.media3.exoplayer.video',
+        doc: 'https://developer.android.com/media/media3/exoplayer'
+    },
+
+    'Generic Media Source': {
+        title: 'Generic Media Source (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer generic media source for playing files or ContentProvider URIs.',
+        components: [
+            'Local File Support',
+            'ContentResolver URI',
+            'Asset Loading',
+            'File Descriptor'
+        ],
+        path: 'androidx.media3.exoplayer.source',
+        doc: 'https://developer.android.com/media/media3/exoplayer',
+        codeExample: `
+val mediaItem = MediaItem.fromUri(uri)
+val mediaSource = DefaultMediaSourceFactory(context)
+    .createMediaSource(mediaItem)
+
+player.setMediaSource(mediaSource)
+player.prepare()
+        `.trim()
+    },
+
+    'HTTP Media Source': {
+        title: 'HTTP Media Source (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer HTTP/HTTPS streaming media source.',
+        components: [
+            'HTTP Client',
+            'Progressive Download',
+            'HLS Support',
+            'DASH Support',
+            'Caching'
+        ],
+        path: 'androidx.media3.datasource.okhttp',
+        doc: 'https://developer.android.com/media/media3/exoplayer',
+        codeExample: `
+val dataSourceFactory = DefaultHttpDataSource.Factory()
+    .setUserAgent("MyApp/1.0")
+    .setConnectTimeoutMs(30000)
+
+val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+    .createMediaSource(MediaItem.fromUri(httpUri))
+
+player.setMediaSource(mediaSource)
+player.prepare()
+        `.trim()
+    },
+
+    'RTSP Media Source': {
+        title: 'RTSP Media Source (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer RTSP protocol media source.',
+        components: [
+            'RTSP Protocol',
+            'RTP/RTCP',
+            'Live Streaming',
+            'IP Camera Support'
+        ],
+        path: 'androidx.media3.exoplayer.rtsp',
+        doc: 'https://developer.android.com/media/media3/exoplayer',
+        codeExample: `
+val rtspUri = Uri.parse("rtsp://example.com/stream")
+val mediaItem = MediaItem.fromUri(rtspUri)
+val mediaSource = RtspMediaSource.Factory()
+    .createMediaSource(mediaItem)
+
+player.setMediaSource(mediaSource)
+player.prepare()
+        `.trim()
+    },
+
+    'Media Source': {
+        title: 'Media Source Base (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer media source base interface.',
+        components: [
+            'Media Period',
+            'Timeline',
+            'Load Events',
+            'Source Preparation'
+        ],
+        path: 'androidx.media3.exoplayer.source',
+        doc: 'https://developer.android.com/media/media3/exoplayer'
+    },
+
+    'Track Selector': {
+        title: 'Track Selector (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer track selector that chooses audio/video/subtitle tracks.',
+        components: [
+            'Adaptive Track Selection',
+            'Bandwidth Estimation',
+            'Quality Selection',
+            'Language Preferences'
+        ],
+        path: 'androidx.media3.exoplayer.trackselection',
+        doc: 'https://developer.android.com/media/media3/exoplayer',
+        codeExample: `
+val trackSelector = DefaultTrackSelector(context).apply {
+    parameters = buildUponParameters()
+        .setMaxVideoSizeSd()  // Limit to SD resolution
+        .setPreferredAudioLanguage("ko")  // Prefer Korean audio
+        .setPreferredTextLanguage("ko")  // Prefer Korean subtitles
+        .build()
+}
+
+val player = ExoPlayer.Builder(context)
+    .setTrackSelector(trackSelector)
+    .build()
+        `.trim()
+    },
+
+    'Load Control': {
+        title: 'Load Control (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer load control that manages buffering policy.',
+        components: [
+            'Buffer Management',
+            'Min/Max Buffer Duration',
+            'Playback Start Threshold',
+            'Rebuffer Detection'
+        ],
+        path: 'androidx.media3.exoplayer',
+        doc: 'https://developer.android.com/media/media3/exoplayer',
+        codeExample: `
+val loadControl = DefaultLoadControl.Builder()
+    .setBufferDurationsMs(
+        15000,  // minBufferMs
+        50000,  // maxBufferMs
+        2500,   // bufferForPlaybackMs
+        5000    // bufferForPlaybackAfterRebufferMs
+    )
+    .build()
+
+val player = ExoPlayer.Builder(context)
+    .setLoadControl(loadControl)
+    .build()
+        `.trim()
+    },
+
+    'Text Renderer': {
+        title: 'Text Renderer (ExoPlayer)',
+        layer: 'Application',
+        description: 'ExoPlayer subtitle renderer.',
+        components: [
+            'SubRip (SRT)',
+            'WebVTT',
+            'TTML',
+            'Closed Captions',
+            'Subtitle Overlay'
+        ],
+        path: 'androidx.media3.exoplayer.text',
+        doc: 'https://developer.android.com/media/media3/exoplayer'
+    },
+
+    'NuPlayer Main': {
+        title: 'NuPlayer Main Engine',
+        layer: 'Native',
+        description: 'AOSP default media player engine. Backend implementation for MediaPlayer API.',
+        components: [
+            'State Machine',
+            'Source Management',
+            'Renderer Management',
+            'Decoder Management',
+            'A/V Sync'
+        ],
+        path: 'frameworks/av/media/libmediaplayerservice/nuplayer/',
+        doc: 'https://source.android.com/docs/core/media',
+        codeExample: `
+sp<NuPlayer> player = new NuPlayer(audioSink);
+player->setDriver(driver);
+sp<IMediaHTTPService> httpService = ...;
+sp<IDataSource> dataSource = ...;
+player->setDataSourceAsync(httpService, url, headers);
+player->start();
+        `.trim()
+    },
+
+    'Playback Thread': {
+        title: 'NuPlayer Playback Thread',
+        layer: 'Native',
+        description: 'NuPlayer main playback thread that coordinates decoders and renderers.',
+        components: [
+            'Message Loop',
+            'Event Handling',
+            'Decoder Coordination',
+            'Renderer Coordination',
+            'Seek Handling'
+        ],
+        path: 'frameworks/av/media/libmediaplayerservice/nuplayer/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'Player API': {
+        title: 'MediaPlayer API',
+        layer: 'Framework',
+        description: 'Android MediaPlayer Java/Kotlin API layer.',
+        components: [
+            'setDataSource()',
+            'prepare() / prepareAsync()',
+            'start() / pause() / stop()',
+            'seekTo()',
+            'Listener Callbacks'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaPlayer.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaPlayer',
+        codeExample: `
+val mediaPlayer = MediaPlayer().apply {
+    setDataSource(context, uri)
+    setOnPreparedListener {
+        start()
+    }
+    setOnCompletionListener {
+        release()
+    }
+    setOnErrorListener { mp, what, extra ->
+        Log.e(TAG, "Error: what=$what, extra=$extra")
+        true
+    }
+    prepareAsync()
+}
+        `.trim()
+    },
+
+    'Audio Sink': {
+        title: 'Audio Sink',
+        layer: 'Native',
+        description: 'NuPlayer audio output sink that passes PCM data to AudioTrack.',
+        components: [
+            'AudioTrack Management',
+            'PCM Buffer',
+            'Volume Control',
+            'Audio Effects'
+        ],
+        path: 'frameworks/av/media/libmediaplayerservice/nuplayer/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'Audio PTS': {
+        title: 'Audio Presentation Timestamp',
+        layer: 'Native',
+        description: 'Playback timestamp for audio frames.',
+        components: [
+            'Timestamp Calculation',
+            'Audio Clock',
+            'Sample Rate',
+            'Frame Count'
+        ]
+    },
+
+    'Audio Render': {
+        title: 'Audio Renderer (NuPlayer)',
+        layer: 'Native',
+        description: 'NuPlayer audio renderer that passes decoded PCM to AudioSink.',
+        components: [
+            'Audio Decoder Output',
+            'AudioSink Integration',
+            'A/V Sync',
+            'Audio Delay'
+        ],
+        path: 'frameworks/av/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'Video PTS': {
+        title: 'Video Presentation Timestamp',
+        layer: 'Native',
+        description: 'Playback timestamp for video frames.',
+        components: [
+            'Timestamp Calculation',
+            'Frame Rate',
+            'Display Time',
+            'Vsync Sync'
+        ]
+    },
+
+    'Video Render': {
+        title: 'Video Renderer (NuPlayer)',
+        layer: 'Native',
+        description: 'NuPlayer video renderer that renders decoded frames to Surface.',
+        components: [
+            'Video Decoder Output',
+            'Surface Rendering',
+            'Frame Drop/Duplicate',
+            'A/V Sync'
+        ],
+        path: 'frameworks/av/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'MediaSync': {
+        title: 'MediaSync (A/V Synchronization)',
+        layer: 'Native',
+        description: 'Component responsible for audio and video synchronization.',
+        components: [
+            'Audio Master Clock',
+            'Video Slave Clock',
+            'PTS Comparison',
+            'Frame Drop/Duplicate Logic',
+            'Playback Rate Control'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media',
+        codeExample: `
+sp<MediaSync> sync = new MediaSync();
+sync->setAudioTrack(audioTrack);
+sync->queueBuffer(buffer, pts);
+MediaSync::SyncMode mode;
+sync->getSyncMode(&mode);
+        `.trim()
+    },
+
+    'Compare PTS': {
+        title: 'Compare Presentation Timestamps',
+        layer: 'Native',
+        description: 'Compares audio and video PTS to calculate sync error.',
+        components: [
+            'Audio PTS',
+            'Video PTS',
+            'Sync Threshold',
+            'Drift Detection'
+        ]
+    },
+
+    'Drop Frame': {
+        title: 'Drop Video Frame',
+        layer: 'Native',
+        description: 'Drops frames when video is behind audio.',
+        components: [
+            'Late Frame Detection',
+            'Drop Decision',
+            'Statistics Tracking'
+        ]
+    },
+
+    'Duplicate Frame': {
+        title: 'Duplicate Video Frame',
+        layer: 'Native',
+        description: 'Duplicates frames to delay when video is ahead of audio.',
+        components: [
+            'Early Frame Detection',
+            'Duplicate Decision',
+            'Frame Hold'
+        ]
+    },
+
+    'Normal Playback': {
+        title: 'Normal Playback Mode',
+        layer: 'Native',
+        description: 'Playback mode where audio and video are normally synchronized.',
+        components: [
+            'Sync Within Threshold',
+            'Normal Rendering',
+            'No Adjustment'
+        ]
+    },
+
+    'Legacy App': {
+        title: 'Legacy Application',
+        layer: 'Application',
+        description: 'App using legacy storage access approach from before Android 10.',
+        components: [
+            'Direct File Path',
+            'READ_EXTERNAL_STORAGE',
+            'WRITE_EXTERNAL_STORAGE',
+            'Legacy Storage Flag'
+        ]
+    },
+
+    'Platform App': {
+        title: 'Platform Application',
+        layer: 'Application',
+        description: 'Modern Android app using Scoped Storage.',
+        components: [
+            'MediaStore API',
+            'ContentResolver',
+            'Scoped Storage',
+            'File Access via URI'
+        ]
+    },
+
+    'Data Source': {
+        title: 'Data Source',
+        layer: 'Framework',
+        description: 'Abstraction layer for reading media data sources.',
+        components: [
+            'File Descriptor',
+            'Content URI',
+            'HTTP/HTTPS Stream',
+            'RTSP Stream',
+            'Asset File'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media',
+        codeExample: `
+val extractor = MediaExtractor()
+extractor.setDataSource(filePath)
+extractor.setDataSource(context, uri, null)
+val pfd = contentResolver.openFileDescriptor(uri, "r")
+extractor.setDataSource(pfd!!.fileDescriptor)
+extractor.setDataSource(httpUrl, headers)
+        `.trim()
+    },
+
+    'Extractor Factory': {
+        title: 'MediaExtractor Factory',
+        layer: 'Framework',
+        description: 'Factory that selects appropriate parser for container format.',
+        components: [
+            'Format Detection',
+            'Parser Selection',
+            'Plugin Loading',
+            'Extractor Creation'
+        ],
+        path: 'frameworks/av/media/libstagefright/MediaExtractorFactory.cpp',
+        doc: 'https://source.android.com/docs/core/media',
+        codeExample: `
+sp<IMediaExtractor> MediaExtractorFactory::Create(
+    const sp<IDataSource>& dataSource) {
+    float confidence = 0;
+    sp<IMediaExtractor> ret;
+    for (auto& plugin : mExtractorPlugins) {
+        float thisConfidence = plugin->sniff(dataSource);
+        if (thisConfidence > confidence) {
+            confidence = thisConfidence;
+            ret = plugin->create(dataSource);
+        }
+    }
+
+    return ret;  // Return extractor with highest confidence
+}
+        `.trim()
+    },
+
+    'File Descriptor': {
+        title: 'File Descriptor',
+        layer: 'OS',
+        description: 'File descriptor pointing to media file in filesystem.',
+        components: [
+            'FD Number',
+            'Offset & Length',
+            'Seekable',
+            'Parcelable'
+        ],
+        doc: 'https://developer.android.com/reference/android/os/ParcelFileDescriptor',
+        codeExample: `
+val contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+val cursor = contentResolver.query(contentUri, null, null, null, null)
+cursor?.use {
+    if (it.moveToFirst()) {
+        val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
+        val uri = ContentUris.withAppendedId(contentUri, id)
+
+        val pfd = contentResolver.openFileDescriptor(uri, "r")
+        val fd = pfd!!.fileDescriptor
+
+        mediaPlayer.setDataSource(fd)
+        pfd.close()
+    }
+}
+        `.trim()
+    },
+
+    'Metadata': {
+        title: 'Media Metadata',
+        layer: 'Framework',
+        description: 'Metadata information for media files.',
+        components: [
+            'Duration',
+            'Track Count',
+            'MIME Type',
+            'Bitrate',
+            'Frame Rate',
+            'Sample Rate',
+            'Album Art'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://developer.android.com/reference/android/media/MediaMetadataRetriever',
+        codeExample: `
+val retriever = MediaMetadataRetriever()
+retriever.setDataSource(context, uri)
+
+val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+val title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+val artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+val album = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
+val albumArt = retriever.embeddedPicture  // Bitmap
+
+retriever.release()
+        `.trim()
+    },
+
+    'MediaExtractor API': {
+        title: 'MediaExtractor API',
+        layer: 'Framework',
+        description: 'Android MediaExtractor Java/Kotlin API.',
+        components: [
+            'setDataSource()',
+            'getTrackCount()',
+            'getTrackFormat()',
+            'selectTrack()',
+            'readSampleData()',
+            'getSampleTime()',
+            'seekTo()'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaExtractor.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaExtractor',
+        codeExample: `
+val extractor = MediaExtractor()
+extractor.setDataSource(context, uri, null)
+for (i in 0 until extractor.trackCount) {
+    val format = extractor.getTrackFormat(i)
+    val mime = format.getString(MediaFormat.KEY_MIME) ?: continue
+
+    if (mime.startsWith("video/")) {
+        extractor.selectTrack(i)
+        break
+    }
+}
+val buffer = ByteBuffer.allocate(1024 * 1024)
+while (true) {
+    val sampleSize = extractor.readSampleData(buffer, 0)
+    if (sampleSize < 0) break
+
+    val presentationTimeUs = extractor.sampleTime
+    val flags = extractor.sampleFlags
+
+    extractor.advance()
+}
+
+extractor.release()
+        `.trim()
+    },
+
+    'MediaExtractor Implementation': {
+        title: 'MediaExtractor Native Implementation',
+        layer: 'Native',
+        description: 'Native C++ implementation of MediaExtractor.',
+        components: [
+            'NuMediaExtractor',
+            'MPEG4Extractor',
+            'MatroskaExtractor',
+            'WebMExtractor',
+            'Track Management',
+            'Sample Buffer'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'MKV Parser': {
+        title: 'Matroska (MKV) Parser',
+        layer: 'Native',
+        description: 'Matroska/MKV container parser.',
+        components: [
+            'EBML Parser',
+            'Cluster Reading',
+            'Track Parsing',
+            'Segment Info',
+            'Cue Points (Seek)',
+            'Subtitle Support'
+        ],
+        path: 'frameworks/av/media/libstagefright/matroska/',
+        doc: 'https://www.matroska.org/technical/specs/index.html',
+        codeExample: `
+/*
+EBML Header
+  - DocType: "matroska"
+  - DocTypeVersion: 4
+
+Segment
+  - SeekHead (index)
+  - Info (duration, timescale)
+  - Tracks
+    - TrackEntry (video)
+      - CodecID: "V_MPEG4/ISO/AVC"
+    - TrackEntry (audio)
+      - CodecID: "A_AAC"
+  - Cluster
+    - SimpleBlock (video frames)
+    - SimpleBlock (audio frames)
+  - Cues (seek points)
+*/
+        `.trim()
+    },
+
+    'MP4 Parser': {
+        title: 'MP4 (ISO BMFF) Parser',
+        layer: 'Native',
+        description: 'MPEG-4 Part 14 (MP4) container parser.',
+        components: [
+            'Box (Atom) Parser',
+            'ftyp (File Type)',
+            'moov (Movie Header)',
+            'mdat (Media Data)',
+            'trak (Track)',
+            'stbl (Sample Table)',
+            'Fast Start Support'
+        ],
+        path: 'frameworks/av/media/libstagefright/MPEG4Extractor.cpp',
+        doc: 'https://www.iso.org/standard/68960.html',
+        codeExample: `
+/*
+ftyp: File Type Box
+  - major_brand: "isom"
+  - compatible_brands: ["isom", "iso2", "avc1", "mp41"]
+
+moov: Movie Box
+  - mvhd: Movie Header (duration, timescale)
+  - trak: Track Box (video)
+    - tkhd: Track Header
+    - mdia: Media Box
+      - mdhd: Media Header
+      - hdlr: Handler (vide)
+      - minf: Media Info
+        - stbl: Sample Table
+          - stsd: Sample Description (avc1)
+          - stts: Time-to-Sample
+          - stss: Sync Sample (I-frames)
+          - stsc: Sample-to-Chunk
+          - stsz: Sample Size
+          - stco: Chunk Offset
+  - trak: Track Box (audio)
+    - ... (similar structure)
+
+mdat: Media Data Box
+  - Raw audio/video samples
+*/
+        `.trim()
+    },
+
+    'WebM Parser': {
+        title: 'WebM Parser',
+        layer: 'Native',
+        description: 'WebM container parser (MKV-based).',
+        components: [
+            'EBML Parser',
+            'VP8/VP9 Video',
+            'Vorbis/Opus Audio',
+            'Web Optimized',
+            'Streaming Support'
+        ],
+        path: 'frameworks/av/media/libstagefright/webm/',
+        doc: 'https://www.webmproject.org/docs/container/',
+        codeExample: `
+/*
+Restrictions:
+- DocType: "webm"
+- Video Codec: Only VP8, VP9, AV1 allowed
+- Audio Codec: Only Vorbis, Opus allowed
+- Streaming optimized (Cues required)
+- Simplified structure
+*/
+val format = MediaFormat()
+format.setString(MediaFormat.KEY_MIME, "video/x-vnd.on2.vp9")
+format.setInteger(MediaFormat.KEY_WIDTH, 1920)
+format.setInteger(MediaFormat.KEY_HEIGHT, 1080)
+        `.trim()
+    },
+
+    'Other Parser': {
+        title: 'Other Container Parsers',
+        layer: 'Native',
+        description: 'Other container format parsers.',
+        components: [
+            '3GP Parser',
+            'FLV Parser',
+            'OGG Parser',
+            'TS Parser (MPEG-TS)',
+            'FLAC Parser',
+            'WAV Parser'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'Sample Reader': {
+        title: 'Sample Reader',
+        layer: 'Native',
+        description: 'Component that reads audio/video samples from containers.',
+        components: [
+            'Sample Extraction',
+            'Buffer Management',
+            'Timestamp Calculation',
+            'Flag Processing (Sync, EOS)',
+            'Seek Support'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media',
+        codeExample: `
+class SampleReader {
+    MediaBufferBase* buffer;
+    int64_t timeUs;
+    uint32_t flags;
+
+    status_t readSample() {
+        off64_t offset = getSampleOffset(mCurrentSample);
+        size_t size = getSampleSize(mCurrentSample);
+        mDataSource->readAt(offset, buffer->data(), size);
+        timeUs = getSampleTime(mCurrentSample);
+        flags = isSyncSample(mCurrentSample) ?
+                MediaExtractor::SAMPLE_FLAG_SYNC : 0;
+
+        mCurrentSample++;
+        return OK;
+    }
+};
+        `.trim()
+    },
+
+    'Stream Source': {
+        title: 'Stream Source',
+        layer: 'Network',
+        description: 'Fetches data from streaming sources like HTTP/RTSP.',
+        components: [
+            'HTTP Client',
+            'Progressive Download',
+            'Adaptive Streaming (DASH/HLS)',
+            'Buffer Caching',
+            'Range Requests'
+        ],
+        path: 'frameworks/av/media/libstagefright/httplive/',
+        doc: 'https://source.android.com/docs/core/media',
+        codeExample: `
+val httpDataSource = DefaultHttpDataSource.Factory()
+    .setUserAgent("MyApp/1.0")
+    .setConnectTimeoutMs(30000)
+    .setReadTimeoutMs(30000)
+    .setAllowCrossProtocolRedirects(true)
+    .createDataSource()
+val uri = Uri.parse("https://example.com/video.mp4")
+val dataSpec = DataSpec(uri)
+httpDataSource.open(dataSpec)
+
+val buffer = ByteArray(1024 * 1024)
+var bytesRead = httpDataSource.read(buffer, 0, buffer.size)
+        `.trim()
+    },
+
+    'Android Auto System': {
+        title: 'Android Auto System Service',
+        layer: 'System',
+        description: 'Android Auto system service that manages MediaSession.',
+        components: [
+            'Session Discovery',
+            'Priority Management',
+            'Projection Service',
+            'Display Integration'
+        ],
+        path: 'packages/apps/Car/',
+        doc: 'https://developer.android.com/training/cars/media'
+    },
+
+    'Android Auto UI': {
+        title: 'Android Auto UI',
+        layer: 'Application',
+        description: 'Android Auto media UI that displays MediaSession information.',
+        components: [
+            'Media Browser',
+            'Playback Controls',
+            'Queue Display',
+            'Album Art',
+            'Voice Commands'
+        ],
+        doc: 'https://developer.android.com/training/cars/media',
+        codeExample: `
+class MyMusicService : MediaBrowserServiceCompat() {
+
+    override fun onGetRoot(
+        clientPackageName: String,
+        clientUid: Int,
+        rootHints: Bundle?
+    ): BrowserRoot? {
+        if (clientPackageName == "com.google.android.projection.gearhead") {
+            return BrowserRoot(MEDIA_ROOT_ID, null)
+        }
+        return null
+    }
+
+    override fun onLoadChildren(
+        parentId: String,
+        result: Result<MutableList<MediaBrowserCompat.MediaItem>>
+    ) {
+        result.sendResult(mediaItems)
+    }
+}
+        `.trim()
+    },
+
+    'Wear OS System': {
+        title: 'Wear OS System Service',
+        layer: 'System',
+        description: 'Wear OS system service that manages MediaSession.',
+        components: [
+            'Session Discovery',
+            'Notification Sync',
+            'Companion App Link',
+            'Bluetooth Control'
+        ],
+        path: 'frameworks/base/services/core/',
+        doc: 'https://developer.android.com/training/wearables/apps/media'
+    },
+
+    'Wear OS UI': {
+        title: 'Wear OS UI',
+        layer: 'Application',
+        description: 'Wear OS media UI that displays MediaSession information.',
+        components: [
+            'Media Controls',
+            'Notification Card',
+            'Volume Control',
+            'Complication (Watch Face)'
+        ],
+        doc: 'https://developer.android.com/training/wearables/apps/media',
+        codeExample: `
+class WearMediaActivity : ComponentActivity() {
+    private lateinit var mediaController: MediaControllerCompat
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val mediaBrowser = MediaBrowserCompat(
+            this,
+            ComponentName(this, MyMusicService::class.java),
+            object : MediaBrowserCompat.ConnectionCallback() {
+                override fun onConnected() {
+                    val sessionToken = mediaBrowser.sessionToken
+                    mediaController = MediaControllerCompat(
+                        this@WearMediaActivity, sessionToken
+                    )
+
+                    MediaControllerCompat.setMediaController(
+                        this@WearMediaActivity, mediaController
+                    )
+                }
+            },
+            null
+        )
+        mediaBrowser.connect()
+
+        setContent {
+            MediaControlScreen(mediaController)
+        }
+    }
+}
+        `.trim()
+    },
+
+    'Media Apps': {
+        title: 'Media Applications',
+        layer: 'Application',
+        description: 'Apps for playing, recording, and streaming media.',
+        components: [
+            'YouTube - Video streaming',
+            'Spotify - Music playback',
+            'Camera - Photo/video capture',
+            'Video Player - Local playback'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media'
+    },
+
+    'MediaExtractor': {
+        title: 'MediaExtractor (Demuxer)',
+        layer: 'Framework',
+        description: 'Parses media containers and extracts audio/video tracks.',
+        components: [
+            'Container Parsing (MP4, MKV, WebM)',
+            'Track Extraction',
+            'Seek Support',
+            'Metadata Reading'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://developer.android.com/reference/android/media/MediaExtractor',
+        codeExample: `
+val extractor = MediaExtractor()
+extractor.setDataSource(filePath)
+val trackCount = extractor.trackCount
+
+for (i in 0 until trackCount) {
+    val format = extractor.getTrackFormat(i)
+    val mime = format.getString(MediaFormat.KEY_MIME)
+    if (mime.startsWith("video/")) {
+        extractor.selectTrack(i)
+        break
+    }
+}
+        `.trim()
+    },
+
+    'NuPlayer': {
+        title: 'NuPlayer',
+        layer: 'Native',
+        description: 'Android\'s default media playback engine. Backend implementation of MediaPlayer.',
+        components: [
+            'Playback State Machine',
+            'Source Management',
+            'Decoder Management',
+            'Renderer Pipeline'
+        ],
+        path: 'frameworks/av/media/libmediaplayerservice/nuplayer/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'ACodec': {
+        title: 'ACodec (OpenMAX)',
+        layer: 'Framework',
+        description: 'Adapter for legacy OpenMAX IL codecs. (Android 10 and below)',
+        components: [
+            'OpenMAX IL Adapter',
+            'Legacy Codec Support',
+            'Buffer Management',
+            'State Machine'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'libmedia': {
+        title: 'libmedia',
+        layer: 'Native',
+        description: 'IPC client library connecting framework and native services.',
+        components: [
+            'Binder IPC',
+            'MediaPlayer Client',
+            'MediaRecorder Client',
+            'AudioTrack/AudioRecord'
+        ],
+        path: 'frameworks/av/media/libmedia/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'libstagefright': {
+        title: 'libstagefright',
+        layer: 'Native',
+        description: 'Core logic library of Android media framework.',
+        components: [
+            'Codec Pipeline',
+            'Container Parsing',
+            'Buffer Management',
+            'Sync/Timing'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'C2Params': {
+        title: 'C2Params',
+        layer: 'HAL',
+        description: 'Codec2 parameter configuration and query system.',
+        components: [
+            'Configuration Parameters',
+            'Query Parameters',
+            'Tuning Parameters',
+            'Info Parameters'
+        ],
+        path: 'frameworks/av/media/codec2/vndk/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'AAudio': {
+        title: 'AAudio',
+        layer: 'Framework API',
+        description: 'Android\'s high-performance audio API. Supports low-latency audio playback and recording.',
+        components: [
+            'Low Latency Audio',
+            'Shared Mode',
+            'Exclusive Mode',
+            'MMAP (Memory Mapped) Buffer'
+        ],
+        path: 'frameworks/av/media/libaaudio/',
+        doc: 'https://developer.android.com/ndk/guides/audio/aaudio/aaudio',
+        codeExample: `
+AAudioStreamBuilder *builder;
+AAudioStream *stream;
+
+AAudio_createStreamBuilder(&builder);
+AAudioStreamBuilder_setDirection(builder, AAUDIO_DIRECTION_OUTPUT);
+AAudioStreamBuilder_setSampleRate(builder, 48000);
+AAudioStreamBuilder_openStream(builder, &stream);
+AAudioStream_requestStart(stream);
+        `.trim()
+    },
+
+    'AudioTrack': {
+        title: 'AudioTrack',
+        layer: 'Framework API',
+        description: 'Android API for playing PCM audio data.',
+        components: [
+            'PCM Playback',
+            'Stream Mode',
+            'Static Mode',
+            'Audio Attributes',
+            'Session ID'
+        ],
+        path: 'frameworks/base/media/java/android/media/AudioTrack.java',
+        doc: 'https://developer.android.com/reference/android/media/AudioTrack',
+        codeExample: `
+val audioTrack = AudioTrack(
+    AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_MEDIA)
+        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+        .build(),
+    AudioFormat.Builder()
+        .setSampleRate(44100)
+        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+        .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+        .build(),
+    bufferSize,
+    AudioTrack.MODE_STREAM,
+    AudioManager.AUDIO_SESSION_ID_GENERATE
+)
+audioTrack.play()
+        `.trim()
+    },
+
+    'AudioRecord': {
+        title: 'AudioRecord',
+        layer: 'Framework API',
+        description: 'Android API for recording PCM audio data.',
+        components: [
+            'PCM Recording',
+            'Audio Source Selection',
+            'Buffer Management',
+            'Sample Rate Control'
+        ],
+        path: 'frameworks/base/media/java/android/media/AudioRecord.java',
+        doc: 'https://developer.android.com/reference/android/media/AudioRecord',
+        codeExample: `
+val bufferSize = AudioRecord.getMinBufferSize(
+    44100,
+    AudioFormat.CHANNEL_IN_MONO,
+    AudioFormat.ENCODING_PCM_16BIT
+)
+val audioRecord = AudioRecord(
+    MediaRecorder.AudioSource.MIC,
+    44100,
+    AudioFormat.CHANNEL_IN_MONO,
+    AudioFormat.ENCODING_PCM_16BIT,
+    bufferSize
+)
+audioRecord.startRecording()
+val buffer = ByteArray(bufferSize)
+audioRecord.read(buffer, 0, bufferSize)
+        `.trim()
+    },
+
+    'AudioManager': {
+        title: 'AudioManager',
+        layer: 'Framework Service',
+        description: 'System service managing audio volume, routing, and audio focus.',
+        components: [
+            'Volume Control',
+            'Audio Focus',
+            'Audio Routing',
+            'Audio Mode (Call, Normal, etc.)',
+            'Device Management'
+        ],
+        path: 'frameworks/base/media/java/android/media/AudioManager.java',
+        doc: 'https://developer.android.com/reference/android/media/AudioManager',
+        codeExample: `
+val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+    .setAudioAttributes(AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_MEDIA)
+        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+        .build())
+    .setOnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS -> stopPlayback()
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> pausePlayback()
+            AudioManager.AUDIOFOCUS_GAIN -> resumePlayback()
+        }
+    }
+    .build()
+audioManager.requestAudioFocus(focusRequest)
+        `.trim(),
+        relatedIssues: [
+            { id: 'issue-audio-focus', title: 'Unable to acquire Audio Focus' },
+            { id: 'issue-audio-latency', title: 'Audio latency too high' }
+        ]
+    },
+
+    'AudioPolicyService': {
+        title: 'AudioPolicyService',
+        layer: 'Native Service',
+        description: 'Determines and manages audio routing policy.',
+        components: [
+            'Device Selection',
+            'Stream Routing',
+            'Volume Curves',
+            'Audio Policy Configuration'
+        ],
+        path: 'frameworks/av/services/audiopolicy/',
+        doc: 'https://source.android.com/docs/core/audio/implement-policy'
+    },
+
+    'AudioMixer': {
+        title: 'AudioMixer',
+        layer: 'Native',
+        description: 'Mixes multiple audio streams.',
+        components: [
+            'Multi-track Mixing',
+            'Resampling',
+            'Volume Ramping',
+            'Effects Processing'
+        ],
+        path: 'frameworks/av/services/audioflinger/',
+        doc: 'https://source.android.com/docs/core/audio/audioflinger'
+    },
+
+    'FastMixer': {
+        title: 'FastMixer Thread',
+        layer: 'Native',
+        description: 'High-priority thread responsible for low-latency audio mixing.',
+        components: [
+            'Low Latency Mixing',
+            'Real-time Priority',
+            'SCHED_FIFO Scheduling',
+            'MMAP Buffer'
+        ],
+        path: 'frameworks/av/services/audioflinger/',
+        doc: 'https://source.android.com/docs/core/audio/latency/design'
+    },
+
+    'Audio Effects': {
+        title: 'Audio Effects',
+        layer: 'Native',
+        description: 'Processes audio effects like equalizer and reverb.',
+        components: [
+            'Equalizer',
+            'Reverb',
+            'Bass Boost',
+            'Virtualizer',
+            'Loudness Enhancer'
+        ],
+        path: 'frameworks/av/media/libeffects/',
+        doc: 'https://developer.android.com/guide/topics/media/audio-effects'
+    },
+
+    'AudioTrack 1': {
+        title: 'AudioTrack Instance 1',
+        layer: 'Client Track',
+        description: 'First AudioTrack instance passed to AudioFlinger MixerThread.',
+        components: [
+            'PCM Buffer',
+            'Audio Format',
+            'Session ID',
+            'Volume',
+            'Audio Attributes'
+        ],
+        path: 'frameworks/av/services/audioflinger/Tracks.cpp',
+        doc: 'https://source.android.com/docs/core/audio/audioflinger'
+    },
+
+    'AudioTrack 2': {
+        title: 'AudioTrack Instance 2',
+        layer: 'Client Track',
+        description: 'Second AudioTrack instance passed to AudioFlinger MixerThread.',
+        components: [
+            'PCM Buffer',
+            'Audio Format',
+            'Session ID',
+            'Volume',
+            'Audio Attributes'
+        ],
+        path: 'frameworks/av/services/audioflinger/Tracks.cpp',
+        doc: 'https://source.android.com/docs/core/audio/audioflinger'
+    },
+
+    'AudioTrack 3': {
+        title: 'AudioTrack Instance 3',
+        layer: 'Client Track',
+        description: 'Third AudioTrack instance passed to AudioFlinger MixerThread.',
+        components: [
+            'PCM Buffer',
+            'Audio Format',
+            'Session ID',
+            'Volume',
+            'Audio Attributes'
+        ],
+        path: 'frameworks/av/services/audioflinger/Tracks.cpp',
+        doc: 'https://source.android.com/docs/core/audio/audioflinger'
+    },
+
+    'Binder IPC (Playback)': {
+        title: 'Binder IPC (Playback Path)',
+        layer: 'IPC',
+        description: 'Binder IPC for passing audio data from apps to AudioFlinger.',
+        components: [
+            'IAudioTrack Interface',
+            'Shared Memory (Parcels)',
+            'Callback Mechanism',
+            'Buffer Transfer',
+            'AIDL/HIDL'
+        ],
+        path: 'frameworks/av/media/libaudioclient/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl/overview',
+        codeExample: `
+
+sp<IAudioTrack> track = audioFlinger->createTrack(
+    streamType,
+    sampleRate,
+    format,
+    channelMask,
+    &frameCount,
+    &trackFlags,
+    sharedBuffer,
+    output,
+    &sessionId,
+    &status
+);
+        `.trim()
+    },
+
+    'Binder IPC (Recording)': {
+        title: 'Binder IPC (Recording Path)',
+        layer: 'IPC',
+        description: 'Binder IPC for passing recording data from AudioFlinger to apps.',
+        components: [
+            'IAudioRecord Interface',
+            'Shared Memory (Parcels)',
+            'Callback Mechanism',
+            'Buffer Transfer',
+            'AIDL/HIDL'
+        ],
+        path: 'frameworks/av/media/libaudioclient/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl/overview',
+        codeExample: `
+
+sp<IAudioRecord> record = audioFlinger->openRecord(
+    input,
+    sampleRate,
+    format,
+    channelMask,
+    &frameCount,
+    &trackFlags,
+    &sessionId,
+    &status
+);
+        `.trim()
+    },
+
+    'Headphone': {
+        title: 'Headphone Output',
+        layer: 'Audio Device',
+        description: 'Headphone/earphone output device.',
+        components: [
+            'Jack Detection',
+            'Impedance Detection',
+            'High-Z/Low-Z Output',
+            'Amplifier Control',
+            '3.5mm Jack / USB-C'
+        ],
+        doc: 'https://source.android.com/docs/core/audio/implement',
+        codeExample: `
+<devicePort type="AUDIO_DEVICE_OUT_WIRED_HEADPHONE"
+            role="sink"
+            address="">
+    <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+             samplingRates="48000"
+             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+</devicePort>
+        `.trim()
+    },
+
+    'Speaker': {
+        title: 'Speaker Output',
+        layer: 'Audio Device',
+        description: 'Built-in speaker output device.',
+        components: [
+            'Amplifier (TAS2557, MAX98357, etc.)',
+            'Stereo/Mono Output',
+            'Volume Ramping',
+            'Thermal Protection',
+            'Speaker Protection Algorithm'
+        ],
+        doc: 'https://source.android.com/docs/core/audio/implement',
+        codeExample: `
+<devicePort type="AUDIO_DEVICE_OUT_SPEAKER"
+            role="sink"
+            address="">
+    <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+             samplingRates="48000"
+             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+    <gains>
+        <gain name="speaker" mode="AUDIO_GAIN_MODE_JOINT"
+              minValueMB="-8400" maxValueMB="400" defaultValueMB="0" stepValueMB="100"/>
+    </gains>
+</devicePort>
+        `.trim()
+    },
+
+    'Audio Hardware': {
+        title: 'Audio Hardware (Codec)',
+        layer: 'Hardware',
+        description: 'Physical audio codec chip (e.g., WM8994, CS43131, ALC5658).',
+        components: [
+            'DAC (Digital-to-Analog)',
+            'ADC (Analog-to-Digital)',
+            'I2S/PCM Interface',
+            'Audio Amplifier',
+            'Mixer & Routing',
+            'Clock Management (PLL)'
+        ],
+        doc: 'https://source.android.com/docs/core/audio/implement-pre-processing',
+        codeExample: `
+/*
+Example: Wolfson WM8994 codec
+- I2S Master/Slave configuration
+- Sample Rate configuration (8kHz ~ 96kHz)
+- Bit Depth configuration (16/24/32-bit)
+- Volume configuration
+- Routing configuration (Speaker/Headphone)
+*/
+static int wm8994_set_dai_fmt(struct snd_soc_dai *dai, unsigned int fmt) {
+    return 0;
+}
+        `.trim()
+    },
+
+    'Legacy Path': {
+        title: 'Legacy Path (AudioFlinger)',
+        layer: 'Playback Path',
+        description: 'Legacy path used when AAudio doesn\'t support MMAP. Goes through AudioFlinger.',
+        components: [
+            'Via AudioFlinger',
+            'Higher Latency (~10-20ms)',
+            'Resampling',
+            'Effects Processing',
+            'Mixing with other streams'
+        ],
+        path: 'frameworks/av/media/libaaudio/',
+        doc: 'https://source.android.com/docs/core/audio/aaudio',
+        codeExample: `
+/*
+App → AAudio → AudioFlinger → HAL → ALSA → Hardware
+
+- Uses Shared Mode
+- Increased latency due to buffering
+- Can mix multiple streams
+- Can apply effects
+*/
+
+AAudioStreamBuilder_setPerformanceMode(builder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
+        `.trim()
+    },
+
+    'Zone 0 (Driver)': {
+        title: 'Audio Zone 0 (Driver Seat)',
+        layer: 'Audio Zone',
+        description: 'Handles audio output for the driver seat area in AAOS.',
+        components: [
+            'Driver Speakers (Front L/R)',
+            'Primary Audio Focus',
+            'Navigation Prompts',
+            'Phone Calls',
+            'Media Playback'
+        ],
+        doc: 'https://source.android.com/docs/automotive/audio',
+        codeExample: `
+<carAudioConfiguration version="2">
+    <zones>
+        <zone name="primary zone" isPrimary="true" occupantZoneId="0">
+            <volumeGroups>
+                <group>
+                    <device address="bus0_media_out">
+                        <context>music</context>
+                        <context>navigation</context>
+                    </device>
+                </group>
+            </volumeGroups>
+        </zone>
+    </zones>
+</carAudioConfiguration>
+        `.trim()
+    },
+
+    'Zone 1 (Rear)': {
+        title: 'Audio Zone 1 (Rear Seat)',
+        layer: 'Audio Zone',
+        description: 'Handles audio output for the rear seat area in AAOS.',
+        components: [
+            'Rear Speakers (Rear L/R)',
+            'Independent Volume Control',
+            'Secondary Media Playback',
+            'Rear Seat Entertainment',
+            'Isolated from Zone 0'
+        ],
+        doc: 'https://source.android.com/docs/automotive/audio',
+        codeExample: `
+<zone name="rear seat zone" isPrimary="false" occupantZoneId="1">
+    <volumeGroups>
+        <group>
+            <device address="bus1_media_out">
+                <context>music</context>
+                <context>movie</context>
+            </device>
+        </group>
+    </volumeGroups>
+</zone>
+val carAudioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+val zoneId = 1  // Rear Zone
+carAudioManager.setZoneIdForUid(zoneId, android.os.Process.myUid())
+        `.trim()
+    },
+
+    'MediaDRM API': {
+        title: 'MediaDRM',
+        layer: 'Framework API',
+        description: 'Android DRM framework API. Supports Widevine, PlayReady, etc.',
+        components: [
+            'Session Management',
+            'Key Request',
+            'License Processing',
+            'Provisioning'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaDrm.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaDrm',
+        codeExample: `
+val widevineUUID = UUID(0xEDEF8BA979D64ACEL, 0xA3C827DCD51D21EDL)
+val mediaDrm = MediaDrm(widevineUUID)
+
+val session = mediaDrm.openSession()
+val request = mediaDrm.getKeyRequest(session, initData, mimeType,
+                                     MediaDrm.KEY_TYPE_STREAMING, null)
+mediaDrm.provideKeyResponse(session, response)
+        `.trim()
+    },
+
+    'MediaCrypto': {
+        title: 'MediaCrypto',
+        layer: 'Framework API',
+        description: 'Used with MediaCodec to decode encrypted media.',
+        components: [
+            'Secure Decoding',
+            'Session Binding',
+            'Crypto Plugin Interface'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaCrypto.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaCrypto',
+        codeExample: `
+val mediaCrypto = MediaCrypto(widevineUUID, sessionId)
+val decoder = MediaCodec.createDecoderByType("video/avc")
+decoder.configure(format, surface, mediaCrypto, 0)
+        `.trim()
+    },
+
+    'Content Decryption Module': {
+        title: 'CDM (Content Decryption Module)',
+        layer: 'Native',
+        description: 'Core decryption module of Widevine DRM.',
+        components: [
+            'License Parsing',
+            'Key Management',
+            'Decryption Engine',
+            'Usage Tracking'
+        ],
+        doc: 'https://www.widevine.com/'
+    },
+
+    'OEMCrypto': {
+        title: 'OEMCrypto',
+        layer: 'HAL',
+        description: 'Hardware encryption API implemented by OEMs. Core security layer of Widevine.',
+        components: [
+            'Hardware Key Storage',
+            'Secure Decryption',
+            'HDCP Enforcement',
+            'Device Provisioning'
+        ],
+        doc: 'https://www.widevine.com/product',
+        codeExample: `
+OEMCrypto_Initialize();
+OEMCryptoResult result = OEMCrypto_LoadKeys(session, message, signature);
+OEMCrypto_DecryptCTR(session, encryptedData, iv, outputBuffer);
+        `.trim()
+    },
+
+    'Trusted Execution Environment': {
+        title: 'TEE (Trusted Execution Environment)',
+        layer: 'Hardware',
+        description: 'Hardware-based secure execution environment. Uses ARM TrustZone, etc.',
+        components: [
+            'Secure World',
+            'Trustlet Execution',
+            'Hardware Key Storage',
+            'Secure Boot'
+        ],
+        doc: 'https://source.android.com/docs/security/features/trusty'
+    },
+
+    'License Server': {
+        title: 'License Server',
+        layer: 'External',
+        description: 'Server that issues DRM licenses.',
+        components: [
+            'License Generation',
+            'Key Encryption',
+            'Usage Rules',
+            'Device Authentication'
+        ],
+        doc: 'https://www.widevine.com/'
+    },
+
+    'PSSH Parser': {
+        title: 'PSSH Parser',
+        layer: 'CDM Component',
+        description: 'Parses Protection System Specific Header. Extracts DRM metadata from media containers.',
+        components: [
+            'PSSH Box Parsing',
+            'System ID Detection',
+            'Init Data Extraction',
+            'KID (Key ID) Extraction',
+            'Multi-DRM Support'
+        ],
+        doc: 'https://w3c.github.io/encrypted-media/',
+        codeExample: `
+/*
+PSSH (Protection System Specific Header):
+- System ID: Widevine UUID (edef8ba9-79d6-4ace-a3c8-27dcd51d21ed)
+- Data: Base64 encoded init data
+*/
+val mediaDrm = MediaDrm(widevineUUID)
+val psshData = extractPsshFromMp4(mediaFile)
+val keyRequest = mediaDrm.getKeyRequest(
+    session,
+    psshData,  // init data extracted from PSSH
+    "video/mp4",
+    MediaDrm.KEY_TYPE_STREAMING,
+    null
+)
+        `.trim()
+    },
+
+    'Encrypted Media Extensions': {
+        title: 'EME (Encrypted Media Extensions)',
+        layer: 'Web API',
+        description: 'W3C standard web browser DRM API. Plays DRM content in HTML5 video.',
+        components: [
+            'MediaKeys',
+            'MediaKeySession',
+            'Key Request/Response',
+            'License Management',
+            'Multi-DRM Support'
+        ],
+        doc: 'https://www.w3.org/TR/encrypted-media/',
+        codeExample: `
+const video = document.querySelector('video');
+const config = [{
+    initDataTypes: ['cenc'],
+    videoCapabilities: [{
+        contentType: 'video/mp4; codecs="avc1.42E01E"'
+    }]
+}];
+
+navigator.requestMediaKeySystemAccess('com.widevine.alpha', config)
+    .then(keySystemAccess => keySystemAccess.createMediaKeys())
+    .then(mediaKeys => {
+        video.setMediaKeys(mediaKeys);
+        const session = mediaKeys.createSession();
+        session.addEventListener('message', event => {
+            fetch(licenseUrl, {
+                method: 'POST',
+                body: event.message
+            }).then(response => response.arrayBuffer())
+              .then(license => session.update(license));
+        });
+        return session.generateRequest('cenc', initData);
+    });
+        `.trim()
+    },
+
+    'Authentication': {
+        title: 'Authentication (License Server)',
+        layer: 'License Server',
+        description: 'Performs device/user authentication during license requests.',
+        components: [
+            'Device Provisioning',
+            'User Authentication',
+            'Token Validation',
+            'Certificate Verification',
+            'Anti-Piracy Checks'
+        ],
+        doc: 'https://www.widevine.com/',
+        codeExample: `
+POST /widevine/license
+Headers:
+  Content-Type: application/octet-stream
+  Authorization: Bearer <user_token>
+  X-Device-ID: <device_id>
+
+Body: (Binary Key Request from MediaDrm)
+
+Response:
+  - Success: License (binary)
+  - Failure: HTTP 401/403
+        `.trim()
+    },
+
+    'Key Generation': {
+        title: 'Key Generation (License Server)',
+        layer: 'License Server',
+        description: 'Generates content encryption keys and includes them in licenses.',
+        components: [
+            'Content Key Generation',
+            'Key Wrapping (Encryption)',
+            'Usage Rules Encoding',
+            'Signature Generation',
+            'Multi-Key Support (HD/SD)'
+        ],
+        doc: 'https://www.widevine.com/',
+        codeExample: `
+function generateLicense(keyRequest, contentId) {
+    const contentKey = crypto.randomBytes(16);
+    const deviceCert = extractCertificate(keyRequest);
+    const wrappedKey = rsaEncrypt(contentKey, deviceCert.publicKey);
+    const license = {
+        contentId: contentId,
+        keys: [{
+            keyId: contentKeyId,
+            key: wrappedKey,
+            type: 'CONTENT'
+        }],
+        policy: {
+            canPlay: true,
+            canPersist: false,
+            renewalDelaySeconds: 300,
+            playbackDurationSeconds: 7200
+        }
+    };
+    return signAndSerialize(license);
+}
+        `.trim()
+    },
+
+    'Secure Key Storage': {
+        title: 'Secure Key Storage (TEE)',
+        layer: 'Hardware',
+        description: 'Secure key storage inside TEE. Stores keys in hardware-protected area.',
+        components: [
+            'Hardware-backed Keystore',
+            'Key Derivation',
+            'Device-bound Keys',
+            'Anti-Tamper Protection',
+            'Key Provisioning'
+        ],
+        doc: 'https://source.android.com/docs/security/features/keystore',
+        codeExample: `
+/*
+In Widevine L1, all keys only exist inside TEE:
+- Content Keys
+- Device Private Key
+- Keybox (Device Certificate)
+
+Regular Android code cannot access keys.
+Decryption only happens inside TEE.
+*/
+val keyStore = KeyStore.getInstance("AndroidKeyStore")
+keyStore.load(null)
+        `.trim()
+    },
+
+    'Decoder': {
+        title: 'Decoder (in Pipeline)',
+        layer: 'Media Pipeline',
+        description: 'Decodes decrypted video/audio.',
+        components: [
+            'Video Decoder (H.264, H.265)',
+            'Audio Decoder (AAC, AC-3)',
+            'Hardware Acceleration',
+            'Secure Decoder (L1)',
+            'Buffer Management'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'Renderer': {
+        title: 'Renderer (in Pipeline)',
+        layer: 'Media Pipeline',
+        description: 'Renders decoded media to screen/speakers.',
+        components: [
+            'Video Renderer (SurfaceFlinger)',
+            'Audio Renderer (AudioFlinger)',
+            'Synchronization',
+            'Frame Dropping',
+            'Secure Output (HDCP)'
+        ],
+        doc: 'https://source.android.com/docs/core/graphics'
+    },
+
+    'L1 Encryption': {
+        title: 'Widevine L1 - Encryption (TEE)',
+        layer: 'Security Level 1',
+        description: 'Encryption operations performed inside TEE (Widevine L1).',
+        components: [
+            'AES-CTR Decryption',
+            'Hardware-backed',
+            'Secure Memory',
+            'Key Isolation',
+            'Sample Decryption'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm',
+        codeExample: `
+/*
+1. Encrypted Sample → TEE
+2. OEMCrypto_DecryptCTR() in TEE
+3. Decrypted Sample → Secure Video Path
+4. Inaccessible from regular Android code
+
+All operations performed in hardware-protected area.
+*/
+        `.trim()
+    },
+
+    'L1 Decoding': {
+        title: 'Widevine L1 - Video Decoding (TEE)',
+        layer: 'Security Level 1',
+        description: 'Video decoding performed inside TEE (Widevine L1).',
+        components: [
+            'Secure Video Decoder',
+            'Hardware Decoder in TEE',
+            'Encrypted Frame Buffer',
+            'Secure Pipeline',
+            'HD/4K/HDR Support'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'L1 Rendering': {
+        title: 'Widevine L1 - Secure Rendering',
+        layer: 'Security Level 1',
+        description: 'Hardware-protected rendering path (Widevine L1).',
+        components: [
+            'Secure Video Path (SVP)',
+            'Protected Frame Buffer',
+            'HDCP Enforcement',
+            'Hardware Overlay',
+            'Direct Display Output'
+        ],
+        doc: 'https://source.android.com/docs/core/media/drm'
+    },
+
+    'L1 Output': {
+        title: 'Widevine L1 - HD/4K/HDR Output',
+        layer: 'Security Level 1',
+        description: 'High-quality output supported by Widevine L1.',
+        components: [
+            'Full HD (1080p)',
+            '4K UHD (2160p)',
+            'HDR (HDR10, Dolby Vision)',
+            'HDCP 2.2+ Required',
+            'Secure Display Pipeline'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'L2 Encryption': {
+        title: 'Widevine L2 - Encryption (TEE)',
+        layer: 'Security Level 2',
+        description: 'Only encryption operations performed in TEE (Widevine L2).',
+        components: [
+            'AES-CTR Decryption in TEE',
+            'Decrypted Output to Android',
+            'Software Decoder',
+            'SD Resolution Only',
+            'Lower Security than L1'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'L2 Decoding': {
+        title: 'Widevine L2 - Software Decoding',
+        layer: 'Security Level 2',
+        description: 'Software decoding in regular Android space (Widevine L2).',
+        components: [
+            'Software Video Decoder',
+            'Unprotected Frame Buffer',
+            'MediaCodec (Non-Secure)',
+            'SD Resolution Only'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'L2 Output': {
+        title: 'Widevine L2 - SD Output',
+        layer: 'Security Level 2',
+        description: 'Widevine L2 supports SD resolution only.',
+        components: [
+            'Standard Definition (480p/576p)',
+            'No HD/4K Support',
+            'HDCP 1.x',
+            'Software Pipeline'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'L3 Encryption': {
+        title: 'Widevine L3 - Software Encryption',
+        layer: 'Security Level 3',
+        description: 'All operations performed in software (Widevine L3).',
+        components: [
+            'Software Decryption',
+            'No Hardware Security',
+            'Extractable Keys',
+            'Lower Security',
+            'SD Resolution Only'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'L3 Decoding': {
+        title: 'Widevine L3 - Software Decoding',
+        layer: 'Security Level 3',
+        description: 'Software video decoding (Widevine L3).',
+        components: [
+            'Software Video Decoder',
+            'Unprotected Memory',
+            'MediaCodec (Non-Secure)',
+            'SD Resolution Only'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'L3 Output': {
+        title: 'Widevine L3 - SD Output',
+        layer: 'Security Level 3',
+        description: 'Widevine L3 supports SD resolution only.',
+        components: [
+            'Standard Definition (480p)',
+            'No HD Support',
+            'No HDCP Required',
+            'Software Pipeline'
+        ],
+        doc: 'https://www.widevine.com/solutions/widevine-drm'
+    },
+
+    'Certification Step 1': {
+        title: 'Widevine Certification - Step 1',
+        layer: 'Certification',
+        description: 'First step in Widevine certification process.',
+        components: [
+            'Sign NDA',
+            'Widevine Portal Access',
+            'Submit Device Info',
+            'Download OEMCrypto Library',
+            'Review Integration Guide'
+        ],
+        doc: 'https://www.widevine.com/product'
+    },
+
+    'CarMediaService': {
+        title: 'CarMediaService',
+        layer: 'Car Framework',
+        description: 'Service managing automotive media playback. Integrates with MediaSession.',
+        components: [
+            'Media Source Management',
+            'Playback State Tracking',
+            'Source Switching',
+            'Last Media Persistence'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/media/',
+        doc: 'https://source.android.com/docs/automotive/start/car-service',
+        codeExample: `
+val carMediaManager = car.getCarManager(Car.CAR_MEDIA_SERVICE) as CarMediaManager
+val currentSource = carMediaManager.mediaSource
+carMediaManager.addMediaSourceListener { source ->
+    Log.d(TAG, "Media source changed: \${source?.packageName}")
+}
+carMediaManager.setMediaSource(componentName, CarMediaManager.MEDIA_SOURCE_MODE_BROWSE)
+        `.trim(),
+        relatedIssues: [
+            { id: 'issue-car-media', title: 'App not visible in vehicle media controls' },
+            { id: 'issue-ux-restrictions', title: 'UX Restrictions violation' }
+        ]
+    },
+
+    'CarAudioService': {
+        title: 'CarAudioService',
+        layer: 'Car Framework',
+        description: 'Manages automotive audio routing and volume. Supports multi-zone audio.',
+        components: [
+            'Audio Zones (Driver, Passenger, Rear)',
+            'Audio Focus (per Zone)',
+            'Volume Groups',
+            'Ducking & Mixing',
+            'External Audio Sources'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/audio/',
+        doc: 'https://source.android.com/docs/automotive/audio',
+        codeExample: `
+val carAudioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+val primaryZoneId = carAudioManager.primaryAudioZone
+val volumeGroupCount = carAudioManager.getVolumeGroupCount(primaryZoneId)
+        `.trim(),
+        relatedIssues: [
+            { id: 'issue-audio-routing', title: 'Audio routed to wrong speakers in vehicle' },
+            { id: 'issue-audio-focus', title: 'Unable to acquire Audio Focus' }
+        ]
+    },
+
+    'Audio Matrix': {
+        title: 'Audio Matrix',
+        layer: 'Car Audio',
+        description: 'Matrix mapping audio sources to output devices.',
+        components: [
+            'Source to Device Mapping',
+            'Dynamic Routing',
+            'Priority Management',
+            'Concurrent Playback'
+        ],
+        path: 'packages/services/Car/service/res/xml/car_audio_configuration.xml',
+        doc: 'https://source.android.com/docs/automotive/audio/audio-routing'
+    },
+
+    'Audio Zones': {
+        title: 'Audio Zones',
+        layer: 'Car Audio',
+        description: 'Independent audio zones within vehicle (e.g., driver seat, rear seat).',
+        components: [
+            'Zone 0 (Primary) - Driver',
+            'Zone 1 - Rear Seat',
+            'Independent Volume',
+            'Independent Audio Focus'
+        ],
+        doc: 'https://source.android.com/docs/automotive/audio/audio-routing'
+    },
+
+    'Android Auto Framework': {
+        title: 'Android Auto Framework (Smartphone)',
+        layer: 'Smartphone Framework',
+        description: 'Android Framework on smartphone where Android Auto app runs.',
+        components: [
+            'Media Browser Service',
+            'MediaSession Manager',
+            'Audio Manager',
+            'Bluetooth Audio Streaming',
+            'USB Audio Streaming'
+        ],
+        path: 'frameworks/base/core/java/android/app/',
+        doc: 'https://developer.android.com/training/cars/media',
+        codeExample: `
+class MyMediaBrowserService : MediaBrowserServiceCompat() {
+    override fun onGetRoot(
+        clientPackageName: String,
+        clientUid: Int,
+        rootHints: Bundle?
+    ): BrowserRoot? {
+        if (clientPackageName == "com.google.android.projection.gearhead") {
+            return BrowserRoot(MEDIA_ROOT_ID, null)
+        }
+        return null
+    }
+
+    override fun onLoadChildren(
+        parentId: String,
+        result: Result<MutableList<MediaBrowserCompat.MediaItem>>
+    ) {
+    }
+}
+        `.trim()
+    },
+
+    'AudioService': {
+        title: 'AudioService',
+        layer: 'Framework Service',
+        description: 'Android audio management system service.',
+        components: [
+            'Volume Control',
+            'Audio Focus Management',
+            'Routing Policy',
+            'Device Connection',
+            'Audio Policy Service Integration'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/audio/AudioService.java',
+        doc: 'https://source.android.com/docs/core/audio',
+        codeExample: `
+val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).apply {
+    setAudioAttributes(AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_MEDIA)
+        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+        .build())
+}.build()
+
+audioManager.requestAudioFocus(focusRequest)
+        `.trim()
+    },
+
+    'Car Media Apps': {
+        title: 'Car Media Apps (Native)',
+        layer: 'Application',
+        description: 'Native media apps built into AAOS.',
+        components: [
+            'Built-in Radio App',
+            'Bluetooth Audio App',
+            'USB Media App',
+            'OEM Media Apps',
+            'MediaSession Integration'
+        ],
+        doc: 'https://source.android.com/docs/automotive/start/app-dev',
+        codeExample: `
+class CarRadioService : MediaBrowserServiceCompat() {
+    private val mediaSession: MediaSessionCompat by lazy {
+        MediaSessionCompat(this, "CarRadio").apply {
+            setCallback(object : MediaSessionCompat.Callback() {
+                override fun onPlay() {
+                    tuner.start()
+                }
+                override fun onCustomAction(action: String, extras: Bundle?) {
+                    when (action) {
+                        "tune_frequency" -> {
+                            val frequency = extras?.getFloat("frequency")
+                            tuner.tuneFrequency(frequency ?: 88.1f)
+                        }
+                    }
+                }
+            })
+            isActive = true
+        }
+    }
+}
+        `.trim()
+    },
+
+    'Radio App': {
+        title: 'Radio App (MediaSession)',
+        layer: 'Application',
+        description: 'App for playing FM/AM/DAB radio. Controlled via MediaSession.',
+        components: [
+            'FM/AM Tuner',
+            'DAB (Digital Audio Broadcasting)',
+            'Preset Management',
+            'RDS (Radio Data System)',
+            'MediaSession Integration'
+        ],
+        doc: 'https://source.android.com/docs/automotive/audio',
+        codeExample: `
+val radioSession = MediaSessionCompat(context, "RadioApp")
+radioSession.setCallback(object : MediaSessionCompat.Callback() {
+    override fun onPlayFromMediaId(mediaId: String, extras: Bundle?) {
+        val frequency = mediaId.substringAfter("_").toFloat()
+        radioTuner.tuneFrequency(frequency)
+
+        radioSession.setMetadata(MediaMetadataCompat.Builder()
+            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, "FM \$frequency MHz")
+            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, "Radio")
+            .build())
+    }
+})
+        `.trim()
+    },
+
+    'Spotify App': {
+        title: 'Spotify (MediaSession)',
+        layer: 'Application',
+        description: 'Spotify music streaming app. Integrates with vehicle via MediaSession.',
+        components: [
+            'Music Streaming',
+            'Offline Playback',
+            'Playlist Management',
+            'MediaSession Integration',
+            'Android Auto Support'
+        ],
+        doc: 'https://developer.spotify.com/documentation/android/',
+        codeExample: `
+class SpotifyMediaService : MediaBrowserServiceCompat() {
+    private val spotifyPlayer: SpotifyAppRemote by lazy {
+    }
+
+    private val mediaSession: MediaSessionCompat by lazy {
+        MediaSessionCompat(this, "Spotify").apply {
+            setCallback(object : MediaSessionCompat.Callback() {
+                override fun onPlay() {
+                    spotifyPlayer.playerApi.resume()
+                }
+                override fun onPause() {
+                    spotifyPlayer.playerApi.pause()
+                }
+                override fun onSkipToNext() {
+                    spotifyPlayer.playerApi.skipNext()
+                }
+            })
+        }
+    }
+}
+        `.trim()
+    },
+
+    'YouTube Music': {
+        title: 'YouTube Music (MediaSession)',
+        layer: 'Application',
+        description: 'YouTube Music app. Integrates with the vehicle via MediaSession.',
+        components: [
+            'Music Streaming',
+            'Video to Audio Mode',
+            'Playlist Management',
+            'MediaSession Integration',
+            'Android Auto Support'
+        ],
+        doc: 'https://developers.google.com/youtube/android/player',
+        codeExample: `
+class YouTubeMusicService : MediaBrowserServiceCompat() {
+    private val mediaSession: MediaSessionCompat by lazy {
+        MediaSessionCompat(this, "YouTubeMusic").apply {
+            setCallback(object : MediaSessionCompat.Callback() {
+                override fun onPlayFromMediaId(mediaId: String, extras: Bundle?) {
+                    youtubePlayer.loadVideo(mediaId)
+                }
+
+                override fun onCustomAction(action: String, extras: Bundle?) {
+                    when (action) {
+                        "toggle_video_mode" -> {
+                            youtubePlayer.setAudioOnly(true)
+                        }
+                    }
+                }
+            })
+        }
+    }
+}
+        `.trim()
+    },
+
+    'Call Audio Request': {
+        title: 'Call Audio Focus Request',
+        layer: 'Audio Focus',
+        description: 'Requests audio focus during a phone call. (USAGE_VOICE_COMMUNICATION)',
+        components: [
+            'USAGE_VOICE_COMMUNICATION',
+            'AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE',
+            'Highest Priority',
+            'Ducks/Pauses Other Audio',
+            'Zone-specific Routing'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media-apps/audio-focus',
+        codeExample: `
+val callFocusRequest = AudioFocusRequest.Builder(
+    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE
+).apply {
+    setAudioAttributes(AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+        .build())
+    setOnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                phoneCall.hangup()
+            }
+        }
+    }
+}.build()
+
+audioManager.requestAudioFocus(callFocusRequest)
+        `.trim()
+    },
+
+    'Media Audio Request': {
+        title: 'Media Audio Focus Request',
+        layer: 'Audio Focus',
+        description: 'Requests audio focus for media playback. (USAGE_MEDIA)',
+        components: [
+            'USAGE_MEDIA',
+            'AUDIOFOCUS_GAIN',
+            'Normal Priority',
+            'Can be Ducked',
+            'Mixable with Navigation'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media-apps/audio-focus',
+        codeExample: `
+val mediaFocusRequest = AudioFocusRequest.Builder(
+    AudioManager.AUDIOFOCUS_GAIN
+).apply {
+    setAudioAttributes(AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_MEDIA)
+        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+        .build())
+    setOnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS -> player.pause()
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> player.pause()
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> player.setVolume(0.3f)
+            AudioManager.AUDIOFOCUS_GAIN -> player.setVolume(1.0f)
+        }
+    }
+}.build()
+
+audioManager.requestAudioFocus(mediaFocusRequest)
+        `.trim()
+    },
+
+    'Navigation Audio Request': {
+        title: 'Navigation Audio Focus Request',
+        layer: 'Audio Focus',
+        description: 'Requests audio focus for navigation guidance. (USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)',
+        components: [
+            'USAGE_ASSISTANCE_NAVIGATION_GUIDANCE',
+            'AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK',
+            'High Priority',
+            'Ducks Media Audio',
+            'Short Duration'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media-apps/audio-focus',
+        codeExample: `
+val navFocusRequest = AudioFocusRequest.Builder(
+    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+).apply {
+    setAudioAttributes(AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+        .build())
+    setOnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                tts.speak("Turn left in 500 meters", TextToSpeech.QUEUE_FLUSH, null, null)
+            }
+        }
+    }
+}.build()
+
+audioManager.requestAudioFocus(navFocusRequest)
+        `.trim()
+    },
+
+    'Media Player': {
+        title: 'Media Player',
+        layer: 'Application',
+        description: 'Actual media player implementation.',
+        components: [
+            'ExoPlayer',
+            'MediaPlayer',
+            'Custom Player',
+            'Playback Engine'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media/media3'
+    },
+
+    'Notification': {
+        title: 'Media Notification',
+        layer: 'Framework',
+        description: 'Displays currently playing media information as a notification.',
+        components: [
+            'Media Style Notification',
+            'Transport Controls',
+            'Artwork Display',
+            'Compact View'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media-apps/mediabuttons'
+    },
+
+    'Android Auto': {
+        title: 'Android Auto',
+        layer: 'Platform',
+        description: 'Displays media apps on vehicle displays.',
+        components: [
+            'Media Browser Service',
+            'Automotive App Library',
+            'Voice Control',
+            'Safety Guidelines'
+        ],
+        doc: 'https://developer.android.com/training/cars/media'
+    },
+
+    'Wear OS': {
+        title: 'Wear OS',
+        layer: 'Platform',
+        description: 'Controls media on wearable devices.',
+        components: [
+            'Media Controls',
+            'Complications',
+            'Voice Commands',
+            'Offline Playback'
+        ],
+        doc: 'https://developer.android.com/training/wearables/media'
+    },
+
+    'Google Assistant': {
+        title: 'Google Assistant (GAS)',
+        layer: 'Google Services',
+        description: 'Google\'s AI voice assistant. Controls via voice commands in vehicles.',
+        components: [
+            'Voice Recognition',
+            'Natural Language Processing',
+            'Context Awareness',
+            'Car Integration',
+            'Hotword Detection ("Hey Google")'
+        ],
+        doc: 'https://developers.google.com/assistant/automotive',
+        codeExample: `
+<intent-filter>
+    <action android:name="android.intent.action.ASSIST" />
+    <category android:name="android.intent.category.DEFAULT" />
+</intent-filter>
+        `.trim()
+    },
+
+    'Vehicle HAL': {
+        title: 'Vehicle HAL (VHAL)',
+        layer: 'HAL',
+        description: 'Hardware Abstraction Layer for vehicle hardware. Acts as an interface between ECU and Android.',
+        components: [
+            'Vehicle Properties (speed, RPM, gear, etc.)',
+            'CAN Bus Communication',
+            'Property Get/Set/Subscribe',
+            'Area-based Property (by Zone)',
+            'Property Change Event'
+        ],
+        path: 'hardware/interfaces/automotive/vehicle/',
+        doc: 'https://source.android.com/docs/automotive/vhal',
+        codeExample: `
+val carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+val speed = carPropertyManager.getFloatProperty(
+    VehiclePropertyIds.PERF_VEHICLE_SPEED,
+    VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL
+)
+carPropertyManager.registerCallback(callback,
+    VehiclePropertyIds.PERF_VEHICLE_SPEED,
+    CarPropertyManager.SENSOR_RATE_NORMAL)
+        `.trim()
+    },
+
+    'Car Service': {
+        title: 'Car Service',
+        layer: 'Framework',
+        description: 'Core system service for AAOS. Provides vehicle-specific functionality.',
+        components: [
+            'CarAudioService - Audio Management',
+            'CarPowerManagementService - Power Management',
+            'CarUserService - User Switching',
+            'CarInputService - Input Events',
+            'CarPropertyService - Vehicle Property',
+            'CarDrivingStateService - Driving State'
+        ],
+        path: 'packages/services/Car/service/',
+        doc: 'https://source.android.com/docs/automotive/start/car-service',
+        codeExample: `
+val car = Car.createCar(context)
+val carAudioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+val carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+        `.trim()
+    },
+
+    'Car API': {
+        title: 'Car API',
+        layer: 'Framework API',
+        description: 'Android API for automotive apps used by app developers.',
+        components: [
+            'CarAudioManager',
+            'CarPropertyManager',
+            'CarAppFocusManager',
+            'CarNavigationManager',
+            'CarSensorManager'
+        ],
+        path: 'packages/services/Car/car-lib/',
+        doc: 'https://developer.android.com/reference/android/car/package-summary',
+        codeExample: `
+dependencies {
+    implementation 'androidx.car.app:app:1.3.0'
+}
+class MyCarActivity : Activity() {
+    private lateinit var car: Car
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        car = Car.createCar(this)
+    }
+}
+        `.trim()
+    },
+
+    'Electronic Control Unit': {
+        title: 'ECU (Electronic Control Unit)',
+        layer: 'Hardware',
+        description: 'Vehicle electronic control unit. Controls engine, transmission, brakes, etc.',
+        components: [
+            'Engine Control Module (ECM)',
+            'Transmission Control Unit (TCU)',
+            'Body Control Module (BCM)',
+            'CAN Bus Protocol',
+            'LIN Bus Protocol'
+        ],
+        doc: 'https://source.android.com/docs/automotive/vhal'
+    },
+
+    'CAN Bus': {
+        title: 'CAN Bus',
+        layer: 'Hardware',
+        description: 'Controller Area Network. Network bus for communication between ECUs in a vehicle.',
+        components: [
+            'CAN High/Low Signal',
+            'Message ID-based Priority',
+            'CAN 2.0A/B Protocol',
+            'Up to 1Mbps Transfer Speed',
+            'Multi-master Communication'
+        ],
+        doc: 'https://en.wikipedia.org/wiki/CAN_bus'
+    },
+
+    'AAOS Operating System': {
+        title: 'Android Automotive OS',
+        layer: 'OS',
+        description: 'Android OS for vehicle infotainment systems.',
+        components: [
+            'AOSP Base + Car Extensions',
+            'Multi-user Support',
+            'Boot Animation',
+            'System UI (Car Launcher)',
+            'Google Automotive Services (Optional)'
+        ],
+        path: 'platform/packages/services/Car/',
+        doc: 'https://source.android.com/docs/automotive'
+    },
+
+    'Android Auto App': {
+        title: 'Android Auto Projection',
+        layer: 'Application',
+        description: 'Projects the smartphone Android Auto app to the vehicle display.',
+        components: [
+            'Phone Projection',
+            'Media Browsing',
+            'Navigation',
+            'Voice Control',
+            'Messaging (Limited)'
+        ],
+        doc: 'https://www.android.com/auto/'
+    },
+
+    'Car Property Manager': {
+        title: 'CarPropertyManager',
+        layer: 'Framework',
+        description: 'Manager for querying and changing Vehicle Properties.',
+        components: [
+            'Property Get/Set',
+            'Subscribe to Changes',
+            'Area-based Access',
+            'Permission Check'
+        ],
+        path: 'packages/services/Car/car-lib/src/android/car/hardware/property/',
+        doc: 'https://developer.android.com/reference/android/car/hardware/property/CarPropertyManager'
+    },
+
+    'Vehicle Properties': {
+        title: 'Vehicle Properties',
+        layer: 'Data',
+        description: 'Properties representing vehicle state and settings.',
+        components: [
+            'PERF_VEHICLE_SPEED - Speed',
+            'ENGINE_RPM - Engine RPM',
+            'GEAR_SELECTION - Gear',
+            'NIGHT_MODE - Night Mode',
+            'HVAC_TEMPERATURE - Temperature',
+            '400+ Properties Defined'
+        ],
+        path: 'hardware/interfaces/automotive/vehicle/aidl/',
+        doc: 'https://source.android.com/docs/automotive/vhal/property-configuration'
+    },
+
+    'Demuxer': {
+        title: 'Demuxer',
+        layer: 'Parser',
+        description: 'Separates audio/video tracks from the container.',
+        components: [
+            'MP4 Demuxer',
+            'MKV Demuxer',
+            'WebM Demuxer',
+            'TS Demuxer',
+            'Track Selection'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'Decryptor': {
+        title: 'Content Decryptor',
+        layer: 'Security',
+        description: 'Decrypts DRM-protected content.',
+        components: [
+            'MediaDrm Integration',
+            'Key Management',
+            'Sample Decryption',
+            'Widevine/PlayReady Support'
+        ],
+        doc: 'https://developer.android.com/guide/topics/media/media3/getting-started/migration-guide#drm_and_decryption'
+    },
+
+    'MediaProvider': {
+        title: 'MediaProvider',
+        layer: 'Content Provider',
+        description: 'Content Provider that manages metadata of media files.',
+        components: [
+            'Media Database (SQLite)',
+            'File Scanning',
+            'Thumbnail Generation',
+            'MediaStore API',
+            'Storage Access Framework'
+        ],
+        path: 'packages/providers/MediaProvider/',
+        doc: 'https://source.android.com/docs/core/storage/mediaprovider',
+        codeExample: `
+val projection = arrayOf(
+    MediaStore.Audio.Media._ID,
+    MediaStore.Audio.Media.DISPLAY_NAME,
+    MediaStore.Audio.Media.DURATION
+)
+
+val cursor = contentResolver.query(
+    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+    projection,
+    null,
+    null,
+    "\${MediaStore.Audio.Media.DISPLAY_NAME} ASC"
+)
+        `.trim()
+    },
+
+    'MediaStore API': {
+        title: 'MediaStore',
+        layer: 'Framework API',
+        description: 'Android API for accessing media files.',
+        components: [
+            'MediaStore.Images',
+            'MediaStore.Audio',
+            'MediaStore.Video',
+            'MediaStore.Files',
+            'Scoped Storage (Android 10+)'
+        ],
+        path: 'frameworks/base/core/java/android/provider/MediaStore.java',
+        doc: 'https://developer.android.com/reference/android/provider/MediaStore'
+    },
+
+    'Media Scanner': {
+        title: 'MediaScanner',
+        layer: 'Service',
+        description: 'Scans the file system to find media files and adds them to the database.',
+        components: [
+            'File Discovery',
+            'Metadata Extraction',
+            'Database Update',
+            'Thumbnail Generation',
+            'Broadcast on Complete'
+        ],
+        path: 'packages/providers/MediaProvider/src/com/android/providers/media/',
+        doc: 'https://source.android.com/docs/core/storage/mediaprovider'
+    },
+
+    'Media Database': {
+        title: 'Media Database',
+        layer: 'Storage',
+        description: 'SQLite database that stores metadata of media files.',
+        components: [
+            'files table (all files)',
+            'audio_meta table (audio)',
+            'video table (video)',
+            'images table (images)',
+            'Indexed Columns (fast search)'
+        ],
+        path: 'packages/providers/MediaProvider/src/com/android/providers/media/MediaProvider.java',
+        doc: 'https://source.android.com/docs/core/storage/mediaprovider'
+    },
+
+    'ContentResolver': {
+        title: 'ContentResolver',
+        layer: 'Framework',
+        description: 'Client API for accessing Content Providers.',
+        components: [
+            'query() - Query data',
+            'insert() - Insert data',
+            'update() - Update data',
+            'delete() - Delete data',
+            'registerContentObserver() - Detect changes'
+        ],
+        path: 'frameworks/base/core/java/android/content/ContentResolver.java',
+        doc: 'https://developer.android.com/reference/android/content/ContentResolver',
+        codeExample: `
+val projection = arrayOf(
+    MediaStore.Audio.Media._ID,
+    MediaStore.Audio.Media.TITLE,
+    MediaStore.Audio.Media.ARTIST
+)
+val cursor = contentResolver.query(
+    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+    projection,
+    null, null,
+    "\${MediaStore.Audio.Media.TITLE} ASC"
+)
+cursor?.use {
+    while (it.moveToNext()) {
+        val title = it.getString(1)
+    }
+}
+        `.trim()
+    },
+
+    'External Storage': {
+        title: 'External Storage',
+        layer: 'Storage',
+        description: 'SD card or internal shared storage. Access is restricted via Scoped Storage on Android 10+.',
+        components: [
+            '/storage/emulated/0/ (Primary)',
+            '/storage/[UUID]/ (Secondary)',
+            'DCIM/, Pictures/, Music/, Movies/, etc.',
+            'Scoped Storage (Android 10+)',
+            'MANAGE_EXTERNAL_STORAGE (Android 11+)'
+        ],
+        doc: 'https://developer.android.com/training/data-storage',
+        codeExample: `
+val contentValues = ContentValues().apply {
+    put(MediaStore.MediaColumns.DISPLAY_NAME, "photo.jpg")
+    put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DCIM)
+}
+
+val uri = contentResolver.insert(
+    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+    contentValues
+)
+
+uri?.let {
+    contentResolver.openOutputStream(it)?.use { outputStream ->
+    }
+}
+        `.trim()
+    },
+
+    'Internal Storage': {
+        title: 'Internal Storage',
+        layer: 'Storage',
+        description: 'App-private internal storage. Cannot be accessed by other apps or users directly.',
+        components: [
+            '/data/data/[package_name]/',
+            'files/ - getFilesDir()',
+            'cache/ - getCacheDir()',
+            'databases/ - SQLite',
+            'shared_prefs/ - SharedPreferences',
+            'Private (deleted on uninstall)'
+        ],
+        path: 'frameworks/base/core/java/android/app/ContextImpl.java',
+        doc: 'https://developer.android.com/training/data-storage/app-specific',
+        codeExample: `
+val file = File(context.filesDir, "myfile.txt")
+file.writeText("Hello, World!")
+val text = file.readText()
+val cacheFile = File(context.cacheDir, "temp.dat")
+        `.trim()
+    },
+
+    'FUSE Daemon': {
+        title: 'FUSE Daemon (File System in Userspace)',
+        layer: 'Native Daemon',
+        description: 'FUSE-based file system where MediaProvider controls storage access on Android 11+.',
+        components: [
+            'Scoped Storage Enforcement',
+            'File Redaction (location removal)',
+            'Permission Check',
+            'MediaProvider Integration',
+            '/storage/emulated mount'
+        ],
+        path: 'packages/providers/MediaProvider/jni/FuseDaemon.cpp',
+        doc: 'https://source.android.com/docs/core/storage/scoped',
+        codeExample: `
+/*
+When app accesses /storage/emulated/0/DCIM/photo.jpg:
+1. FUSE Daemon intercepts request
+2. Checks permission with MediaProvider
+3. Returns actual file if permitted
+4. Returns EACCES error if not permitted
+*/
+val file = File("/storage/emulated/0/DCIM/photo.jpg")
+file.exists() // false (hidden by FUSE)
+        `.trim()
+    },
+
+    'Legacy File System': {
+        title: 'Legacy File System Access',
+        layer: 'Storage Access',
+        description: 'Direct file access method used on Android 9 and below.',
+        components: [
+            'File() direct access',
+            'java.io.FileInputStream',
+            'java.io.FileOutputStream',
+            'WRITE_EXTERNAL_STORAGE permission',
+            'READ_EXTERNAL_STORAGE permission',
+            'Deprecated on Android 10+'
+        ],
+        doc: 'https://developer.android.com/about/versions/10/privacy/changes#scoped-storage',
+        codeExample: `
+
+val file = File(Environment.getExternalStorageDirectory(), "DCIM/photo.jpg")
+if (file.exists()) {
+    val inputStream = FileInputStream(file)
+}
+        `.trim()
+    },
+
+    'Legacy Permissions': {
+        title: 'Legacy Storage Permissions',
+        layer: 'Permissions',
+        description: 'Storage permission system used on Android 9 and below.',
+        components: [
+            'READ_EXTERNAL_STORAGE',
+            'WRITE_EXTERNAL_STORAGE',
+            'Runtime Permission (Android 6+)',
+            'Full Storage Access',
+            'Limited on Android 10+'
+        ],
+        doc: 'https://developer.android.com/training/permissions/requesting',
+        codeExample: `
+if (ContextCompat.checkSelfPermission(this,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    != PackageManager.PERMISSION_GRANTED) {
+
+    ActivityCompat.requestPermissions(this,
+        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+        REQUEST_CODE)
+}
+        `.trim()
+    },
+
+    'Scoped Storage App': {
+        title: 'Scoped Storage App Access',
+        layer: 'Storage Access',
+        description: 'Restricted storage access method for apps on Android 10+.',
+        components: [
+            'Use MediaStore API',
+            'Direct access to app directory',
+            'SAF (Storage Access Framework)',
+            'Photo Picker (Android 13+)',
+            'No Full Storage Access'
+        ],
+        doc: 'https://developer.android.com/training/data-storage#scoped-storage',
+        codeExample: `
+val projection = arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DISPLAY_NAME)
+val cursor = contentResolver.query(
+    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+    projection,
+    null,
+    null,
+    null
+)
+
+cursor?.use {
+    while (it.moveToNext()) {
+        val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
+        val uri = ContentUris.withAppendedId(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id
+        )
+    }
+}
+        `.trim()
+    },
+
+    'Scoped Media Access': {
+        title: 'Scoped Media Access',
+        layer: 'Permissions',
+        description: 'Granular media permissions introduced in Android 13+.',
+        components: [
+            'READ_MEDIA_IMAGES',
+            'READ_MEDIA_VIDEO',
+            'READ_MEDIA_AUDIO',
+            'READ_MEDIA_VISUAL_USER_SELECTED (Android 14+)',
+            'Media type-specific permissions'
+        ],
+        doc: 'https://developer.android.com/about/versions/13/behavior-changes-13#granular-media-permissions',
+        codeExample: `
+val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    arrayOf(
+        Manifest.permission.READ_MEDIA_IMAGES,
+        Manifest.permission.READ_MEDIA_VIDEO,
+        Manifest.permission.READ_MEDIA_AUDIO
+    )
+} else {
+    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+}
+
+ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+}
+        `.trim()
+    },
+
+    'Scoped Own Files': {
+        title: 'Scoped Own Files Access',
+        layer: 'Storage Access',
+        description: 'Direct access permission for files created by the app.',
+        components: [
+            'App-Created Files',
+            'No Permission Required',
+            'MediaStore.IS_PENDING',
+            'Automatic Access',
+            'Delete/Modify Allowed'
+        ],
+        doc: 'https://developer.android.com/training/data-storage/shared/media#own-files',
+        codeExample: `
+val contentValues = ContentValues().apply {
+    put(MediaStore.MediaColumns.DISPLAY_NAME, "my_photo.jpg")
+    put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+    put(MediaStore.MediaColumns.IS_PENDING, 1) // Writing in progress
+}
+
+val uri = contentResolver.insert(
+    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+    contentValues
+)
+
+uri?.let {
+    contentResolver.openOutputStream(it)?.use { stream ->
+    }
+    contentValues.clear()
+    contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+    contentResolver.update(it, contentValues, null, null)
+}
+        `.trim()
+    },
+
+    'Storage Access Framework': {
+        title: 'Storage Access Framework (SAF)',
+        layer: 'Framework',
+        description: 'Storage access method via system UI where users select files.',
+        components: [
+            'ACTION_OPEN_DOCUMENT',
+            'ACTION_CREATE_DOCUMENT',
+            'ACTION_OPEN_DOCUMENT_TREE',
+            'Document Provider',
+            'User-Granted Access',
+            'No Permission Required'
+        ],
+        path: 'frameworks/base/core/java/android/provider/DocumentsContract.java',
+        doc: 'https://developer.android.com/guide/topics/providers/document-provider',
+        codeExample: `
+val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+    addCategory(Intent.CATEGORY_OPENABLE)
+    type = "image/*"
+}
+startActivityForResult(intent, REQUEST_CODE)
+override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    if (requestCode == REQUEST_CODE && resultCode == RESULT_OK) {
+        data?.data?.let { uri ->
+            contentResolver.openInputStream(uri)?.use { stream ->
+            }
+        }
+    }
+}
+val treeIntent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+startActivityForResult(treeIntent, TREE_REQUEST_CODE)
+        `.trim()
+    },
+
+    'Android OS Core': {
+        title: 'Android OS Core (AOSP)',
+        layer: 'Operating System',
+        description: 'AOSP-based Android OS core. Includes Linux Kernel and HAL.',
+        components: [
+            'Linux Kernel',
+            'Hardware Abstraction Layer (HAL)',
+            'Native Libraries (libc, SQLite)',
+            'Android Runtime (ART)',
+            'Binder IPC'
+        ],
+        doc: 'https://source.android.com/',
+        codeExample: `
+/*
+[Android OS Core]
+├── Linux Kernel (Device Drivers, Memory Management)
+├── HAL (Audio, Camera, Sensors, Vehicle)
+├── Native Libraries (WebKit, OpenGL, Media Framework)
+└── ART (Android Runtime, Dalvik VM)
+*/
+        `.trim()
+    },
+
+    'Google Maps': {
+        title: 'Google Maps & Navigation (GAS)',
+        layer: 'Google Services',
+        description: 'Google\'s map and navigation service.',
+        components: [
+            'Real-time Navigation',
+            'Traffic Information',
+            'Points of Interest',
+            'Turn-by-Turn Directions',
+            'Car-optimized UI'
+        ],
+        doc: 'https://developers.google.com/maps',
+        codeExample: `
+val gmmIntentUri = Uri.parse("google.navigation:q=Starbucks")
+val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+mapIntent.setPackage("com.google.android.apps.maps")
+startActivity(mapIntent)
+        `.trim()
+    },
+
+    'Google Play Store': {
+        title: 'Google Play Store (GAS)',
+        layer: 'Google Services',
+        description: 'Downloads and updates automotive apps.',
+        components: [
+            'App Discovery',
+            'App Installation',
+            'Auto Updates',
+            'Car App Filtering',
+            'License Verification'
+        ],
+        doc: 'https://developer.android.com/distribute/google-play',
+        codeExample: `
+val appUpdateManager = AppUpdateManagerFactory.create(context)
+val appUpdateInfoTask = appUpdateManager.appUpdateInfo
+
+appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
+    if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
+    }
+}
+        `.trim()
+    },
+
+    'Google Play Services': {
+        title: 'Google Play Services (GAS)',
+        layer: 'Google Services',
+        description: 'Common service layer for Google apps. Provides authentication, location, maps, etc.',
+        components: [
+            'Google APIs (Maps, Drive, etc.)',
+            'Location Services',
+            'Google Sign-In',
+            'Firebase Integration',
+            'SafetyNet'
+        ],
+        doc: 'https://developers.google.com/android/guides/overview',
+        codeExample: `
+val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+    if (location != null) {
+        val latitude = location.latitude
+        val longitude = location.longitude
+    }
+}
+        `.trim()
+    },
+
+    'Other Google Apps': {
+        title: 'Other Google Apps (YouTube Music, Chrome, etc.)',
+        layer: 'Google Services',
+        description: 'Other Google apps included in GAS.',
+        components: [
+            'YouTube Music',
+            'Chrome Browser',
+            'Google Messages',
+            'Google Calendar',
+            'Google News'
+        ],
+        doc: 'https://www.android.com/intl/en_us/auto/',
+        codeExample: `
+val intent = Intent(Intent.ACTION_VIEW)
+intent.setPackage("com.google.android.apps.youtube.music")
+intent.data = Uri.parse("https://music.youtube.com/")
+startActivity(intent)
+        `.trim()
+    },
+
+    'OEM Apps': {
+        title: 'OEM Apps (Climate, Radio, etc.)',
+        layer: 'OEM Customization',
+        description: 'OEM-developed vehicle-specific apps.',
+        components: [
+            'Climate Control App',
+            'Radio/Tuner App',
+            'Vehicle Settings',
+            'Charging Status (EV)',
+            'OEM Services'
+        ],
+        doc: 'https://source.android.com/docs/automotive/start/app-dev',
+        codeExample: `
+class ClimateControlActivity : AppCompatActivity() {
+    private val carPropertyManager by lazy {
+        car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+    }
+
+    fun setTemperature(zone: Int, temperature: Float) {
+        carPropertyManager.setFloatProperty(
+            VehiclePropertyIds.HVAC_TEMPERATURE_SET,
+            zone,
+            temperature
+        )
+    }
+}
+        `.trim()
+    },
+
+    'OEM UI': {
+        title: 'OEM Custom UI/UX',
+        layer: 'OEM Customization',
+        description: 'OEM-customized UI/UX.',
+        components: [
+            'Custom Launcher',
+            'System UI Theme',
+            'Navigation Bar',
+            'Notification Shade',
+            'Brand Identity'
+        ],
+        doc: 'https://source.android.com/docs/automotive/start/customization',
+        codeExample: `
+<application>
+    <activity android:name=".OemLauncher">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent-filter>
+    </activity>
+</application>
+        `.trim()
+    },
+
+    '3rd Party Apps': {
+        title: '3rd Party Apps (Spotify, Waze, etc.)',
+        layer: 'User Applications',
+        description: 'Third-party apps installed by users.',
+        components: [
+            'Spotify (Music)',
+            'Waze (Navigation)',
+            'Audible (Audiobooks)',
+            'Pocket Casts (Podcasts)',
+            'Car-compatible Apps'
+        ],
+        doc: 'https://developer.android.com/training/cars',
+        codeExample: `
+<application>
+    <meta-data
+        android:name="com.google.android.gms.car.application"
+        android:resource="@xml/automotive_app_desc" />
+</application>
+<automotiveApp>
+    <uses name="media" />
+    <uses name="navigation" />
+</automotiveApp>
+        `.trim()
+    },
+
+    'Camera API 1': {
+        title: 'Camera API 1 (Deprecated)',
+        layer: 'Framework API',
+        description: 'Early Android camera API. (Deprecated in Android 5.0)',
+        components: [
+            'Camera.open()',
+            'Camera.Parameters',
+            'Preview Callback',
+            'Auto Focus',
+            'Simple API'
+        ],
+        path: 'frameworks/base/core/java/android/hardware/Camera.java',
+        doc: 'https://developer.android.com/reference/android/hardware/Camera'
+    },
+
+    'Camera API 2': {
+        title: 'Camera2 API',
+        layer: 'Framework API',
+        description: 'Advanced camera API introduced in Android 5.0.',
+        components: [
+            'CameraManager',
+            'CameraDevice',
+            'CaptureRequest',
+            'CaptureResult',
+            'Manual Control (ISO, exposure, etc.)',
+            'RAW Capture Support'
+        ],
+        path: 'frameworks/base/core/java/android/hardware/camera2/',
+        doc: 'https://developer.android.com/training/camera2',
+        codeExample: `
+val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+val cameraId = cameraManager.cameraIdList[0]
+
+cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
+    override fun onOpened(camera: CameraDevice) {
+    }
+    override fun onDisconnected(camera: CameraDevice) {}
+    override fun onError(camera: CameraDevice, error: Int) {}
+}, handler)
+        `.trim()
+    },
+
+    'CameraX': {
+        title: 'CameraX',
+        layer: 'Jetpack Library',
+        description: 'High-level Jetpack library that hides Camera2 complexity.',
+        components: [
+            'Preview - Preview',
+            'ImageCapture - Photo capture',
+            'ImageAnalysis - Image analysis',
+            'VideoCapture - Video recording',
+            'Lifecycle-aware',
+            'Auto device compatibility handling'
+        ],
+        doc: 'https://developer.android.com/training/camerax',
+        codeExample: `
+val preview = Preview.Builder().build()
+val imageCapture = ImageCapture.Builder().build()
+
+val cameraProvider = ProcessCameraProvider.getInstance(context).get()
+cameraProvider.bindToLifecycle(
+    lifecycleOwner,
+    CameraSelector.DEFAULT_BACK_CAMERA,
+    preview,
+    imageCapture
+)
+        `.trim()
+    },
+
+    'OpenSL ES': {
+        title: 'OpenSL ES',
+        layer: 'NDK Audio API',
+        description: 'Audio API in Android NDK. Enables low-level audio control in C/C++.',
+        components: [
+            'Audio Playback',
+            'Audio Recording',
+            'Buffer Queue',
+            'Effects',
+            'Low Latency (Fast Track)'
+        ],
+        path: 'frameworks/wilhelm/',
+        doc: 'https://developer.android.com/ndk/guides/audio/opensl',
+        codeExample: `
+SLObjectItf engineObject;
+slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);
+(*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
+
+SLEngineItf engine;
+(*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engine);
+        `.trim()
+    },
+
+    'Compatibility Test Suite': {
+        title: 'CTS (Compatibility Test Suite)',
+        layer: 'Testing',
+        description: 'Automated test suite for verifying Android compatibility.',
+        components: [
+            'API Tests',
+            'Media Tests',
+            'Audio Tests',
+            'Camera Tests',
+            'Performance Tests',
+            '10,000+ Test Cases'
+        ],
+        doc: 'https://source.android.com/docs/compatibility/cts',
+        codeExample: `
+# Run CTS
+./cts-tradefed run cts
+
+# Run specific module
+./cts-tradefed run cts -m CtsMediaTestCases
+
+# Retry failed tests
+./cts-tradefed run retry --retry <session_id>
+        `.trim()
+    },
+
+    'Vendor Test Suite': {
+        title: 'VTS (Vendor Test Suite)',
+        layer: 'Testing',
+        description: 'Test suite for verifying HAL implementations.',
+        components: [
+            'HAL Interface Tests',
+            'Kernel Tests',
+            'Performance Tests',
+            'Security Tests'
+        ],
+        doc: 'https://source.android.com/docs/compatibility/vts'
+    },
+
+    'GMS Test Suite': {
+        title: 'GTS (GMS Test Suite)',
+        layer: 'Testing',
+        description: 'Tests Google Mobile Services compatibility.',
+        components: [
+            'Google Play Services Tests',
+            'Google Apps Tests',
+            'GMS Core Tests'
+        ],
+        doc: 'https://source.android.com/docs/compatibility'
+    },
+
+    'Compatibility Definition Document': {
+        title: 'CDD (Compatibility Definition Document)',
+        layer: 'Policy',
+        description: 'Defines requirements that Android-compatible devices must meet.',
+        components: [
+            'Hardware Requirements',
+            'Software Requirements',
+            'Performance Requirements',
+            'Security Requirements',
+            'Media Codec Requirements'
+        ],
+        doc: 'https://source.android.com/docs/compatibility/cdd',
+        codeExample: `
+# CDD key requirement examples
+
+[7.5/H-1-1] Must support at least 1 H.264 decoder
+[7.5/H-1-2] Must support AAC decoder
+[5.1/C-1-1] Must support at least 44.1kHz sample rate
+[5.4/H-1-1] Audio latency < 100ms (Pro Audio)
+        `.trim()
+    },
+
+    'System Services': {
+        title: 'System Services',
+        layer: 'Framework',
+        description: 'Core system services running in the system_server process.',
+        components: [
+            'ActivityManagerService (AMS)',
+            'WindowManagerService (WMS)',
+            'PackageManagerService (PMS)',
+            'NotificationManagerService',
+            'PowerManagerService',
+            'LocationManagerService'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/',
+        doc: 'https://source.android.com/docs/core/architecture/services'
+    },
+
+    'Application Layer': {
+        title: 'Application Layer',
+        layer: 'Application',
+        description: 'Top-level layer where Android apps run.',
+        components: [
+            'System Apps',
+            'Third-party Apps',
+            'Activity',
+            'Service',
+            'Broadcast Receiver',
+            'Content Provider'
+        ],
+        doc: 'https://developer.android.com/guide/components/fundamentals'
+    },
+
+    'HAL Layer': {
+        title: 'HAL Layer',
+        layer: 'HAL',
+        description: 'Hardware Abstraction Layer that abstracts vendor-specific hardware implementations.',
+        components: [
+            'Audio HAL',
+            'Camera HAL',
+            'Sensors HAL',
+            'Graphics HAL',
+            'Codec HAL',
+            'Vehicle HAL (AAOS)'
+        ],
+        path: 'hardware/interfaces/',
+        doc: 'https://source.android.com/docs/core/architecture/hal'
+    },
+
+    'Binder IPC': {
+        title: 'Binder IPC',
+        layer: 'IPC',
+        description: 'Inter-process communication between Client-Server.',
+        components: [
+            'IMediaPlayer',
+            'IMediaCodec',
+            'IMediaDrm',
+            'Parcel'
+        ]
+    },
+
+    'Proxy': {
+        title: 'Binder Proxy',
+        layer: 'IPC',
+        description: 'Client-side proxy object in Binder IPC.',
+        components: [
+            'Method Call Forwarding',
+            'Parcel Serialization',
+            'Transaction',
+            'Death Recipient'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture/aidl/binder-ipc'
+    },
+
+    'Stub': {
+        title: 'Binder Stub',
+        layer: 'IPC',
+        description: 'Server-side stub object in Binder IPC.',
+        components: [
+            'Method Implementation',
+            'Parcel Deserialization',
+            'onTransact()',
+            'Thread Pool'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture/aidl/binder-ipc'
+    },
+
+    'ServiceManager': {
+        title: 'Service Manager',
+        layer: 'System Service',
+        description: 'Central registry for registering and looking up Binder services.',
+        components: [
+            'Service Registration',
+            'Service Lookup',
+            'Binder Context Manager',
+            'Access Control (SELinux)'
+        ],
+        path: 'frameworks/native/cmds/servicemanager/',
+        doc: 'https://source.android.com/docs/core/architecture/aidl/binder-ipc'
+    },
+
+    'HIDL': {
+        title: 'HIDL (HAL Interface Definition Language)',
+        layer: 'HAL Interface',
+        description: 'HAL interface definition language introduced in Android 8.0.',
+        components: [
+            'HAL Interface Definition',
+            'Binderized HAL',
+            'Passthrough HAL',
+            'hwservicemanager',
+            'Code Generation'
+        ],
+        path: 'system/libhidl/',
+        doc: 'https://source.android.com/docs/core/architecture/hidl'
+    },
+
+    'Camera Service': {
+        title: 'Camera Service',
+        layer: 'Native Service',
+        description: 'System service that manages camera devices and provides camera access to apps.',
+        components: [
+            'Camera Device Management',
+            'Camera Session',
+            'Preview Stream',
+            'Capture Request',
+            'Camera Metadata'
+        ],
+        path: 'frameworks/av/services/camera/',
+        doc: 'https://source.android.com/docs/core/camera'
+    },
+
+    'Codec Service': {
+        title: 'Codec Service',
+        layer: 'Native Service',
+        description: 'Codec service for MediaCodec.',
+        components: [
+            'Codec Resource Management',
+            'Codec Component Store',
+            'Buffer Management',
+            'Codec2 Support'
+        ],
+        path: 'frameworks/av/services/mediacodec/',
+        doc: 'https://source.android.com/docs/core/media/codec'
+    },
+
+    'VNDK': {
+        title: 'Vendor Native Development Kit',
+        layer: 'System-Vendor Interface',
+        description: 'Stable native library interface between system and vendor partitions.',
+        components: [
+            'VNDK-core (LL-NDK)',
+            'VNDK-SP (Same-Process)',
+            'Vendor Libraries',
+            'ABI Stability'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture/vndk'
+    },
+
+    'System Partition': {
+        title: 'System Partition',
+        layer: 'System',
+        description: 'Read-only partition containing AOSP code.',
+        components: [
+            'Framework',
+            'System Apps',
+            'Native Libraries',
+            'System Services'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture'
+    },
+
+    'Vendor Partition': {
+        title: 'Vendor Partition',
+        layer: 'Vendor',
+        description: 'Partition containing vendor-specific HAL implementations.',
+        components: [
+            'HAL Implementations',
+            'Vendor Libraries',
+            'Firmware',
+            'Device Config'
+        ],
+        doc: 'https://source.android.com/docs/core/architecture'
+    },
+
+    'Daemons': {
+        title: 'Native Daemons',
+        layer: 'Native Service',
+        description: 'Background daemon processes written in C/C++.',
+        components: [
+            'vold (Volume Daemon)',
+            'netd (Network Daemon)',
+            'installd (Install Daemon)',
+            'logd (Log Daemon)',
+            'adbd (ADB Daemon)'
+        ],
+        path: 'system/core/',
+        doc: 'https://source.android.com/docs/core/architecture'
+    },
+
+    'Display': {
+        title: 'Display Driver',
+        layer: 'Kernel Driver',
+        description: 'Kernel driver that controls display hardware.',
+        components: [
+            'Display Controller',
+            'DRM/KMS',
+            'Framebuffer',
+            'HDMI/DP/MIPI'
+        ],
+        doc: 'https://source.android.com/docs/core/graphics'
+    },
+
+    'Media Router': {
+        title: 'Media Router',
+        layer: 'Framework',
+        description: 'Framework for routing media to multiple output devices.',
+        components: [
+            'Route Discovery',
+            'Chromecast Support',
+            'Audio Output Selection',
+            'Video Output Selection'
+        ],
+        path: 'frameworks/base/media/java/android/media/',
+        doc: 'https://developer.android.com/guide/topics/media/routing'
+    },
+
+    'Media API': {
+        title: 'Media API',
+        layer: 'Framework',
+        description: 'Android media playback/recording API.',
+        components: [
+            'MediaPlayer',
+            'MediaRecorder',
+            'MediaCodec',
+            'AudioTrack',
+            'AudioRecord'
+        ],
+        path: 'frameworks/base/media/java/android/media/',
+        doc: 'https://developer.android.com/guide/topics/media'
+    },
+
+    'Stagefright': {
+        title: 'Stagefright',
+        layer: 'Native Library',
+        description: 'Native media framework in Android.',
+        components: [
+            'MediaExtractor',
+            'MediaMuxer',
+            'OMX IL',
+            'Codec2 Wrapper',
+            'Container Parsing'
+        ],
+        path: 'frameworks/av/media/libstagefright/',
+        doc: 'https://source.android.com/docs/core/media'
+    },
+
+    'Client': {
+        title: 'Binder Client',
+        layer: 'IPC',
+        description: 'Client that invokes services through Binder IPC.',
+        components: [
+            'Proxy Object',
+            'Method Invocation',
+            'IPC Transaction'
+        ]
+    },
+
+    'Server': {
+        title: 'Binder Server',
+        layer: 'IPC',
+        description: 'Server that provides services through Binder IPC.',
+        components: [
+            'Stub Object',
+            'Method Implementation',
+            'Thread Pool'
+        ]
+    },
+
+    'HAL Interface': {
+        title: 'HAL Interface',
+        layer: 'HAL',
+        description: 'HAL interface defined with HIDL or AIDL.',
+        components: [
+            'Interface Definition',
+            'Generated Code',
+            'Version Management'
+        ]
+    },
+
+    'App View': {
+        title: 'App View/Canvas',
+        layer: 'Application',
+        description: 'View hierarchy that draws app UI.',
+        components: [
+            'View Tree',
+            'Canvas API',
+            'Hardware Acceleration',
+            'RenderThread'
+        ],
+        doc: 'https://developer.android.com/guide/topics/ui/how-android-draws'
+    },
+
+    'Lollipop': {
+        title: 'Android 5.0 Lollipop',
+        layer: 'Android Version',
+        description: 'ART runtime default, Camera2 API introduction (2014)',
+        components: [
+            'ART (Replaced Dalvik)',
+            'Camera2 API',
+            'AudioAttributes',
+            'Material Design',
+            '64-bit Support'
+        ],
+        doc: 'https://developer.android.com/about/versions/lollipop'
+    },
+
+    'Marshmallow': {
+        title: 'Android 6.0 Marshmallow',
+        layer: 'Android Version',
+        description: 'Runtime permissions, MIDI API addition (2015)',
+        components: [
+            'Runtime Permissions',
+            'MIDI API',
+            'Doze Mode',
+            'App Standby',
+            'Adoptable Storage'
+        ],
+        doc: 'https://developer.android.com/about/versions/marshmallow'
+    },
+
+    'Features - Lollipop': {
+        title: 'Lollipop Media Features',
+        layer: 'Features',
+        description: 'Media features added in Android 5.0 Lollipop',
+        components: [
+            'Camera2 API',
+            'AudioAttributes',
+            'MediaSession API',
+            'MediaRouter API',
+            'Material Design'
+        ]
+    },
+
+    'Features - Marshmallow': {
+        title: 'Marshmallow Media Features',
+        layer: 'Features',
+        description: 'Media features added in Android 6.0 Marshmallow',
+        components: [
+            'MIDI API',
+            'Audio Capture Improvements',
+            'Camera2 Enhancements',
+            'Runtime Permissions for Media'
+        ]
+    },
+
+    'Features - AAudio': {
+        title: 'AAudio Features',
+        layer: 'Features',
+        description: 'Key features of AAudio API',
+        components: [
+            'Low Latency',
+            'Exclusive Mode',
+            'MMAP',
+            'Callback-driven'
+        ]
+    },
+
+    'Features - AudioTrack': {
+        title: 'AudioTrack Features',
+        layer: 'Features',
+        description: 'Key features of AudioTrack API',
+        components: [
+            'PCM Playback',
+            'Static/Streaming',
+            'Volume Control',
+            'Playback Rate'
+        ]
+    },
+
+    'Features - OpenSL ES': {
+        title: 'OpenSL ES Features',
+        layer: 'Features',
+        description: 'Key features of OpenSL ES API',
+        components: [
+            'Native Audio',
+            'Low Latency',
+            'Buffer Queue',
+            'Effects'
+        ]
+    },
+
+    'Camera1 Features': {
+        title: 'Camera API 1 Features',
+        layer: 'Features',
+        description: 'Key features of Camera API 1 (Deprecated)',
+        components: [
+            'Simple Camera Access',
+            'Preview',
+            'Capture',
+            'Auto-focus',
+            'Deprecated in Android 5.0'
+        ]
+    },
+
+    'Camera2 Features': {
+        title: 'Camera API 2 Features',
+        layer: 'Features',
+        description: 'Key features of Camera API 2',
+        components: [
+            'Manual Camera Control',
+            'RAW Capture',
+            'Burst Capture',
+            'Camera2 Session',
+            'CaptureRequest'
+        ]
+    },
+
+    'CameraX Features': {
+        title: 'CameraX Features',
+        layer: 'Features',
+        description: 'Key features of CameraX Jetpack library',
+        components: [
+            'Simplified API',
+            'Use Case-based',
+            'Lifecycle-aware',
+            'Extensions API',
+            'Backward Compatibility'
+        ]
+    },
+
+    'OMX IL': {
+        title: 'OpenMAX IL',
+        layer: 'Codec API',
+        description: 'Codec interface used in Android 4.x~9.x. (Deprecated)',
+        components: [
+            'OMX Component',
+            'Port-based Architecture',
+            'Buffer Management',
+            'State Machine',
+            'Replaced by Codec2'
+        ],
+        path: 'frameworks/av/media/libstagefright/omx/',
+        doc: 'https://source.android.com/docs/core/media/compat'
+    },
+
+    'App1': {
+        title: 'App (Legacy)',
+        layer: 'Application',
+        description: 'Legacy app using OpenMAX IL.',
+        components: [
+            'MediaCodec API',
+            'ACodec',
+            'OpenMAX IL'
+        ]
+    },
+
+    'App2': {
+        title: 'App (Modern)',
+        layer: 'Application',
+        description: 'Modern app using Codec2.',
+        components: [
+            'MediaCodec API',
+            'CCodec',
+            'Codec2 API'
+        ]
+    },
+
+    'MediaCodec1': {
+        title: 'MediaCodec API (Legacy)',
+        layer: 'Framework API',
+        description: 'MediaCodec API using OpenMAX IL.',
+        components: [
+            'ACodec Backend',
+            'Input/Output Buffers',
+            'Async Callback'
+        ],
+        path: 'frameworks/av/media/libstagefright/'
+    },
+
+    'MediaCodec2': {
+        title: 'MediaCodec API (Modern)',
+        layer: 'Framework API',
+        description: 'MediaCodec API using Codec2.',
+        components: [
+            'CCodec Backend',
+            'Input/Output Buffers',
+            'Async Callback',
+            'Better Performance'
+        ],
+        path: 'frameworks/av/media/libstagefright/'
+    },
+
+    'Vendor Codec Library': {
+        title: 'Vendor Codec Library',
+        layer: 'Vendor Implementation',
+        description: 'Hardware codec implementation provided by vendor.',
+        components: [
+            'H.264/H.265 Decoder',
+            'H.264/H.265 Encoder',
+            'VP9/AV1 Decoder',
+            'Hardware Accelerated',
+            'Vendor-specific Optimization'
+        ]
+    },
+
+    'Codec2 Implementation': {
+        title: 'Codec2 Implementation',
+        layer: 'HAL Implementation',
+        description: 'Actual implementation of Codec2 HAL.',
+        components: [
+            'C2Component',
+            'C2ComponentStore',
+            'Software/Hardware Codec',
+            'Modular & Updatable',
+            'Project Mainline Support'
+        ],
+        path: 'hardware/google/av/codec2/',
+        doc: 'https://source.android.com/docs/core/media/codec2'
+    },
+
+    'Codec2 API': {
+        title: 'Codec2 API',
+        layer: 'HAL Interface',
+        description: 'New codec HAL that replaces OpenMAX.',
+        components: [
+            'C2Component Interface',
+            'Parameter-based Configuration',
+            'Work-based Processing',
+            'Better Memory Management',
+            'Reduced Overhead'
+        ],
+        path: 'frameworks/av/media/codec2/',
+        doc: 'https://source.android.com/docs/core/media/codec2'
+    },
+
+    'Legacy': {
+        title: 'Legacy Architecture',
+        layer: 'System',
+        description: 'Legacy codec architecture before Android 10.',
+        components: [
+            'OpenMAX IL',
+            'ACodec',
+            'Tight Coupling',
+            'Difficult to Update'
+        ]
+    },
+
+    'Modern': {
+        title: 'Modern Architecture',
+        layer: 'System',
+        description: 'Modern codec architecture in Android 10+.',
+        components: [
+            'Codec2',
+            'CCodec',
+            'Modular Design',
+            'Project Mainline Support'
+        ]
+    },
+
+    'Gen1': {
+        title: 'Generation 1',
+        layer: 'Evolution',
+        description: 'First generation media architecture.',
+        components: [
+            'OpenCore',
+            'PV Player',
+            'Android 1.x - 2.1'
+        ]
+    },
+
+    'Gen2': {
+        title: 'Generation 2',
+        layer: 'Evolution',
+        description: 'Second generation media architecture.',
+        components: [
+            'Stagefright',
+            'OpenMAX IL',
+            'Android 2.2 - 9.0'
+        ]
+    },
+
+    'Gen3': {
+        title: 'Generation 3',
+        layer: 'Evolution',
+        description: 'Third generation media architecture.',
+        components: [
+            'NuPlayer',
+            'Codec2',
+            'Android 10+'
+        ]
+    },
+
+    'Java': {
+        title: 'Java Layer',
+        layer: 'Framework',
+        description: 'Java framework layer.',
+        components: [
+            'MediaPlayer API',
+            'MediaCodec API',
+            'MediaRecorder API'
+        ]
+    },
+
+    'Native1': {
+        title: 'Native Layer (Legacy)',
+        layer: 'Native',
+        description: 'Legacy native layer.',
+        components: [
+            'Stagefright',
+            'ACodec',
+            'OpenMAX IL'
+        ]
+    },
+
+    'Native2': {
+        title: 'Native Layer (Modern)',
+        layer: 'Native',
+        description: 'Modern native layer.',
+        components: [
+            'NuPlayer',
+            'CCodec',
+            'Codec2'
+        ]
+    },
+
+    'Features': {
+        title: 'Current Features',
+        layer: 'Features',
+        description: 'Currently available features.',
+        components: [
+            'MediaCodec API',
+            'Camera2 API',
+            'AAudio',
+            'Codec2'
+        ]
+    },
+
+    'Future': {
+        title: 'Future Enhancements',
+        layer: 'Roadmap',
+        description: 'Planned future improvements.',
+        components: [
+            'AV1 Hardware Support',
+            'HDR10+ Support',
+            'Spatial Audio',
+            'AI-enhanced Processing'
+        ]
+    },
+
+    'Car App Library': {
+        title: 'Car App Library',
+        layer: 'Framework Library',
+        description: 'App development library for AAOS and Android Auto.',
+        components: [
+            'CarAppService',
+            'Navigation Templates',
+            'POI Templates',
+            'Messaging Templates',
+            'Media Templates'
+        ],
+        doc: 'https://developer.android.com/training/cars/apps'
+    },
+
+    'Car Controls': {
+        title: 'Car Controls',
+        layer: 'System UI',
+        description: 'System UI for vehicle controls.',
+        components: [
+            'Climate Control',
+            'Seat Control',
+            'Window Control',
+            'Quick Settings'
+        ],
+        path: 'packages/apps/Car/SystemUI/'
+    },
+
+    'Car Display': {
+        title: 'Car Display Service',
+        layer: 'Car Service',
+        description: 'Service that manages multiple displays in vehicles.',
+        components: [
+            'Multi-Display Support',
+            'Display Zones',
+            'Activity Routing',
+            'Display Policy'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/display/'
+    },
+
+    'VHAL Interface': {
+        title: 'VHAL Interface',
+        layer: 'HAL Interface',
+        description: 'AIDL interface for communicating with Vehicle HAL.',
+        components: [
+            'IVehicle.aidl',
+            'Property Subscribe/Unsubscribe',
+            'Property Get/Set',
+            'VehicleAreaConfig'
+        ],
+        path: 'hardware/interfaces/automotive/vehicle/aidl/'
+    },
+
+    'Sensors': {
+        title: 'Vehicle Sensors',
+        layer: 'Hardware',
+        description: 'Various sensors in the vehicle.',
+        components: [
+            'Speed Sensor',
+            'Gear Sensor',
+            'Parking Sensor',
+            'Fuel Sensor',
+            'Temperature Sensor'
+        ]
+    },
+
+    'Car Hardware': {
+        title: 'Car Hardware',
+        layer: 'Hardware',
+        description: 'Vehicle hardware components.',
+        components: [
+            'Display',
+            'Audio Amplifier',
+            'Microphone',
+            'Camera',
+            'CAN Bus'
+        ]
+    },
+
+    'Phone Hardware': {
+        title: 'Phone Hardware',
+        layer: 'Hardware',
+        description: 'Smartphone hardware.',
+        components: [
+            'Display',
+            'Touchscreen',
+            'Microphone',
+            'Speaker',
+            'GPS'
+        ]
+    },
+
+    'Phone': {
+        title: 'Phone (Smartphone)',
+        layer: 'Device',
+        description: 'Smartphone running Android Auto.',
+        components: [
+            'Android Auto App',
+            'USB/Bluetooth Connection',
+            'Media Apps',
+            'Navigation Apps'
+        ]
+    },
+
+    'User 1': {
+        title: 'Driver Profile',
+        layer: 'User Profile',
+        description: 'Driver user profile.',
+        components: [
+            'User Settings',
+            'App Data',
+            'Media Preferences',
+            'Navigation History'
+        ]
+    },
+
+    'User 2': {
+        title: 'Passenger Profile',
+        layer: 'User Profile',
+        description: 'Passenger user profile.',
+        components: [
+            'User Settings',
+            'App Data',
+            'Media Preferences',
+            'Navigation History'
+        ]
+    },
+
+    'ECU 1': {
+        title: 'ECU 1 (Engine)',
+        layer: 'Hardware',
+        description: 'Engine control ECU.',
+        components: [
+            'Engine Control',
+            'Transmission Control',
+            'CAN Bus Communication'
+        ]
+    },
+
+    'ECU 2': {
+        title: 'ECU 2 (Body)',
+        layer: 'Hardware',
+        description: 'Body control ECU.',
+        components: [
+            'Body Control',
+            'Climate Control',
+            'CAN Bus Communication'
+        ]
+    },
+
+    'Audio Zone 1': {
+        title: 'Audio Zone 1 (Front)',
+        layer: 'Audio Zone',
+        description: 'Front seat audio zone.',
+        components: [
+            'Front Speakers',
+            'Navigation Audio',
+            'Media Playback',
+            'Phone Calls'
+        ]
+    },
+
+    'Audio Zone 2': {
+        title: 'Audio Zone 2 (Rear)',
+        layer: 'Audio Zone',
+        description: 'Rear seat audio zone.',
+        components: [
+            'Rear Speakers',
+            'Independent Media',
+            'Headphone Support'
+        ]
+    },
+
+    'Standard HAL': {
+        title: 'Standard HAL',
+        layer: 'HAL',
+        description: 'Standard Android HAL.',
+        components: [
+            'Audio HAL',
+            'Sensor HAL',
+            'Graphics HAL',
+            'Bluetooth HAL'
+        ]
+    },
+
+    'Vehicle App': {
+        title: 'Vehicle App',
+        layer: 'Application',
+        description: 'Vehicle apps running on AAOS.',
+        components: [
+            'Navigation Apps',
+            'Media Apps',
+            'HVAC Control Apps',
+            'Car Settings',
+            'OEM Apps'
+        ],
+        doc: 'https://developer.android.com/training/cars/apps'
+    },
+
+    'Navigation App': {
+        title: 'Navigation App',
+        layer: 'Application',
+        description: 'Vehicle navigation app.',
+        components: [
+            'Google Maps',
+            'Waze',
+            'OEM Navigation',
+            'Route Planning',
+            'Turn-by-turn Guidance'
+        ],
+        doc: 'https://developer.android.com/training/cars/navigation'
+    },
+
+    'Media3 Library': {
+        title: 'Media3 Library',
+        layer: 'Framework Library',
+        description: 'Next-generation media library that includes ExoPlayer in Jetpack Media3.',
+        components: [
+            'ExoPlayer (Core Player)',
+            'MediaSession (Session Management)',
+            'Media3 UI Components',
+            'Casting Support',
+            'Background Playback'
+        ],
+        path: 'androidx.media3',
+        doc: 'https://developer.android.com/media/media3',
+        codeExample: `
+val player = ExoPlayer.Builder(context)
+    .setAudioAttributes(AudioAttributes.DEFAULT, true)
+    .setHandleAudioBecomingNoisy(true)
+    .build()
+val mediaSession = MediaSession.Builder(context, player)
+    .setCallback(MediaSessionCallback())
+    .build()
+val mediaItem = MediaItem.fromUri(uri)
+player.setMediaItem(mediaItem)
+player.prepare()
+player.play()
+        `.trim()
+    },
+
+    'AAOS App Types': {
+        title: 'AAOS App Types',
+        layer: 'Application Architecture',
+        description: 'Types of apps that can run on AAOS.',
+        components: [
+            'Car App Library Apps',
+            'Media Apps',
+            'Navigation Apps',
+            'System Apps',
+            'OEM Apps'
+        ]
+    },
+
+    'Layer 1': {
+        title: 'Layer 1: Vehicle Apps',
+        layer: 'Application Layer',
+        description: 'AAOS app layer.',
+        components: [
+            'Navigation Apps',
+            'Media Apps',
+            'HVAC Apps',
+            'Settings'
+        ]
+    },
+
+    'Layer 2': {
+        title: 'Layer 2: Car Services',
+        layer: 'Framework Layer',
+        description: 'Car Service framework layer.',
+        components: [
+            'Car Service',
+            'Car Audio Service',
+            'Car Display Service',
+            'Car Input Service'
+        ]
+    },
+
+    'Layer 3': {
+        title: 'Layer 3: Android Framework',
+        layer: 'Framework Layer',
+        description: 'Standard Android framework layer.',
+        components: [
+            'ActivityManager',
+            'WindowManager',
+            'AudioManager',
+            'PackageManager'
+        ]
+    },
+
+    'Layer 7': {
+        title: 'Layer 7: Hardware',
+        layer: 'Hardware Layer',
+        description: 'Vehicle hardware layer.',
+        components: [
+            'ECU',
+            'Sensors',
+            'Displays',
+            'Audio Amplifiers'
+        ]
+    },
+
+    'Car Services': {
+        title: 'Car Services',
+        layer: 'Framework',
+        description: 'AAOS Car Service components.',
+        components: [
+            'Car Audio Service',
+            'Car Display Service',
+            'Car Input Service',
+            'Car Property Service',
+            'Car User Service'
+        ],
+        path: 'packages/services/Car/service/'
+    },
+
+    'VHAL Layer': {
+        title: 'VHAL Layer',
+        layer: 'HAL',
+        description: 'Vehicle HAL layer.',
+        components: [
+            'Vehicle HAL',
+            'VHAL Interface',
+            'Property Management',
+            'CAN Bus Communication'
+        ]
+    },
+
+    'Vehicle': {
+        title: 'Vehicle',
+        layer: 'Hardware',
+        description: 'Actual vehicle hardware.',
+        components: [
+            'ECU',
+            'CAN Bus',
+            'Sensors',
+            'Actuators'
+        ]
+    },
+
+    'Hardware': {
+        title: 'Hardware',
+        layer: 'Hardware',
+        description: 'Vehicle hardware components.',
+        components: [
+            'Display',
+            'Audio',
+            'Camera',
+            'Sensors'
+        ]
+    },
+
+    'Java API Framework': {
+        title: 'Java API Framework',
+        layer: 'Layer 2',
+        description: 'Android media Java API framework.',
+        components: [
+            'MediaPlayer',
+            'MediaCodec',
+            'MediaRecorder',
+            'MediaSession',
+            'MediaDrm'
+        ],
+        path: 'frameworks/base/media/java/android/media/'
+    },
+
+    'Native Libraries & Runtime': {
+        title: 'Native Libraries & Runtime',
+        layer: 'Layer 3',
+        description: 'Native C++ media libraries and runtime.',
+        components: [
+            'libmedia',
+            'libstagefright',
+            'NuPlayer',
+            'MediaExtractor',
+            'ART'
+        ],
+        path: 'frameworks/av/'
+    },
+
+    'Media3': {
+        title: 'Media3 (Jetpack)',
+        layer: 'App Library',
+        description: 'Jetpack media library that includes ExoPlayer.',
+        components: [
+            'ExoPlayer',
+            'MediaSession',
+            'UI Components',
+            'Casting'
+        ],
+        path: 'androidx.media3',
+        doc: 'https://developer.android.com/media/media3'
+    },
+
+    'Media3 Session': {
+        title: 'Media3 MediaSession',
+        layer: 'Session Management',
+        description: 'MediaSession implementation in Media3.',
+        components: [
+            'Session Management',
+            'Media Button',
+            'Notification',
+            'Background Playback'
+        ]
+    },
+
+    'Media3 UI': {
+        title: 'Media3 UI',
+        layer: 'UI Components',
+        description: 'UI components in Media3.',
+        components: [
+            'PlayerView',
+            'PlayerControlView',
+            'StyledPlayerView',
+            'Custom Controls'
+        ]
+    },
+
+    'MediaCodec 1': {
+        title: 'MediaCodec (Input)',
+        layer: 'Framework API',
+        description: 'MediaCodec input buffer processing.',
+        components: [
+            'Input Buffer',
+            'Queue Input',
+            'Feed Data'
+        ]
+    },
+
+    'MediaCodec 2': {
+        title: 'MediaCodec (Processing)',
+        layer: 'Framework API',
+        description: 'MediaCodec processing stage.',
+        components: [
+            'Decode/Encode',
+            'Hardware Acceleration',
+            'Buffer Processing'
+        ]
+    },
+
+    'MediaCodec 3': {
+        title: 'MediaCodec (Output)',
+        layer: 'Framework API',
+        description: 'MediaCodec output buffer processing.',
+        components: [
+            'Output Buffer',
+            'Dequeue Output',
+            'Release Buffer'
+        ]
+    },
+
+    'MediaDrm': {
+        title: 'MediaDrm',
+        layer: 'Framework API',
+        description: 'DRM (Digital Rights Management) Framework API.',
+        components: [
+            'License Management',
+            'Key Request/Response',
+            'Crypto Session',
+            'Widevine/PlayReady Support'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaDrm.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaDrm',
+        codeExample: `
+val WIDEVINE_UUID = UUID(-0x121074568629b532L, -0x5c37d8232ae2de13L)
+val mediaDrm = MediaDrm(WIDEVINE_UUID)
+val sessionId = mediaDrm.openSession()
+val keyRequest = mediaDrm.getKeyRequest(
+    sessionId,
+    initData,
+    "cenc",
+    MediaDrm.KEY_TYPE_STREAMING,
+    null
+)
+mediaDrm.provideKeyResponse(sessionId, licenseResponse)
+        `.trim(),
+        relatedIssues: [
+            { id: 'issue-drm-license', title: 'Widevine license acquisition failure' },
+            { id: 'issue-hdcp', title: 'HDCP connection failure' }
+        ]
+    },
+
+    'MediaDrm Service': {
+        title: 'MediaDrm Service',
+        layer: 'Native Service',
+        description: 'Native service that handles DRM.',
+        components: [
+            'DRM Plugin Management',
+            'License Storage',
+            'Crypto Operations',
+            'TEE Communication'
+        ],
+        path: 'frameworks/av/drm/'
+    },
+
+    'KeyMaster': {
+        title: 'KeyMaster',
+        layer: 'Security',
+        description: 'HAL that securely manages encryption keys.',
+        components: [
+            'Key Generation',
+            'Key Storage',
+            'Cryptographic Operations',
+            'Hardware-backed Keys'
+        ],
+        path: 'hardware/interfaces/keymaster/',
+        doc: 'https://source.android.com/docs/security/features/keystore'
+    },
+
+    'Widevine': {
+        title: 'Widevine DRM',
+        layer: 'DRM',
+        description: 'Google\'s DRM solution.',
+        components: [
+            'Widevine L1 (TEE)',
+            'Widevine L2 (TEE)',
+            'Widevine L3 (Software)',
+            'License Server'
+        ],
+        doc: 'https://www.widevine.com/',
+        codeExample: `
+val WIDEVINE_UUID = UUID(-0x121074568629b532L, -0x5c37d8232ae2de13L)
+val isSupported = MediaDrm.isCryptoSchemeSupported(WIDEVINE_UUID)
+val mediaDrm = MediaDrm(WIDEVINE_UUID)
+val securityLevel = mediaDrm.getPropertyString("securityLevel")
+val deviceId = mediaDrm.getPropertyByteArray("deviceId")
+        `.trim()
+    },
+
+    'Secure Decoder': {
+        title: 'Secure Decoder',
+        layer: 'Hardware Codec',
+        description: 'Secure decoder that runs in TEE (Trusted Execution Environment).',
+        components: [
+            'Encrypted Input',
+            'TEE Decryption',
+            'Secure Pipeline',
+            'Protected Output'
+        ],
+        codeExample: `
+val format = MediaFormat.createVideoFormat("video/avc", width, height)
+format.setInteger(MediaFormat.KEY_SECURE_PLAYBACK, 1) // Request secure decoder
+
+val decoderName = MediaCodecList(MediaCodecList.ALL_CODECS)
+    .findDecoderForFormat(format)
+
+val codec = MediaCodec.createByCodecName(decoderName)
+codec.configure(format, secureSurface, mediaCrypto, 0)
+        `.trim()
+    },
+
+    'MediaSession Service': {
+        title: 'MediaSession Service',
+        layer: 'System Service',
+        description: 'System service that manages MediaSessions.',
+        components: [
+            'Session Management',
+            'Priority Control',
+            'Media Button Routing',
+            'Volume Control'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/media/'
+    },
+
+    'MediaSession Framework': {
+        title: 'MediaSession Framework',
+        layer: 'Framework',
+        description: 'MediaSession framework components.',
+        components: [
+            'MediaSession',
+            'MediaController',
+            'MediaBrowser',
+            'MediaBrowserService'
+        ],
+        path: 'frameworks/base/media/java/android/media/session/'
+    },
+
+    'Components': {
+        title: 'Codec Components',
+        layer: 'Codec',
+        description: 'Codec components.',
+        components: [
+            'Encoder',
+            'Decoder',
+            'Filters',
+            'Muxers'
+        ]
+    },
+
+    'Codec HAL Interface': {
+        title: 'Codec HAL Interface',
+        layer: 'HAL Interface',
+        description: 'Codec2 HAL interface.',
+        components: [
+            'IComponent',
+            'IComponentStore',
+            'IConfigurable',
+            'HIDL/AIDL'
+        ],
+        path: 'hardware/interfaces/media/c2/'
+    },
+
+    'Codec2 Core': {
+        title: 'Codec2 Core',
+        layer: 'HAL Implementation',
+        description: 'Codec2 core implementation.',
+        components: [
+            'C2Component',
+            'C2Allocator',
+            'C2Buffer',
+            'C2Param'
+        ],
+        path: 'frameworks/av/media/codec2/'
+    },
+
+    'Codec2 Component': {
+        title: 'Codec2 Component',
+        layer: 'Codec Component',
+        description: 'Individual codec component.',
+        components: [
+            'Component Interface',
+            'Work Queue',
+            'Buffer Management',
+            'Parameter Configuration'
+        ]
+    },
+
+    'Codec2 Parameter': {
+        title: 'Codec2 Parameter',
+        layer: 'Configuration',
+        description: 'Codec2 parameter system.',
+        components: [
+            'C2Param',
+            'C2Setting',
+            'C2Info',
+            'Reflector'
+        ]
+    },
+
+    'Codec2 Hardware': {
+        title: 'Codec2 Hardware Codec',
+        layer: 'Hardware',
+        description: 'Hardware accelerated codec.',
+        components: [
+            'HW Encoder',
+            'HW Decoder',
+            'Video Processor',
+            'Vendor Implementation'
+        ]
+    },
+
+    'Codec2 Software': {
+        title: 'Codec2 Software Codec',
+        layer: 'Software',
+        description: 'Software codec.',
+        components: [
+            'SW Encoder',
+            'SW Decoder',
+            'libvpx (VP9)',
+            'dav1d (AV1)'
+        ]
+    },
+
+    'Codec2 Store': {
+        title: 'Codec2 Component Store',
+        layer: 'Codec Store',
+        description: 'Component store that manages codec components.',
+        components: [
+            'Component Query',
+            'Component Creation',
+            'Trait Management',
+            'Interface Discovery'
+        ]
+    },
+
+    'Gallery App': {
+        title: 'Gallery',
+        layer: 'Application',
+        description: 'Photo/video gallery app.',
+        components: [
+            'Image Viewer',
+            'Video Player',
+            'Slideshow',
+            'Editing'
+        ]
+    },
+
+    'Music App': {
+        title: 'Music',
+        layer: 'Application',
+        description: 'Music player app.',
+        components: [
+            'Audio Playback',
+            'Playlist',
+            'Audio Focus',
+            'MediaSession'
+        ]
+    },
+
+    'Media Files': {
+        title: 'Media Files',
+        layer: 'Storage',
+        description: 'Media files in storage.',
+        components: [
+            'Audio Files',
+            'Video Files',
+            'Images',
+            'Playlists'
+        ]
+    },
+
+    'Vehicle MCU': {
+        title: 'Vehicle MCU (VMCU)',
+        layer: 'Hardware',
+        description: 'Vehicle Microcontroller Unit. Delivers IGN/ACC signals to the Android system.',
+        components: [
+            'Ignition Signal Processing',
+            'Power State Management',
+            'Wake-up Signal Generation',
+            'Sleep Trigger'
+        ],
+        doc: 'https://source.android.com/docs/automotive/power'
+    },
+
+    'CarPowerManagementService': {
+        title: 'CarPowerManagementService (CPMS)',
+        layer: 'Car Service',
+        description: 'Manages the Android power state machine. Receives VHAL events and sends Sleep/Shutdown notifications to each service.',
+        components: [
+            'Power State Machine',
+            'Sleep Entry/Exit Handler',
+            'Policy Listener Management',
+            'Component Notification'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/power/',
+        doc: 'https://source.android.com/docs/automotive/power/car-power-management'
+    },
+
+    'CarPowerPolicy': {
+        title: 'CarPowerPolicy',
+        layer: 'Car Service',
+        description: 'Policy that defines "which components to turn on/off". In ShutdownPrepare state, AUDIO, MEDIA, and DISPLAY are turned OFF.',
+        components: [
+            'Component Enable/Disable',
+            'Policy Definition',
+            'State-based Rules',
+            'XML Configuration'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/power/',
+        doc: 'https://source.android.com/docs/automotive/power/power-policy'
+    },
+
+    'Power Components': {
+        title: 'Power Components',
+        layer: 'System',
+        description: 'System components controlled by power policy.',
+        components: [
+            'AUDIO - Audio subsystem',
+            'MEDIA - Media subsystem',
+            'DISPLAY - Display',
+            'BLUETOOTH - Bluetooth',
+            'WIFI - WiFi',
+            'CELLULAR - Cellular network'
+        ],
+        doc: 'https://source.android.com/docs/automotive/power/power-components'
+    },
+
+    'CarInputService': {
+        title: 'CarInputService',
+        layer: 'Car Service',
+        description: 'Core component that centrally manages input events in AAOS. Analyzes events received from VHAL and routes them to appropriate targets.',
+        components: [
+            'Key Event Processing',
+            'Rotary Event Handling',
+            'Input Filtering',
+            'Display Target Routing'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/CarInputService.java',
+        doc: 'https://source.android.com/docs/automotive/input/car-input'
+    },
+
+    'InputManagerService': {
+        title: 'InputManagerService',
+        layer: 'System Service',
+        description: 'Android\'s input event management service. Handles keyboard, touch, and hardware button events.',
+        components: [
+            'Input Event Dispatch',
+            'Input Device Management',
+            'Key Event Injection',
+            'Focus Management'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/input/',
+        doc: 'https://source.android.com/docs/core/input/input-overview'
+    },
+
+    'CarUxRestrictionsManager': {
+        title: 'CarUxRestrictionsManager',
+        layer: 'Car API',
+        description: 'Manages UX restrictions while driving. Apps can detect driving state through this and adjust UI accordingly.',
+        components: [
+            'Driving State Detection',
+            'UX Restriction Callbacks',
+            'Restriction Types (NO_VIDEO, NO_KEYBOARD)',
+            'Distraction Optimized Check'
+        ],
+        path: 'packages/services/Car/car-lib/src/android/car/drivingstate/',
+        doc: 'https://source.android.com/docs/automotive/driver_distraction/guidelines'
+    },
+
+    'RotaryService': {
+        title: 'RotaryService',
+        layer: 'Car Service',
+        description: 'Converts rotary knob input into focus navigation events, allowing app control through controls other than touchscreen.',
+        components: [
+            'Rotary Event Detection',
+            'Focus Navigation',
+            'Scroll Control',
+            'Nudge Mode'
+        ],
+        path: 'packages/apps/Car/RotaryController/',
+        doc: 'https://source.android.com/docs/automotive/input/rotary'
+    },
+
+    'FocusController': {
+        title: 'FocusController',
+        layer: 'UI Controller',
+        description: 'Manages focus movement for rotary controller.',
+        components: [
+            'requestFocus()',
+            'Focus Direction',
+            'Focus Search Algorithm',
+            'Focus Indicators'
+        ]
+    },
+
+    'ScrollController': {
+        title: 'ScrollController',
+        layer: 'UI Controller',
+        description: 'Manages scroll behavior for rotary controller.',
+        components: [
+            'smoothScrollBy()',
+            'Scroll Velocity',
+            'RecyclerView Integration',
+            'Scroll Indicators'
+        ]
+    },
+
+    'InputDispatcher': {
+        title: 'InputDispatcher',
+        layer: 'Native',
+        description: 'Component that delivers input events to target windows at native level.',
+        components: [
+            'Event Queue',
+            'Target Window Selection',
+            'Event Injection',
+            'ANR Detection'
+        ],
+        path: 'frameworks/native/services/inputflinger/dispatcher/'
+    },
+
+    'MediaConnectorService': {
+        title: 'MediaConnectorService',
+        layer: 'Car Service',
+        description: 'OEM/AAOS system service that binds to the corresponding Media Source at the direction of CarMediaService and attempts autoplay with EXTRA_AUTOPLAY when needed.',
+        components: [
+            'MediaBrowser Connection',
+            'EXTRA_AUTOPLAY Handling',
+            'Session Token Management',
+            'TransportControls'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/media/'
+    },
+
+    'MediaBrowserService': {
+        title: 'MediaBrowserService',
+        layer: 'App Component',
+        description: 'Service implemented by media apps to provide media browsing and playback control.',
+        components: [
+            'onGetRoot()',
+            'onLoadChildren()',
+            'MediaSession Token',
+            'Content Hierarchy'
+        ],
+        path: 'frameworks/base/media/java/android/media/browse/',
+        doc: 'https://developer.android.com/guide/topics/media-apps/audio-app/building-a-mediabrowserservice',
+        codeExample: `
+class MusicService : MediaBrowserServiceCompat() {
+    private lateinit var mediaSession: MediaSessionCompat
+
+    override fun onGetRoot(clientPackageName: String, clientUid: Int,
+        rootHints: Bundle?): BrowserRoot {
+        return BrowserRoot("root", null)
+    }
+
+    override fun onLoadChildren(parentId: String,
+        result: Result<MutableList<MediaBrowserCompat.MediaItem>>) {
+        val items = mutableListOf<MediaBrowserCompat.MediaItem>()
+        result.sendResult(items)
+    }
+}
+        `.trim()
+    },
+
+    'SharedPreferences': {
+        title: 'SharedPreferences',
+        layer: 'Storage',
+        description: 'Key-value storage that stores Last Media Source information. Stored separately per user.',
+        components: [
+            'Last Media Source',
+            'User ID Prefixing',
+            'Media Mode (Playback/Browse)',
+            'Position & Playlist'
+        ]
+    },
+
+    'Compatibility Mode': {
+        title: 'Compatibility Mode Container',
+        layer: 'System',
+        description: 'System container that helps apps render appropriately for vehicle displays.',
+        components: [
+            'Aspect ratio adjustment (Letterbox/Pillarbox)',
+            'Input transformation (rotary → touch)',
+            'System bar handling',
+            'DPI scaling'
+        ],
+        doc: 'https://source.android.com/docs/automotive/compatibility'
+    },
+
+    'Driving State Monitor': {
+        title: 'Driving State Monitor',
+        layer: 'Safety',
+        description: 'Monitors vehicle driving state and applies UX restrictions.',
+        components: [
+            'Gear Position Detection',
+            'Speed Threshold',
+            'Park/Drive State',
+            'UX Restriction Trigger'
+        ]
+    },
+
+    'UX Restriction Engine': {
+        title: 'UX Restriction Engine',
+        layer: 'Safety',
+        description: 'Engine that restricts certain features for safety while driving.',
+        components: [
+            'NO_VIDEO - Block video playback',
+            'NO_KEYBOARD - Block keyboard input',
+            'LIMIT_STRING_LENGTH - Limit text length',
+            'LIMIT_CONTENT - Limit content list'
+        ],
+        doc: 'https://source.android.com/docs/automotive/driver_distraction/guidelines'
+    },
+
+    'Camera2': {
+        title: 'Camera2 API',
+        layer: 'Framework API',
+        description: 'Android\'s advanced camera API. Provides RAW capture, manual control, multi-camera support, etc.',
+        components: [
+            'CameraManager',
+            'CameraDevice',
+            'CameraCaptureSession',
+            'CaptureRequest',
+            'ImageReader'
+        ],
+        path: 'frameworks/base/core/java/android/hardware/camera2/',
+        doc: 'https://developer.android.com/reference/android/hardware/camera2/package-summary'
+    },
+
+    'Lock Screen': {
+        title: 'Lock Screen Media Controls',
+        layer: 'System UI',
+        description: 'Controls that allow media control on the lock screen. Works with MediaSession.',
+        components: [
+            'Album Art Display',
+            'Playback Controls',
+            'Track Info',
+            'Seek Bar'
+        ]
+    },
+
+    'MediaController': {
+        title: 'MediaController',
+        layer: 'Framework API',
+        description: 'API that allows other apps or the system to remotely control MediaSession.',
+        components: [
+            'TransportControls - Playback control',
+            'getPlaybackState() - Query state',
+            'getMetadata() - Query metadata',
+            'setVolumeTo() - Set volume'
+        ],
+        path: 'frameworks/base/media/java/android/media/session/MediaController.java',
+        doc: 'https://developer.android.com/reference/android/media/session/MediaController',
+        codeExample: `
+val sessionManager = getSystemService(MediaSessionManager::class.java)
+val controllers = sessionManager.getActiveSessions(componentName)
+val controller = controllers.firstOrNull()
+controller?.transportControls?.apply {
+    play()      // Play
+    pause()     // Pause
+    skipToNext() // Next track
+    seekTo(30000) // Seek to 30s
+}
+controller?.registerCallback(object : MediaController.Callback() {
+    override fun onPlaybackStateChanged(state: PlaybackState?) { }
+})
+        `.trim()
+    },
+
+    'VolumeProvider': {
+        title: 'VolumeProvider',
+        layer: 'Framework API',
+        description: 'Class that provides remote volume control. Used by connecting to MediaSession.',
+        components: [
+            'VOLUME_CONTROL_FIXED - Not changeable',
+            'VOLUME_CONTROL_RELATIVE - Relative adjustment',
+            'VOLUME_CONTROL_ABSOLUTE - Absolute value setting',
+            'onAdjustVolume() - Volume adjustment callback'
+        ],
+        path: 'frameworks/base/media/java/android/media/VolumeProvider.java',
+        doc: 'https://developer.android.com/reference/android/media/VolumeProvider'
+    },
+
+    'Session Callback': {
+        title: 'MediaSession.Callback',
+        layer: 'Framework API',
+        description: 'Callback interface for MediaSession. Receives playback control commands.',
+        components: [
+            'onPlay() - Start playback',
+            'onPause() - Pause',
+            'onSkipToNext() - Next track',
+            'onSeekTo() - Seek',
+            'onMediaButtonEvent() - Media button'
+        ],
+        path: 'frameworks/base/media/java/android/media/session/MediaSession.java',
+        doc: 'https://developer.android.com/reference/android/media/session/MediaSession.Callback'
+    },
+
+    'Queue Manager': {
+        title: 'Queue Manager',
+        layer: 'App Component',
+        description: 'Component that manages playback queue.',
+        components: [
+            'Queue Items',
+            'Shuffle Mode',
+            'Repeat Mode',
+            'Skip Logic'
+        ]
+    },
+
+    'STATE_NONE': {
+        title: 'PlaybackState.STATE_NONE',
+        layer: 'State',
+        description: 'Initial state. No media has been loaded yet.',
+        components: []
+    },
+
+    'STATE_BUFFERING': {
+        title: 'PlaybackState.STATE_BUFFERING',
+        layer: 'State',
+        description: 'Buffering state. Loading data during network streaming.',
+        components: []
+    },
+
+    'STATE_PLAYING': {
+        title: 'PlaybackState.STATE_PLAYING',
+        layer: 'State',
+        description: 'Playing state. Media is actively playing.',
+        components: []
+    },
+
+    'STATE_PAUSED': {
+        title: 'PlaybackState.STATE_PAUSED',
+        layer: 'State',
+        description: 'Paused state. Playback is stopped but can be resumed at any time.',
+        components: []
+    },
+
+    'STATE_STOPPED': {
+        title: 'PlaybackState.STATE_STOPPED',
+        layer: 'State',
+        description: 'Stopped state. Playback is completely stopped and resources are released.',
+        components: []
+    },
+
+    'CDD Media Requirements': {
+        title: 'CDD Media Requirements',
+        layer: 'Requirements',
+        description: 'Media-related requirements in CDD. Defines codecs, resolutions, frame rates, etc.',
+        components: [
+            'Section 5: Multimedia',
+            'Media Codecs (H.264, HEVC, VP9, AV1)',
+            'Video Encoding Requirements',
+            'Audio Recording Requirements'
+        ],
+        doc: 'https://source.android.com/docs/compatibility/cdd#5_multimedia'
+    },
+
+    'Device Types': {
+        title: 'CDD Device Types',
+        layer: 'Classification',
+        description: 'Device types defined in CDD.',
+        components: [
+            'Handheld (smartphone)',
+            'Television',
+            'Automotive',
+            'Watch',
+            'Tablet'
+        ]
+    },
+
+    'Performance Class': {
+        title: 'Media Performance Class',
+        layer: 'Requirements',
+        description: 'Class that guarantees high-performance media features. Used for premium device certification.',
+        components: [
+            'Camera Requirements',
+            'Video Codec Performance',
+            'Memory/Storage',
+            'Display Quality'
+        ],
+        doc: 'https://source.android.com/docs/compatibility/cdd#2_2_7_performance_class'
+    },
+
+    'Dolby Engine': {
+        title: 'Dolby Engine (MS12/DAP)',
+        layer: 'Vendor',
+        description: 'Engine responsible for Dolby audio decoding and post-processing. Includes MS12 and DAP (Digital Audio Processing).',
+        components: [
+            'MS12 Decoder',
+            'DAP (post-processing)',
+            'Atmos Renderer',
+            'Metadata Parsing'
+        ]
+    },
+
+    'Stream Input': {
+        title: 'Stream Input',
+        layer: 'HAL',
+        description: 'Audio stream input to Audio HAL.',
+        components: [
+            'PCM Input',
+            'Compressed Audio (AC-3, E-AC-3)',
+            'Dolby Atmos JOC',
+            'Metadata'
+        ]
+    },
+
+    'C2 Component': {
+        title: 'C2 Component (Dolby Vision)',
+        layer: 'Codec2',
+        description: 'Codec2 component for Dolby Vision decoding.',
+        components: [
+            'c2.vendor.dv.decoder',
+            'Profile 4/5/7/8 Support',
+            'RPU Metadata Parsing',
+            'Secure Playback'
+        ]
+    },
+
+    'Graphic Buffer': {
+        title: 'Graphic Buffer',
+        layer: 'Graphics',
+        description: 'Graphics buffer containing YUV P010 format and RPU data.',
+        components: [
+            'YUV P010 (10-bit)',
+            'RPU Metadata',
+            'HDR Metadata',
+            'Gralloc'
+        ]
+    },
+
+    'Display HAL': {
+        title: 'Display HAL / HWC',
+        layer: 'HAL',
+        description: 'Display HAL that performs Dolby Vision tone mapping.',
+        components: [
+            'Tone Mapping',
+            'HDR Processing',
+            'Color Management',
+            'Panel Calibration'
+        ],
+        path: 'hardware/interfaces/graphics/composer/'
+    },
+
+    'HDR Display Panel': {
+        title: 'HDR Display Panel',
+        layer: 'Hardware',
+        description: 'Display panel capable of displaying HDR content.',
+        components: [
+            'HDR10',
+            'Dolby Vision',
+            'HLG',
+            'Peak Brightness'
+        ]
+    },
+
+    'Logcat': {
+        title: 'Logcat',
+        layer: 'Debug Tool',
+        description: 'Android\'s logging system. Can view app and system logs in real-time.',
+        components: [
+            'Log Levels (V/D/I/W/E)',
+            'Tag Filtering',
+            'Buffer Selection',
+            'Timestamp'
+        ],
+        codeExample: `
+# Filter media-related logs
+adb logcat -s MediaPlayer ExoPlayer AudioTrack MediaCodec
+
+# NuPlayer debugging
+adb logcat -s NuPlayer NuPlayerDriver MediaCodec
+
+# Audio debugging
+adb logcat -s AudioFlinger AudioPolicyService AudioTrack
+        `.trim()
+    },
+
+    'Dumpsys': {
+        title: 'Dumpsys',
+        layer: 'Debug Tool',
+        description: 'Tool that dumps the state of system services. Can check media, audio, session information.',
+        components: [
+            'dumpsys media.player',
+            'dumpsys audio',
+            'dumpsys media_session',
+            'dumpsys SurfaceFlinger'
+        ],
+        codeExample: `
+# MediaPlayer service status
+adb shell dumpsys media.player
+
+# Audio service status
+adb shell dumpsys audio
+
+# MediaSession information
+adb shell dumpsys media_session
+        `.trim()
+    },
+
+    'Perfetto': {
+        title: 'Perfetto',
+        layer: 'Debug Tool',
+        description: 'Android\'s advanced tracing tool. Visualizes CPU, memory, GPU usage.',
+        components: [
+            'System Tracing',
+            'App Tracing',
+            'Custom Events',
+            'Web Viewer'
+        ],
+        doc: 'https://perfetto.dev/docs/quickstart/android-tracing'
+    },
+
+    'Systrace': {
+        title: 'Systrace',
+        layer: 'Debug Tool',
+        description: 'Tool that collects system-wide traces. (Migration to Perfetto recommended)',
+        components: [
+            'CPU Scheduling',
+            'Disk Activity',
+            'App Threads',
+            'HTML Report'
+        ]
+    },
+
+    'Bugreport': {
+        title: 'Bugreport',
+        layer: 'Debug Tool',
+        description: 'Comprehensive report that collects entire system state.',
+        components: [
+            'System Logs',
+            'Service Dumps',
+            'Stack Traces',
+            'Device Info'
+        ],
+        codeExample: `
+# Generate Bugreport
+adb bugreport ~/bugreport.zip
+
+# Interactive version
+adb shell am bug-report
+        `.trim()
+    },
+
+    'Idle State': {
+        title: 'MediaPlayer Idle State',
+        layer: 'State',
+        description: 'Initial state of MediaPlayer. State after new MediaPlayer() or after reset().',
+        components: [
+            'setDataSource() available',
+            'prepare() not available',
+            'start() not available'
+        ]
+    },
+
+    'Initialized State': {
+        title: 'MediaPlayer Initialized State',
+        layer: 'State',
+        description: 'State after setDataSource() call.',
+        components: [
+            'prepare() or prepareAsync() available',
+            'start() not available'
+        ]
+    },
+
+    'Preparing State': {
+        title: 'MediaPlayer Preparing State',
+        layer: 'State',
+        description: 'State after prepareAsync() call. Preparing asynchronously.',
+        components: [
+            'Waiting for onPrepared() callback',
+            'Cannot call other methods'
+        ]
+    },
+
+    'Prepared State': {
+        title: 'MediaPlayer Prepared State',
+        layer: 'State',
+        description: 'State after prepare() completes or after onPrepared() callback.',
+        components: [
+            'start() available',
+            'seekTo() available',
+            'getDuration() available'
+        ]
+    },
+
+    'Started State': {
+        title: 'MediaPlayer Started State',
+        layer: 'State',
+        description: 'Playing state after start() call.',
+        components: [
+            'pause() available',
+            'stop() available',
+            'seekTo() available',
+            'isPlaying() = true'
+        ]
+    },
+
+    'Playback Completed': {
+        title: 'MediaPlayer PlaybackCompleted State',
+        layer: 'State',
+        description: 'State when playback is completed. onCompletion() callback is called.',
+        components: [
+            'start() - Play from beginning',
+            'seekTo() available',
+            'stop() available'
+        ]
+    },
+
+    'Media Issue': {
+        title: 'Media Issue',
+        layer: 'Problem',
+        description: 'Common issues related to media playback.',
+        components: [
+            'Audio issues',
+            'Video issues',
+            'DRM issues',
+            'Codec issues'
+        ]
+    },
+
+    'Symptom': {
+        title: 'Symptom',
+        layer: 'Diagnosis',
+        description: 'Symptoms of the problem. Can be verified by logs or behavior.',
+        components: [
+            'Log messages',
+            'Abnormal behavior',
+            'Error codes',
+            'Visual symptoms'
+        ]
+    },
+
+    'Solution': {
+        title: 'Solution',
+        layer: 'Fix',
+        description: 'How to solve the problem.',
+        components: [
+            'Code fix',
+            'Configuration change',
+            'Permission addition',
+            'API change'
+        ]
+    },
+
+    'Codec HAL': {
+        title: 'Codec HAL',
+        layer: 'HAL',
+        description: 'Android Hardware Abstraction Layer for media codecs. Provides standard interface between codec implementations and Android framework.',
+        components: [
+            'IComponentStore - Codec store interface',
+            'IComponent - Codec component interface',
+            'IConfigurable - Configuration interface',
+            'HIDL/AIDL interface'
+        ],
+        path: 'hardware/interfaces/media/c2/',
+        doc: 'https://source.android.com/docs/core/media/codec2'
+    },
+
+    'Component Interface': {
+        title: 'C2 Component Interface',
+        layer: 'HAL',
+        description: 'Control interface for Codec2 components. Responsible for parameter queries, settings, and state management.',
+        components: [
+            'query() - Query parameters',
+            'config() - Set parameters',
+            'createTunnel() - Tunnel mode',
+            'start()/stop()/reset()'
+        ],
+        path: 'frameworks/av/media/codec2/core/include/C2Component.h'
+    },
+
+    'MediaCodec API': {
+        title: 'MediaCodec API',
+        layer: 'Framework',
+        description: 'Android\'s low-level codec API. Provides direct access to hardware/software codecs.',
+        components: [
+            'configure()',
+            'start()/stop()',
+            'queueInputBuffer()',
+            'dequeueOutputBuffer()'
+        ],
+        path: 'frameworks/base/media/java/android/media/MediaCodec.java',
+        doc: 'https://developer.android.com/reference/android/media/MediaCodec'
+    },
+
+    'CCodec Entry': {
+        title: 'CCodec Entry',
+        layer: 'Native',
+        description: 'Entry point for Codec2 framework. Handles connection from MediaCodec to Codec2 components.',
+        components: [
+            'CCodec initialization',
+            'Component creation',
+            'BufferChannel setup',
+            'Client connection'
+        ],
+        path: 'frameworks/av/media/codec2/sfplugin/'
+    },
+
+    'Audio': {
+        title: 'Audio',
+        layer: 'Native',
+        description: 'Audio subsystem. Responsible for audio playback and recording.',
+        components: [
+            'AudioFlinger',
+            'AudioPolicyService',
+            'AudioTrack',
+            'AudioRecord'
+        ],
+        path: 'frameworks/av/media/libaudioclient/'
+    },
+
+    'libmediadrm': {
+        title: 'libmediadrm',
+        layer: 'Native',
+        description: 'MediaDrm native library. Communicates with DRM HAL.',
+        components: [
+            'DrmHal Integration',
+            'CryptoHal Integration',
+            'Session Management',
+            'Key Processing'
+        ],
+        path: 'frameworks/av/drm/libmediadrm/'
+    },
+
+    'DRM HAL': {
+        title: 'DRM HAL',
+        layer: 'HAL',
+        description: 'DRM Hardware Abstraction Layer. Communicates with DRM plugins.',
+        components: [
+            'IDrmFactory',
+            'IDrmPlugin',
+            'License Processing',
+            'Key Management'
+        ],
+        path: 'hardware/interfaces/drm/'
+    },
+
+    'Crypto HAL': {
+        title: 'Crypto HAL',
+        layer: 'HAL',
+        description: 'Crypto HAL. Performs encryption/decryption operations.',
+        components: [
+            'ICryptoFactory',
+            'ICryptoPlugin',
+            'decrypt()',
+            'Secure Buffer'
+        ],
+        path: 'hardware/interfaces/drm/'
+    },
+
+    'CDM Library': {
+        title: 'CDM Library',
+        layer: 'DRM',
+        description: 'Widevine CDM library. Contains Widevine\'s core logic.',
+        components: [
+            'libwvdrmengine.so',
+            'License Parsing',
+            'Key Derivation',
+            'OEMCrypto Integration'
+        ]
+    },
+
+    'CDM Core': {
+        title: 'CDM Core',
+        layer: 'DRM',
+        description: 'Widevine CDM core engine. Implements license protocol.',
+        components: [
+            'License Request Generation',
+            'License Response Processing',
+            'Key Management',
+            'Session State'
+        ]
+    },
+
+    'CDM Session': {
+        title: 'CDM Session',
+        layer: 'DRM',
+        description: 'Widevine session. Manages DRM context per content.',
+        components: [
+            'Session ID',
+            'Key Set',
+            'License State',
+            'Renewal Management'
+        ]
+    },
+
+    'OEMCrypto Library': {
+        title: 'OEMCrypto Library',
+        layer: 'TEE',
+        description: 'OEMCrypto library. Handles secure operations inside TEE.',
+        components: [
+            'liboemcrypto.so',
+            'TEE Communication',
+            'Key Wrapping',
+            'Decryption Engine'
+        ]
+    },
+
+    'TEE OS': {
+        title: 'TEE Operating System',
+        layer: 'TEE',
+        description: 'TEE operating system. Includes Trusty, QSEE, Kinibi, etc.',
+        components: [
+            'Secure Boot',
+            'Trustlet Management',
+            'Secure Services',
+            'Normal World Communication'
+        ]
+    },
+
+    'Trustlet': {
+        title: 'Trustlet',
+        layer: 'TEE',
+        description: 'Secure application running in TEE.',
+        components: [
+            'Widevine Trustlet',
+            'KeyMaster Trustlet',
+            'Gatekeeper Trustlet',
+            'Secure Operation Processing'
+        ]
+    },
+
+    'Widevine L1 TEE': {
+        title: 'Widevine L1 (TEE)',
+        layer: 'DRM',
+        description: 'Widevine Level 1. Decryption and decoding performed in TEE.',
+        components: [
+            'TEE Decryption',
+            'TEE Decoding',
+            'Secure Video Path',
+            'HDCP Required'
+        ]
+    },
+
+    'Widevine L2 TEE': {
+        title: 'Widevine L2 (TEE)',
+        layer: 'DRM',
+        description: 'Widevine Level 2. Only decryption performed in TEE.',
+        components: [
+            'TEE Decryption',
+            'SW Decoding',
+            'Medium Security Level',
+            'Some HD Content'
+        ]
+    },
+
+    'Widevine L3 Software': {
+        title: 'Widevine L3 (Software)',
+        layer: 'DRM',
+        description: 'Widevine Level 3. All processing performed in software.',
+        components: [
+            'SW Decryption',
+            'SW Decoding',
+            'Low Security Level',
+            'SD Content'
+        ]
+    },
+
+    'Key Storage': {
+        title: 'Key Storage',
+        layer: 'DRM',
+        description: 'Key storage. Stores offline license keys.',
+        components: [
+            'Local Key Storage',
+            'Offline License',
+            'Renewal Management',
+            'Expiration Handling'
+        ]
+    },
+
+    'CarDisplayService': {
+        title: 'CarDisplayService',
+        layer: 'Framework',
+        description: 'AAOS display service. Manages vehicle\'s multiple displays.',
+        components: [
+            'Multiple Display Management',
+            'Cluster Display',
+            'Rear Seat Display',
+            'Display State'
+        ],
+        path: 'packages/services/Car/service/'
+    },
+
+    'Car OS': {
+        title: 'Car OS',
+        layer: 'System',
+        description: 'AAOS operating system. Android optimized for vehicles.',
+        components: [
+            'Car Service',
+            'VHAL',
+            'Multi-user',
+            'Audio Zones'
+        ]
+    },
+
+    'Audio Groups': {
+        title: 'Audio Groups',
+        layer: 'Framework',
+        description: 'Audio groups. Groups similar audio usages.',
+        components: [
+            'Media Group',
+            'Navigation Group',
+            'Call Group',
+            'Alert Group'
+        ]
+    },
+
+    'Main Speaker': {
+        title: 'Main Speaker',
+        layer: 'Hardware',
+        description: 'Main speaker. Responsible for front audio output.',
+        components: [
+            'Front Speakers',
+            'Subwoofer',
+            'Tweeter',
+            'Amplifier Integration'
+        ]
+    },
+
+    'Navigation Speaker': {
+        title: 'Navigation Speaker',
+        layer: 'Hardware',
+        description: 'Navigation speaker. Outputs navigation guidance voice.',
+        components: [
+            'Dedicated Speaker',
+            'Ducking Integration',
+            'Direction Guidance',
+            'Alert Voice'
+        ]
+    },
+
+    'Rear Speaker': {
+        title: 'Rear Speaker',
+        layer: 'Hardware',
+        description: 'Rear speaker. Outputs audio for rear passengers.',
+        components: [
+            'Rear Entertainment',
+            'Independent Volume',
+            'Headphone Jack',
+            'Independent Source'
+        ]
+    },
+
+    'Media Button': {
+        title: 'Media Button',
+        layer: 'Input',
+        description: 'Media button. Handles inputs like play/pause, next/previous.',
+        components: [
+            'KEYCODE_MEDIA_PLAY',
+            'KEYCODE_MEDIA_PAUSE',
+            'KEYCODE_MEDIA_NEXT',
+            'KEYCODE_MEDIA_PREVIOUS'
+        ]
+    },
+
+    'External Device': {
+        title: 'External Device',
+        layer: 'Hardware',
+        description: 'External media control device. Includes Bluetooth headset, steering wheel buttons, etc.',
+        components: [
+            'Bluetooth Headset',
+            'Steering Wheel Controls',
+            'USB Remote',
+            'CarPlay/Android Auto'
+        ]
+    },
+
+    'AAOS Full Stack': {
+        title: 'AAOS Full Stack',
+        layer: 'System',
+        description: 'AAOS full stack. Layered structure from hardware to application.',
+        components: [
+            'Application Layer',
+            'Framework Layer',
+            'HAL Layer',
+            'Kernel Layer'
+        ]
+    },
+
+    'Car App': {
+        title: 'Car App',
+        layer: 'Application',
+        description: 'Vehicle app. Runs on AAOS or Android Auto.',
+        components: [
+            'Media App',
+            'Navigation App',
+            'POI App',
+            'Parking App'
+        ]
+    },
+
+    'Car Android Auto': {
+        title: 'Car Android Auto',
+        layer: 'Application',
+        description: 'Vehicle-side Android Auto. Projects phone apps.',
+        components: [
+            'Projection Host',
+            'Media Host',
+            'Navigation Host',
+            'Voice Host'
+        ]
+    },
+
+    'Audio Routing': {
+        title: 'Audio Routing',
+        layer: 'Framework',
+        description: 'Audio routing. Routes audio streams to appropriate output devices.',
+        components: [
+            'AudioPolicy integration',
+            'Device selection',
+            'Priority handling',
+            'Dynamic routing'
+        ],
+        path: 'frameworks/av/services/audiopolicy/'
+    },
+
+    'Volume Control': {
+        title: 'Volume Control',
+        layer: 'Framework',
+        description: 'Volume control. Manages volume per stream.',
+        components: [
+            'StreamVolume',
+            'Volume curve',
+            'Mute state',
+            'Volume groups'
+        ]
+    },
+
+    'Car Audio Service': {
+        title: 'Car Audio Service',
+        layer: 'Framework',
+        description: 'AAOS audio service. Manages automotive audio features.',
+        components: [
+            'Audio zones',
+            'Volume groups',
+            'Audio focus',
+            'Ducking'
+        ],
+        path: 'packages/services/Car/service/src/com/android/car/audio/'
+    },
+
+    'Bluetooth Audio': {
+        title: 'Bluetooth Audio',
+        layer: 'HAL',
+        description: 'Bluetooth audio. Supports A2DP, HFP profiles.',
+        components: [
+            'A2DP Sink/Source',
+            'HFP',
+            'AVRCP',
+            'Codec negotiation'
+        ]
+    },
+
+    'USB DAC': {
+        title: 'USB DAC',
+        layer: 'Hardware',
+        description: 'USB DAC. External audio device connected via USB.',
+        components: [
+            'USB Audio Class',
+            'High-resolution audio',
+            'Sample rate support',
+            'Plug and play'
+        ]
+    },
+
+    'Camera App': {
+        title: 'Camera App',
+        layer: 'Application',
+        description: 'Camera app. Takes photos and videos.',
+        components: [
+            'Camera2 API',
+            'Preview',
+            'Capture',
+            'Video Recording'
+        ]
+    },
+
+    'Container Parser': {
+        title: 'Container Parser',
+        layer: 'Native',
+        description: 'Container parser. Parses media containers like MP4, MKV.',
+        components: [
+            'Box/Atom parsing',
+            'Track extraction',
+            'Metadata reading',
+            'Sample indexing'
+        ]
+    },
+
+    'Google Automotive Services': {
+        title: 'Google Automotive Services',
+        layer: 'Application',
+        description: 'GAS. Provides Google services on AAOS.',
+        components: [
+            'Google Maps',
+            'Google Assistant',
+            'Play Store',
+            'Play Services'
+        ],
+        doc: 'https://source.android.com/docs/automotive'
+    },
+
+    'Android Auto (Gearhead)': {
+        title: 'Android Auto (Gearhead)',
+        layer: 'Application',
+        description: 'Android Auto app. Projects phone apps in vehicle.',
+        components: [
+            'Phone Projection',
+            'Media Apps',
+            'Navigation',
+            'Communication'
+        ]
+    },
+
+    'App UI': {
+        title: 'App UI',
+        layer: 'Application',
+        description: 'App user interface. Provides media control UI.',
+        components: [
+            'PlayerView',
+            'Controls',
+            'Progress Bar',
+            'Playlist UI'
+        ]
+    },
+
+    'LoadControl': {
+        title: 'LoadControl',
+        layer: 'Application',
+        description: 'ExoPlayer LoadControl. Controls buffering strategy.',
+        components: [
+            'Buffer Size',
+            'shouldStartPlayback()',
+            'shouldContinueLoading()',
+            'Target Buffer'
+        ]
+    },
+
+    'MediaService': {
+        title: 'MediaService',
+        layer: 'Application',
+        description: 'Media service. Supports background playback.',
+        components: [
+            'MediaBrowserService',
+            'MediaSession',
+            'Foreground Service',
+            'Notification'
+        ]
+    },
+
+    'Track': {
+        title: 'Track',
+        layer: 'Native',
+        description: 'Media track. Represents audio, video, subtitle tracks.',
+        components: [
+            'Audio Track',
+            'Video Track',
+            'Text Track',
+            'Metadata Track'
+        ]
+    },
+
+    'User Interface': {
+        title: 'User Interface',
+        layer: 'Application',
+        description: 'User interface. Visual elements of the app.',
+        components: [
+            'View Hierarchy',
+            'Layout',
+            'Theme',
+            'Interaction'
+        ]
+    },
+
+    'Power Policy': {
+        title: 'Power Policy',
+        layer: 'Framework',
+        description: 'Power policy. Defines behavior based on vehicle power state.',
+        components: [
+            'ON Policy',
+            'OFF Policy',
+            'Component State',
+            'Garage Mode'
+        ],
+        path: 'packages/services/Car/service/',
+        doc: 'https://source.android.com/docs/automotive/power'
+    },
+
+    'Suspend Manager': {
+        title: 'Suspend Manager',
+        layer: 'Native',
+        description: 'Suspend manager. Manages system sleep state.',
+        components: [
+            'Suspend-to-RAM',
+            'Wake Lock',
+            'Wake Source',
+            'Resume'
+        ]
+    },
+
+    'Driver': {
+        title: 'Driver',
+        layer: 'Kernel',
+        description: 'Kernel driver. Responsible for hardware control.',
+        components: [
+            'Character Device',
+            'Block Device',
+            'Platform Driver',
+            'sysfs interface'
+        ]
+    },
+
+    'Vehicle Hardware': {
+        title: 'Vehicle Hardware',
+        layer: 'Hardware',
+        description: 'Vehicle hardware. Steering wheel buttons, touchscreens, etc.',
+        components: [
+            'Steering Wheel',
+            'Touch Display',
+            'Rotary Controller',
+            'Physical Buttons'
+        ]
+    },
+
+    'MediaSessionService': {
+        title: 'MediaSessionService',
+        layer: 'Framework',
+        description: 'MediaSession system service. Manages media sessions.',
+        components: [
+            'Session Management',
+            'Media Button Routing',
+            'Priority Queue',
+            'Callback Dispatch'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/media/'
+    },
+
+    'Gear/Speed Sensor': {
+        title: 'Gear/Speed Sensor',
+        layer: 'Hardware',
+        description: 'Gear/speed sensor. Detects vehicle state.',
+        components: [
+            'Gear Position',
+            'Vehicle Speed',
+            'Parking Brake',
+            'VHAL integration'
+        ]
+    },
+
+    'CarInfoManager': {
+        title: 'CarInfoManager',
+        layer: 'Framework',
+        description: 'Car Info Manager. Provides vehicle information.',
+        components: [
+            'Vehicle Model',
+            'Manufacturer',
+            'VIN',
+            'Year'
+        ]
+    },
+
+    'State Check': {
+        title: 'State Check',
+        layer: 'Framework',
+        description: 'State check. Checks restrictions based on driving state.',
+        components: [
+            'Driving State',
+            'Speed Check',
+            'UX Restrictions',
+            'Safety Check'
+        ]
+    },
+
+    'Block Input': {
+        title: 'Block Input',
+        layer: 'Framework',
+        description: 'Input blocking. Blocks dangerous inputs while driving.',
+        components: [
+            'Touch Block',
+            'Keyboard Block',
+            'Complex Task Block',
+            'Safety Override'
+        ]
+    },
+
+    'Allow Interaction': {
+        title: 'Allow Interaction',
+        layer: 'Framework',
+        description: 'Allow interaction. Permits safe interactions.',
+        components: [
+            'Simple Touch',
+            'Voice Control',
+            'Steering Controls',
+            'Quick Actions'
+        ]
+    },
+
+    'Volume Group': {
+        title: 'Volume Group',
+        layer: 'Framework',
+        description: 'Volume group. Groups similar audio usages.',
+        components: [
+            'Media Volume',
+            'Navigation Volume',
+            'Call Volume',
+            'System Volume'
+        ]
+    },
+
+    'Current Context': {
+        title: 'Current Context',
+        layer: 'Framework',
+        description: 'Current context. Focused audio context.',
+        components: [
+            'Active Session',
+            'Audio Focus',
+            'Priority',
+            'State information'
+        ]
+    },
+
+    'Priority Check': {
+        title: 'Priority Check',
+        layer: 'Framework',
+        description: 'Priority check. Determines priority of audio requests.',
+        components: [
+            'Usage comparison',
+            'Context comparison',
+            'Ducking decision',
+            'Focus decision'
+        ]
+    },
+
+    'Hardware Amplifier': {
+        title: 'Hardware Amplifier',
+        layer: 'Hardware',
+        description: 'Hardware amplifier. Amplifies audio signals.',
+        components: [
+            'Power Amplifier',
+            'Per-channel control',
+            'Volume adjustment',
+            'Fade/Balance'
+        ]
+    },
+
+    'Nudge Mode': {
+        title: 'Nudge Mode',
+        layer: 'Framework',
+        description: 'Nudge mode. Up/down/left/right movement of rotary controller.',
+        components: [
+            'Directional Navigation',
+            'Focus Movement',
+            'Boundary Handling',
+            'Target Resolution'
+        ]
+    },
+
+    'Focusable View 1': {
+        title: 'Focusable View 1',
+        layer: 'Application',
+        description: 'Focusable view 1. Can receive rotary focus.',
+        components: [
+            'focusable=true',
+            'Focus Highlight',
+            'Click Handler',
+            'Accessibility'
+        ]
+    },
+
+    'Focusable View 2': {
+        title: 'Focusable View 2',
+        layer: 'Application',
+        description: 'Focusable view 2.',
+        components: [
+            'focusable=true',
+            'Focus Highlight',
+            'Click Handler',
+            'Accessibility'
+        ]
+    },
+
+    'RecyclerView': {
+        title: 'RecyclerView',
+        layer: 'Application',
+        description: 'RecyclerView. Provides list/grid UI.',
+        components: [
+            'ViewHolder Pattern',
+            'LayoutManager',
+            'Adapter',
+            'Item Animator'
+        ]
+    },
+
+    'InputManager': {
+        title: 'InputManager',
+        layer: 'Framework',
+        description: 'Input Manager. Manages input events.',
+        components: [
+            'Input Device',
+            'Event Dispatch',
+            'Key Mapping',
+            'Touch Event'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/input/'
+    },
+
+    'Application': {
+        title: 'Application',
+        layer: 'Application',
+        description: 'Android application. Interacts with users.',
+        components: [
+            'Activity',
+            'Service',
+            'BroadcastReceiver',
+            'ContentProvider'
+        ]
+    },
+
+    'Display Type': {
+        title: 'Display Type',
+        layer: 'Hardware',
+        description: 'Display type. Various displays in vehicle.',
+        components: [
+            'Main Display',
+            'Cluster Display',
+            'HUD',
+            'Rear Display'
+        ]
+    },
+
+    'Main Display': {
+        title: 'Main Display',
+        layer: 'Hardware',
+        description: 'Main display. Center infotainment screen.',
+        components: [
+            'IVI Screen',
+            'Touch Input',
+            'Main UI',
+            'Apps Display'
+        ]
+    },
+
+    'Cluster Display': {
+        title: 'Cluster Display',
+        layer: 'Hardware',
+        description: 'Cluster display. Instrument panel screen.',
+        components: [
+            'Instrument Cluster',
+            'Speed/RPM',
+            'Navigation Info',
+            'Warning Indicators'
+        ]
+    },
+
+    'Cluster UI': {
+        title: 'Cluster UI',
+        layer: 'Application',
+        description: 'Cluster UI. Interface displayed on instrument panel.',
+        components: [
+            'Speed Display',
+            'Navigation Card',
+            'Media Info',
+            'Alerts'
+        ]
+    },
+
+    'User': {
+        title: 'User',
+        layer: 'User',
+        description: 'User. Person using the system.',
+        components: [
+            'User profile',
+            'Settings',
+            'Permissions',
+            'Personalization'
+        ]
+    },
+
+    'Mobile App': {
+        title: 'Mobile App',
+        layer: 'Application',
+        description: 'Mobile app. Phone app running in vehicle.',
+        components: [
+            'Car Compatibility',
+            'Distraction Optimized',
+            'Media Browser',
+            'Voice Control'
+        ]
+    },
+
+    'UI Layout': {
+        title: 'UI Layout',
+        layer: 'Application',
+        description: 'UI layout. Defines screen composition.',
+        components: [
+            'XML Layout',
+            'ConstraintLayout',
+            'Car UI Library',
+            'Responsive Design'
+        ]
+    },
+
+    'App Logic': {
+        title: 'App Logic',
+        layer: 'Application',
+        description: 'App logic. Application business logic.',
+        components: [
+            'ViewModel',
+            'Repository',
+            'Use Cases',
+            'Data Processing'
+        ]
+    },
+
+    'Window Manager': {
+        title: 'Window Manager',
+        layer: 'Framework',
+        description: 'Window Manager. Handles window management.',
+        components: [
+            'Window Layout',
+            'Z-ordering',
+            'Animation',
+            'Multi-window'
+        ],
+        path: 'frameworks/base/services/core/java/com/android/server/wm/'
+    },
+
+    'Input Manager': {
+        title: 'Input Manager',
+        layer: 'Framework',
+        description: 'Input Manager. Processes input events.',
+        components: [
+            'Touch Events',
+            'Key Events',
+            'Rotary Events',
+            'Injection'
+        ]
+    },
+
+    'Safety Layer': {
+        title: 'Safety Layer',
+        layer: 'Framework',
+        description: 'Safety layer. Applies restrictions for driving safety.',
+        components: [
+            'UX Restrictions',
+            'Driving State',
+            'Distraction Optimized',
+            'Block Lists'
+        ]
+    },
+
+    'Android System': {
+        title: 'Android System',
+        layer: 'System',
+        description: 'Android system. Provides OS core functions.',
+        components: [
+            'System Server',
+            'Framework',
+            'Runtime',
+            'HAL'
+        ]
+    },
+
+    'Other App': {
+        title: 'Other App',
+        layer: 'Application',
+        description: 'Other app. External app requesting media control.',
+        components: [
+            'MediaController',
+            'Remote Control',
+            'Voice App',
+            'Companion App'
+        ]
+    },
+
+    'BT Headset': {
+        title: 'BT Headset',
+        layer: 'Hardware',
+        description: 'Bluetooth headset. Wireless audio output device.',
+        components: [
+            'A2DP',
+            'HFP',
+            'AVRCP',
+            'Media control'
+        ]
+    },
+
+    'Introduction': {
+        title: 'Introduction',
+        layer: 'Document',
+        description: 'CDD introduction. Explains document overview and purpose.',
+        components: [
+            'Document scope',
+            'Terminology',
+            'Requirement levels',
+            'Version info'
+        ]
+    },
+
+    'Software': {
+        title: 'Software',
+        layer: 'Document',
+        description: 'CDD software requirements.',
+        components: [
+            'API compatibility',
+            'Permission model',
+            'Runtime environment',
+            'App compatibility'
+        ]
+    },
+
+    'App Packaging': {
+        title: 'App Packaging',
+        layer: 'Document',
+        description: 'CDD app packaging requirements.',
+        components: [
+            'APK Format',
+            'App Bundle',
+            'Signing',
+            'Manifest'
+        ]
+    },
+
+    'Dev Tools': {
+        title: 'Dev Tools',
+        layer: 'Document',
+        description: 'CDD development tools requirements.',
+        components: [
+            'ADB',
+            'DDMS',
+            'Device Monitor',
+            'Debugging support'
+        ]
+    },
+
+    'Performance': {
+        title: 'Performance',
+        layer: 'Document',
+        description: 'CDD performance requirements.',
+        components: [
+            'App launch time',
+            'Frame Rate',
+            'Memory usage',
+            'I/O performance'
+        ]
+    },
+
+    'Security': {
+        title: 'Security',
+        layer: 'Document',
+        description: 'CDD security requirements.',
+        components: [
+            'SELinux',
+            'Verified Boot',
+            'Encryption',
+            'Permission model'
+        ]
+    },
+
+    'Testing': {
+        title: 'Testing',
+        layer: 'Document',
+        description: 'CDD testing requirements.',
+        components: [
+            'CTS',
+            'VTS',
+            'GTS',
+            'Test coverage'
+        ]
+    },
+
+    'Handheld': {
+        title: 'Handheld',
+        layer: 'Device',
+        description: 'Handheld device. Smartphones, tablets, etc.',
+        components: [
+            'Phone',
+            'Tablet',
+            'Touchscreen',
+            'Portable'
+        ]
+    },
+
+    'Television': {
+        title: 'Television',
+        layer: 'Device',
+        description: 'TV device. Android TV.',
+        components: [
+            'Android TV',
+            'Leanback UI',
+            'D-pad Navigation',
+            '10ft UI'
+        ]
+    },
+
+    'Automotive': {
+        title: 'Automotive',
+        layer: 'Device',
+        description: 'Automotive device. Vehicle equipped with AAOS.',
+        components: [
+            'AAOS',
+            'Vehicle Integration',
+            'Multi-display',
+            'Audio Zones'
+        ]
+    },
+
+    'Watch': {
+        title: 'Watch',
+        layer: 'Device',
+        description: 'Watch device. Wear OS.',
+        components: [
+            'Wear OS',
+            'Round display',
+            'Low power',
+            'Wearable'
+        ]
+    },
+
+    'Media Codecs': {
+        title: 'Media Codecs',
+        layer: 'Document',
+        description: 'CDD media codec requirements.',
+        components: [
+            'Required codecs',
+            'Recommended codecs',
+            'Profile/Level',
+            'Encoding/Decoding'
+        ]
+    },
+
+    'Video Encoding': {
+        title: 'Video Encoding',
+        layer: 'Document',
+        description: 'CDD video encoding requirements.',
+        components: [
+            'H.264 encoder',
+            'HEVC encoder',
+            'Bitrate',
+            'Resolution'
+        ]
+    },
+
+    'Audio Recording': {
+        title: 'Audio Recording',
+        layer: 'Document',
+        description: 'CDD audio recording requirements.',
+        components: [
+            'AAC encoding',
+            'Microphone support',
+            'Sample rate',
+            'Channel count'
+        ]
+    },
+
+    'Camera': {
+        title: 'Camera',
+        layer: 'Document',
+        description: 'CDD camera requirements.',
+        components: [
+            'Camera2 API',
+            'Resolution',
+            'Auto Focus',
+            'Flash'
+        ]
+    },
+
+    'H.264/AVC': {
+        title: 'H.264/AVC',
+        layer: 'Codec',
+        description: 'H.264/AVC codec. Most widely used video codec.',
+        components: [
+            'Baseline Profile',
+            'Main Profile',
+            'High Profile',
+            'Level support'
+        ]
+    },
+
+    'HEVC': {
+        title: 'HEVC',
+        layer: 'Codec',
+        description: 'HEVC/H.265 codec. High efficiency video compression.',
+        components: [
+            'Main Profile',
+            'Main 10 Profile',
+            '4K support',
+            'HDR support'
+        ]
+    },
+
+    'VP9/AV1': {
+        title: 'VP9/AV1',
+        layer: 'Codec',
+        description: 'VP9/AV1 codec. Royalty-free video codec.',
+        components: [
+            'VP9 Profile 0/2',
+            'AV1 Main Profile',
+            'YouTube streaming',
+            'WebRTC'
+        ]
+    },
+
+    'AAC/Opus': {
+        title: 'AAC/Opus',
+        layer: 'Codec',
+        description: 'AAC/Opus audio codec.',
+        components: [
+            'AAC-LC',
+            'HE-AAC',
+            'Opus',
+            'Various bitrates'
+        ]
+    },
+
+    'Resolution': {
+        title: 'Resolution',
+        layer: 'Document',
+        description: 'CDD resolution requirements.',
+        components: [
+            'SD (480p)',
+            'HD (720p)',
+            'FHD (1080p)',
+            '4K (2160p)'
+        ]
+    },
+
+    'Frame Rate': {
+        title: 'Frame Rate',
+        layer: 'Document',
+        description: 'CDD frame rate requirements.',
+        components: [
+            '24fps',
+            '30fps',
+            '60fps',
+            '120fps'
+        ]
+    },
+
+    'Bitrate': {
+        title: 'Bitrate',
+        layer: 'Document',
+        description: 'CDD bitrate requirements.',
+        components: [
+            'Minimum bitrate',
+            'Maximum bitrate',
+            'VBR/CBR',
+            'Codec-specific limits'
+        ]
+    },
+
+    'Raw Audio': {
+        title: 'Raw Audio',
+        layer: 'Document',
+        description: 'CDD raw audio requirements.',
+        components: [
+            'PCM 16-bit',
+            'PCM 24-bit',
+            'Sample rate',
+            'Channel count'
+        ]
+    },
+
+    'Latency': {
+        title: 'Latency',
+        layer: 'Document',
+        description: 'CDD audio latency requirements.',
+        components: [
+            'Output latency',
+            'Input latency',
+            'Round-trip latency',
+            'AAudio latency'
+        ]
+    },
+
+    'Microphone': {
+        title: 'Microphone',
+        layer: 'Hardware',
+        description: 'Microphone. Audio input device.',
+        components: [
+            'Built-in microphone',
+            'Directionality',
+            'Noise cancellation',
+            'Sample rate'
+        ]
+    },
+
+    'Media Performance': {
+        title: 'Media Performance',
+        layer: 'Document',
+        description: 'CDD media performance requirements.',
+        components: [
+            'Decoding performance',
+            'Encoding performance',
+            'Concurrent instances',
+            'Transition time'
+        ]
+    },
+
+    'Camera Requirements': {
+        title: 'Camera Requirements',
+        layer: 'Document',
+        description: 'CDD camera requirements.',
+        components: [
+            'Resolution',
+            'Frame Rate',
+            'Auto Focus',
+            'HDR'
+        ]
+    },
+
+    'Memory/Storage': {
+        title: 'Memory/Storage',
+        layer: 'Document',
+        description: 'CDD memory/storage requirements.',
+        components: [
+            'RAM requirements',
+            'Storage requirements',
+            'Adoptable Storage',
+            'Partitions'
+        ]
+    },
+
+    'Google': {
+        title: 'Google',
+        layer: 'Entity',
+        description: 'Google. Android platform developer.',
+        components: [
+            'AOSP',
+            'GMS',
+            'CDD/CTS',
+            'Android Updates'
+        ]
+    },
+
+    'OEM/Manufacturer': {
+        title: 'OEM/Manufacturer',
+        layer: 'Entity',
+        description: 'OEM/Manufacturer. Manufactures devices.',
+        components: [
+            'Hardware design',
+            'BSP development',
+            'Certification',
+            'Product launch'
+        ]
+    },
+
+    'Audio Framework': {
+        title: 'Audio Framework',
+        layer: 'Native',
+        description: 'Audio framework. Android audio system.',
+        components: [
+            'AudioFlinger',
+            'AudioPolicyService',
+            'Audio HAL',
+            'ALSA'
+        ],
+        path: 'frameworks/av/media/libaudioclient/'
+    },
+
+    'Codec2 Framework': {
+        title: 'Codec2 Framework',
+        layer: 'Native',
+        description: 'Codec2 framework. Android media codec system.',
+        components: [
+            'CCodec',
+            'C2Component',
+            'C2Buffer',
+            'Codec HAL'
+        ],
+        path: 'frameworks/av/media/codec2/'
+    },
+
+    'CTS Description': {
+        title: 'CTS Description',
+        layer: 'Testing',
+        description: 'CTS description. Compatibility Test Suite.',
+        components: [
+            'API tests',
+            'Behavior tests',
+            'Compatibility verification',
+            'Automated testing'
+        ]
+    },
+
+    'VTS Description': {
+        title: 'VTS Description',
+        layer: 'Testing',
+        description: 'VTS description. Vendor Test Suite.',
+        components: [
+            'HAL tests',
+            'Kernel tests',
+            'Treble verification',
+            'Vendor compatibility'
+        ]
+    },
+
+    'GTS Description': {
+        title: 'GTS Description',
+        layer: 'Testing',
+        description: 'GTS description. GMS Test Suite.',
+        components: [
+            'GMS tests',
+            'Play Store',
+            'Google apps',
+            'Play Services'
+        ]
+    },
+
+    'Test Device': {
+        title: 'Test Device',
+        layer: 'Testing',
+        description: 'Test device. Device to execute tests on.',
+        components: [
+            'Device Under Test',
+            'USB connection',
+            'ADB',
+            'Test environment'
+        ]
+    }
+};
+
+
 
 // ========================================
 // 언어별 데이터 선택
