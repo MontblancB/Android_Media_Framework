@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Widevine DRM 아키텍처 상세 시각화</title>
+    <title>Widevine DRM Architecture Detailed Visualization</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,32 +26,32 @@
     <div class="container">
         <header>
             <h1 class="page-title">🔒 Widevine DRM</h1>
-            <p class="page-subtitle">Google Widevine Digital Rights Management 아키텍처 상세 시각화</p>
+            <p class="page-subtitle">Google Widevine Digital Rights Management Architecture Detailed Visualization</p>
         </header>
 
         <!-- Section 1: Widevine Overview -->
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">1</span>
-                Widevine DRM 개요
+                Widevine DRM Overview
             </h2>
             <p class="section-description">
-                Widevine은 Google이 소유한 디지털 저작권 관리(DRM) 시스템으로,
-                스트리밍 서비스에서 프리미엄 콘텐츠를 보호하는 데 널리 사용됩니다.
+                Widevine is a digital rights management (DRM) system owned by Google,
+                widely used to protect premium content in streaming services.
             </p>
 
             <div class="content-grid">
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🎯</span>
-                        주요 목적
+                        Key Objectives
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>저작권 보호된 비디오 콘텐츠 보안</li>
-                            <li>불법 복제 및 화면 캡처 방지</li>
-                            <li>HD/4K 콘텐츠 스트리밍 보호</li>
-                            <li>다양한 플랫폼 지원 (Web, Android, iOS 등)</li>
+                            <li>Secure copyrighted video content</li>
+                            <li>Prevent piracy and screen capture</li>
+                            <li>Protect HD/4K content streaming</li>
+                            <li>Cross-platform support (Web, Android, iOS, etc.)</li>
                         </ul>
                     </div>
                 </div>
@@ -59,15 +59,15 @@
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🏢</span>
-                        주요 사용처
+                        Major Users
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li><strong>Netflix</strong>: HD/4K 스트리밍</li>
-                            <li><strong>Amazon Prime Video</strong>: 프리미엄 콘텐츠</li>
-                            <li><strong>Disney+</strong>: HDR 콘텐츠</li>
-                            <li><strong>YouTube</strong>: 유료 콘텐츠</li>
-                            <li><strong>Spotify</strong>: 오디오 DRM</li>
+                            <li><strong>Netflix</strong>: HD/4K streaming</li>
+                            <li><strong>Amazon Prime Video</strong>: Premium content</li>
+                            <li><strong>Disney+</strong>: HDR content</li>
+                            <li><strong>YouTube</strong>: Paid content</li>
+                            <li><strong>Spotify</strong>: Audio DRM</li>
                         </ul>
                     </div>
                 </div>
@@ -75,17 +75,17 @@
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🔐</span>
-                        보안 레벨
+                        Security Levels
                     </h3>
                     <div class="card-description">
-                        <p>Widevine은 3가지 보안 레벨을 제공:</p>
+                        <p>Widevine provides 3 security levels:</p>
                         <ul>
-                            <li><span class="security-badge security-l1">L1</span> 최고 보안 (하드웨어 TEE)</li>
-                            <li><span class="security-badge security-l2">L2</span> 중간 보안 (부분 TEE)</li>
-                            <li><span class="security-badge security-l3">L3</span> 기본 보안 (소프트웨어)</li>
+                            <li><span class="security-badge security-l1">L1</span> Highest security (Hardware TEE)</li>
+                            <li><span class="security-badge security-l2">L2</span> Medium security (Partial TEE)</li>
+                            <li><span class="security-badge security-l3">L3</span> Basic security (Software)</li>
                         </ul>
                         <p style="margin-top: 10px; font-size: 0.9em;">
-                            레벨에 따라 재생 가능한 화질이 제한됩니다.
+                            Playback quality is limited based on the security level.
                         </p>
                     </div>
                 </div>
@@ -93,13 +93,13 @@
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">⚙️</span>
-                        핵심 컴포넌트
+                        Core Components
                     </h3>
                     <div class="card-description">
                         <ul>
                             <li><strong>CDM</strong>: Content Decryption Module</li>
-                            <li><strong>OEMCrypto</strong>: 하드웨어 암호화 모듈</li>
-                            <li><strong>License Server</strong>: 라이선스 발급 서버</li>
+                            <li><strong>OEMCrypto</strong>: Hardware encryption module</li>
+                            <li><strong>License Server</strong>: License issuance server</li>
                             <li><strong>EME</strong>: Encrypted Media Extensions (Web)</li>
                             <li><strong>MediaDrm</strong>: Android DRM API</li>
                         </ul>
@@ -112,36 +112,36 @@
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">2</span>
-                보안 레벨 (L1, L2, L3)
+                Security Levels (L1, L2, L3)
             </h2>
             <p class="section-description">
-                Widevine의 보안 레벨은 하드웨어 기반 보안(TEE) 사용 여부에 따라 구분되며,
-                각 레벨마다 재생 가능한 콘텐츠 화질이 다릅니다.
+                Widevine security levels are distinguished by hardware-based security (TEE) usage,
+                with different playable content quality for each level.
             </p>
 
             <div class="mermaid-container">
                 <div class="mermaid">
                     graph TB
-                    subgraph L1["Security Level 1 (최고 보안)"]
+                    subgraph L1["Security Level 1 (Highest Security)"]
                     L1_TEE["Trusted Execution Environment<br />(ARM TrustZone)"]
-                    L1_CRYPT["암호화 작업<br />(TEE 내부)"]
-                    L1_DEC["비디오 디코딩<br />(TEE 내부)"]
-                    L1_RENDER["렌더링<br />(하드웨어 보호)"]
-                    L1_OUT["출력: HD/4K/HDR"]
+                    L1_CRYPT["Cryptographic Operations<br />(Inside TEE)"]
+                    L1_DEC["Video Decoding<br />(Inside TEE)"]
+                    L1_RENDER["Rendering<br />(Hardware Protected)"]
+                    L1_OUT["Output: HD/4K/HDR"]
                     end
 
-                    subgraph L2["Security Level 2 (중간 보안)"]
+                    subgraph L2["Security Level 2 (Medium Security)"]
                     L2_TEE["Trusted Execution Environment"]
-                    L2_CRYPT["암호화 작업<br />(TEE 내부)"]
-                    L2_DEC["비디오 디코딩<br />(TEE 외부)"]
-                    L2_OUT["출력: ~540p"]
+                    L2_CRYPT["Cryptographic Operations<br />(Inside TEE)"]
+                    L2_DEC["Video Decoding<br />(Outside TEE)"]
+                    L2_OUT["Output: ~540p"]
                     end
 
-                    subgraph L3["Security Level 3 (기본 보안)"]
-                    L3_SW["소프트웨어 DRM<br />(TEE 없음)"]
-                    L3_CRYPT["암호화 작업<br />(사용자 공간)"]
-                    L3_DEC["비디오 디코딩<br />(소프트웨어)"]
-                    L3_OUT["출력: SD (480p)"]
+                    subgraph L3["Security Level 3 (Basic Security)"]
+                    L3_SW["Software DRM<br />(No TEE)"]
+                    L3_CRYPT["Cryptographic Operations<br />(User Space)"]
+                    L3_DEC["Video Decoding<br />(Software)"]
+                    L3_OUT["Output: SD (480p)"]
                     end
 
                     L1_TEE --> L1_CRYPT --> L1_DEC --> L1_RENDER --> L1_OUT
@@ -152,72 +152,72 @@
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;">
-                📊 보안 레벨 상세 비교
+                📊 Security Level Detailed Comparison
             </h3>
 
             <table class="comparison-table">
                 <thead>
                     <tr>
-                        <th>항목</th>
-                        <th>L1 (최고)</th>
-                        <th>L2 (중간)</th>
-                        <th>L3 (기본)</th>
+                        <th>Item</th>
+                        <th>L1 (Highest)</th>
+                        <th>L2 (Medium)</th>
+                        <th>L3 (Basic)</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>암호화 작업</strong></td>
-                        <td>TEE 내부</td>
-                        <td>TEE 내부</td>
-                        <td>사용자 공간 (소프트웨어)</td>
+                        <td><strong>Cryptographic Operations</strong></td>
+                        <td>Inside TEE</td>
+                        <td>Inside TEE</td>
+                        <td>User Space (Software)</td>
                     </tr>
                     <tr>
-                        <td><strong>비디오 디코딩</strong></td>
-                        <td>TEE 내부</td>
-                        <td>TEE 외부</td>
-                        <td>사용자 공간 (소프트웨어)</td>
+                        <td><strong>Video Decoding</strong></td>
+                        <td>Inside TEE</td>
+                        <td>Outside TEE</td>
+                        <td>User Space (Software)</td>
                     </tr>
                     <tr>
-                        <td><strong>렌더링</strong></td>
-                        <td>하드웨어 보호</td>
-                        <td>소프트웨어/하드웨어</td>
-                        <td>소프트웨어</td>
+                        <td><strong>Rendering</strong></td>
+                        <td>Hardware Protected</td>
+                        <td>Software/Hardware</td>
+                        <td>Software</td>
                     </tr>
                     <tr>
-                        <td><strong>최대 화질</strong></td>
+                        <td><strong>Max Quality</strong></td>
                         <td>4K UHD, HDR</td>
                         <td>~540p</td>
                         <td>SD (480p)</td>
                     </tr>
                     <tr>
-                        <td><strong>화면 캡처 방지</strong></td>
-                        <td>완벽 차단</td>
-                        <td>부분 차단</td>
-                        <td>제한적</td>
+                        <td><strong>Screen Capture Prevention</strong></td>
+                        <td>Complete Block</td>
+                        <td>Partial Block</td>
+                        <td>Limited</td>
                     </tr>
                     <tr>
-                        <td><strong>하드웨어 요구사항</strong></td>
-                        <td>TEE 필수 (ARM TrustZone)</td>
-                        <td>부분 TEE</td>
-                        <td>없음 (모든 기기)</td>
+                        <td><strong>Hardware Requirements</strong></td>
+                        <td>TEE Required (ARM TrustZone)</td>
+                        <td>Partial TEE</td>
+                        <td>None (All Devices)</td>
                     </tr>
                     <tr>
-                        <td><strong>보안 취약점</strong></td>
-                        <td>매우 낮음</td>
-                        <td>중간</td>
-                        <td>상대적으로 높음</td>
+                        <td><strong>Security Vulnerability</strong></td>
+                        <td>Very Low</td>
+                        <td>Medium</td>
+                        <td>Relatively High</td>
                     </tr>
                     <tr>
-                        <td><strong>주요 사용 기기</strong></td>
-                        <td>플래그십 스마트폰, 인증된 기기</td>
-                        <td>드물음</td>
-                        <td>엔트리 레벨 기기, 루팅된 기기</td>
+                        <td><strong>Primary Devices</strong></td>
+                        <td>Flagship Smartphones, Certified Devices</td>
+                        <td>Rare</td>
+                        <td>Entry-level Devices, Rooted Devices</td>
                     </tr>
                     <tr>
-                        <td><strong>Android 통합</strong></td>
+                        <td><strong>Android Integration</strong></td>
                         <td>Stagefright + TrustZone</td>
-                        <td>부분 통합</td>
-                        <td>소프트웨어 DRM만</td>
+                        <td>Partial Integration</td>
+                        <td>Software DRM Only</td>
                     </tr>
                 </tbody>
             </table>
@@ -229,13 +229,13 @@
                         <span class="tag tag-tee">TEE</span>
                     </h3>
                     <div class="card-description">
-                        <p><strong>완전한 하드웨어 보호</strong></p>
+                        <p><strong>Complete Hardware Protection</strong></p>
                         <ul>
-                            <li>모든 처리가 TEE 내부에서 진행</li>
-                            <li>복호화 키가 절대 노출되지 않음</li>
-                            <li>ARM TrustZone 활용</li>
-                            <li>Netflix, Disney+ 4K 재생 가능</li>
-                            <li>Google 인증 필수</li>
+                            <li>All processing occurs inside TEE</li>
+                            <li>Decryption keys never exposed</li>
+                            <li>Uses ARM TrustZone</li>
+                            <li>Netflix, Disney+ 4K playback enabled</li>
+                            <li>Google certification required</li>
                         </ul>
                     </div>
                 </div>
@@ -245,13 +245,13 @@
                         ⚠️ Level 2 (L2)
                     </h3>
                     <div class="card-description">
-                        <p><strong>부분 하드웨어 보호</strong></p>
+                        <p><strong>Partial Hardware Protection</strong></p>
                         <ul>
-                            <li>암호화만 TEE에서 처리</li>
-                            <li>디코딩은 TEE 외부</li>
-                            <li>시장에서 드물게 사용</li>
-                            <li>중간 화질 제한 (540p)</li>
-                            <li>과도기적 솔루션</li>
+                            <li>Only encryption processed in TEE</li>
+                            <li>Decoding outside TEE</li>
+                            <li>Rarely used in market</li>
+                            <li>Medium quality limit (540p)</li>
+                            <li>Transitional solution</li>
                         </ul>
                     </div>
                 </div>
@@ -262,13 +262,13 @@
                         <span class="tag tag-software">Software</span>
                     </h3>
                     <div class="card-description">
-                        <p><strong>소프트웨어 전용 보호</strong></p>
+                        <p><strong>Software-Only Protection</strong></p>
                         <ul>
-                            <li>TEE 없이 소프트웨어로만 동작</li>
-                            <li>메모리 덤프 공격에 취약</li>
-                            <li>모든 Android 기기 호환</li>
-                            <li>SD 화질 제한 (480p)</li>
-                            <li>루팅된 기기는 L3로 강등</li>
+                            <li>Operates in software without TEE</li>
+                            <li>Vulnerable to memory dump attacks</li>
+                            <li>Compatible with all Android devices</li>
+                            <li>SD quality limit (480p)</li>
+                            <li>Rooted devices downgraded to L3</li>
                         </ul>
                     </div>
                 </div>
@@ -279,10 +279,10 @@
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">3</span>
-                Widevine 아키텍처
+                Widevine Architecture
             </h2>
             <p class="section-description">
-                Widevine DRM의 전체 아키텍처는 CDM, OEMCrypto, 라이선스 서버로 구성됩니다.
+                The overall Widevine DRM architecture consists of CDM, OEMCrypto, and License Server.
             </p>
 
             <div class="mermaid-container">
@@ -346,13 +346,13 @@
                         CDM (Content Decryption Module)
                     </h3>
                     <div class="card-description">
-                        <p>Widevine 핵심 컴포넌트</p>
+                        <p>Widevine Core Component</p>
                         <ul>
-                            <li>라이선스 요청 생성</li>
-                            <li>PSSH (Protection System Specific Header) 파싱</li>
-                            <li>세션 관리 (Temporary/Persistent)</li>
-                            <li>OEMCrypto와 통신하여 복호화</li>
-                            <li>브라우저/앱 샌드박스 내에서 동작</li>
+                            <li>Generate license requests</li>
+                            <li>PSSH (Protection System Specific Header) parsing</li>
+                            <li>Session management (Temporary/Persistent)</li>
+                            <li>Communicate with OEMCrypto for decryption</li>
+                            <li>Operates within browser/app sandbox</li>
                         </ul>
                     </div>
                 </div>
@@ -363,13 +363,13 @@
                         OEMCrypto Module
                     </h3>
                     <div class="card-description">
-                        <p>하드웨어 보안 모듈</p>
+                        <p>Hardware Security Module</p>
                         <ul>
-                            <li>TEE(Trusted Execution Environment) 내에서 실행</li>
-                            <li>복호화 키 관리 및 저장</li>
-                            <li>암호화된 콘텐츠 복호화</li>
-                            <li>서명 키 검증</li>
-                            <li>하드웨어 기반 보안 제공 (L1)</li>
+                            <li>Runs inside TEE (Trusted Execution Environment)</li>
+                            <li>Decryption key management and storage</li>
+                            <li>Decrypt encrypted content</li>
+                            <li>Signature key verification</li>
+                            <li>Provides hardware-based security (L1)</li>
                         </ul>
                     </div>
                 </div>
@@ -380,13 +380,13 @@
                         EME (Web)
                     </h3>
                     <div class="card-description">
-                        <p>웹 브라우저 DRM API</p>
+                        <p>Web Browser DRM API</p>
                         <ul>
-                            <li>W3C 표준 (<code>navigator.requestMediaKeySystemAccess()</code>)</li>
-                            <li>MediaKeys 객체 생성</li>
-                            <li>MediaKeySession 관리</li>
-                            <li>암호화된 미디어 재생 지원</li>
-                            <li>Chrome, Firefox, Safari 지원</li>
+                            <li>W3C Standard (<code>navigator.requestMediaKeySystemAccess()</code>)</li>
+                            <li>Create MediaKeys object</li>
+                            <li>MediaKeySession management</li>
+                            <li>Support encrypted media playback</li>
+                            <li>Chrome, Firefox, Safari supported</li>
                         </ul>
                     </div>
                 </div>
@@ -397,13 +397,13 @@
                         MediaDrm (Android)
                     </h3>
                     <div class="card-description">
-                        <p>Android DRM 프레임워크</p>
+                        <p>Android DRM Framework</p>
                         <ul>
                             <li><code>android.media.MediaDrm</code> API</li>
-                            <li>DRM 플러그인 아키텍처</li>
-                            <li>UUID 기반 DRM 스킴 식별</li>
+                            <li>DRM plugin architecture</li>
+                            <li>UUID-based DRM scheme identification</li>
                             <li>CryptoHal/DrmHal (AIDL)</li>
-                            <li>ExoPlayer, MediaPlayer 통합</li>
+                            <li>ExoPlayer, MediaPlayer integration</li>
                         </ul>
                     </div>
                 </div>
@@ -414,13 +414,13 @@
                         License Server
                     </h3>
                     <div class="card-description">
-                        <p>Widevine 라이선스 발급</p>
+                        <p>Widevine License Issuance</p>
                         <ul>
-                            <li>클라이언트 인증</li>
-                            <li>콘텐츠 키 생성 및 암호화</li>
-                            <li>라이선스 정책 적용 (만료 시간, 재생 횟수)</li>
-                            <li>기기 프로비저닝</li>
-                            <li>Google 또는 타사 라이선스 서버</li>
+                            <li>Client authentication</li>
+                            <li>Content key generation and encryption</li>
+                            <li>License policy application (expiration, playback count)</li>
+                            <li>Device provisioning</li>
+                            <li>Google or third-party license server</li>
                         </ul>
                     </div>
                 </div>
@@ -431,13 +431,13 @@
                         TEE (TrustZone)
                     </h3>
                     <div class="card-description">
-                        <p>신뢰 실행 환경</p>
+                        <p>Trusted Execution Environment</p>
                         <ul>
-                            <li>ARM TrustZone 기술</li>
-                            <li>격리된 보안 영역</li>
-                            <li>루트 공격으로부터 보호</li>
-                            <li>Secure World / Normal World 분리</li>
-                            <li>하드웨어 기반 키 저장소</li>
+                            <li>ARM TrustZone technology</li>
+                            <li>Isolated secure area</li>
+                            <li>Protection from root attacks</li>
+                            <li>Secure World / Normal World separation</li>
+                            <li>Hardware-based key storage</li>
                         </ul>
                     </div>
                 </div>
@@ -448,10 +448,10 @@
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">4</span>
-                라이선스 획득 플로우
+                License Acquisition Flow
             </h2>
             <p class="section-description">
-                Widevine 라이선스를 획득하고 콘텐츠를 재생하는 전체 과정을 시각화합니다.
+                Visualizing the entire process of acquiring a Widevine license and playing content.
             </p>
 
             <div class="mermaid-container">
@@ -464,130 +464,130 @@
                     participant OEM as OEMCrypto
                     participant TEE as TrustZone (TEE)
 
-                    APP->>EME: 암호화된 미디어 감지
-                    EME->>EME: 'encrypted' 이벤트 발생
+                    APP->>EME: Detect encrypted media
+                    EME->>EME: 'encrypted' event fired
                     APP->>EME: requestMediaKeySystemAccess()
-                    EME-->>APP: MediaKeys 객체 생성
+                    EME-->>APP: Create MediaKeys object
 
                     APP->>CDM: createSession()
-                    CDM->>CDM: Session 생성
+                    CDM->>CDM: Create Session
                     APP->>CDM: generateRequest(initData)
-                    CDM->>CDM: PSSH 파싱
-                    CDM-->>APP: 'message' 이벤트<br />(License Request)
+                    CDM->>CDM: Parse PSSH
+                    CDM-->>APP: 'message' event<br />(License Request)
 
                     APP->>LS: XHR/Fetch<br />(License Request)
-                    LS->>LS: 클라이언트 인증
-                    LS->>LS: 콘텐츠 키 생성
+                    LS->>LS: Client authentication
+                    LS->>LS: Generate content key
                     LS-->>APP: Encrypted License
 
                     APP->>CDM: update(license)
-                    CDM->>OEM: 라이선스 전달
-                    OEM->>TEE: 키 저장 (Secure Storage)
-                    TEE-->>OEM: 저장 완료
-                    OEM-->>CDM: 준비 완료
-                    CDM-->>APP: 재생 가능
+                    CDM->>OEM: Pass license
+                    OEM->>TEE: Store key (Secure Storage)
+                    TEE-->>OEM: Storage complete
+                    OEM-->>CDM: Ready
+                    CDM-->>APP: Playback ready
 
-                    loop 콘텐츠 재생
-                    APP->>CDM: 암호화된 청크
-                    CDM->>OEM: 복호화 요청
-                    OEM->>TEE: 키 로드 및 복호화
-                    TEE-->>OEM: 복호화된 데이터
-                    OEM-->>CDM: 복호화된 데이터
-                    CDM-->>APP: 재생용 데이터
-                    APP->>APP: 디코딩 및 렌더링
+                    loop Content Playback
+                    APP->>CDM: Encrypted chunk
+                    CDM->>OEM: Decryption request
+                    OEM->>TEE: Load key and decrypt
+                    TEE-->>OEM: Decrypted data
+                    OEM-->>CDM: Decrypted data
+                    CDM-->>APP: Playback data
+                    APP->>APP: Decode and render
                     end
                 </div>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 30px; margin-bottom: 15px;">
-                📋 단계별 상세 설명
+                📋 Step-by-Step Details
             </h3>
 
             <div class="content-grid">
                 <div class="card">
-                    <h3 class="card-title">1️⃣ 미디어 감지</h3>
+                    <h3 class="card-title">1️⃣ Media Detection</h3>
                     <div class="card-description">
                         <ul>
-                            <li>HTML5 <code>&lt;video&gt;</code> 또는 앱이 암호화된 미디어 로드</li>
-                            <li><code>encrypted</code> 이벤트 발생</li>
-                            <li>initData에 PSSH 정보 포함</li>
+                            <li>HTML5 <code>&lt;video&gt;</code> or app loads encrypted media</li>
+                            <li><code>encrypted</code> event fired</li>
+                            <li>PSSH info included in initData</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">2️⃣ Key System 선택</h3>
+                    <h3 class="card-title">2️⃣ Key System Selection</h3>
                     <div class="card-description">
                         <ul>
                             <li><code>navigator.requestMediaKeySystemAccess()</code></li>
-                            <li>"com.widevine.alpha" 선택</li>
-                            <li>MediaKeys 객체 생성</li>
+                            <li>Select "com.widevine.alpha"</li>
+                            <li>Create MediaKeys object</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">3️⃣ 세션 생성</h3>
+                    <h3 class="card-title">3️⃣ Session Creation</h3>
                     <div class="card-description">
                         <ul>
-                            <li>MediaKeySession 객체 생성</li>
-                            <li>세션 타입: "temporary" 또는 "persistent"</li>
-                            <li><code>generateRequest(initData)</code> 호출</li>
+                            <li>Create MediaKeySession object</li>
+                            <li>Session type: "temporary" or "persistent"</li>
+                            <li>Call <code>generateRequest(initData)</code></li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">4️⃣ 라이선스 요청</h3>
+                    <h3 class="card-title">4️⃣ License Request</h3>
                     <div class="card-description">
                         <ul>
-                            <li>CDM이 라이선스 요청 메시지 생성</li>
-                            <li><code>message</code> 이벤트로 앱에 전달</li>
-                            <li>앱이 License Server로 XHR 전송</li>
+                            <li>CDM generates license request message</li>
+                            <li>Passed to app via <code>message</code> event</li>
+                            <li>App sends XHR to License Server</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">5️⃣ 라이선스 발급</h3>
+                    <h3 class="card-title">5️⃣ License Issuance</h3>
                     <div class="card-description">
                         <ul>
-                            <li>License Server가 클라이언트 인증</li>
-                            <li>콘텐츠 키 생성 및 암호화</li>
-                            <li>암호화된 라이선스 응답</li>
+                            <li>License Server authenticates client</li>
+                            <li>Generate and encrypt content key</li>
+                            <li>Return encrypted license response</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">6️⃣ 키 프로비저닝</h3>
+                    <h3 class="card-title">6️⃣ Key Provisioning</h3>
                     <div class="card-description">
                         <ul>
-                            <li><code>session.update(license)</code> 호출</li>
-                            <li>CDM이 OEMCrypto로 라이선스 전달</li>
-                            <li>TEE에 복호화 키 안전하게 저장</li>
+                            <li>Call <code>session.update(license)</code></li>
+                            <li>CDM passes license to OEMCrypto</li>
+                            <li>Store decryption key securely in TEE</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">7️⃣ 콘텐츠 복호화</h3>
+                    <h3 class="card-title">7️⃣ Content Decryption</h3>
                     <div class="card-description">
                         <ul>
-                            <li>암호화된 미디어 청크를 CDM에 전달</li>
-                            <li>OEMCrypto가 TEE 내에서 복호화</li>
-                            <li>복호화된 데이터를 플레이어에 반환</li>
+                            <li>Pass encrypted media chunks to CDM</li>
+                            <li>OEMCrypto decrypts inside TEE</li>
+                            <li>Return decrypted data to player</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">8️⃣ 재생</h3>
+                    <h3 class="card-title">8️⃣ Playback</h3>
                     <div class="card-description">
                         <ul>
-                            <li>디코더가 복호화된 데이터 처리</li>
-                            <li>렌더러가 화면에 출력</li>
-                            <li>A/V 동기화 유지</li>
+                            <li>Decoder processes decrypted data</li>
+                            <li>Renderer outputs to screen</li>
+                            <li>Maintain A/V synchronization</li>
                         </ul>
                     </div>
                 </div>
@@ -598,10 +598,10 @@
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">5</span>
-                Android 통합
+                Android Integration
             </h2>
             <p class="section-description">
-                Widevine이 Android Media Framework와 어떻게 통합되는지 보여줍니다.
+                Shows how Widevine integrates with the Android Media Framework.
             </p>
 
             <div class="mermaid-container">
@@ -658,12 +658,12 @@
                         Application Layer
                     </h3>
                     <div class="card-description">
-                        <p>앱에서 사용하는 미디어 플레이어</p>
+                        <p>Media players used in apps</p>
                         <ul>
-                            <li><strong>ExoPlayer</strong>: Google 권장, DRM 완벽 지원</li>
-                            <li><strong>MediaPlayer</strong>: 시스템 기본 플레이어</li>
-                            <li>MediaDrm API로 라이선스 관리</li>
-                            <li>MediaCrypto로 복호화 연결</li>
+                            <li><strong>ExoPlayer</strong>: Google recommended, full DRM support</li>
+                            <li><strong>MediaPlayer</strong>: System default player</li>
+                            <li>License management via MediaDrm API</li>
+                            <li>Decryption connection via MediaCrypto</li>
                         </ul>
                     </div>
                 </div>
@@ -674,12 +674,12 @@
                         Framework Layer
                     </h3>
                     <div class="card-description">
-                        <p>Android DRM 프레임워크</p>
+                        <p>Android DRM Framework</p>
                         <ul>
-                            <li><code>android.media.MediaDrm</code>: DRM 세션 관리</li>
-                            <li><code>MediaCrypto</code>: 복호화 세션</li>
-                            <li><code>MediaCodec</code>과 통합</li>
-                            <li>UUID로 DRM 스킴 식별</li>
+                            <li><code>android.media.MediaDrm</code>: DRM session management</li>
+                            <li><code>MediaCrypto</code>: Decryption session</li>
+                            <li>Integration with <code>MediaCodec</code></li>
+                            <li>DRM scheme identification via UUID</li>
                         </ul>
                     </div>
                 </div>
@@ -690,12 +690,12 @@
                         Native Layer
                     </h3>
                     <div class="card-description">
-                        <p>HAL 인터페이스</p>
+                        <p>HAL Interface</p>
                         <ul>
-                            <li><code>libmediadrm</code>: 네이티브 DRM 라이브러리</li>
-                            <li><strong>DrmHal</strong>: 라이선스 관리 HAL (AIDL)</li>
-                            <li><strong>CryptoHal</strong>: 복호화 HAL (AIDL)</li>
-                            <li>Android 11+부터 AIDL 기반</li>
+                            <li><code>libmediadrm</code>: Native DRM library</li>
+                            <li><strong>DrmHal</strong>: License management HAL (AIDL)</li>
+                            <li><strong>CryptoHal</strong>: Decryption HAL (AIDL)</li>
+                            <li>AIDL-based from Android 11+</li>
                         </ul>
                     </div>
                 </div>
@@ -706,12 +706,12 @@
                         Vendor Layer
                     </h3>
                     <div class="card-description">
-                        <p>Widevine 플러그인</p>
+                        <p>Widevine Plugin</p>
                         <ul>
                             <li><code>libwvdrmengine.so</code>: Widevine CDM</li>
-                            <li><code>liboemcrypto.so</code>: OEMCrypto 구현</li>
-                            <li>벤더별 커스터마이징 가능</li>
-                            <li>Google 인증 필요 (L1)</li>
+                            <li><code>liboemcrypto.so</code>: OEMCrypto implementation</li>
+                            <li>Vendor customization available</li>
+                            <li>Google certification required (L1)</li>
                         </ul>
                     </div>
                 </div>
@@ -722,12 +722,12 @@
                         Secure World
                     </h3>
                     <div class="card-description">
-                        <p>TrustZone 보안 영역</p>
+                        <p>TrustZone Secure Region</p>
                         <ul>
-                            <li><strong>TEE OS</strong>: 신뢰 실행 환경 운영체제</li>
-                            <li><strong>Widevine Trustlet</strong>: TEE 내 Widevine 에이전트</li>
-                            <li><strong>Secure Key Storage</strong>: 하드웨어 키 저장소</li>
-                            <li>Normal World와 격리</li>
+                            <li><strong>TEE OS</strong>: Trusted Execution Environment OS</li>
+                            <li><strong>Widevine Trustlet</strong>: Widevine agent in TEE</li>
+                            <li><strong>Secure Key Storage</strong>: Hardware key storage</li>
+                            <li>Isolated from Normal World</li>
                         </ul>
                     </div>
                 </div>
@@ -735,15 +735,15 @@
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🔍</span>
-                        확인 방법
+                        How to Check
                     </h3>
                     <div class="card-description">
-                        <p>Android 기기의 Widevine 레벨 확인</p>
+                        <p>Check Widevine level on Android device</p>
                         <ul>
-                            <li><strong>DRM Info</strong> 앱 설치 (Play Store)</li>
-                            <li><code>MediaDrm.getPropertyString()</code> API 사용</li>
-                            <li>보안 레벨 확인: L1/L2/L3</li>
-                            <li>루팅 시 L3로 강등될 수 있음</li>
+                            <li>Install <strong>DRM Info</strong> app (Play Store)</li>
+                            <li>Use <code>MediaDrm.getPropertyString()</code> API</li>
+                            <li>Check security level: L1/L2/L3</li>
+                            <li>May be downgraded to L3 when rooted</li>
                         </ul>
                     </div>
                 </div>
@@ -754,26 +754,26 @@
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">6</span>
-                보안 및 모범 사례
+                Security & Best Practices
             </h2>
             <p class="section-description">
-                Widevine DRM을 안전하고 효과적으로 사용하기 위한 보안 고려사항과 모범 사례입니다.
+                Security considerations and best practices for using Widevine DRM safely and effectively.
             </p>
 
             <div class="content-grid">
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">✅</span>
-                        보안 강화
+                        Security Enhancement
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>항상 L1 레벨 기기 권장</li>
-                            <li>HTTPS로 라이선스 요청</li>
-                            <li>라이선스 만료 시간 설정</li>
-                            <li>재생 횟수 제한</li>
-                            <li>기기 프로비저닝 관리</li>
-                            <li>루팅 감지 구현</li>
+                            <li>Always recommend L1 level devices</li>
+                            <li>License requests over HTTPS</li>
+                            <li>Set license expiration time</li>
+                            <li>Limit playback count</li>
+                            <li>Manage device provisioning</li>
+                            <li>Implement root detection</li>
                         </ul>
                     </div>
                 </div>
@@ -781,15 +781,15 @@
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🎬</span>
-                        콘텐츠 보호
+                        Content Protection
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>HD/4K 콘텐츠는 L1만 허용</li>
-                            <li>HDCP (High-bandwidth Digital Content Protection) 적용</li>
-                            <li>화면 캡처 방지 (L1)</li>
-                            <li>워터마킹 추가 고려</li>
-                            <li>저작권 정보 삽입</li>
+                            <li>HD/4K content L1 only</li>
+                            <li>Apply HDCP (High-bandwidth Digital Content Protection)</li>
+                            <li>Screen capture prevention (L1)</li>
+                            <li>Consider adding watermarking</li>
+                            <li>Embed copyright information</li>
                         </ul>
                     </div>
                 </div>
@@ -797,15 +797,15 @@
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">⚠️</span>
-                        알려진 제한사항
+                        Known Limitations
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>루팅된 기기는 L3로 강등</li>
-                            <li>Custom ROM 사용 시 L3</li>
-                            <li>Bootloader 언락 시 L3</li>
-                            <li>소프트웨어 업데이트 후 레벨 변경 가능</li>
-                            <li>L3 기기는 SD 화질 제한</li>
+                            <li>Rooted devices downgraded to L3</li>
+                            <li>Custom ROM results in L3</li>
+                            <li>Bootloader unlock results in L3</li>
+                            <li>Level may change after software update</li>
+                            <li>L3 devices limited to SD quality</li>
                         </ul>
                     </div>
                 </div>
@@ -813,15 +813,15 @@
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🔧</span>
-                        개발 권장사항
+                        Development Recommendations
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>ExoPlayer 사용 권장 (Android)</li>
-                            <li>Persistent 라이선스로 오프라인 재생 지원</li>
-                            <li>라이선스 갱신 로직 구현</li>
-                            <li>에러 처리 및 폴백</li>
-                            <li>보안 레벨별 화질 조정</li>
+                            <li>Recommend ExoPlayer (Android)</li>
+                            <li>Support offline playback with persistent licenses</li>
+                            <li>Implement license renewal logic</li>
+                            <li>Error handling and fallback</li>
+                            <li>Adjust quality by security level</li>
                         </ul>
                     </div>
                 </div>
@@ -829,15 +829,15 @@
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">📊</span>
-                        성능 최적화
+                        Performance Optimization
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>라이선스 미리 로드 (Pre-fetch)</li>
-                            <li>세션 재사용</li>
-                            <li>하드웨어 디코더 활용</li>
-                            <li>버퍼링 최적화</li>
-                            <li>네트워크 상태에 따른 ABR</li>
+                            <li>Pre-fetch licenses</li>
+                            <li>Session reuse</li>
+                            <li>Utilize hardware decoder</li>
+                            <li>Buffering optimization</li>
+                            <li>ABR based on network status</li>
                         </ul>
                     </div>
                 </div>
@@ -845,15 +845,15 @@
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🐛</span>
-                        디버깅 팁
+                        Debugging Tips
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>DRM Info 앱으로 보안 레벨 확인</li>
-                            <li>Chrome DevTools의 EME 로그 활용</li>
-                            <li>Android Logcat으로 MediaDrm 로그 확인</li>
+                            <li>Check security level with DRM Info app</li>
+                            <li>Use Chrome DevTools EME logs</li>
+                            <li>Check MediaDrm logs with Android Logcat</li>
                             <li><code>adb shell dumpsys media.drm</code></li>
-                            <li>라이선스 요청/응답 검증</li>
+                            <li>Verify license request/response</li>
                         </ul>
                     </div>
                 </div>
@@ -864,31 +864,31 @@
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">7</span>
-                실제 코드 예시
+                Code Examples
             </h2>
             <p class="section-description">
-                Android MediaDrm API, ExoPlayer DRM 설정, Web EME 구현 예시입니다.
+                Android MediaDrm API, ExoPlayer DRM setup, and Web EME implementation examples.
             </p>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 30px; margin-bottom: 15px;">
-                7-1. Android MediaDrm API 사용
+                7-1. Android MediaDrm API Usage
             </h3>
             <div class="code-block">
-                <pre><code class="language-kotlin">// Widevine MediaDrm 초기화
+                <pre><code class="language-kotlin">// Initialize Widevine MediaDrm
 val WIDEVINE_UUID = UUID(-0x121074568629b532L, -0x5c37d8232ae2de13L)
 // "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed"
 
 val mediaDrm = MediaDrm(WIDEVINE_UUID)
 
-// 보안 레벨 확인
+// Check security level
 val securityLevel = mediaDrm.getPropertyString(MediaDrm.PROPERTY_SECURITY_LEVEL)
 Log.d(TAG, "Widevine Security Level: $securityLevel") // "L1", "L2", or "L3"
 
-// 세션 생성
+// Create session
 val sessionId = mediaDrm.openSession()
 
-// 라이선스 요청 생성
-val initData = extractInitData(encryptedContent) // PSSH 데이터
+// Generate license request
+val initData = extractInitData(encryptedContent) // PSSH data
 val keyRequest = mediaDrm.getKeyRequest(
     sessionId,
     initData,
@@ -897,28 +897,28 @@ val keyRequest = mediaDrm.getKeyRequest(
     null // Optional parameters
 )
 
-// 라이선스 서버로 요청
+// Request to license server
 val licenseUrl = "https://license.example.com/widevine"
 val licenseResponse = sendLicenseRequest(licenseUrl, keyRequest.data)
 
-// 라이선스 제공
+// Provide license
 mediaDrm.provideKeyResponse(sessionId, licenseResponse)
 
-// MediaCrypto 생성 (MediaCodec과 연동)
+// Create MediaCrypto (integration with MediaCodec)
 val mediaCrypto = MediaCrypto(WIDEVINE_UUID, sessionId)
 
-// MediaCodec 설정
+// Configure MediaCodec
 val mediaCodec = MediaCodec.createDecoderByType("video/avc")
 mediaCodec.configure(format, surface, mediaCrypto, 0)
 
-// 재생 완료 후 정리
+// Cleanup after playback
 mediaDrm.closeSession(sessionId)
 mediaDrm.release()
 mediaCrypto.release()</code></pre>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                7-2. ExoPlayer Widevine DRM 설정
+                7-2. ExoPlayer Widevine DRM Configuration
             </h3>
             <div class="code-block">
                 <pre><code class="language-kotlin">// ExoPlayer with Widevine DRM
@@ -927,7 +927,7 @@ val drmCallback = HttpMediaDrmCallback(
     DefaultHttpDataSource.Factory()
 )
 
-// DRM 세션 매니저
+// DRM session manager
 val drmSessionManager = DefaultDrmSessionManager.Builder()
     .setUuidAndExoMediaDrmProvider(
         C.WIDEVINE_UUID,
@@ -936,7 +936,7 @@ val drmSessionManager = DefaultDrmSessionManager.Builder()
     .setMultiSession(false)
     .build(drmCallback)
 
-// MediaSource 생성
+// Create MediaSource
 val mediaItem = MediaItem.Builder()
     .setUri("https://example.com/encrypted_video.mpd")
     .setDrmConfiguration(
@@ -951,7 +951,7 @@ val mediaSource = DashMediaSource.Factory(dataSourceFactory)
     .setDrmSessionManagerProvider { drmSessionManager }
     .createMediaSource(mediaItem)
 
-// ExoPlayer 설정
+// Configure ExoPlayer
 val player = ExoPlayer.Builder(context)
     .build()
     .apply {
@@ -960,7 +960,7 @@ val player = ExoPlayer.Builder(context)
         playWhenReady = true
     }
 
-// DRM 이벤트 리스너
+// DRM event listener
 player.addListener(object : Player.Listener {
     override fun onPlayerError(error: PlaybackException) {
         if (error.cause is DrmSession.DrmSessionException) {
@@ -972,13 +972,13 @@ player.addListener(object : Player.Listener {
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                7-3. Web EME (Encrypted Media Extensions) 구현
+                7-3. Web EME (Encrypted Media Extensions) Implementation
             </h3>
             <div class="code-block">
-                <pre><code class="language-javascript">// Web에서 Widevine 사용
+                <pre><code class="language-javascript">// Using Widevine on Web
 const video = document.querySelector('video');
 
-// Widevine Key System 확인
+// Check Widevine Key System
 const config = [{
     initDataTypes: ['cenc'],
     videoCapabilities: [{
@@ -998,7 +998,7 @@ navigator.requestMediaKeySystemAccess('com.widevine.alpha', config)
         video.setMediaKeys(mediaKeys);
         const keySession = mediaKeys.createSession();
 
-        // 'encrypted' 이벤트 리스너
+        // 'encrypted' event listener
         video.addEventListener('encrypted', event => {
             console.log('Encrypted event:', event.initDataType);
 
@@ -1011,7 +1011,7 @@ navigator.requestMediaKeySystemAccess('com.widevine.alpha', config)
                 });
         });
 
-        // 'message' 이벤트: 라이선스 요청
+        // 'message' event: license request
         keySession.addEventListener('message', event => {
             console.log('License request:', event.messageType);
 
@@ -1038,16 +1038,16 @@ navigator.requestMediaKeySystemAccess('com.widevine.alpha', config)
         console.error('MediaKeySystemAccess failed:', error);
     });
 
-// 비디오 재생
+// Play video
 video.src = 'https://example.com/encrypted_video.mp4';
 video.play();</code></pre>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                7-4. 라이선스 요청/응답 처리
+                7-4. License Request/Response Handling
             </h3>
             <div class="code-block">
-                <pre><code class="language-kotlin">// 라이선스 서버 통신
+                <pre><code class="language-kotlin">// License server communication
 suspend fun sendLicenseRequest(url: String, requestData: ByteArray): ByteArray {
     return withContext(Dispatchers.IO) {
         val connection = URL(url).openConnection() as HttpURLConnection
@@ -1060,10 +1060,10 @@ suspend fun sendLicenseRequest(url: String, requestData: ByteArray): ByteArray {
                 setRequestProperty("User-Agent", "Widevine CDM")
             }
 
-            // 요청 전송
+            // Send request
             connection.outputStream.use { it.write(requestData) }
 
-            // 응답 수신
+            // Receive response
             if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                 connection.inputStream.use { it.readBytes() }
             } else {
@@ -1075,9 +1075,9 @@ suspend fun sendLicenseRequest(url: String, requestData: ByteArray): ByteArray {
     }
 }
 
-// PSSH 데이터 추출
+// Extract PSSH data
 fun extractInitData(mp4Data: ByteArray): ByteArray? {
-    // MP4에서 'pssh' box 찾기
+    // Find 'pssh' box in MP4
     var offset = 0
     while (offset < mp4Data.size - 8) {
         val boxSize = ByteBuffer.wrap(mp4Data, offset, 4).int
@@ -1098,25 +1098,25 @@ fun extractInitData(mp4Data: ByteArray): ByteArray? {
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">8</span>
-                DRM HAL (AIDL) 구현
+                DRM HAL (AIDL) Implementation
             </h2>
             <p class="section-description">
-                Android 11+에서 사용되는 AIDL 기반 DRM/Crypto HAL 인터페이스입니다.
+                AIDL-based DRM/Crypto HAL interface used in Android 11+.
             </p>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 30px; margin-bottom: 15px;">
-                8-1. IDrmPlugin.aidl 인터페이스
+                8-1. IDrmPlugin.aidl Interface
             </h3>
             <div class="code-block">
                 <pre><code class="language-java">// hardware/interfaces/drm/aidl/android/hardware/drm/IDrmPlugin.aidl
 package android.hardware.drm;
 
 interface IDrmPlugin {
-    // 세션 관리
+    // Session management
     byte[] openSession(in SecurityLevel securityLevel);
     void closeSession(in byte[] sessionId);
 
-    // 키 요청/응답
+    // Key request/response
     KeyRequest getKeyRequest(
         in byte[] scope,
         in byte[] initData,
@@ -1130,7 +1130,7 @@ interface IDrmPlugin {
         in byte[] response
     );
 
-    // 프로비저닝
+    // Provisioning
     ProvisionRequest getProvisionRequest(
         in String certificateType,
         in String certificateAuthority
@@ -1138,36 +1138,36 @@ interface IDrmPlugin {
 
     void provideProvisionResponse(in byte[] response);
 
-    // 속성 관리
+    // Property management
     String getPropertyString(in String propertyName);
     byte[] getPropertyByteArray(in String propertyName);
     void setPropertyString(in String propertyName, in String value);
     void setPropertyByteArray(in String propertyName, in byte[] value);
 
-    // 복호화
+    // Decryption
     void setCipherAlgorithm(in byte[] sessionId, in String algorithm);
     void setMacAlgorithm(in byte[] sessionId, in String algorithm);
 
-    // 오프라인 라이선스
+    // Offline license
     byte[] getOfflineLicenseKeySetIds();
     void removeOfflineLicense(in byte[] keySetId);
     OfflineLicenseState getOfflineLicenseState(in byte[] keySetId);
 
-    // 보안 정보
+    // Security info
     SecurityLevel getSecurityLevel(in byte[] sessionId);
     byte[] getMetrics();
 }</code></pre>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                8-2. ICryptoPlugin.aidl 인터페이스
+                8-2. ICryptoPlugin.aidl Interface
             </h3>
             <div class="code-block">
                 <pre><code class="language-java">// hardware/interfaces/drm/aidl/android/hardware/drm/ICryptoPlugin.aidl
 package android.hardware.drm;
 
 interface ICryptoPlugin {
-    // 복호화
+    // Decryption
     int decrypt(
         in boolean secure,
         in byte[] keyId,
@@ -1180,34 +1180,34 @@ interface ICryptoPlugin {
         in DestinationBuffer destination
     );
 
-    // 메모리 설정
+    // Memory configuration
     void setMediaDrmSession(in byte[] sessionId);
     void setSharedBufferBase(in SharedBuffer base);
 
-    // 보안 레벨 확인
+    // Check security level
     SecurityLevel getSecurityLevel();
 
-    // 로그 메시지
+    // Log messages
     void notifyResolution(in int width, in int height);
     void requiresSecureDecoderComponent(in String mime);
 }</code></pre>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                8-3. Widevine HAL 구현 구조 (C++)
+                8-3. Widevine HAL Implementation Structure (C++)
             </h3>
             <div class="code-block">
-                <pre><code class="language-cpp">// Widevine HAL 구현 예시 (vendor/widevine/)
+                <pre><code class="language-cpp">// Widevine HAL implementation example (vendor/widevine/)
 namespace aidl::android::hardware::drm {
 
 class WidevineDrmPlugin : public BnDrmPlugin {
 public:
-    // 세션 관리
+    // Session management
     ndk::ScopedAStatus openSession(
         SecurityLevel securityLevel,
         std::vector&lt;uint8_t&gt;* sessionId
     ) override {
-        // OEMCrypto_OpenSession 호출
+        // Call OEMCrypto_OpenSession
         OEMCryptoResult result = OEMCrypto_OpenSession(sessionId->data());
         if (result != OEMCrypto_SUCCESS) {
             return ndk::ScopedAStatus::fromServiceSpecificError(
@@ -1217,7 +1217,7 @@ public:
         return ndk::ScopedAStatus::ok();
     }
 
-    // 키 요청 생성
+    // Generate key request
     ndk::ScopedAStatus getKeyRequest(
         const std::vector&lt;uint8_t&gt;& scope,
         const std::vector&lt;uint8_t&gt;& initData,
@@ -1226,7 +1226,7 @@ public:
         const std::vector&lt;KeyValue&gt;& optionalParameters,
         KeyRequest* keyRequest
     ) override {
-        // PSSH 파싱
+        // Parse PSSH
         wv::InitDataParser parser;
         if (!parser.parse(initData)) {
             return ndk::ScopedAStatus::fromServiceSpecificError(
@@ -1234,7 +1234,7 @@ public:
             );
         }
 
-        // CDM에 라이선스 요청 생성
+        // Generate license request to CDM
         cdm::LicenseRequest request;
         request.set_content_id(parser.getContentId());
         request.set_session_id(scope.data(), scope.size());
@@ -1246,13 +1246,13 @@ public:
         return ndk::ScopedAStatus::ok();
     }
 
-    // 키 응답 제공
+    // Provide key response
     ndk::ScopedAStatus provideKeyResponse(
         const std::vector&lt;uint8_t&gt;& scope,
         const std::vector&lt;uint8_t&gt;& response,
         std::vector&lt;uint8_t&gt;* keySetId
     ) override {
-        // 라이선스 파싱
+        // Parse license
         cdm::License license;
         if (!license.ParseFromArray(response.data(), response.size())) {
             return ndk::ScopedAStatus::fromServiceSpecificError(
@@ -1260,7 +1260,7 @@ public:
             );
         }
 
-        // OEMCrypto로 키 로드
+        // Load keys via OEMCrypto
         for (const auto& key : license.key()) {
             OEMCrypto_LoadKeys(
                 scope.data(),
@@ -1279,7 +1279,7 @@ private:
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                8-4. Binder 통신 메커니즘
+                8-4. Binder Communication Mechanism
             </h3>
             <div class="mermaid-container">
                 <div class="mermaid">
@@ -1318,9 +1318,9 @@ private:
                     <div class="card-description">
                         <ul>
                             <li><strong>HIDL (Android 8-10)</strong>: Legacy HAL, hwservicemanager</li>
-                            <li><strong>AIDL (Android 11+)</strong>: 현대적 인터페이스, servicemanager</li>
-                            <li>AIDL이 더 간결하고 유지보수 쉬움</li>
-                            <li>HIDL은 Deprecated, AIDL 마이그레이션 권장</li>
+                            <li><strong>AIDL (Android 11+)</strong>: Modern interface, servicemanager</li>
+                            <li>AIDL is more concise and easier to maintain</li>
+                            <li>HIDL is Deprecated, AIDL migration recommended</li>
                         </ul>
                     </div>
                 </div>
@@ -1331,27 +1331,27 @@ private:
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">9</span>
-                OEMCrypto API 상세
+                OEMCrypto API Details
             </h2>
             <p class="section-description">
-                Widevine OEMCrypto는 TEE 내에서 실행되는 하드웨어 보안 모듈의 API입니다.
+                Widevine OEMCrypto is the API for the hardware security module running inside the TEE.
             </p>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 30px; margin-bottom: 15px;">
-                9-1. 핵심 OEMCrypto 함수
+                9-1. Core OEMCrypto Functions
             </h3>
             <div class="code-block">
                 <pre><code class="language-cpp">// OEMCrypto API (vendor/widevine/libwvdrmengine/oemcrypto/include/OEMCryptoCENC.h)
 
-// 초기화
+// Initialization
 OEMCryptoResult OEMCrypto_Initialize(void);
 OEMCryptoResult OEMCrypto_Terminate(void);
 
-// 세션 관리
+// Session management
 OEMCryptoResult OEMCrypto_OpenSession(OEMCrypto_SESSION* session);
 OEMCryptoResult OEMCrypto_CloseSession(OEMCrypto_SESSION session);
 
-// 키 로드
+// Key loading
 OEMCryptoResult OEMCrypto_LoadKeys(
     OEMCrypto_SESSION session,
     const uint8_t* message,
@@ -1364,7 +1364,7 @@ OEMCryptoResult OEMCrypto_LoadKeys(
     const OEMCrypto_KeyObject* key_array
 );
 
-// 복호화
+// Decryption
 OEMCryptoResult OEMCrypto_DecryptCENC(
     OEMCrypto_SESSION session,
     const uint8_t* data_addr,
@@ -1377,7 +1377,7 @@ OEMCryptoResult OEMCrypto_DecryptCENC(
     const OEMCrypto_CENCEncryptPatternDesc* pattern
 );
 
-// 키 갱신
+// Key renewal
 OEMCryptoResult OEMCrypto_RefreshKeys(
     OEMCrypto_SESSION session,
     const uint8_t* message,
@@ -1388,7 +1388,7 @@ OEMCryptoResult OEMCrypto_RefreshKeys(
     const OEMCrypto_KeyRefreshObject* key_array
 );
 
-// Usage Table (사용 추적)
+// Usage Table (Usage Tracking)
 OEMCryptoResult OEMCrypto_UpdateUsageTable(
     OEMCrypto_SESSION session
 );
@@ -1398,7 +1398,7 @@ OEMCryptoResult OEMCrypto_DeactivateUsageEntry(
     size_t pst_length
 );
 
-// 프로비저닝
+// Provisioning
 OEMCryptoResult OEMCrypto_GetDeviceID(
     uint8_t* device_id,
     size_t* id_length
@@ -1417,7 +1417,7 @@ OEMCryptoResult OEMCrypto_GetHDCPCapability(
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                9-2. TEE 통신 프로토콜
+                9-2. TEE Communication Protocol
             </h3>
             <div class="mermaid-container">
                 <div class="mermaid">
@@ -1448,21 +1448,21 @@ OEMCryptoResult OEMCrypto_GetHDCPCapability(
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                9-3. Keybox 프로비저닝
+                9-3. Keybox Provisioning
             </h3>
             <div class="content-grid">
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🔑</span>
-                        Keybox란?
+                        What is Keybox?
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>기기 고유의 암호화 키 세트</li>
-                            <li>제조 과정에서 안전하게 주입</li>
-                            <li>Device ID, Encryption Key 포함</li>
-                            <li>TEE 내 Secure Storage에 저장</li>
-                            <li>Google 인증 필수 (L1)</li>
+                            <li>Device-unique encryption key set</li>
+                            <li>Securely injected during manufacturing</li>
+                            <li>Contains Device ID, Encryption Key</li>
+                            <li>Stored in TEE Secure Storage</li>
+                            <li>Google certification required (L1)</li>
                         </ul>
                     </div>
                 </div>
@@ -1470,48 +1470,48 @@ OEMCryptoResult OEMCrypto_GetHDCPCapability(
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🏭</span>
-                        프로비저닝 프로세스
+                        Provisioning Process
                     </h3>
                     <div class="card-description">
                         <ol>
-                            <li>제조사가 Google에 Keybox 요청</li>
-                            <li>Google이 암호화된 Keybox 생성</li>
-                            <li>제조 라인에서 TEE에 주입</li>
-                            <li>OEMCrypto_GetDeviceID()로 검증</li>
-                            <li>라이선스 서버가 Device ID 인증</li>
+                            <li>Manufacturer requests Keybox from Google</li>
+                            <li>Google generates encrypted Keybox</li>
+                            <li>Inject into TEE on manufacturing line</li>
+                            <li>Verify with OEMCrypto_GetDeviceID()</li>
+                            <li>License server authenticates Device ID</li>
                         </ol>
                     </div>
                 </div>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                9-4. Usage Table 관리
+                9-4. Usage Table Management
             </h3>
             <div class="code-block">
-                <pre><code class="language-cpp">// Usage Table: 오프라인 라이선스 사용 추적
+                <pre><code class="language-cpp">// Usage Table: Offline license usage tracking
 struct OEMCrypto_UsageEntry {
     uint8_t pst[32];              // Provider Session Token
-    uint64_t time_of_first_use;   // 첫 사용 시간
-    uint64_t time_of_last_use;    // 마지막 사용 시간
-    uint32_t usage_count;         // 사용 횟수
+    uint64_t time_of_first_use;   // First use time
+    uint64_t time_of_last_use;    // Last use time
+    uint32_t usage_count;         // Usage count
     OEMCrypto_UsageEntryStatus status;
 };
 
-// Usage Table 업데이트
+// Update Usage Table
 OEMCryptoResult OEMCrypto_UpdateUsageTable(OEMCrypto_SESSION session) {
-    // 현재 세션의 사용 정보를 Usage Table에 기록
-    // TEE 내 Secure Storage에 영구 저장
-    // 라이선스 정책 위반 시 재생 차단
+    // Record current session usage info to Usage Table
+    // Persist to TEE Secure Storage
+    // Block playback on license policy violation
     return OEMCrypto_SUCCESS;
 }
 
-// 비활성화
+// Deactivate
 OEMCryptoResult OEMCrypto_DeactivateUsageEntry(
     const uint8_t* pst,
     size_t pst_length
 ) {
-    // 특정 PST의 Usage Entry 삭제
-    // 오프라인 라이선스 해제 시 사용
+    // Delete Usage Entry for specific PST
+    // Used when releasing offline license
     return OEMCrypto_SUCCESS;
 }</code></pre>
             </div>
@@ -1519,41 +1519,41 @@ OEMCryptoResult OEMCrypto_DeactivateUsageEntry(
             <table class="comparison-table" style="margin-top: 30px;">
                 <thead>
                     <tr>
-                        <th>OEMCrypto 함수</th>
-                        <th>실행 위치</th>
-                        <th>용도</th>
+                        <th>OEMCrypto Function</th>
+                        <th>Execution Location</th>
+                        <th>Purpose</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>OEMCrypto_Initialize</td>
                         <td>REE → TEE</td>
-                        <td>OEMCrypto 라이브러리 초기화</td>
+                        <td>Initialize OEMCrypto library</td>
                     </tr>
                     <tr>
                         <td>OEMCrypto_OpenSession</td>
                         <td>TEE</td>
-                        <td>암호화 세션 생성</td>
+                        <td>Create encryption session</td>
                     </tr>
                     <tr>
                         <td>OEMCrypto_LoadKeys</td>
                         <td>TEE (Trustlet)</td>
-                        <td>라이선스에서 콘텐츠 키 추출 및 저장</td>
+                        <td>Extract and store content keys from license</td>
                     </tr>
                     <tr>
                         <td>OEMCrypto_DecryptCENC</td>
                         <td>TEE (Trustlet)</td>
-                        <td>암호화된 미디어 데이터 복호화</td>
+                        <td>Decrypt encrypted media data</td>
                     </tr>
                     <tr>
                         <td>OEMCrypto_GetDeviceID</td>
                         <td>TEE (Keybox)</td>
-                        <td>기기 고유 ID 조회</td>
+                        <td>Query device unique ID</td>
                     </tr>
                     <tr>
                         <td>OEMCrypto_UpdateUsageTable</td>
                         <td>TEE (Secure Storage)</td>
-                        <td>오프라인 라이선스 사용 추적</td>
+                        <td>Track offline license usage</td>
                     </tr>
                 </tbody>
             </table>
@@ -1563,26 +1563,26 @@ OEMCryptoResult OEMCrypto_DeactivateUsageEntry(
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">10</span>
-                Widevine 인증 프로세스
+                Widevine Certification Process
             </h2>
             <p class="section-description">
-                Widevine L1 보안 레벨 인증을 받기 위한 Google 인증 절차입니다.
+                Google certification process for obtaining Widevine L1 security level certification.
             </p>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 30px; margin-bottom: 15px;">
-                10-1. 인증 단계
+                10-1. Certification Steps
             </h3>
             <div class="mermaid-container">
                 <div class="mermaid">
                     graph LR
-                    A[1. 사전 준비] --> B[2. CWTS 등록]
-                    B --> C[3. 구현 개발]
+                    A[1. Preparation] --> B[2. CWTS Registration]
+                    B --> C[3. Implementation]
                     C --> D[4. Self-Test]
-                    D --> E[5. Google 제출]
+                    D --> E[5. Google Submission]
                     E --> F[6. Robustness Test]
-                    F --> G[7. 인증 승인]
-                    G --> H[8. Keybox 발급]
-                    H --> I[9. 양산 적용]
+                    F --> G[7. Certification Approval]
+                    G --> H[8. Keybox Issuance]
+                    H --> I[9. Production Deployment]
 
                     style A fill:#e3f2fd
                     style G fill:#c8e6c9
@@ -1592,37 +1592,37 @@ OEMCryptoResult OEMCrypto_DeactivateUsageEntry(
 
             <div class="content-grid" style="margin-top: 30px;">
                 <div class="card">
-                    <h3 class="card-title">1️⃣ 사전 준비</h3>
+                    <h3 class="card-title">1️⃣ Preparation</h3>
                     <div class="card-description">
                         <ul>
-                            <li>TEE 환경 구축 (TrustZone, OP-TEE 등)</li>
-                            <li>OEMCrypto 라이브러리 통합</li>
-                            <li>DRM HAL 구현</li>
-                            <li>Widevine CDM 라이선스 계약</li>
+                            <li>Set up TEE environment (TrustZone, OP-TEE, etc.)</li>
+                            <li>Integrate OEMCrypto library</li>
+                            <li>Implement DRM HAL</li>
+                            <li>Widevine CDM license agreement</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">2️⃣ CWTS 등록</h3>
+                    <h3 class="card-title">2️⃣ CWTS Registration</h3>
                     <div class="card-description">
                         <ul>
-                            <li>Chrome Web Test Suite 접근 권한 요청</li>
-                            <li>Google 파트너 포털 계정 필요</li>
-                            <li>제조사 정보 제출</li>
-                            <li>NDA 서명</li>
+                            <li>Request Chrome Web Test Suite access</li>
+                            <li>Google partner portal account required</li>
+                            <li>Submit manufacturer information</li>
+                            <li>Sign NDA</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">3️⃣ 구현 개발</h3>
+                    <h3 class="card-title">3️⃣ Implementation Development</h3>
                     <div class="card-description">
                         <ul>
-                            <li>OEMCrypto API 전체 구현</li>
-                            <li>Trustlet 개발 (TEE 내)</li>
-                            <li>Secure Video Path 구현</li>
-                            <li>HDCP 지원</li>
+                            <li>Full OEMCrypto API implementation</li>
+                            <li>Trustlet development (inside TEE)</li>
+                            <li>Secure Video Path implementation</li>
+                            <li>HDCP support</li>
                         </ul>
                     </div>
                 </div>
@@ -1631,22 +1631,22 @@ OEMCryptoResult OEMCrypto_DeactivateUsageEntry(
                     <h3 class="card-title">4️⃣ Self-Test</h3>
                     <div class="card-description">
                         <ul>
-                            <li>OEMCrypto Test Vector 실행</li>
-                            <li>CWTS 자동화 테스트</li>
-                            <li>메모리 덤프 공격 검증</li>
-                            <li>화면 캡처 방지 확인</li>
+                            <li>Run OEMCrypto Test Vectors</li>
+                            <li>CWTS automated testing</li>
+                            <li>Memory dump attack verification</li>
+                            <li>Screen capture prevention check</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">5️⃣ Google 제출</h3>
+                    <h3 class="card-title">5️⃣ Google Submission</h3>
                     <div class="card-description">
                         <ul>
-                            <li>테스트 결과 보고서 작성</li>
-                            <li>구현 아키텍처 문서 제출</li>
-                            <li>보안 분석 리포트</li>
-                            <li>샘플 기기 발송 (선택)</li>
+                            <li>Write test results report</li>
+                            <li>Submit implementation architecture document</li>
+                            <li>Security analysis report</li>
+                            <li>Ship sample device (optional)</li>
                         </ul>
                     </div>
                 </div>
@@ -1655,112 +1655,112 @@ OEMCryptoResult OEMCrypto_DeactivateUsageEntry(
                     <h3 class="card-title">6️⃣ Robustness Test</h3>
                     <div class="card-description">
                         <ul>
-                            <li>Google 보안 팀의 침투 테스트</li>
-                            <li>TEE 격리 검증</li>
-                            <li>키 추출 시도 (실패해야 함)</li>
-                            <li>Secure Video Path 무결성</li>
+                            <li>Penetration testing by Google security team</li>
+                            <li>TEE isolation verification</li>
+                            <li>Key extraction attempts (must fail)</li>
+                            <li>Secure Video Path integrity</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">7️⃣ 인증 승인</h3>
+                    <h3 class="card-title">7️⃣ Certification Approval</h3>
                     <div class="card-description">
                         <ul>
-                            <li>모든 테스트 통과 시 승인</li>
-                            <li>Widevine L1 인증서 발급</li>
-                            <li>유효 기간: 일반적으로 2년</li>
-                            <li>갱신 필요</li>
+                            <li>Approved when all tests pass</li>
+                            <li>Widevine L1 certificate issued</li>
+                            <li>Validity period: typically 2 years</li>
+                            <li>Renewal required</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">8️⃣ Keybox 발급</h3>
+                    <h3 class="card-title">8️⃣ Keybox Issuance</h3>
                     <div class="card-description">
                         <ul>
-                            <li>양산용 Keybox 요청</li>
-                            <li>Google이 암호화하여 제공</li>
-                            <li>제조 라인에서 주입</li>
-                            <li>기기당 고유 키</li>
+                            <li>Request production Keybox</li>
+                            <li>Google provides encrypted</li>
+                            <li>Inject on manufacturing line</li>
+                            <li>Unique key per device</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">9️⃣ 양산 적용</h3>
+                    <h3 class="card-title">9️⃣ Production Deployment</h3>
                     <div class="card-description">
                         <ul>
-                            <li>제품에 Widevine L1 탑재</li>
-                            <li>정기 보안 업데이트</li>
-                            <li>인증 유지 관리</li>
-                            <li>Play Protect 인증 통합</li>
+                            <li>Ship product with Widevine L1</li>
+                            <li>Regular security updates</li>
+                            <li>Certification maintenance</li>
+                            <li>Play Protect certification integration</li>
                         </ul>
                     </div>
                 </div>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                10-2. Robustness Rules (보안 요구사항)
+                10-2. Robustness Rules (Security Requirements)
             </h3>
             <table class="comparison-table">
                 <thead>
                     <tr>
-                        <th>규칙</th>
-                        <th>요구사항</th>
-                        <th>검증 방법</th>
+                        <th>Rule</th>
+                        <th>Requirement</th>
+                        <th>Verification Method</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>R1: 키 격리</td>
-                        <td>콘텐츠 키가 TEE 외부로 절대 노출되지 않음</td>
-                        <td>메모리 덤프, 디버거 attach 시도</td>
+                        <td>R1: Key Isolation</td>
+                        <td>Content keys never exposed outside TEE</td>
+                        <td>Memory dump, debugger attach attempts</td>
                     </tr>
                     <tr>
-                        <td>R2: 복호화 위치</td>
-                        <td>복호화가 반드시 TEE 내에서 수행됨</td>
-                        <td>복호화 프로세스 추적, Timing Attack</td>
+                        <td>R2: Decryption Location</td>
+                        <td>Decryption must occur inside TEE</td>
+                        <td>Decryption process tracing, Timing Attack</td>
                     </tr>
                     <tr>
                         <td>R3: Secure Video Path</td>
-                        <td>복호화된 프레임이 보호된 경로로만 이동</td>
-                        <td>화면 캡처 시도, HDMI 스니핑</td>
+                        <td>Decrypted frames only travel through protected path</td>
+                        <td>Screen capture attempts, HDMI sniffing</td>
                     </tr>
                     <tr>
-                        <td>R4: HDCP 강제</td>
-                        <td>외부 디스플레이는 HDCP 2.2+ 필수</td>
-                        <td>HDCP 없는 모니터 연결 시도</td>
+                        <td>R4: HDCP Enforcement</td>
+                        <td>External displays require HDCP 2.2+</td>
+                        <td>Connect monitor without HDCP</td>
                     </tr>
                     <tr>
-                        <td>R5: Root 감지</td>
-                        <td>루팅 기기는 L3로 강등 또는 재생 차단</td>
-                        <td>루팅된 기기에서 테스트</td>
+                        <td>R5: Root Detection</td>
+                        <td>Rooted devices downgraded to L3 or playback blocked</td>
+                        <td>Test on rooted device</td>
                     </tr>
                     <tr>
-                        <td>R6: Rollback 방지</td>
-                        <td>구버전 소프트웨어로 다운그레이드 불가</td>
-                        <td>펌웨어 롤백 시도</td>
+                        <td>R6: Rollback Prevention</td>
+                        <td>Cannot downgrade to older software version</td>
+                        <td>Firmware rollback attempt</td>
                     </tr>
                 </tbody>
             </table>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                10-3. 인증 체크리스트
+                10-3. Certification Checklist
             </h3>
             <div class="content-grid">
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">✅</span>
-                        기술 요구사항
+                        Technical Requirements
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>☑️ ARM TrustZone 또는 동등 TEE</li>
-                            <li>☑️ OEMCrypto 16+ API 레벨</li>
+                            <li>☑️ ARM TrustZone or equivalent TEE</li>
+                            <li>☑️ OEMCrypto 16+ API level</li>
                             <li>☑️ Secure Boot Chain</li>
                             <li>☑️ Hardware Root of Trust</li>
-                            <li>☑️ HDCP 2.2+ 지원</li>
+                            <li>☑️ HDCP 2.2+ support</li>
                             <li>☑️ Secure Video Path</li>
                         </ul>
                     </div>
@@ -1769,32 +1769,32 @@ OEMCryptoResult OEMCrypto_DeactivateUsageEntry(
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🧪</span>
-                        테스트 통과 필수
+                        Required Test Passes
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>☑️ CWTS 자동화 테스트 100% 통과</li>
-                            <li>☑️ OEMCrypto Test Vector 전체 통과</li>
-                            <li>☑️ CTS MediaDrmTest 통과</li>
-                            <li>☑️ Widevine Robustness Test 통과</li>
-                            <li>☑️ 침투 테스트 (Penetration Test)</li>
+                            <li>☑️ CWTS automated tests 100% pass</li>
+                            <li>☑️ OEMCrypto Test Vectors all pass</li>
+                            <li>☑️ CTS MediaDrmTest pass</li>
+                            <li>☑️ Widevine Robustness Test pass</li>
+                            <li>☑️ Penetration Test</li>
                         </ul>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Section 11: CTS/GTS DRM 테스트 -->
+        <!-- Section 11: CTS/GTS DRM Tests -->
         <section class="description-section">
             <h2 style="color: var(--accent-primary); font-size: 1.8rem; margin-bottom: 20px; border-bottom: 2px solid var(--accent-primary); padding-bottom: 10px;">
-                11. CTS/GTS DRM 테스트
+                11. CTS/GTS DRM Tests
             </h2>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
                 11-1. CTS MediaDrmTest
             </h3>
             <p style="line-height: 1.8; color: var(--text-secondary); margin-bottom: 20px;">
-                CTS (Compatibility Test Suite)는 Android 호환성을 검증하는 테스트로, Widevine DRM도 포함됩니다.
+                CTS (Compatibility Test Suite) verifies Android compatibility and includes Widevine DRM tests.
             </p>
 
             <div class="mermaid-container">
@@ -1825,198 +1825,198 @@ graph LR
             <table class="comparison-table">
                 <thead>
                     <tr>
-                        <th>테스트 클래스</th>
-                        <th>주요 테스트 케이스</th>
-                        <th>검증 내용</th>
+                        <th>Test Class</th>
+                        <th>Key Test Cases</th>
+                        <th>Verification Content</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>MediaDrmTest</td>
                         <td>testOpenCloseSession</td>
-                        <td>세션 생성/종료 정상 동작</td>
+                        <td>Session create/close normal operation</td>
                     </tr>
                     <tr>
                         <td>MediaDrmTest</td>
                         <td>testGetKeyRequest</td>
-                        <td>라이선스 요청 생성 포맷</td>
+                        <td>License request generation format</td>
                     </tr>
                     <tr>
                         <td>MediaDrmTest</td>
                         <td>testProvideKeyResponse</td>
-                        <td>라이선스 응답 처리</td>
+                        <td>License response handling</td>
                     </tr>
                     <tr>
                         <td>MediaDrmTest</td>
                         <td>testQueryKeyStatus</td>
-                        <td>키 상태 조회 (유효기간 등)</td>
+                        <td>Key status query (validity period, etc.)</td>
                     </tr>
                     <tr>
                         <td>CryptoTest</td>
                         <td>testDecryptClearVideo</td>
-                        <td>Clear 콘텐츠 복호화 (정상 통과)</td>
+                        <td>Clear content decryption (should pass)</td>
                     </tr>
                     <tr>
                         <td>CryptoTest</td>
                         <td>testDecryptEncryptedVideo</td>
-                        <td>암호화 콘텐츠 복호화</td>
+                        <td>Encrypted content decryption</td>
                     </tr>
                     <tr>
                         <td>MediaCodecTest</td>
                         <td>testSecureDecoderPlayback</td>
-                        <td>보안 디코더 재생 (L1)</td>
+                        <td>Secure decoder playback (L1)</td>
                     </tr>
                 </tbody>
             </table>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                11-2. Widevine 전용 테스트
+                11-2. Widevine-Specific Tests
             </h3>
             <div class="code-block">
-                <pre><code class="language-bash"># Widevine CTS 테스트 실행
+                <pre><code class="language-bash"># Run Widevine CTS tests
 adb shell am instrument -w -e class \
   com.android.cts.media.MediaDrmTest#testWidevineL1Provisioning \
   android.media.cts/androidx.test.runner.AndroidJUnitRunner
 
-# L1 인증 확인
+# Check L1 certification
 adb shell getprop drm.service.enabled
-# 출력: true
+# Output: true
 
 adb shell getprop ro.vendor.widevine.level
-# 출력: 1 (L1), 2 (L2), 3 (L3)</code></pre>
+# Output: 1 (L1), 2 (L2), 3 (L3)</code></pre>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                11-3. GTS DRM 테스트
+                11-3. GTS DRM Tests
             </h3>
             <p style="line-height: 1.8; color: var(--text-secondary); margin-bottom: 20px;">
-                GTS (Google Mobile Services Test Suite)는 Google 서비스 호환성을 검증합니다.
+                GTS (Google Mobile Services Test Suite) verifies Google services compatibility.
             </p>
 
             <table class="comparison-table">
                 <thead>
                     <tr>
-                        <th>테스트 카테고리</th>
-                        <th>필수 통과 항목</th>
-                        <th>실패 시 영향</th>
+                        <th>Test Category</th>
+                        <th>Required Pass Items</th>
+                        <th>Impact on Failure</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>GtsMediaTestCases</td>
-                        <td>Widevine L1 프로비저닝</td>
-                        <td>Netflix/YouTube Premium 재생 불가</td>
+                        <td>Widevine L1 Provisioning</td>
+                        <td>Netflix/YouTube Premium playback unavailable</td>
                     </tr>
                     <tr>
                         <td>GtsWidevineDrmTestCases</td>
-                        <td>HDCP 2.2+ 강제 적용</td>
-                        <td>외부 디스플레이 4K 재생 불가</td>
+                        <td>HDCP 2.2+ Enforcement</td>
+                        <td>External display 4K playback unavailable</td>
                     </tr>
                     <tr>
                         <td>GtsSecurityTestCases</td>
-                        <td>Root 감지 및 L3 강등</td>
-                        <td>프리미엄 콘텐츠 재생 차단</td>
+                        <td>Root Detection and L3 Downgrade</td>
+                        <td>Premium content playback blocked</td>
                     </tr>
                     <tr>
                         <td>GtsPlayReadyTestCases</td>
-                        <td>PlayReady + Widevine 공존</td>
-                        <td>일부 스트리밍 서비스 호환성 문제</td>
+                        <td>PlayReady + Widevine Coexistence</td>
+                        <td>Some streaming service compatibility issues</td>
                     </tr>
                 </tbody>
             </table>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                11-4. 테스트 실패 분석
+                11-4. Test Failure Analysis
             </h3>
             <div class="content-grid">
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">❌</span>
-                        testSecureDecoderPlayback 실패
+                        testSecureDecoderPlayback Failure
                     </h3>
                     <div class="card-description">
-                        <strong>증상:</strong> L1 콘텐츠 재생 시 화면 검은색<br>
-                        <strong>원인:</strong> Secure Video Path 미구현<br>
-                        <strong>해결:</strong> Gralloc HAL에 GRALLOC_USAGE_PROTECTED 지원 추가
+                        <strong>Symptom:</strong> Black screen when playing L1 content<br>
+                        <strong>Cause:</strong> Secure Video Path not implemented<br>
+                        <strong>Solution:</strong> Add GRALLOC_USAGE_PROTECTED support to Gralloc HAL
                     </div>
                 </div>
 
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">❌</span>
-                        testProvideKeyResponse 실패
+                        testProvideKeyResponse Failure
                     </h3>
                     <div class="card-description">
-                        <strong>증상:</strong> 라이선스 로드 시 ERROR_LICENSE_PARSE<br>
-                        <strong>원인:</strong> OEMCrypto_LoadKeys 시그니처 검증 실패<br>
-                        <strong>해결:</strong> Keybox provisioning 재실행
+                        <strong>Symptom:</strong> ERROR_LICENSE_PARSE when loading license<br>
+                        <strong>Cause:</strong> OEMCrypto_LoadKeys signature verification failed<br>
+                        <strong>Solution:</strong> Re-run Keybox provisioning
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Section 12: Persistent License (오프라인 재생) -->
+        <!-- Section 12: Persistent License (Offline Playback) -->
         <section class="description-section">
             <h2 style="color: var(--accent-primary); font-size: 1.8rem; margin-bottom: 20px; border-bottom: 2px solid var(--accent-primary); padding-bottom: 10px;">
-                12. Persistent License (오프라인 재생)
+                12. Persistent License (Offline Playback)
             </h2>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                12-1. Persistent Session 생성
+                12-1. Persistent Session Creation
             </h3>
             <p style="line-height: 1.8; color: var(--text-secondary); margin-bottom: 20px;">
-                오프라인 재생을 위해 라이선스를 디바이스에 저장하는 방식입니다.
+                A method of storing licenses on the device for offline playback.
             </p>
 
             <div class="code-block">
-                <pre><code class="language-kotlin">// Persistent License 다운로드
+                <pre><code class="language-kotlin">// Download Persistent License
 val mediaDrm = MediaDrm(WIDEVINE_UUID)
 
-// Offline 세션 생성
+// Create Offline session
 val sessionId = mediaDrm.openSession(MediaDrm.SESSION_TYPE_OFFLINE)
 
-// 오프라인 키 요청
+// Offline key request
 val request = mediaDrm.getKeyRequest(
     sessionId,
     initData,
     "video/mp4",
-    MediaDrm.KEY_TYPE_OFFLINE,  // ← Offline 타입
+    MediaDrm.KEY_TYPE_OFFLINE,  // ← Offline type
     null
 )
 
-// 라이선스 서버에 요청
+// Request to license server
 val response = httpClient.post(licenseUrl, request.data)
 
-// 라이선스 저장
+// Save license
 val keySetId = mediaDrm.provideKeyResponse(sessionId, response)
 
-// keySetId를 DB에 저장 (나중에 재사용)
+// Save keySetId to DB (for later reuse)
 offlineDatabase.saveLicenseId(videoId, keySetId)</code></pre>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                12-2. 오프라인 라이선스 로드
+                12-2. Load Offline License
             </h3>
             <div class="code-block">
-                <pre><code class="language-kotlin">// 저장된 라이선스로 재생
+                <pre><code class="language-kotlin">// Play with saved license
 val keySetId = offlineDatabase.getLicenseId(videoId)
 
 val mediaDrm = MediaDrm(WIDEVINE_UUID)
 val sessionId = mediaDrm.openSession()
 
-// 저장된 키 복원
+// Restore saved keys
 mediaDrm.restoreKeys(sessionId, keySetId)
 
-// MediaCodec에 세션 연결
+// Connect session to MediaCodec
 mediaCrypto = MediaCrypto(WIDEVINE_UUID, sessionId)
 mediaCodec.configure(format, surface, mediaCrypto, 0)
 
-// 오프라인 재생 시작
+// Start offline playback
 mediaCodec.start()</code></pre>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                12-3. 라이선스 갱신 (Renewal)
+                12-3. License Renewal
             </h3>
             <div class="mermaid-container">
                 <pre class="mermaid">
@@ -2026,7 +2026,7 @@ sequenceDiagram
     participant Server
     participant OEMCrypto
 
-    Note over App,OEMCrypto: 라이선스 만료 임박 (24시간 전)
+    Note over App,OEMCrypto: License expiration approaching (24 hours before)
 
     App->>MediaDrm: getKeyRequest(sessionId, KEY_TYPE_RENEWAL)
     MediaDrm->>OEMCrypto: GenerateRenewalRequest()
@@ -2040,43 +2040,43 @@ sequenceDiagram
     MediaDrm->>OEMCrypto: LoadKeys(updated keys)
     OEMCrypto->>OEMCrypto: Update Usage Table
     OEMCrypto-->>MediaDrm: SUCCESS
-    MediaDrm-->>App: keySetId (갱신됨)
+    MediaDrm-->>App: keySetId (renewed)
 
-    Note over App,OEMCrypto: 라이선스 유효기간 연장됨
+    Note over App,OEMCrypto: License validity extended
                 </pre>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                12-4. 저장 관리
+                12-4. Storage Management
             </h3>
             <table class="comparison-table">
                 <thead>
                     <tr>
                         <th>API</th>
-                        <th>설명</th>
-                        <th>용도</th>
+                        <th>Description</th>
+                        <th>Purpose</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>queryKeyStatus(sessionId)</td>
-                        <td>라이선스 만료 시간, 남은 재생 횟수 조회</td>
-                        <td>갱신 시점 판단</td>
+                        <td>Query license expiration time, remaining plays</td>
+                        <td>Determine renewal timing</td>
                     </tr>
                     <tr>
                         <td>getOfflineLicenseKeySetIds()</td>
-                        <td>저장된 모든 오프라인 라이선스 목록</td>
-                        <td>만료된 라이선스 정리</td>
+                        <td>List all stored offline licenses</td>
+                        <td>Clean up expired licenses</td>
                     </tr>
                     <tr>
                         <td>removeOfflineLicense(keySetId)</td>
-                        <td>오프라인 라이선스 삭제</td>
-                        <td>스토리지 확보, 만료 라이선스 제거</td>
+                        <td>Delete offline license</td>
+                        <td>Free storage, remove expired licenses</td>
                     </tr>
                     <tr>
                         <td>getOfflineLicenseState(keySetId)</td>
                         <td>UNKNOWN / USABLE / INACTIVE</td>
-                        <td>라이선스 유효성 확인</td>
+                        <td>Check license validity</td>
                     </tr>
                 </tbody>
             </table>
@@ -2085,52 +2085,52 @@ sequenceDiagram
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">💾</span>
-                        저장 위치
+                        Storage Location
                     </h3>
                     <div class="card-description">
-                        <strong>경로:</strong> /data/vendor/mediadrm/[UUID]/<br>
-                        <strong>파일:</strong> persistent_license_*.bin<br>
-                        <strong>암호화:</strong> OEMCrypto가 자동 암호화<br>
-                        <strong>권한:</strong> system UID만 접근 가능
+                        <strong>Path:</strong> /data/vendor/mediadrm/[UUID]/<br>
+                        <strong>File:</strong> persistent_license_*.bin<br>
+                        <strong>Encryption:</strong> Auto-encrypted by OEMCrypto<br>
+                        <strong>Permission:</strong> Only system UID can access
                     </div>
                 </div>
 
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">⚠️</span>
-                        주의사항
+                        Cautions
                     </h3>
                     <div class="card-description">
-                        <strong>기기 변경:</strong> 라이선스는 다른 기기로 이동 불가<br>
-                        <strong>Factory Reset:</strong> 라이선스 전체 삭제<br>
-                        <strong>최대 개수:</strong> 디바이스당 보통 100개 제한<br>
-                        <strong>저장 공간:</strong> 라이선스당 약 1~10KB
+                        <strong>Device Change:</strong> Licenses cannot be transferred to another device<br>
+                        <strong>Factory Reset:</strong> All licenses deleted<br>
+                        <strong>Max Count:</strong> Usually 100 per device limit<br>
+                        <strong>Storage:</strong> About 1~10KB per license
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Section 13: HDCP (콘텐츠 보호) -->
+        <!-- Section 13: HDCP (Content Protection) -->
         <section class="description-section">
             <h2 style="color: var(--accent-primary); font-size: 1.8rem; margin-bottom: 20px; border-bottom: 2px solid var(--accent-primary); padding-bottom: 10px;">
-                13. HDCP (콘텐츠 보호)
+                13. HDCP (Content Protection)
             </h2>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                13-1. HDCP 개요
+                13-1. HDCP Overview
             </h3>
             <p style="line-height: 1.8; color: var(--text-secondary); margin-bottom: 20px;">
-                HDCP (High-bandwidth Digital Content Protection)는 디지털 영상 신호의 불법 복제를 방지하는 암호화 프로토콜입니다.
+                HDCP (High-bandwidth Digital Content Protection) is an encryption protocol designed to prevent illegal copying of digital video signals.
             </p>
 
             <div class="mermaid-container">
                 <pre class="mermaid">
 graph LR
     A[MediaCodec<br/>Secure Decoder] --> B[Display HAL]
-    B --> C{HDCP 검증}
-    C -->|HDCP 2.2+| D[외부 디스플레이<br/>4K HDR 재생]
-    C -->|HDCP 1.x| E[외부 디스플레이<br/>1080p 제한]
-    C -->|No HDCP| F[재생 차단<br/>ERROR_HDCP_FAILURE]
+    B --> C{HDCP Verification}
+    C -->|HDCP 2.2+| D[External Display<br/>4K HDR Playback]
+    C -->|HDCP 1.x| E[External Display<br/>1080p Limited]
+    C -->|No HDCP| F[Playback Blocked<br/>ERROR_HDCP_FAILURE]
 
     style A fill:#1a1f35,stroke:#3b82f6,stroke-width:2px
     style C fill:#1a1f35,stroke:#f59e0b,stroke-width:2px
@@ -2141,15 +2141,15 @@ graph LR
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                13-2. HDCP 버전 비교
+                13-2. HDCP Version Comparison
             </h3>
             <table class="comparison-table">
                 <thead>
                     <tr>
-                        <th>HDCP 버전</th>
-                        <th>최대 해상도</th>
-                        <th>인터페이스</th>
-                        <th>Widevine 요구사항</th>
+                        <th>HDCP Version</th>
+                        <th>Max Resolution</th>
+                        <th>Interface</th>
+                        <th>Widevine Requirements</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -2157,56 +2157,56 @@ graph LR
                         <td>HDCP 1.4</td>
                         <td>1080p (Full HD)</td>
                         <td>HDMI 1.4, DVI</td>
-                        <td>L3 콘텐츠만 재생 가능</td>
+                        <td>L3 content playback only</td>
                     </tr>
                     <tr>
                         <td>HDCP 2.0</td>
                         <td>4K (3840x2160)</td>
                         <td>HDMI 2.0</td>
-                        <td>L1 콘텐츠 제한적 재생</td>
+                        <td>L1 content limited playback</td>
                     </tr>
                     <tr>
                         <td>HDCP 2.2</td>
                         <td>4K HDR, 8K</td>
                         <td>HDMI 2.0+, DisplayPort 1.3+</td>
-                        <td>L1 프리미엄 콘텐츠 재생 (필수)</td>
+                        <td>L1 premium content playback (required)</td>
                     </tr>
                     <tr>
                         <td>HDCP 2.3</td>
                         <td>8K, 10K</td>
                         <td>HDMI 2.1, DP 2.0</td>
-                        <td>미래 4K+ 콘텐츠 대비</td>
+                        <td>Future 4K+ content ready</td>
                     </tr>
                 </tbody>
             </table>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                13-3. Android DisplayManager HDCP 설정
+                13-3. Android DisplayManager HDCP Configuration
             </h3>
             <div class="code-block">
-                <pre><code class="language-kotlin">// HDCP 레벨 확인
+                <pre><code class="language-kotlin">// Check HDCP level
 val displayManager = getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
 val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
 
 val hdcpLevel = display.getHdrCapabilities()?.let {
-    // HDCP 2.2+ 지원 확인
+    // Check HDCP 2.2+ support
     when {
         it.supportedHdrTypes.contains(Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION) -> "HDCP 2.2+"
         it.supportedHdrTypes.contains(Display.HdrCapabilities.HDR_TYPE_HDR10) -> "HDCP 2.2+"
-        else -> "HDCP 1.x 또는 미지원"
+        else -> "HDCP 1.x or unsupported"
     }
 }
 
-// 외부 디스플레이 연결 감지
+// Detect external display connection
 displayManager.registerDisplayListener(object : DisplayManager.DisplayListener {
     override fun onDisplayAdded(displayId: Int) {
         val externalDisplay = displayManager.getDisplay(displayId)
 
-        // HDCP 검증
+        // HDCP verification
         if (!isHdcpCompliant(externalDisplay)) {
-            // 재생 중단 또는 해상도 다운그레이드
+            // Stop playback or downgrade resolution
             player.stop()
-            showError("HDCP 2.2 미지원 디스플레이입니다.")
+            showError("Display does not support HDCP 2.2.")
         }
     }
 
@@ -2216,7 +2216,7 @@ displayManager.registerDisplayListener(object : DisplayManager.DisplayListener {
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                13-4. Miracast/Casting 제한
+                13-4. Miracast/Casting Limitations
             </h3>
             <div class="content-grid">
                 <div class="card">
@@ -2225,10 +2225,10 @@ displayManager.registerDisplayListener(object : DisplayManager.DisplayListener {
                         Miracast (Wi-Fi Display)
                     </h3>
                     <div class="card-description">
-                        <strong>문제:</strong> Miracast는 HDCP 인증 불가<br>
-                        <strong>결과:</strong> L1 콘텐츠 재생 차단<br>
-                        <strong>해결:</strong> Chromecast 등 HDCP 인증 기기 사용<br>
-                        <strong>검증:</strong> MediaDrm.EVENT_SESSION_RECLAIMED 발생
+                        <strong>Issue:</strong> Miracast cannot pass HDCP authentication<br>
+                        <strong>Result:</strong> L1 content playback blocked<br>
+                        <strong>Solution:</strong> Use HDCP-certified devices like Chromecast<br>
+                        <strong>Verification:</strong> MediaDrm.EVENT_SESSION_RECLAIMED triggered
                     </div>
                 </div>
 
@@ -2238,19 +2238,19 @@ displayManager.registerDisplayListener(object : DisplayManager.DisplayListener {
                         Chromecast
                     </h3>
                     <div class="card-description">
-                        <strong>지원:</strong> Chromecast Ultra 이상 HDCP 2.2 지원<br>
-                        <strong>구현:</strong> Cast SDK가 자동으로 HDCP 검증<br>
-                        <strong>폴백:</strong> HDCP 실패 시 해상도 자동 다운그레이드<br>
-                        <strong>확인:</strong> CastSession.isHdcpSupported()
+                        <strong>Support:</strong> Chromecast Ultra and above support HDCP 2.2<br>
+                        <strong>Implementation:</strong> Cast SDK automatically verifies HDCP<br>
+                        <strong>Fallback:</strong> Auto-downgrade resolution on HDCP failure<br>
+                        <strong>Check:</strong> CastSession.isHdcpSupported()
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Section 14: Android 버전별 변화 -->
+        <!-- Section 14: Android Version Changes -->
         <section class="description-section">
             <h2 style="color: var(--accent-primary); font-size: 1.8rem; margin-bottom: 20px; border-bottom: 2px solid var(--accent-primary); padding-bottom: 10px;">
-                14. Android 버전별 변화
+                14. Android Version Changes
             </h2>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
@@ -2260,14 +2260,14 @@ displayManager.registerDisplayListener(object : DisplayManager.DisplayListener {
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🆕</span>
-                        주요 변경사항
+                        Key Changes
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>DRM HAL 1.0 (HIDL) 도입</li>
-                            <li>MediaDrm API 레벨 27 추가 메서드</li>
-                            <li>HDCP 레벨 쿼리 API 추가</li>
-                            <li>clearkey DRM 기본 지원</li>
+                            <li>DRM HAL 1.0 (HIDL) introduction</li>
+                            <li>MediaDrm API level 27 additional methods</li>
+                            <li>HDCP level query API added</li>
+                            <li>clearkey DRM default support</li>
                         </ul>
                     </div>
                 </div>
@@ -2280,14 +2280,14 @@ displayManager.registerDisplayListener(object : DisplayManager.DisplayListener {
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🔐</span>
-                        보안 강화
+                        Security Enhancements
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>Scoped Storage로 라이선스 접근 제한</li>
-                            <li>MediaDrm 메트릭 API 추가</li>
-                            <li>DRM HAL 1.3 (세션 로그 개선)</li>
-                            <li>Root 감지 강화</li>
+                            <li>License access restrictions with Scoped Storage</li>
+                            <li>MediaDrm metrics API added</li>
+                            <li>DRM HAL 1.3 (improved session logging)</li>
+                            <li>Enhanced root detection</li>
                         </ul>
                     </div>
                 </div>
@@ -2300,14 +2300,14 @@ displayManager.registerDisplayListener(object : DisplayManager.DisplayListener {
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">⚡</span>
-                        성능 개선
+                        Performance Improvements
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>DRM HAL 1.4 (멀티 세션 최적화)</li>
-                            <li>MediaDrm AIDL 마이그레이션 시작</li>
-                            <li>HDCP 2.3 지원 추가</li>
-                            <li>AV1 + Widevine 공식 지원</li>
+                            <li>DRM HAL 1.4 (multi-session optimization)</li>
+                            <li>MediaDrm AIDL migration started</li>
+                            <li>HDCP 2.3 support added</li>
+                            <li>AV1 + Widevine official support</li>
                         </ul>
                     </div>
                 </div>
@@ -2320,14 +2320,14 @@ displayManager.registerDisplayListener(object : DisplayManager.DisplayListener {
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🚀</span>
-                        AIDL 전환
+                        AIDL Transition
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>DRM HAL AIDL (IDrmPlugin.aidl) 필수</li>
+                            <li>DRM HAL AIDL (IDrmPlugin.aidl) required</li>
                             <li>HIDL DRM HAL Deprecated</li>
-                            <li>MediaDrm API 33 확장 (오프라인 만료 시간)</li>
-                            <li>Widevine L1 필수 요구사항 강화 (CDD)</li>
+                            <li>MediaDrm API 33 extension (offline expiration time)</li>
+                            <li>Widevine L1 requirements strengthened (CDD)</li>
                         </ul>
                     </div>
                 </div>
@@ -2340,14 +2340,14 @@ displayManager.registerDisplayListener(object : DisplayManager.DisplayListener {
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🎯</span>
-                        최신 기능
+                        Latest Features
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>Ultra HDR + Widevine 통합</li>
-                            <li>MediaDrm 에러 코드 세분화</li>
-                            <li>DRM 세션 메모리 최적화</li>
-                            <li>HDCP 검증 로직 개선</li>
+                            <li>Ultra HDR + Widevine integration</li>
+                            <li>MediaDrm error code granularity</li>
+                            <li>DRM session memory optimization</li>
+                            <li>HDCP verification logic improvements</li>
                         </ul>
                     </div>
                 </div>
@@ -2360,14 +2360,14 @@ displayManager.registerDisplayListener(object : DisplayManager.DisplayListener {
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🔮</span>
-                        예정 기능
+                        Planned Features
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>AI 기반 DRM 공격 감지</li>
-                            <li>Widevine L0 (차세대 보안 레벨) 준비</li>
-                            <li>8K HDR Widevine 최적화</li>
-                            <li>DRM 세션 복구 API</li>
+                            <li>AI-based DRM attack detection</li>
+                            <li>Widevine L0 (next-gen security level) preparation</li>
+                            <li>8K HDR Widevine optimization</li>
+                            <li>DRM session recovery API</li>
                         </ul>
                     </div>
                 </div>
@@ -2376,10 +2376,10 @@ displayManager.registerDisplayListener(object : DisplayManager.DisplayListener {
             <table class="comparison-table">
                 <thead>
                     <tr>
-                        <th>Android 버전</th>
+                        <th>Android Version</th>
                         <th>API Level</th>
                         <th>DRM HAL</th>
-                        <th>주요 변경사항</th>
+                        <th>Key Changes</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -2387,56 +2387,56 @@ displayManager.registerDisplayListener(object : DisplayManager.DisplayListener {
                         <td>Android 8.0 (Oreo)</td>
                         <td>26-27</td>
                         <td>HIDL 1.0</td>
-                        <td>HIDL DRM HAL 도입</td>
+                        <td>HIDL DRM HAL introduction</td>
                     </tr>
                     <tr>
                         <td>Android 10 (Q)</td>
                         <td>29</td>
                         <td>HIDL 1.3</td>
-                        <td>Scoped Storage, 메트릭 API</td>
+                        <td>Scoped Storage, Metrics API</td>
                     </tr>
                     <tr>
                         <td>Android 12 (S)</td>
                         <td>31-32</td>
-                        <td>HIDL 1.4 / AIDL 병행</td>
-                        <td>AIDL 마이그레이션 시작</td>
+                        <td>HIDL 1.4 / AIDL parallel</td>
+                        <td>AIDL migration started</td>
                     </tr>
                     <tr>
                         <td>Android 13 (T)</td>
                         <td>33</td>
-                        <td>AIDL 필수</td>
-                        <td>HIDL Deprecated, AIDL 전환</td>
+                        <td>AIDL required</td>
+                        <td>HIDL Deprecated, AIDL transition</td>
                     </tr>
                     <tr>
                         <td>Android 14 (U)</td>
                         <td>34</td>
                         <td>AIDL</td>
-                        <td>Ultra HDR, 에러 코드 개선</td>
+                        <td>Ultra HDR, Error code improvements</td>
                     </tr>
                     <tr>
                         <td>Android 15 (V)</td>
                         <td>35</td>
                         <td>AIDL</td>
-                        <td>AI 공격 감지, L0 준비</td>
+                        <td>AI attack detection, L0 preparation</td>
                     </tr>
                 </tbody>
             </table>
         </section>
 
-        <!-- Section 15: 디버깅 & 트러블슈팅 -->
+        <!-- Section 15: Debugging & Troubleshooting -->
         <section class="description-section">
             <h2 style="color: var(--accent-primary); font-size: 1.8rem; margin-bottom: 20px; border-bottom: 2px solid var(--accent-primary); padding-bottom: 10px;">
-                15. 디버깅 & 트러블슈팅
+                15. Debugging & Troubleshooting
             </h2>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
                 15-1. dumpsys media.drm
             </h3>
             <div class="code-block">
-                <pre><code class="language-bash"># DRM 상태 덤프
+                <pre><code class="language-bash"># DRM status dump
 adb shell dumpsys media.drm
 
-# 출력 예시:
+# Output example:
 # Widevine CDM version: 16.1.0
 # Security Level: L1
 # Active sessions: 2
@@ -2447,97 +2447,97 @@ adb shell dumpsys media.drm
 # Session 0xabcdef00:
 #   - State: CLOSED
 
-# 오프라인 라이선스 목록
+# Offline license list
 adb shell dumpsys media.drm --offline-licenses
 
-# 세션 로그 확인
+# Check session logs
 adb shell dumpsys media.drm --sessions</code></pre>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                15-2. logcat 필터링
+                15-2. logcat Filtering
             </h3>
             <div class="code-block">
-                <pre><code class="language-bash"># Widevine 관련 로그만 필터
+                <pre><code class="language-bash"># Filter Widevine-related logs only
 adb logcat | grep -E "Widevine|MediaDrm|Crypto|OEMCrypto"
 
-# DRM HAL 로그
+# DRM HAL logs
 adb logcat | grep "android.hardware.drm"
 
-# 에러만 표시
+# Show errors only
 adb logcat *:E | grep Widevine
 
-# 주요 로그 예시:
+# Key log examples:
 # E/MediaDrm: provideKeyResponse failed: ERROR_LICENSE_PARSE
 # W/OEMCrypto: Signature verification failed
 # I/Widevine: Security level changed: L1 -> L3 (root detected)</code></pre>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                15-3. 주요 에러 코드 해결
+                15-3. Common Error Code Solutions
             </h3>
             <table class="comparison-table">
                 <thead>
                     <tr>
-                        <th>에러 코드</th>
-                        <th>원인</th>
-                        <th>해결 방법</th>
+                        <th>Error Code</th>
+                        <th>Cause</th>
+                        <th>Solution</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>ERROR_DRM_SESSION_NOT_OPENED</td>
-                        <td>세션 ID 무효 또는 만료</td>
-                        <td>새 세션 생성 (openSession)</td>
+                        <td>Invalid or expired session ID</td>
+                        <td>Create new session (openSession)</td>
                     </tr>
                     <tr>
                         <td>ERROR_DRM_CANNOT_HANDLE</td>
-                        <td>PSSH 파싱 실패</td>
-                        <td>initData 포맷 확인 (cenc/webm)</td>
+                        <td>PSSH parsing failed</td>
+                        <td>Check initData format (cenc/webm)</td>
                     </tr>
                     <tr>
                         <td>ERROR_DRM_LICENSE_EXPIRED</td>
-                        <td>라이선스 유효기간 만료</td>
-                        <td>라이선스 갱신 (KEY_TYPE_RENEWAL)</td>
+                        <td>License validity expired</td>
+                        <td>Renew license (KEY_TYPE_RENEWAL)</td>
                     </tr>
                     <tr>
                         <td>ERROR_DRM_RESOURCE_BUSY</td>
-                        <td>최대 세션 개수 초과</td>
-                        <td>사용하지 않는 세션 closeSession</td>
+                        <td>Maximum session count exceeded</td>
+                        <td>closeSession for unused sessions</td>
                     </tr>
                     <tr>
                         <td>ERROR_DRM_DEVICE_REVOKED</td>
-                        <td>디바이스가 블랙리스트 등록됨</td>
-                        <td>복구 불가 (펌웨어 재발급 필요)</td>
+                        <td>Device is blacklisted</td>
+                        <td>Unrecoverable (firmware reissue required)</td>
                     </tr>
                     <tr>
                         <td>ERROR_HDCP_FAILURE</td>
-                        <td>HDCP 검증 실패</td>
-                        <td>HDCP 2.2 지원 케이블/디스플레이 사용</td>
+                        <td>HDCP verification failed</td>
+                        <td>Use HDCP 2.2 supported cable/display</td>
                     </tr>
                     <tr>
                         <td>ERROR_DRM_DECRYPT</td>
-                        <td>복호화 실패 (키 불일치)</td>
-                        <td>올바른 키로 provideKeyResponse 재시도</td>
+                        <td>Decryption failed (key mismatch)</td>
+                        <td>Retry provideKeyResponse with correct key</td>
                     </tr>
                 </tbody>
             </table>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                15-4. L1 → L3 강등 분석
+                15-4. L1 → L3 Downgrade Analysis
             </h3>
             <div class="content-grid">
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🔍</span>
-                        강등 원인 확인
+                        Check Downgrade Cause
                     </h3>
                     <div class="card-description">
-                        <strong>1단계:</strong> Security Level 확인<br>
+                        <strong>Step 1:</strong> Check Security Level<br>
                         <code>adb shell getprop ro.vendor.widevine.level</code><br><br>
-                        <strong>2단계:</strong> 로그 분석<br>
+                        <strong>Step 2:</strong> Log Analysis<br>
                         <code>adb logcat | grep "Security level"</code><br><br>
-                        <strong>3단계:</strong> Root 감지 여부<br>
+                        <strong>Step 3:</strong> Root Detection Check<br>
                         <code>adb shell getprop ro.boot.verifiedbootstate</code>
                     </div>
                 </div>
@@ -2545,50 +2545,50 @@ adb logcat *:E | grep Widevine
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">🛠️</span>
-                        일반적인 원인
+                        Common Causes
                     </h3>
                     <div class="card-description">
                         <ul>
-                            <li>✗ 디바이스 루팅됨</li>
+                            <li>✗ Device is rooted</li>
                             <li>✗ Bootloader Unlocked</li>
-                            <li>✗ TEE 펌웨어 손상</li>
-                            <li>✗ OEMCrypto 라이브러리 변조</li>
-                            <li>✗ HDCP 미지원 외부 디스플레이 연결</li>
-                            <li>✗ SafetyNet Attestation 실패</li>
+                            <li>✗ TEE firmware corrupted</li>
+                            <li>✗ OEMCrypto library tampered</li>
+                            <li>✗ External display without HDCP support connected</li>
+                            <li>✗ SafetyNet Attestation failed</li>
                         </ul>
                     </div>
                 </div>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                15-5. 수동 테스트 방법
+                15-5. Manual Testing Methods
             </h3>
             <div class="code-block">
-                <pre><code class="language-bash"># 1. Widevine CDM 버전 확인
+                <pre><code class="language-bash"># 1. Check Widevine CDM version
 adb shell dumpsys media.drm | grep "version"
 
-# 2. 테스트 앱으로 재생 시도
+# 2. Try playback with test app
 adb install WidevineSampleApp.apk
 adb shell am start -n com.widevine.demo/.MainActivity
 
-# 3. CTS Verifier로 수동 검증
+# 3. Manual verification with CTS Verifier
 adb install CtsVerifier.apk
-# 앱에서 "DRM Tests" → "Widevine L1" 선택
+# In app, select "DRM Tests" → "Widevine L1"
 
-# 4. Chrome에서 Web EME 테스트
+# 4. Web EME test in Chrome
 adb shell am start -a android.intent.action.VIEW \
   -d "https://shaka-player-demo.appspot.com/demo/"
 
-# 5. 네트워크 패킷 캡처 (라이선스 요청/응답)
+# 5. Network packet capture (license request/response)
 adb shell tcpdump -i any -s 0 -w /sdcard/drm.pcap port 443
-# Wireshark로 분석</code></pre>
+# Analyze with Wireshark</code></pre>
             </div>
         </section>
 
-        <!-- Section 16: AOSP 소스 코드 참조 -->
+        <!-- Section 16: AOSP Source Code Reference -->
         <section class="description-section">
             <h2 style="color: var(--accent-primary); font-size: 1.8rem; margin-bottom: 20px; border-bottom: 2px solid var(--accent-primary); padding-bottom: 10px;">
-                16. AOSP 소스 코드 참조
+                16. AOSP Source Code Reference
             </h2>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
@@ -2597,26 +2597,26 @@ adb shell tcpdump -i any -s 0 -w /sdcard/drm.pcap port 443
             <table class="comparison-table">
                 <thead>
                     <tr>
-                        <th>파일 경로</th>
-                        <th>설명</th>
+                        <th>File Path</th>
+                        <th>Description</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>frameworks/base/media/java/android/media/MediaDrm.java</td>
-                        <td>MediaDrm API 진입점 (openSession, getKeyRequest 등)</td>
+                        <td>MediaDrm API entry point (openSession, getKeyRequest, etc.)</td>
                     </tr>
                     <tr>
                         <td>frameworks/base/media/java/android/media/MediaCrypto.java</td>
-                        <td>MediaCodec과 DRM 세션 연결</td>
+                        <td>MediaCodec and DRM session connection</td>
                     </tr>
                     <tr>
                         <td>frameworks/base/media/java/android/media/MediaDrmException.java</td>
-                        <td>DRM 예외 정의</td>
+                        <td>DRM exception definitions</td>
                     </tr>
                     <tr>
                         <td>frameworks/base/media/java/android/media/UnsupportedSchemeException.java</td>
-                        <td>지원하지 않는 DRM 스킴 예외</td>
+                        <td>Unsupported DRM scheme exception</td>
                     </tr>
                 </tbody>
             </table>
@@ -2627,104 +2627,104 @@ adb shell tcpdump -i any -s 0 -w /sdcard/drm.pcap port 443
             <table class="comparison-table">
                 <thead>
                     <tr>
-                        <th>파일 경로</th>
-                        <th>설명</th>
+                        <th>File Path</th>
+                        <th>Description</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>frameworks/av/drm/libmediadrm/DrmHal.cpp</td>
-                        <td>HIDL/AIDL DRM HAL 클라이언트</td>
+                        <td>HIDL/AIDL DRM HAL client</td>
                     </tr>
                     <tr>
                         <td>frameworks/av/drm/libmediadrm/CryptoHal.cpp</td>
-                        <td>Crypto HAL 클라이언트</td>
+                        <td>Crypto HAL client</td>
                     </tr>
                     <tr>
                         <td>frameworks/av/drm/libmediadrm/DrmSessionManager.cpp</td>
-                        <td>세션 관리 및 리소스 할당</td>
+                        <td>Session management and resource allocation</td>
                     </tr>
                     <tr>
                         <td>hardware/interfaces/drm/aidl/android/hardware/drm/IDrmPlugin.aidl</td>
-                        <td>DRM HAL AIDL 인터페이스 정의</td>
+                        <td>DRM HAL AIDL interface definition</td>
                     </tr>
                     <tr>
                         <td>hardware/interfaces/drm/aidl/android/hardware/drm/ICryptoPlugin.aidl</td>
-                        <td>Crypto HAL AIDL 인터페이스 정의</td>
+                        <td>Crypto HAL AIDL interface definition</td>
                     </tr>
                 </tbody>
             </table>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                16-3. Widevine 플러그인 (Vendor)
+                16-3. Widevine Plugin (Vendor)
             </h3>
             <table class="comparison-table">
                 <thead>
                     <tr>
-                        <th>파일 경로</th>
-                        <th>설명</th>
+                        <th>File Path</th>
+                        <th>Description</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>vendor/widevine/libwvdrmengine/</td>
-                        <td>Widevine DRM 플러그인 구현</td>
+                        <td>Widevine DRM plugin implementation</td>
                     </tr>
                     <tr>
                         <td>vendor/widevine/oemcrypto/</td>
-                        <td>OEMCrypto TEE 통신 라이브러리</td>
+                        <td>OEMCrypto TEE communication library</td>
                     </tr>
                     <tr>
                         <td>vendor/widevine/mediadrm/service.cpp</td>
-                        <td>Widevine DRM HAL 서비스 (AIDL)</td>
+                        <td>Widevine DRM HAL service (AIDL)</td>
                     </tr>
                 </tbody>
             </table>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                16-4. OEMCrypto 헤더
+                16-4. OEMCrypto Headers
             </h3>
             <table class="comparison-table">
                 <thead>
                     <tr>
-                        <th>파일 경로</th>
-                        <th>설명</th>
+                        <th>File Path</th>
+                        <th>Description</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>vendor/widevine/oemcrypto/include/OEMCryptoCENC.h</td>
-                        <td>OEMCrypto API 정의 (CENC 복호화)</td>
+                        <td>OEMCrypto API definition (CENC decryption)</td>
                     </tr>
                     <tr>
                         <td>vendor/widevine/oemcrypto/include/OEMCryptoTypes.h</td>
-                        <td>OEMCrypto 데이터 타입 정의</td>
+                        <td>OEMCrypto data type definitions</td>
                     </tr>
                 </tbody>
             </table>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                16-5. CTS 테스트 코드
+                16-5. CTS Test Code
             </h3>
             <table class="comparison-table">
                 <thead>
                     <tr>
-                        <th>파일 경로</th>
-                        <th>설명</th>
+                        <th>File Path</th>
+                        <th>Description</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>cts/tests/tests/media/src/android/media/cts/MediaDrmTest.java</td>
-                        <td>MediaDrm CTS 테스트 (세션, 키 요청 등)</td>
+                        <td>MediaDrm CTS tests (session, key request, etc.)</td>
                     </tr>
                     <tr>
                         <td>cts/tests/tests/media/src/android/media/cts/CryptoTest.java</td>
-                        <td>MediaCrypto CTS 테스트 (복호화)</td>
+                        <td>MediaCrypto CTS tests (decryption)</td>
                     </tr>
                     <tr>
                         <td>cts/tests/tests/media/src/android/media/cts/NativeDecoderTest.cpp</td>
-                        <td>Native 레벨 보안 디코더 테스트</td>
+                        <td>Native level secure decoder tests</td>
                     </tr>
                 </tbody>
             </table>
@@ -2733,25 +2733,25 @@ adb shell tcpdump -i any -s 0 -w /sdcard/drm.pcap port 443
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">📂</span>
-                        소스 코드 탐색 팁
+                        Source Code Navigation Tips
                     </h3>
                     <div class="card-description">
-                        <strong>1. Android Code Search 사용:</strong><br>
-                        <a href="https://cs.android.com/" style="color: var(--accent-primary);">cs.android.com</a>에서 키워드 검색<br><br>
-                        <strong>2. 로컬 AOSP 다운로드:</strong><br>
+                        <strong>1. Use Android Code Search:</strong><br>
+                        Search by keywords at <a href="https://cs.android.com/" style="color: var(--accent-primary);">cs.android.com</a><br><br>
+                        <strong>2. Download AOSP Locally:</strong><br>
                         <code>repo init -u https://android.googlesource.com/platform/manifest -b main</code><br>
                         <code>repo sync</code><br><br>
-                        <strong>3. 주요 검색 키워드:</strong><br>
+                        <strong>3. Key Search Keywords:</strong><br>
                         "MediaDrm", "OEMCrypto", "IDrmPlugin", "Widevine"
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Section 17: 관련 상세 문서 -->
+        <!-- Section 17: Related Documents -->
         <section class="description-section">
             <h2 style="color: var(--accent-primary); font-size: 1.8rem; margin-bottom: 20px; border-bottom: 2px solid var(--accent-primary); padding-bottom: 10px;">
-                17. 관련 상세 문서
+                17. Related Documents
             </h2>
 
             <div class="content-grid">
@@ -2761,10 +2761,10 @@ adb shell tcpdump -i any -s 0 -w /sdcard/drm.pcap port 443
                         Media Framework Core
                     </h3>
                     <div class="card-description">
-                        Android 미디어 프레임워크의 전체 아키텍처 (Framework↔Native 상호작용, Binder IPC, MediaServer 구조)를 설명합니다.
+                        Explains the overall architecture of Android media framework (Framework↔Native interaction, Binder IPC, MediaServer structure).
                     </div>
                     <a href="media-framework-core.html" style="color: var(--accent-primary); text-decoration: none;">
-                        자세히 보기 →
+                        View Details →
                     </a>
                 </div>
 
@@ -2774,10 +2774,10 @@ adb shell tcpdump -i any -s 0 -w /sdcard/drm.pcap port 443
                         Codec 2.0 & Media HAL
                     </h3>
                     <div class="card-description">
-                        Codec 2.0 아키텍처, HAL 인터페이스, 그리고 Widevine과의 통합 방식을 다룹니다.
+                        Covers Codec 2.0 architecture, HAL interface, and integration with Widevine.
                     </div>
                     <a href="codec2.html" style="color: var(--accent-primary); text-decoration: none;">
-                        자세히 보기 →
+                        View Details →
                     </a>
                 </div>
 
@@ -2787,10 +2787,10 @@ adb shell tcpdump -i any -s 0 -w /sdcard/drm.pcap port 443
                         Media Playback Pipeline
                     </h3>
                     <div class="card-description">
-                        미디어 재생 파이프라인의 데이터 플로우 (Extractor→Codec→Renderer)와 DRM 통합 지점을 설명합니다.
+                        Explains the data flow in media playback pipeline (Extractor→Codec→Renderer) and DRM integration points.
                     </div>
                     <a href="media-playback.html" style="color: var(--accent-primary); text-decoration: none;">
-                        자세히 보기 →
+                        View Details →
                     </a>
                 </div>
 
@@ -2800,23 +2800,23 @@ adb shell tcpdump -i any -s 0 -w /sdcard/drm.pcap port 443
                         CTS/GTS Testing
                     </h3>
                     <div class="card-description">
-                        CTS/VTS/GTS 테스트 프레임워크와 Widevine DRM 인증 테스트를 상세히 다룹니다.
+                        Covers CTS/VTS/GTS test frameworks and Widevine DRM certification testing in detail.
                     </div>
                     <a href="cts.html" style="color: var(--accent-primary); text-decoration: none;">
-                        자세히 보기 →
+                        View Details →
                     </a>
                 </div>
 
                 <div class="card">
                     <h3 class="card-title">
                         <span class="card-icon">📋</span>
-                        CDD (호환성 정의 문서)
+                        CDD (Compatibility Definition Document)
                     </h3>
                     <div class="card-description">
-                        Android CDD의 미디어 DRM 요구사항 (섹션 5.1, 5.9) 및 Widevine L1 인증 조건을 정리합니다.
+                        Summarizes Android CDD media DRM requirements (Section 5.1, 5.9) and Widevine L1 certification conditions.
                     </div>
                     <a href="cdd.html" style="color: var(--accent-primary); text-decoration: none;">
-                        자세히 보기 →
+                        View Details →
                     </a>
                 </div>
 
@@ -2826,50 +2826,50 @@ adb shell tcpdump -i any -s 0 -w /sdcard/drm.pcap port 443
                         Dolby DRM Integration
                     </h3>
                     <div class="card-description">
-                        Dolby Atmos/AC-4와 Widevine의 통합 구현 (DRM + Premium Audio 동시 처리)을 설명합니다.
+                        Explains Dolby Atmos/AC-4 integration with Widevine (DRM + Premium Audio simultaneous processing).
                     </div>
                     <a href="dolby-codecs.html" style="color: var(--accent-primary); text-decoration: none;">
-                        자세히 보기 →
+                        View Details →
                     </a>
                 </div>
             </div>
 
             <h3 style="color: var(--accent-primary); font-size: 1.3rem; margin-top: 40px; margin-bottom: 15px;">
-                외부 참조 문서
+                External Reference Documents
             </h3>
             <table class="comparison-table">
                 <thead>
                     <tr>
-                        <th>문서</th>
-                        <th>링크</th>
-                        <th>설명</th>
+                        <th>Document</th>
+                        <th>Link</th>
+                        <th>Description</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>AOSP Media DRM</td>
                         <td><a href="https://source.android.com/docs/core/media/drm" style="color: var(--accent-primary);">source.android.com/media/drm</a></td>
-                        <td>공식 AOSP DRM 가이드</td>
+                        <td>Official AOSP DRM Guide</td>
                     </tr>
                     <tr>
-                        <td>Widevine 공식 문서</td>
+                        <td>Widevine Official Docs</td>
                         <td><a href="https://www.widevine.com/solutions/widevine-drm" style="color: var(--accent-primary);">widevine.com</a></td>
-                        <td>Widevine DRM 솔루션 개요</td>
+                        <td>Widevine DRM Solution Overview</td>
                     </tr>
                     <tr>
-                        <td>W3C EME 표준</td>
+                        <td>W3C EME Standard</td>
                         <td><a href="https://www.w3.org/TR/encrypted-media/" style="color: var(--accent-primary);">w3.org/TR/encrypted-media</a></td>
                         <td>Web Encrypted Media Extensions</td>
                     </tr>
                     <tr>
-                        <td>HDCP 스펙</td>
+                        <td>HDCP Spec</td>
                         <td><a href="https://www.digital-cp.com/hdcp-specifications" style="color: var(--accent-primary);">digital-cp.com</a></td>
-                        <td>HDCP 2.2/2.3 기술 명세</td>
+                        <td>HDCP 2.2/2.3 Technical Specification</td>
                     </tr>
                     <tr>
                         <td>Android CDD</td>
                         <td><a href="https://source.android.com/compatibility/cdd" style="color: var(--accent-primary);">source.android.com/compatibility/cdd</a></td>
-                        <td>호환성 정의 문서 (DRM 요구사항)</td>
+                        <td>Compatibility Definition Document (DRM Requirements)</td>
                     </tr>
                 </tbody>
             </table>
@@ -2884,7 +2884,7 @@ adb shell tcpdump -i any -s 0 -w /sdcard/drm.pcap port 443
             </p>
             <p style="margin-top: 20px;">
                 <a href="index.html" style="color: var(--accent-primary); text-decoration: none;">
-                    ← AOSP Media Framework로 돌아가기
+                    ← Back to AOSP Media Framework
                 </a>
             </p>
         </footer>
