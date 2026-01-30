@@ -663,31 +663,41 @@ private fun connectToMediaBrowser(component: ComponentName, autoplay: Boolean) {
             <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-1. Boot Timeline</h3>
             <div class="mermaid-container">
                 <div class="mermaid">
-                    timeline
-                        title AAOS Last Media Restoration Timeline
+                    flowchart TD
+                        subgraph BOOT ["🚗 Boot Phase (0~3s)"]
+                            A["⚡ Vehicle Ignition ON<br/><small>0ms</small>"]
+                            B["🔧 Kernel Boot<br/><small>0~1.5s</small>"]
+                            C["📱 Android Init<br/><small>1.5~3s</small>"]
+                            A --> B --> C
+                        end
 
-                        section Boot Phase (0-3s)
-                            Vehicle Ignition ON : 0ms - IGN_ON signal
-                            Kernel Boot : 0-1.5s
-                            Android Init : 1.5-3s
+                        subgraph SERVICE ["⚙️ System Services (3~5s)"]
+                            D["CarService.onCreate()<br/><small>3s</small>"]
+                            E["VHAL Connection<br/><small>3.5s</small>"]
+                            F["Power Policy Init<br/><small>4s</small>"]
+                            G["User Unlock (HEAD_USER)<br/><small>4.3~5s</small>"]
+                            D --> E --> F --> G
+                        end
 
-                        section System Services (3-5s)
-                            CarService.onCreate : 3s
-                            VHAL Connection : 3.5s
-                            Power Policy Init : 4s
-                            User Unlock : 4.3-5s HEAD_USER
+                        subgraph MEDIA ["🎵 Media Restoration (5~6s)"]
+                            H["CarMediaService.onCreate()<br/><small>5s</small>"]
+                            I["Load SharedPreferences<br/><small>5.2s</small>"]
+                            J["getLastMediaSource()<br/><small>5.3s</small>"]
+                            K["shouldStartPlayback()<br/><small>5.35s</small>"]
+                            H --> I --> J --> K
+                        end
 
-                        section Media Restoration (5-6s)
-                            CarMediaService.onCreate : 5s
-                            Load SharedPreferences : 5.2s
-                            getLastMediaSource : 5.3s
-                            shouldStartPlayback : 5.35s
+                        subgraph PLAY ["▶️ Media Playback (6s~)"]
+                            L["Start MediaConnectorService<br/><small>5.4s</small>"]
+                            M["MediaBrowser.connect()<br/><small>5.6s</small>"]
+                            N["MediaSession Ready<br/><small>5.9s</small>"]
+                            O["🎶 Autoplay<br/><small>6s</small>"]
+                            L --> M --> N --> O
+                        end
 
-                        section Media Playback (6s+)
-                            Start MediaConnectorService : 5.4s
-                            MediaBrowser.connect : 5.6s
-                            MediaSession Ready : 5.9s
-                            Autoplay : 6s if enabled
+                        C --> D
+                        G --> H
+                        K --> L
                 </div>
             </div>
 
