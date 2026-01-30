@@ -30,20 +30,20 @@
                 Prerequisites & Licensing
             </h2>
             <p>
-                Dolby Digital Plus 통합은 단순한 소프트웨어 설치가 아니며, 하드웨어 및 라이선스 요구사항을 충족해야 합니다.
-                <strong>Android 14 이상</strong>에서는 Audio HAL이 <strong>AIDL</strong> 인터페이스로 전환되었으므로 이에 맞춘 구현이 필요합니다.
+                Dolby Digital Plus integration is not just a simple software installation; it requires meeting hardware and licensing requirements.
+                <strong>Android 14 and above</strong> requires implementation aligned with the <strong>AIDL</strong> interface as Audio HAL has transitioned to it.
             </p>
             <div class="alert">
                 <div class="alert-title">⚠️ Licensing Required</div>
-                <p>Dolby 기술을 상용 기기에 탑재하려면 반드시 Dolby Laboratories와의 라이선스 계약이 필요하며,
-                    제공되는 <strong>Dolby Audio for Android (DAX3)</strong> SDK 또는 <strong>MS12</strong> 라이브러리를 사용해야 합니다.
+                <p>To deploy Dolby technology on commercial devices, a licensing agreement with Dolby Laboratories is mandatory,
+                    and you must use the provided <strong>Dolby Audio for Android (DAX3)</strong> SDK or <strong>MS12</strong> library.
                 </p>
             </div>
             <ul>
-                <li><strong>SoC Support:</strong> Dolby 인증을 받은 DSP 또는 Audio Processor (e.g., Qualcomm Hexagon, MediaTek,
+                <li><strong>SoC Support:</strong> Dolby-certified DSP or Audio Processor (e.g., Qualcomm Hexagon, MediaTek,
                     Amlogic).</li>
-                <li><strong>Efuse Provisioning:</strong> SoC 레벨에서 Dolby 기능 활성화를 위한 Efuse 키 주입 필요.</li>
-                <li><strong>Android Version:</strong> Android 14+ (AIDL HAL 필수), Android 10+ (AudioTrack Offload 지원).
+                <li><strong>Efuse Provisioning:</strong> Efuse key injection required at SoC level for Dolby feature activation.</li>
+                <li><strong>Android Version:</strong> Android 14+ (AIDL HAL required), Android 10+ (AudioTrack Offload support).
                 </li>
             </ul>
         </section>
@@ -55,8 +55,8 @@
                 Integration Architecture (AIDL)
             </h2>
             <p>
-                Dolby 통합의 핵심은 <strong>Audio HAL</strong> 내에 Dolby 엔진(DAP/MS12)을 배치하여
-                디코딩과 후처리(Post-processing)를 수행하는 것입니다. Android 14부터는 AIDL 인터페이스를 통해 Framework와 통신합니다.
+                The core of Dolby integration is placing the Dolby engine (DAP/MS12) within the <strong>Audio HAL</strong> to
+                perform decoding and post-processing. Starting from Android 14, it communicates with the Framework through the AIDL interface.
             </p>
             <div class="mermaid">
                 graph TD
@@ -80,7 +80,7 @@
             </h2>
 
             <h3>3.1 Library Integration</h3>
-            <p>Dolby에서 제공하는 공유 라이브러리를 <code>/vendor/lib64/</code>에 배치하고 권한을 설정합니다.</p>
+            <p>Place the shared libraries provided by Dolby in <code>/vendor/lib64/</code> and configure permissions.</p>
             <pre>
 # Core Decoding & Processing Engine
 /vendor/lib64/libdolbyms12.so
@@ -90,13 +90,13 @@
 /vendor/etc/dolby/dax-default.xml</pre>
 
             <h3>3.2 HAL Implementation (AIDL)</h3>
-            <p><code>IStreamOut.aidl</code> 구현체에서 Dolby 포맷을 감지하고 엔진으로 라우팅합니다.</p>
+            <p>Detect Dolby formats in the <code>IStreamOut.aidl</code> implementation and route them to the engine.</p>
             <ul>
-                <li><strong>Format Detection:</strong> <code>AudioFormat.AC3</code>, <code>AudioFormat.E_AC3</code>,
-                    <code>AudioFormat.AC4</code> 감지.</li>
-                <li><strong>Offload Playback:</strong> 압축 오디오 패스스루를 위해 <code>AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD</code>
-                    플래그 처리.</li>
-                <li><strong>Metadata Handling:</strong> <code>AudioMetadata</code>를 통해 전달된 스트림 메타데이터를 Dolby 엔진에 적용.</li>
+                <li><strong>Format Detection:</strong> Detect <code>AudioFormat.AC3</code>, <code>AudioFormat.E_AC3</code>,
+                    <code>AudioFormat.AC4</code>.</li>
+                <li><strong>Offload Playback:</strong> Handle <code>AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD</code>
+                    flag for compressed audio pass-through.</li>
+                <li><strong>Metadata Handling:</strong> Apply stream metadata passed through <code>AudioMetadata</code> to the Dolby engine.</li>
             </ul>
         </section>
 
@@ -108,7 +108,7 @@
             </h2>
 
             <h3>4.1 audio_policy_configuration.xml</h3>
-            <p>Dolby 포맷을 지원하는 <code>mixPort</code>와 <code>devicePort</code>를 연결하는 <code>route</code>를 정의해야 합니다.</p>
+            <p>Define <code>route</code> connecting <code>mixPort</code> and <code>devicePort</code> that support Dolby formats.</p>
             <pre><code class="language-xml">&lt;!-- MixPort Definition --&gt;
 &lt;mixPort name="dolby_direct_output" role="source" flags="AUDIO_OUTPUT_FLAG_DIRECT|AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD"&gt;
     &lt;profile name="" format="AUDIO_FORMAT_AC3"
@@ -124,7 +124,7 @@
 &lt;/routes&gt;</code></pre>
 
             <h3>4.2 MediaCodec Configuration</h3>
-            <p><code>media_codecs.xml</code>에 Dolby 디코더를 등록하여 <code>MediaCodec</code> API를 통해 접근 가능하게 합니다.</p>
+            <p>Register Dolby decoders in <code>media_codecs.xml</code> to make them accessible through the <code>MediaCodec</code> API.</p>
             <pre><code class="language-xml">&lt;MediaCodec name="c2.dolby.eac3.decoder" type="audio/eac3"&gt;
     &lt;Limit name="channel-count" max="8" /&gt;
     &lt;Limit name="sample-rate" ranges="32000-48000" /&gt;
@@ -138,12 +138,12 @@
                 <span class="step-number">5</span>
                 Verification & Testing
             </h2>
-            <p>포팅 완료 후 다음 항목을 검증해야 합니다.</p>
+            <p>After completing the porting, verify the following items.</p>
             <ul>
-                <li><strong>Decoder Availability:</strong> <code>MediaCodecList</code>에서 Dolby 디코더가 조회되는지 확인.</li>
-                <li><strong>Pass-through:</strong> HDMI/SPDIF 연결 시 비트스트림 패스스루가 정상 동작하는지 확인.</li>
-                <li><strong>DAP Effects:</strong> Dolby Atmos 설정(Movie, Music 모드 등) 변경 시 청감상 변화가 있는지 확인.</li>
-                <li><strong>CTS Tests:</strong> Android CTS의 Media 관련 테스트 케이스 통과 여부 확인.</li>
+                <li><strong>Decoder Availability:</strong> Verify that Dolby decoders are listed in <code>MediaCodecList</code>.</li>
+                <li><strong>Pass-through:</strong> Verify that bitstream pass-through works correctly when connected via HDMI/SPDIF.</li>
+                <li><strong>DAP Effects:</strong> Verify audible changes when changing Dolby Atmos settings (Movie, Music modes, etc.).</li>
+                <li><strong>CTS Tests:</strong> Verify passing of Android CTS Media-related test cases.</li>
             </ul>
         </section>
 
