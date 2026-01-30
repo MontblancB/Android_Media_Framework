@@ -368,7 +368,7 @@ body::before {
     border-radius: 8px;
     padding: 4px;
     gap: 2px;
-    margin-right: var(--spacing-sm);
+    margin-right: 0;
 }
 
 [data-theme="light"] .lang-switch {
@@ -412,7 +412,7 @@ body::before {
 
 /* Language switch in fixed nav */
 .nav.fixed-nav .lang-switch {
-    margin-right: var(--spacing-sm);
+    margin-right: 0;
 }
 
 /* ========================================
