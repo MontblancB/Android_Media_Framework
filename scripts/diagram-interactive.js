@@ -13,7 +13,7 @@ const DEBUG = (function() {
     const protocol = window.location.protocol;
     return hostname === 'localhost' ||
            hostname === '127.0.0.1' ||
-           hostname === '' ||
+           hostname === '' ||  // file:// 프로토콜
            protocol === 'file:';
 })();
 const log = DEBUG ? console.log.bind(console) : () => {};
@@ -106,16 +106,53 @@ function getDiagramData() {
     return DIAGRAM_NODE_DATA;
 }
 
+/**
+ * Mermaid 렌더링 완료 대기
+ * - 기본: 1.5초 대기 (기존 1초에서 증가)
+ * - SVG가 이미 있으면 즉시 실행하되 안정화 딜레이 적용
+ */
+function waitForMermaidRender() {
+    return new Promise((resolve) => {
+        const BASE_DELAY = 1500; // 기본 대기 시간 (ms)
+        const STABILIZATION_DELAY = 500; // 안정화 딜레이 (ms)
+
+        // 이미 Mermaid SVG가 렌더링되어 있는지 확인
+        const existingSvgs = document.querySelectorAll('.mermaid svg');
+        if (existingSvgs.length > 0) {
+            log('✅ Mermaid SVG 이미 렌더링됨, 안정화 대기 중...');
+            setTimeout(() => {
+                log('✅ 안정화 딜레이 완료');
+                resolve();
+            }, STABILIZATION_DELAY);
+            return;
+        }
+
+        // SVG가 없으면 기본 대기 시간 적용
+        log('⏳ Mermaid SVG 대기 중...');
+        setTimeout(() => {
+            const svgs = document.querySelectorAll('.mermaid svg');
+            if (svgs.length > 0) {
+                log('✅ Mermaid SVG 렌더링 완료');
+            } else {
+                warn('⚠️ Mermaid SVG를 찾을 수 없음');
+            }
+            resolve();
+        }, BASE_DELAY);
+    });
+}
+
 // DOM 로드 완료 후 초기화
 document.addEventListener('DOMContentLoaded', () => {
     log('🚀 diagram-interactive.js 로드됨!');
     log('📦 DIAGRAM_NODE_DATA 정의 여부:', typeof DIAGRAM_NODE_DATA !== 'undefined');
+    log('🔧 DEBUG 모드:', DEBUG);
+    log('🌐 hostname:', window.location.hostname);
 
-    // Mermaid 렌더링 완료 대기 (1초)
-    setTimeout(() => {
-        log('⏰ 1초 대기 완료, 초기화 시작...');
+    // Mermaid 렌더링 완료 대기 후 초기화
+    waitForMermaidRender().then(() => {
+        log('⏰ 대기 완료, 초기화 시작...');
         initializeDiagramInteractivity();
-    }, 1000);
+    });
 });
 
 /**
@@ -221,10 +258,12 @@ function attachInteractiveHandlers(container, diagramIndex) {
             });
         }
 
-        // 데이터 유무 표시
-        const diagramData = getDiagramData();
-        const hasData = !!diagramData[nodeId];
-        log(`    ✓ 노드 "${nodeId}" 인터랙티브 활성화 (${isTouchDevice ? '터치' : '마우스'} 모드, 데이터: ${hasData ? '있음' : '자동생성'})`);
+        // 데이터 유무 표시 (디버그 모드에서만)
+        if (DEBUG) {
+            const diagramData = getDiagramData();
+            const hasData = !!diagramData[nodeId];
+            log(`    ✓ 노드 "${nodeId}" 인터랙티브 활성화 (${isTouchDevice ? '터치' : '마우스'} 모드, 데이터: ${hasData ? '있음' : '자동생성'})`);
+        }
     });
 }
 
