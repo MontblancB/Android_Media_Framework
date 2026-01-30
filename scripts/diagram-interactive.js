@@ -5,19 +5,62 @@
 
 /**
  * 디버그 모드 설정
- * - localhost, 127.0.0.1, 또는 파일 프로토콜에서 console.log 활성화
- * - 프로덕션에서는 빈 함수로 대체하여 성능 최적화
+ * - URL에 ?debug=1 파라미터가 있으면 디버그 패널 표시
+ * - 모바일 디버깅용
  */
 const DEBUG = (function() {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
+    const urlParams = new URLSearchParams(window.location.search);
     return hostname === 'localhost' ||
            hostname === '127.0.0.1' ||
-           hostname === '' ||  // file:// 프로토콜
-           protocol === 'file:';
+           hostname === '' ||
+           protocol === 'file:' ||
+           urlParams.get('debug') === '1';
 })();
-const log = DEBUG ? console.log.bind(console) : () => {};
-const warn = DEBUG ? console.warn.bind(console) : () => {};
+
+// 모바일 디버그 패널
+let debugPanel = null;
+function createDebugPanel() {
+    if (!DEBUG || debugPanel) return;
+    debugPanel = document.createElement('div');
+    debugPanel.id = 'mobileDebugPanel';
+    debugPanel.style.cssText = `
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-height: 150px;
+        overflow-y: auto;
+        background: rgba(0,0,0,0.9);
+        color: #0f0;
+        font-family: monospace;
+        font-size: 11px;
+        padding: 8px;
+        z-index: 999999;
+        pointer-events: auto;
+    `;
+    document.body.appendChild(debugPanel);
+}
+
+const log = function(...args) {
+    if (!DEBUG) return;
+    console.log(...args);
+    if (debugPanel) {
+        const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ');
+        debugPanel.innerHTML += `<div>${msg}</div>`;
+        debugPanel.scrollTop = debugPanel.scrollHeight;
+    }
+};
+const warn = function(...args) {
+    if (!DEBUG) return;
+    console.warn(...args);
+    if (debugPanel) {
+        const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ');
+        debugPanel.innerHTML += `<div style="color:yellow">${msg}</div>`;
+        debugPanel.scrollTop = debugPanel.scrollHeight;
+    }
+};
 
 /**
  * 현재 언어 감지
@@ -147,10 +190,11 @@ function waitForMermaidRender() {
 
 // DOM 로드 완료 후 초기화
 document.addEventListener('DOMContentLoaded', () => {
+    createDebugPanel();
     log('🚀 diagram-interactive.js 로드됨!');
-    log('📦 DIAGRAM_NODE_DATA 정의 여부:', typeof DIAGRAM_NODE_DATA !== 'undefined');
-    log('🔧 DEBUG 모드:', DEBUG);
-    log('🌐 hostname:', window.location.hostname);
+    log('📦 DIAGRAM_NODE_DATA:', typeof DIAGRAM_NODE_DATA !== 'undefined');
+    log('🔧 DEBUG:', DEBUG);
+    log('📱 Touch:', 'ontouchstart' in window);
 
     // Mermaid 렌더링 완료 대기 후 초기화
     waitForMermaidRender().then(() => {
