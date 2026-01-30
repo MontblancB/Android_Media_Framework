@@ -19,7 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |------|------|------|
 | 한국어 페이지 | 38개 | index + old_main_page + 35개 컨텐츠 + 1개 레거시 |
 | 영문 페이지 | 40개 | en/ 디렉토리 |
-| 다이어그램 노드 | 740+ | 한국어 + 영문 (527개 번역) |
+| 다이어그램 노드 | 527개 | 한국어 + 영문 (100% 번역 완료) |
 | Scripts 파일 | 16개 | JS 13개 + Python 3개 |
 | diagram-data.js | 21,479줄 | 노드 데이터 + 매핑 |
 
@@ -101,8 +101,8 @@ Android_Media_Framework/
 │   │   └── mermaid-theme.js        # Mermaid 다이어그램 테마 동적 변경
 │   │
 │   ├── [인터랙티브 다이어그램]
-│   │   ├── diagram-data.js         # 노드 데이터 (21,479줄, 740+ 항목)
-│   │   ├── diagram-data-en-partial.js # 영문 노드 데이터 (527개 번역)
+│   │   ├── diagram-data.js         # 노드 데이터 (21,479줄, 527개 노드, 한/영 100%)
+│   │   ├── diagram-data-en-partial.js # 영문 노드 데이터 (레거시, 사용 안 함)
 │   │   └── diagram-interactive.js  # 노드 클릭 핸들러 & 상세 패널
 │   │
 │   ├── [다국어 지원]
@@ -539,7 +539,7 @@ python3 skills/ui-ux-pro-max/scripts/search.py "키워드" --domain ux
 | FOIT 수정 | 라이트모드 페이지 전환 시 다크모드 플래시 현상 해결 |
 | 한/영 버튼 | 컨텐츠 페이지에서 다크모드 버튼 옆으로 정렬 |
 | 검색 UI | 다국어 플레이스홀더 지원 (한국어/영어) |
-| 다이어그램 | 인터랙티브 다이어그램 다국어 지원 (527개 노드 번역) |
+| 다이어그램 | 인터랙티브 다이어그램 다국어 지원 (527개 노드, 100% 번역) |
 
 **영문 번역 완료**:
 - Widevine DRM 페이지 (한→영)
@@ -597,11 +597,11 @@ python3 skills/ui-ux-pro-max/scripts/search.py "키워드" --domain ux
 
 | 항목 | 이전 | 이후 | 현재 (2025-01-30) |
 |------|------|------|-------------------|
-| 데이터 키 수 | 58개 | 740개 | 740개 |
+| 데이터 키 수 | 58개 | 527개 | 527개 |
 | 누락 항목 | 466개 | 0개 | 0개 |
 | 커버리지 | 10% | 100% | 100% |
 | 파일 라인 수 | 8,993줄 | 12,485줄 | 21,479줄 |
-| 영문 번역 | - | - | 527개 (71%) |
+| 영문 번역 | - | - | 527개 (100%) |
 
 **추가된 노드 카테고리**:
 1. **AOSP 아키텍처**: Codec HAL, System Services, HAL Layer, Proxy/Stub, ServiceManager 등
@@ -631,7 +631,7 @@ const DIAGRAM_NODE_DATA = {
         path: 'AOSP 소스 경로 (선택)',
         doc: '공식 문서 URL (선택)'
     },
-    // ... 740개 항목
+    // ... 527개 항목
 };
 ```
 
@@ -687,10 +687,10 @@ Mermaid.js 다이어그램의 노드를 클릭하면 해당 컴포넌트의 상�
 scripts/
 ├── diagram-data.js          # 한국어 노드 데이터 (21,479줄)
 │   ├── NODE_ID_MAPPING      # Mermaid ID → 표시 이름 (523개)
-│   ├── DIAGRAM_NODE_DATA    # 노드별 상세 정보 (740개)
+│   ├── DIAGRAM_NODE_DATA    # 노드별 상세 정보 (527개)
 │   └── DIAGRAM_NODE_RELATIONSHIPS  # 노드 간 관계
 │
-├── diagram-data-en-partial.js # 영문 노드 데이터 (527개 번역)
+├── diagram-data-en-partial.js # 영문 노드 데이터 (레거시, diagram-data.js에 통합됨)
 │   └── DIAGRAM_NODE_DATA_EN  # 영문 상세 정보
 │
 └── diagram-interactive.js   # 노드 클릭 핸들러 & 다국어 로직
@@ -761,7 +761,7 @@ console.log('매핑:', mappingValues.length, '데이터:', dataKeys.length, '누
 | 기능 | 한국어 | 영어 | 비고 |
 |------|--------|------|------|
 | HTML 페이지 | 41개 | 40개 | 100% 완료 |
-| 다이어그램 노드 | 740개 | 527개 | 71% 번역 |
+| 다이어그램 노드 | 527개 | 527개 | 100% 번역 |
 | 검색 UI | ✅ | ✅ | 플레이스홀더 다국어 |
 | 코드 복사 버튼 | ✅ | ✅ | 텍스트 다국어 |
 
@@ -798,7 +798,7 @@ open en/aosp.html
 
 ### 번역 상태
 - **HTML 페이지**: 100% 완료 (한국어 41개, 영문 40개)
-- **다이어그램 데이터**: 71% 완료 (527/740 노드 번역)
+- **다이어그램 데이터**: 100% 완료 (527/527 노드 번역)
 - **검색 UI**: 100% 다국어 지원
 
 ## 🔍 검색 기능
@@ -862,7 +862,7 @@ const SEARCH_INDEX = [
 
 ### 5. 인터랙티브 다이어그램 핸들러 (diagram-interactive.js)
 - **기능**: Mermaid 노드 클릭 시 상세 정보 패널 표시
-- **데이터 소스**: diagram-data.js (740+ 노드)
+- **데이터 소스**: diagram-data.js (527개 노드)
 - **UI**: 오버레이 모달 + 닫기 버튼
 
 ## 💡 향후 개선 사항 (선택사항)
@@ -872,10 +872,9 @@ const SEARCH_INDEX = [
 - ~~인터랙티브 다이어그램 노드 데이터 완성~~ ✅ (2025-01-28 완료)
 - ~~다국어 UI 지원 (검색, 버튼)~~ ✅ (2025-01-30 완료)
 - ~~FOIT 수정~~ ✅ (2025-01-30 완료)
-- ~~인터랙티브 다이어그램 다국어 지원~~ ✅ (527개 노드 번역)
+- ~~인터랙티브 다이어그램 다국어 지원~~ ✅ (527/527 노드 번역, 100% 완료)
 
 ### 진행 예정 항목
-- **영문 다이어그램 번역 완성**: 527/740 → 740/740 (현재 71%)
 - **Card 1-20 마이그레이션**: 인라인 스타일 → design-system.css로 통합
 - SEO 및 Open Graph 메타 태그 최적화
 - 코드 하이라이팅 개선 (Prism.js 도입)
