@@ -185,11 +185,127 @@ function initializeDiagramInteractivity() {
 
     log(`📊 인터랙티브 다이어그램: ${mermaidContainers.length}개의 다이어그램 발견`);
 
+    // 노드 ID 맵 생성 (노드 요소 → nodeId 매핑)
+    window.nodeIdMap = new WeakMap();
+
     mermaidContainers.forEach((container, index) => {
         attachInteractiveHandlers(container, index);
     });
 
+    // iOS standalone 모드에서는 document 레벨에서 터치 이벤트 캡처
+    if (isIOSStandalone) {
+        setupDocumentLevelTouchHandler();
+    }
+
     log('✅ 인터랙티브 다이어그램 초기화 완료');
+}
+
+/**
+ * iOS standalone 모드를 위한 document 레벨 터치 핸들러
+ * SVG 내부 요소에 이벤트가 전달되지 않는 문제를 우회
+ */
+function setupDocumentLevelTouchHandler() {
+    log('📱 iOS Standalone: Document 레벨 터치 핸들러 설정');
+
+    let touchStartTime = 0;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchedNode = null;
+
+    document.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+
+        const touch = e.touches[0];
+        touchStartTime = Date.now();
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+
+        // 터치 위치에서 노드 찾기
+        touchedNode = findNodeAtPoint(touch.clientX, touch.clientY);
+
+        if (touchedNode) {
+            touchedNode.element.style.transform = 'scale(1.05)';
+            touchedNode.element.style.opacity = '0.8';
+            log(`📱 Document touchstart: ${touchedNode.nodeId}`);
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+        if (!touchedNode) return;
+
+        const touch = e.changedTouches[0];
+        const duration = Date.now() - touchStartTime;
+        const deltaX = Math.abs(touch.clientX - touchStartX);
+        const deltaY = Math.abs(touch.clientY - touchStartY);
+
+        // 시각적 피드백 복원
+        touchedNode.element.style.transform = '';
+        touchedNode.element.style.opacity = '';
+
+        // 탭 판정: 500ms 이하 + 이동 거리 20px 이하
+        if (duration < 500 && deltaX < 20 && deltaY < 20) {
+            log(`📱 Document tap: ${touchedNode.nodeId} (${duration}ms)`);
+            handleNodeClick(touchedNode.nodeId, touchedNode.element);
+            e.preventDefault(); // 클릭 이벤트 방지
+        }
+
+        touchedNode = null;
+    }, { passive: false });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!touchedNode) return;
+
+        const touch = e.touches[0];
+        const deltaX = Math.abs(touch.clientX - touchStartX);
+        const deltaY = Math.abs(touch.clientY - touchStartY);
+
+        // 20px 이상 이동하면 취소
+        if (deltaX > 20 || deltaY > 20) {
+            touchedNode.element.style.transform = '';
+            touchedNode.element.style.opacity = '';
+            touchedNode = null;
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchcancel', () => {
+        if (touchedNode) {
+            touchedNode.element.style.transform = '';
+            touchedNode.element.style.opacity = '';
+            touchedNode = null;
+        }
+    }, { passive: true });
+}
+
+/**
+ * 특정 좌표에서 노드 찾기
+ */
+function findNodeAtPoint(x, y) {
+    // elementFromPoint로 해당 위치의 요소 찾기
+    const element = document.elementFromPoint(x, y);
+    if (!element) return null;
+
+    // 노드 요소 또는 그 부모 중에서 .node 클래스 찾기
+    let nodeElement = element.closest('.node');
+
+    // closest가 안 되는 경우 수동으로 찾기
+    if (!nodeElement) {
+        let current = element;
+        while (current && current !== document.body) {
+            if (current.classList && current.classList.contains('node')) {
+                nodeElement = current;
+                break;
+            }
+            current = current.parentElement;
+        }
+    }
+
+    if (!nodeElement) return null;
+
+    // 노드 ID 가져오기
+    const nodeId = window.nodeIdMap.get(nodeElement);
+    if (!nodeId) return null;
+
+    return { element: nodeElement, nodeId: nodeId };
 }
 
 /**
@@ -214,6 +330,9 @@ function attachInteractiveHandlers(container, diagramIndex) {
         if (!nodeId) {
             return;
         }
+
+        // 노드 ID를 WeakMap에 저장 (iOS standalone document 레벨 핸들러용)
+        window.nodeIdMap.set(node, nodeId);
 
         // 모든 노드에 인터랙티브 적용 (데이터가 없으면 자동 생성)
         // 커서 및 터치 관련 CSS 설정
@@ -281,9 +400,10 @@ function attachInteractiveHandlers(container, diagramIndex) {
             node.style.opacity = '';
         }
 
-        // iOS standalone 모드에서는 터치 이벤트를 우선 사용
-        if (isIOSStandalone || isTouchDevice) {
-            log(`📱 터치 이벤트 등록: ${nodeId} (iOS Standalone: ${isIOSStandalone})`);
+        // iOS standalone 모드에서는 document 레벨 핸들러 사용 (노드 레벨 터치 비활성화)
+        // 일반 터치 디바이스에서만 노드 레벨 터치 이벤트 사용
+        if (isTouchDevice && !isIOSStandalone) {
+            log(`📱 터치 이벤트 등록: ${nodeId}`);
 
             node.addEventListener('touchstart', (e) => {
                 // 단일 터치만 처리
