@@ -210,39 +210,55 @@ function attachInteractiveHandlers(container, diagramIndex) {
         // 터치 디바이스 감지
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-        // 클릭 이벤트 (모든 디바이스에서 동작)
-        // 모바일에서 터치 → 클릭 이벤트 자동 변환됨
-        node.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            log(`🖱️ 클릭 이벤트 발생: ${nodeId}`);
-            handleNodeClick(nodeId, node);
-        });
-
-        // 터치 피드백 (모바일/태블릿) - 시각적 효과만
         if (isTouchDevice) {
+            // 모바일: 터치 이벤트로 직접 처리 (SVG 클릭 이벤트 버그 우회)
+            let touchStartTime = 0;
+            let touchStartX = 0;
+            let touchStartY = 0;
+
             node.addEventListener('touchstart', (e) => {
+                touchStartTime = Date.now();
+                const touch = e.touches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+
                 // 시각적 피드백
                 node.style.transform = 'scale(1.05)';
                 node.style.opacity = '0.8';
+                log(`📱 터치 시작: ${nodeId}`);
             }, { passive: true });
 
             node.addEventListener('touchend', (e) => {
-                // 시각적 피드백 복원 (클릭 이벤트가 처리함)
-                setTimeout(() => {
-                    node.style.transform = '';
-                    node.style.opacity = '';
-                }, 100);
+                const touchDuration = Date.now() - touchStartTime;
+                const touch = e.changedTouches[0];
+                const deltaX = Math.abs(touch.clientX - touchStartX);
+                const deltaY = Math.abs(touch.clientY - touchStartY);
+
+                // 시각적 피드백 복원
+                node.style.transform = '';
+                node.style.opacity = '';
+
+                // 탭 판정: 300ms 이하 + 이동 거리 10px 이하
+                if (touchDuration < 300 && deltaX < 10 && deltaY < 10) {
+                    log(`📱 탭 감지: ${nodeId} (${touchDuration}ms)`);
+                    handleNodeClick(nodeId, node);
+                }
             }, { passive: true });
 
             node.addEventListener('touchcancel', () => {
                 node.style.transform = '';
                 node.style.opacity = '';
             }, { passive: true });
-        }
+        } else {
+            // 데스크톱: 클릭 이벤트 사용
+            node.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                log(`🖱️ 클릭 이벤트 발생: ${nodeId}`);
+                handleNodeClick(nodeId, node);
+            });
 
-        // 호버 이벤트 (데스크톱만)
-        if (!isTouchDevice) {
+            // 호버 이벤트
             node.addEventListener('mouseenter', (e) => {
                 handleNodeHover(e, nodeId, node);
             });
