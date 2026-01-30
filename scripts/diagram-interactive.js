@@ -207,66 +207,67 @@ function attachInteractiveHandlers(container, diagramIndex) {
         node.style.cursor = 'pointer';
         node.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
 
-        // 터치 디바이스 감지
-        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        // Pointer Events 사용 (마우스 + 터치 통합, iOS standalone 모드 지원)
+        let pointerStartTime = 0;
+        let pointerStartX = 0;
+        let pointerStartY = 0;
+        let isPointerDown = false;
 
-        if (isTouchDevice) {
-            // 모바일: 터치 이벤트로 직접 처리 (SVG 클릭 이벤트 버그 우회)
-            let touchStartTime = 0;
-            let touchStartX = 0;
-            let touchStartY = 0;
+        node.addEventListener('pointerdown', (e) => {
+            isPointerDown = true;
+            pointerStartTime = Date.now();
+            pointerStartX = e.clientX;
+            pointerStartY = e.clientY;
 
-            node.addEventListener('touchstart', (e) => {
-                touchStartTime = Date.now();
-                const touch = e.touches[0];
-                touchStartX = touch.clientX;
-                touchStartY = touch.clientY;
+            // 시각적 피드백
+            node.style.transform = 'scale(1.05)';
+            node.style.opacity = '0.8';
+            log(`👆 pointerdown: ${nodeId} (${e.pointerType})`);
+        });
 
-                // 시각적 피드백
-                node.style.transform = 'scale(1.05)';
-                node.style.opacity = '0.8';
-                log(`📱 터치 시작: ${nodeId}`);
-            }, { passive: true });
+        node.addEventListener('pointerup', (e) => {
+            if (!isPointerDown) return;
+            isPointerDown = false;
 
-            node.addEventListener('touchend', (e) => {
-                const touchDuration = Date.now() - touchStartTime;
-                const touch = e.changedTouches[0];
-                const deltaX = Math.abs(touch.clientX - touchStartX);
-                const deltaY = Math.abs(touch.clientY - touchStartY);
+            const duration = Date.now() - pointerStartTime;
+            const deltaX = Math.abs(e.clientX - pointerStartX);
+            const deltaY = Math.abs(e.clientY - pointerStartY);
 
-                // 시각적 피드백 복원
-                node.style.transform = '';
-                node.style.opacity = '';
+            // 시각적 피드백 복원
+            node.style.transform = '';
+            node.style.opacity = '';
 
-                // 탭 판정: 300ms 이하 + 이동 거리 10px 이하
-                if (touchDuration < 300 && deltaX < 10 && deltaY < 10) {
-                    log(`📱 탭 감지: ${nodeId} (${touchDuration}ms)`);
-                    handleNodeClick(nodeId, node);
-                }
-            }, { passive: true });
-
-            node.addEventListener('touchcancel', () => {
-                node.style.transform = '';
-                node.style.opacity = '';
-            }, { passive: true });
-        } else {
-            // 데스크톱: 클릭 이벤트 사용
-            node.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                log(`🖱️ 클릭 이벤트 발생: ${nodeId}`);
+            // 탭/클릭 판정: 500ms 이하 + 이동 거리 15px 이하
+            if (duration < 500 && deltaX < 15 && deltaY < 15) {
+                log(`✅ 탭/클릭: ${nodeId} (${duration}ms, ${e.pointerType})`);
                 handleNodeClick(nodeId, node);
-            });
+            }
+        });
 
-            // 호버 이벤트
-            node.addEventListener('mouseenter', (e) => {
+        node.addEventListener('pointercancel', () => {
+            isPointerDown = false;
+            node.style.transform = '';
+            node.style.opacity = '';
+        });
+
+        node.addEventListener('pointerleave', () => {
+            if (isPointerDown) {
+                isPointerDown = false;
+                node.style.transform = '';
+                node.style.opacity = '';
+            }
+        });
+
+        // 호버 이벤트 (마우스만)
+        node.addEventListener('mouseenter', (e) => {
+            if (e.pointerType !== 'touch') {
                 handleNodeHover(e, nodeId, node);
-            });
+            }
+        });
 
-            node.addEventListener('mouseleave', () => {
-                handleNodeLeave(node);
-            });
-        }
+        node.addEventListener('mouseleave', () => {
+            handleNodeLeave(node);
+        });
 
         // 데이터 유무 표시 (디버그 모드에서만)
         if (DEBUG) {
