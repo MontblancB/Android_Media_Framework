@@ -980,10 +980,214 @@
             </div>
         </section>
 
-        <!-- Section 10: Related AAOS Pages -->
+        <!-- Section 10: User Management & Multi-User -->
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">10</span>
+                User Management & Multi-User
+            </h2>
+            <p class="section-description">
+                AAOS는 차량 환경에 특화된 멀티 유저 시스템을 제공하여 운전자, 동승자별로 개인화된 경험을 지원합니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>차량 멀티 유저의 특징:</strong> 일반 Android와 달리 AAOS는 운전자/동승자 구분, 좌석 기반 프로필,
+                차량 설정(좌석/미러) 연동 등 차량 환경에 최적화된 사용자 관리를 제공합니다.
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                        subgraph USERS["User Types in AAOS"]
+                            SYSTEM["System User<br/>(User 0)<br/>백그라운드 전용"]
+                            DRIVER["Driver User<br/>(Primary)<br/>운전자 프로필"]
+                            PASSENGER["Passenger Users<br/>(Secondary)<br/>동승자 프로필"]
+                            GUEST["Guest User<br/>(Ephemeral)<br/>임시 사용자"]
+                        end
+
+                        subgraph ZONES["Occupant Zones"]
+                            DRIVER_ZONE["Driver Zone<br/>메인 디스플레이"]
+                            FRONT_ZONE["Front Passenger Zone<br/>동승석 디스플레이"]
+                            REAR_ZONE["Rear Zone<br/>후석 디스플레이"]
+                        end
+
+                        subgraph SETTINGS["User-Specific Settings"]
+                            SEAT["좌석 위치<br/>미러 각도"]
+                            MEDIA["미디어 재생 기록<br/>라디오 프리셋"]
+                            CLIMATE["에어컨 온도<br/>풍량 설정"]
+                            APPS["앱 데이터<br/>로그인 정보"]
+                        end
+
+                        DRIVER --> DRIVER_ZONE
+                        PASSENGER --> FRONT_ZONE
+                        PASSENGER --> REAR_ZONE
+                        GUEST --> REAR_ZONE
+
+                        DRIVER_ZONE --> SETTINGS
+                        FRONT_ZONE --> SETTINGS
+                        REAR_ZONE --> SETTINGS
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">👤</span>
+                        User 유형
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>System User (User 0)</strong>: 항상 백그라운드 실행, UI 없음</li>
+                            <li><strong>Driver User</strong>: 메인 운전자, 차량 시작 시 자동 로그인</li>
+                            <li><strong>Passenger User</strong>: 동승자용 개별 프로필</li>
+                            <li><strong>Guest User</strong>: 임시 사용자, 세션 종료 시 데이터 삭제</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🪑</span>
+                        Occupant Zone
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Driver Zone</strong>: 운전석 + 메인 디스플레이</li>
+                            <li><strong>Front Passenger</strong>: 조수석 + 전면 패신저 디스플레이</li>
+                            <li><strong>Rear Left/Right</strong>: 후석 좌/우 디스플레이</li>
+                            <li>Zone별 User 할당 및 독립적 미디어 세션</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        User 별 설정 동기화
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>차량 설정</strong>: 좌석 위치, 미러 각도, 스티어링 위치</li>
+                            <li><strong>미디어 설정</strong>: 라디오 프리셋, 재생 기록, 볼륨</li>
+                            <li><strong>기후 설정</strong>: 에어컨 온도, 시트 히터/쿨러</li>
+                            <li><strong>앱 데이터</strong>: 로그인 상태, 개인화 설정</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin: 30px 0 20px; color: var(--color-text-primary);">CarUserManager API</h3>
+            <p style="color: var(--color-text-secondary); margin-bottom: 20px;">
+                AAOS는 <code>CarUserManager</code>를 통해 사용자 관리 기능을 제공합니다.
+            </p>
+
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">// CarUserManager 획득
+val car = Car.createCar(context)
+val carUserManager = car.getCarManager(Car.CAR_USER_SERVICE) as CarUserManager
+
+// 현재 사용자 정보
+val currentUser = carUserManager.currentUser
+Log.d("AAOS", "Current User ID: ${currentUser.identifier}")
+
+// 사용자 전환 (Driver → Passenger)
+carUserManager.switchUser(targetUserId, executor) { result ->
+    if (result.isSuccess) {
+        Log.d("AAOS", "User switched successfully")
+    } else {
+        Log.e("AAOS", "Switch failed: ${result.errorMessage}")
+    }
+}
+
+// 사용자 생성
+carUserManager.createUser("Passenger", UserManager.USER_TYPE_FULL_SECONDARY) { result ->
+    if (result.isSuccess) {
+        val newUser = result.user
+        Log.d("AAOS", "Created user: ${newUser.name}")
+    }
+}
+
+// 게스트 사용자 생성
+carUserManager.createGuest("Guest") { result ->
+    // 게스트는 세션 종료 시 자동 삭제
+}</code></pre>
+
+            <h3 style="margin: 30px 0 20px; color: var(--color-text-primary);">CarOccupantZoneManager API</h3>
+            <p style="color: var(--color-text-secondary); margin-bottom: 20px;">
+                Occupant Zone과 User 간의 매핑을 관리합니다.
+            </p>
+
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">// CarOccupantZoneManager 획득
+val occupantZoneManager = car.getCarManager(Car.CAR_OCCUPANT_ZONE_SERVICE)
+    as CarOccupantZoneManager
+
+// 모든 Occupant Zone 조회
+val allZones = occupantZoneManager.allOccupantZones
+for (zone in allZones) {
+    Log.d("AAOS", "Zone: ${zone.occupantType}")  // DRIVER, FRONT_PASSENGER, REAR_*
+}
+
+// 특정 Zone에 할당된 User 조회
+val driverZone = occupantZoneManager.getOccupantZone(
+    CarOccupantZoneManager.OCCUPANT_TYPE_DRIVER,
+    VehicleAreaSeat.SEAT_ROW_1_LEFT
+)
+val driverUser = occupantZoneManager.getUserForOccupant(driverZone)
+
+// Zone에 User 할당
+occupantZoneManager.assignProfileUserToOccupantZone(zone, userId)
+
+// Zone 변경 리스너
+occupantZoneManager.registerOccupantZoneConfigChangeCallback(executor) { flags ->
+    if (flags and CarOccupantZoneManager.ZONE_CONFIG_CHANGE_FLAG_USER != 0) {
+        Log.d("AAOS", "User assignment changed")
+    }
+}</code></pre>
+
+            <div class="content-grid" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔑</span>
+                        User 전환 시나리오
+                    </h3>
+                    <div class="card-description">
+                        <ol style="padding-left: 20px;">
+                            <li><strong>차량 시동</strong>: 마지막 운전자 자동 로그인</li>
+                            <li><strong>키 인식</strong>: 디지털 키로 운전자 식별</li>
+                            <li><strong>수동 전환</strong>: 설정 앱에서 사용자 선택</li>
+                            <li><strong>얼굴 인식</strong>: 카메라로 운전자 자동 인식 (OEM 구현)</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🛡️</span>
+                        User 권한 및 제한
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Driver</strong>: 차량 설정 변경 가능</li>
+                            <li><strong>Passenger</strong>: 미디어, 기후만 제어 가능</li>
+                            <li><strong>Guest</strong>: 제한된 기능, 데이터 비저장</li>
+                            <li>OEM이 권한 수준 커스터마이징 가능</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 개발 시 고려사항</strong><br/>
+                • <strong>User-aware 앱</strong>: 앱 데이터는 User별로 격리됨 (SharedPreferences, Database)<br/>
+                • <strong>Zone-aware 미디어</strong>: <code>CarOccupantZoneManager</code>로 Zone별 미디어 세션 분리<br/>
+                • <strong>User 전환 대응</strong>: <code>ACTION_USER_SWITCHED</code> 브로드캐스트 수신하여 상태 갱신<br/>
+                • <strong>Guest 모드</strong>: Ephemeral User이므로 중요 데이터는 클라우드 백업 권장
+            </div>
+        </section>
+
+        <!-- Section 11: Related AAOS Pages -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
                 AAOS 상세 주제
             </h2>
             <p class="section-description">

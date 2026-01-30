@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Prevent Flash of Incorrect Theme (FOIT) -->
+    <script>
+    (function(){var t=localStorage.getItem('android-media-framework-theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme:light)').matches)document.documentElement.setAttribute('data-theme','light');})();
+    </script>
+    <title>AOSP Audio Codecs - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
+
+    <style>
+        /* Page-specific styles */
+        .codec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+
+        .codec-table th,
+        .codec-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--color-surface-elevated);
+        }
+
+        .codec-table th {
+            background: var(--color-surface);
+            color: var(--color-accent);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+        }
+
+        .codec-table tr:hover {
+            background: var(--color-surface);
+        }
+
+        .codec-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-required {
+            background: rgba(38, 222, 129, 0.2);
+            color: #26de81;
+            border: 1px solid rgba(38, 222, 129, 0.4);
+        }
+
+        .badge-optional {
+            background: rgba(255, 159, 67, 0.2);
+            color: #ff9f43;
+            border: 1px solid rgba(255, 159, 67, 0.4);
+        }
+
+        .badge-recommended {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            border: 1px solid rgba(0, 212, 255, 0.4);
+        }
+
+        .badge-decode {
+            background: rgba(74, 158, 255, 0.2);
+            color: #4a9eff;
+        }
+
+        .badge-encode {
+            background: rgba(165, 94, 234, 0.2);
+            color: #a55eea;
+        }
+
+        .spec-box {
+            background: var(--color-surface);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid var(--color-accent);
+        }
+
+        .spec-box h4 {
+            color: var(--color-accent);
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+
+        .spec-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .spec-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .spec-label {
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .spec-value {
+            color: var(--color-text-primary);
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+
+        .format-card {
+            background: var(--color-surface);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--color-surface-elevated);
+            transition: all 0.3s ease;
+        }
+
+        .format-card:hover {
+            border-color: var(--color-accent);
+            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.1);
+        }
+
+        .format-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .format-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--color-text-primary);
+        }
+
+        .format-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .sample-rates {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .sample-rate-chip {
+            background: var(--color-bg-tertiary);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
+            color: var(--color-text-secondary);
+        }
+
+        .android-version {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(38, 222, 129, 0.1);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #26de81;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">🎧 AOSP Audio Codecs</h1>
+            <p class="page-subtitle">Android가 지원하는 오디오 코덱, 포맷, 사양 상세 가이드</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                오디오 코덱 개요
+            </h2>
+            <p class="section-description">
+                Android는 다양한 오디오 코덱을 지원하며, CDD(Compatibility Definition Document)에서 필수/권장 코덱을 정의합니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>CDD 요구사항:</strong> Android 기기는 CDD에서 정의한 필수 오디오 코덱을 반드시 지원해야 합니다.
+                이는 앱 개발자가 특정 코덱의 가용성을 보장받을 수 있게 합니다.
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                        subgraph LOSSY["손실 압축 (Lossy)"]
+                            AAC["AAC / AAC-LC / HE-AAC"]
+                            MP3["MP3 (MPEG-1 Audio Layer 3)"]
+                            VORBIS["Vorbis (OGG)"]
+                            OPUS["Opus"]
+                            AMR["AMR-NB / AMR-WB"]
+                            AC4["Dolby AC-4"]
+                        end
+
+                        subgraph LOSSLESS["무손실 압축 (Lossless)"]
+                            FLAC["FLAC"]
+                            ALAC["ALAC (Apple Lossless)"]
+                        end
+
+                        subgraph RAW["비압축 (Raw)"]
+                            PCM["PCM / WAV"]
+                        end
+
+                        subgraph SPATIAL["공간 오디오 (Spatial)"]
+                            ATMOS["Dolby Atmos"]
+                            MPEG_H["MPEG-H 3D Audio"]
+                        end
+
+                        APP["📱 Android App"] --> DECODER["Audio Decoder"]
+                        DECODER --> LOSSY
+                        DECODER --> LOSSLESS
+                        DECODER --> RAW
+                        DECODER --> SPATIAL
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        필수 코덱 (CDD Required)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>AAC LC (Decode)</li>
+                            <li>HE-AAC v1 (AAC+) (Decode)</li>
+                            <li>HE-AAC v2 (eAAC+) (Decode)</li>
+                            <li>AAC ELD (Decode)</li>
+                            <li>AMR-NB (Encode/Decode)</li>
+                            <li>AMR-WB (Decode)</li>
+                            <li>FLAC (Decode)</li>
+                            <li>MP3 (Decode)</li>
+                            <li>Vorbis (Decode)</li>
+                            <li>Opus (Decode)</li>
+                            <li>PCM/WAVE (Decode)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⭐</span>
+                        권장 코덱 (Recommended)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>AAC (Encode)</li>
+                            <li>AMR-WB (Encode)</li>
+                            <li>FLAC (Encode)</li>
+                            <li>Opus (Encode)</li>
+                            <li>ALAC (Decode)</li>
+                            <li>AC-4 (Decode, Android 9+)</li>
+                            <li>MPEG-H 3D Audio (Android 13+)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        지원 사양
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Sample Rate</strong>: 8kHz ~ 192kHz</li>
+                            <li><strong>Bit Depth</strong>: 8/16/24/32-bit</li>
+                            <li><strong>Channels</strong>: Mono ~ 7.1 Surround</li>
+                            <li><strong>Bitrate</strong>: 8kbps ~ 320kbps+</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: AAC Family -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                AAC 코덱 계열
+            </h2>
+            <p class="section-description">
+                AAC(Advanced Audio Coding)는 Android에서 가장 널리 사용되는 오디오 코덱으로, 여러 프로파일을 지원합니다.
+            </p>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">AAC-LC (Low Complexity)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="codec-badge badge-encode">Encode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    가장 기본적인 AAC 프로파일로, 높은 호환성과 좋은 음질을 제공합니다.
+                    대부분의 스트리밍 서비스와 음악 파일에서 사용됩니다.
+                </p>
+                <div class="spec-box">
+                    <h4>지원 사양</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 96kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">Mono, Stereo, 5.1</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">8 ~ 320 kbps</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Container:</span>
+                            <span class="spec-value">MP4, M4A, 3GP, MKV, ADTS</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 12px;">
+                    <strong style="color: var(--color-text-secondary);">권장 Sample Rates:</strong>
+                    <div class="sample-rates">
+                        <span class="sample-rate-chip">44100 Hz</span>
+                        <span class="sample-rate-chip">48000 Hz</span>
+                        <span class="sample-rate-chip">96000 Hz</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">HE-AAC v1 (AAC+)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    SBR(Spectral Band Replication)을 사용하여 저비트레이트에서도 우수한 음질을 제공합니다.
+                    스트리밍 서비스, 라디오 방송에 적합합니다.
+                </p>
+                <div class="spec-box">
+                    <h4>지원 사양</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">Mono, Stereo</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">24 ~ 128 kbps</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">특징:</span>
+                            <span class="spec-value">SBR (Spectral Band Replication)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">HE-AAC v2 (eAAC+)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    SBR + PS(Parametric Stereo)를 사용하여 초저비트레이트(24~48kbps)에서도 스테레오 음질을 제공합니다.
+                </p>
+                <div class="spec-box">
+                    <h4>지원 사양</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">Stereo (PS 적용)</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">24 ~ 64 kbps</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">특징:</span>
+                            <span class="spec-value">SBR + PS</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">AAC ELD (Enhanced Low Delay)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="codec-badge badge-encode">Encode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    실시간 통신(VoIP, 화상회의)을 위한 저지연 코덱입니다.
+                    15ms 이하의 알고리즘 지연을 제공합니다.
+                </p>
+                <div class="spec-box">
+                    <h4>지원 사양</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">16kHz ~ 48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">Mono, Stereo</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">지연:</span>
+                            <span class="spec-value">&lt; 15ms</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">용도:</span>
+                            <span class="spec-value">VoIP, 실시간 통신</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">xHE-AAC (Extended HE-AAC)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-recommended">Recommended</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="android-version">Android 9+</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    최신 AAC 프로파일로, 12kbps 초저비트레이트부터 고비트레이트까지 넓은 범위를 지원합니다.
+                    USAC(Unified Speech and Audio Coding) 기반입니다.
+                </p>
+                <div class="spec-box">
+                    <h4>지원 사양</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">12 ~ 500 kbps</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">특징:</span>
+                            <span class="spec-value">음성+오디오 통합, Loudness 관리</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Lossless Codecs -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                무손실 코덱 (Lossless)
+            </h2>
+            <p class="section-description">
+                원본 오디오 데이터를 손실 없이 압축하여 CD 품질 이상의 음질을 제공합니다.
+            </p>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">FLAC (Free Lossless Audio Codec)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="codec-badge badge-encode">Encode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    가장 널리 사용되는 오픈 소스 무손실 코덱입니다. 압축률 40~60%, 빠른 디코딩 속도를 제공합니다.
+                </p>
+                <div class="spec-box">
+                    <h4>지원 사양</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">1Hz ~ 655,350Hz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bit Depth:</span>
+                            <span class="spec-value">4 ~ 32-bit</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">1 ~ 8 channels</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Container:</span>
+                            <span class="spec-value">.flac, MKV, OGG</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 12px;">
+                    <strong style="color: var(--color-text-secondary);">Hi-Res Audio Sample Rates:</strong>
+                    <div class="sample-rates">
+                        <span class="sample-rate-chip">44100 Hz (CD)</span>
+                        <span class="sample-rate-chip">48000 Hz</span>
+                        <span class="sample-rate-chip">88200 Hz</span>
+                        <span class="sample-rate-chip">96000 Hz</span>
+                        <span class="sample-rate-chip">176400 Hz</span>
+                        <span class="sample-rate-chip">192000 Hz</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">ALAC (Apple Lossless Audio Codec)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-optional">Optional</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Apple에서 개발한 무손실 코덱입니다. iTunes, Apple Music에서 주로 사용되며, Android에서도 디코딩을 지원합니다.
+                </p>
+                <div class="spec-box">
+                    <h4>지원 사양</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">1Hz ~ 384kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bit Depth:</span>
+                            <span class="spec-value">16/24/32-bit</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">1 ~ 8 channels</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Container:</span>
+                            <span class="spec-value">M4A, MOV, CAF</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">PCM / WAV (비압축)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="codec-badge badge-encode">Encode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    압축되지 않은 원본 오디오 데이터입니다. 편집, 마스터링 작업에 사용되며, 파일 크기가 큽니다.
+                </p>
+                <div class="spec-box">
+                    <h4>지원 사양</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 192kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bit Depth:</span>
+                            <span class="spec-value">8/16/24/32-bit (int), 32-bit (float)</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">Mono ~ 7.1</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Container:</span>
+                            <span class="spec-value">.wav, .aiff</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Voice Codecs -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                음성 코덱 (Voice/Speech)
+            </h2>
+            <p class="section-description">
+                음성 통화 및 음성 녹음에 최적화된 저비트레이트 코덱입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="format-card">
+                    <div class="format-header">
+                        <div class="format-title">AMR-NB (Narrowband)</div>
+                        <div class="format-badges">
+                            <span class="codec-badge badge-required">CDD Required</span>
+                            <span class="codec-badge badge-decode">Decode</span>
+                            <span class="codec-badge badge-encode">Encode</span>
+                        </div>
+                    </div>
+                    <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                        2G/3G 음성 통화에 사용되는 표준 코덱입니다.
+                    </p>
+                    <div class="spec-box">
+                        <h4>지원 사양</h4>
+                        <div class="spec-list">
+                            <div class="spec-item">
+                                <span class="spec-label">Sample Rate:</span>
+                                <span class="spec-value">8000 Hz</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Bitrate:</span>
+                                <span class="spec-value">4.75 ~ 12.2 kbps</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Channels:</span>
+                                <span class="spec-value">Mono</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Container:</span>
+                                <span class="spec-value">.amr, 3GP</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="format-card">
+                    <div class="format-header">
+                        <div class="format-title">AMR-WB (Wideband)</div>
+                        <div class="format-badges">
+                            <span class="codec-badge badge-required">CDD Required</span>
+                            <span class="codec-badge badge-decode">Decode</span>
+                            <span class="codec-badge badge-encode">Encode (Optional)</span>
+                        </div>
+                    </div>
+                    <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                        HD Voice(VoLTE)에 사용되는 고음질 음성 코덱입니다.
+                    </p>
+                    <div class="spec-box">
+                        <h4>지원 사양</h4>
+                        <div class="spec-list">
+                            <div class="spec-item">
+                                <span class="spec-label">Sample Rate:</span>
+                                <span class="spec-value">16000 Hz</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Bitrate:</span>
+                                <span class="spec-value">6.6 ~ 23.85 kbps</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Channels:</span>
+                                <span class="spec-value">Mono</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Container:</span>
+                                <span class="spec-value">.awb, 3GP</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Open Source Codecs -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                오픈 소스 코덱
+            </h2>
+            <p class="section-description">
+                라이선스 비용 없이 사용 가능한 오픈 소스 오디오 코덱입니다.
+            </p>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">Opus</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="codec-badge badge-encode">Encode</span>
+                        <span class="android-version">Android 5.0+</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    IETF 표준 코덱으로, 음성과 음악 모두에서 뛰어난 성능을 제공합니다.
+                    WebRTC, Discord, WhatsApp 등에서 사용됩니다.
+                </p>
+                <div class="spec-box">
+                    <h4>지원 사양</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">6 ~ 510 kbps</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">1 ~ 255 channels</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">지연:</span>
+                            <span class="spec-value">2.5ms ~ 60ms (설정 가능)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="highlight-box" style="margin-top: 16px;">
+                    <strong>Opus 모드:</strong><br/>
+                    • <strong>SILK</strong>: 음성 최적화 (저비트레이트)<br/>
+                    • <strong>CELT</strong>: 음악 최적화 (고품질)<br/>
+                    • <strong>Hybrid</strong>: 음성+음악 결합
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">Vorbis (OGG)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Xiph.Org에서 개발한 오픈 소스 손실 압축 코덱입니다.
+                    게임 오디오, 스트리밍 서비스에서 널리 사용됩니다.
+                </p>
+                <div class="spec-box">
+                    <h4>지원 사양</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 192kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">45 ~ 500 kbps</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">1 ~ 255 channels</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Container:</span>
+                            <span class="spec-value">.ogg, .ogv, MKV, WebM</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">MP3 (MPEG-1 Audio Layer 3)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    가장 널리 알려진 오디오 포맷입니다. 특허가 만료되어(2017) 자유롭게 사용 가능합니다.
+                </p>
+                <div class="spec-box">
+                    <h4>지원 사양</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">8 ~ 320 kbps (CBR/VBR)</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">Mono, Stereo, Joint Stereo</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Container:</span>
+                            <span class="spec-value">.mp3</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Spatial Audio -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                공간 오디오 (Spatial Audio)
+            </h2>
+            <p class="section-description">
+                3D 오디오 경험을 제공하는 몰입형 오디오 코덱입니다.
+            </p>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">Dolby AC-4</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-optional">Optional</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="android-version">Android 9+</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Dolby의 차세대 오디오 코덱으로, 방송, 스트리밍, 모바일에 최적화되어 있습니다.
+                    Dolby Atmos 콘텐츠의 기본 코덱입니다.
+                </p>
+                <div class="spec-box">
+                    <h4>지원 사양</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">64 ~ 2048 kbps</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">최대 7.1.4 (Dolby Atmos)</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">특징:</span>
+                            <span class="spec-value">Object-based Audio, Loudness 관리</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">MPEG-H 3D Audio</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-optional">Optional</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="android-version">Android 13+</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    MPEG 표준의 차세대 3D 오디오 코덱입니다. 한국 ATSC 3.0 방송 표준에 채택되었습니다.
+                </p>
+                <div class="spec-box">
+                    <h4>지원 사양</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">14.7kHz ~ 48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">최대 64 channels + Objects</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">특징:</span>
+                            <span class="spec-value">Personalized Audio, Loudness 관리</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Sample Rate & Bit Depth -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Sample Rate & Bit Depth
+            </h2>
+            <p class="section-description">
+                오디오 품질을 결정하는 핵심 파라미터입니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Nyquist 정리:</strong> Sample Rate는 재현 가능한 최대 주파수의 2배 이상이어야 합니다.
+                인간의 가청 주파수(20Hz~20kHz)를 재현하려면 최소 40kHz가 필요합니다.
+            </div>
+
+            <h3 style="margin: 30px 0 20px; color: var(--color-text-primary);">Sample Rate 비교</h3>
+            <table class="codec-table">
+                <thead>
+                    <tr>
+                        <th>Sample Rate</th>
+                        <th>주파수 범위</th>
+                        <th>용도</th>
+                        <th>품질</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>8,000 Hz</code></td>
+                        <td>~4 kHz</td>
+                        <td>전화 통화 (NB)</td>
+                        <td>Telephone</td>
+                    </tr>
+                    <tr>
+                        <td><code>16,000 Hz</code></td>
+                        <td>~8 kHz</td>
+                        <td>VoIP, HD Voice (WB)</td>
+                        <td>Wideband</td>
+                    </tr>
+                    <tr>
+                        <td><code>22,050 Hz</code></td>
+                        <td>~11 kHz</td>
+                        <td>FM 라디오</td>
+                        <td>FM Quality</td>
+                    </tr>
+                    <tr>
+                        <td><code>44,100 Hz</code></td>
+                        <td>~22 kHz</td>
+                        <td>CD Audio</td>
+                        <td>CD Quality</td>
+                    </tr>
+                    <tr>
+                        <td><code>48,000 Hz</code></td>
+                        <td>~24 kHz</td>
+                        <td>DVD, 방송, 영상</td>
+                        <td>Professional</td>
+                    </tr>
+                    <tr>
+                        <td><code>96,000 Hz</code></td>
+                        <td>~48 kHz</td>
+                        <td>Hi-Res Audio</td>
+                        <td>High Resolution</td>
+                    </tr>
+                    <tr>
+                        <td><code>192,000 Hz</code></td>
+                        <td>~96 kHz</td>
+                        <td>Studio Master</td>
+                        <td>Ultra High Resolution</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="margin: 30px 0 20px; color: var(--color-text-primary);">Bit Depth 비교</h3>
+            <table class="codec-table">
+                <thead>
+                    <tr>
+                        <th>Bit Depth</th>
+                        <th>Dynamic Range</th>
+                        <th>값 범위</th>
+                        <th>용도</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>8-bit</code></td>
+                        <td>~48 dB</td>
+                        <td>0 ~ 255</td>
+                        <td>Low Quality, 게임 효과음</td>
+                    </tr>
+                    <tr>
+                        <td><code>16-bit</code></td>
+                        <td>~96 dB</td>
+                        <td>-32,768 ~ 32,767</td>
+                        <td>CD Quality (표준)</td>
+                    </tr>
+                    <tr>
+                        <td><code>24-bit</code></td>
+                        <td>~144 dB</td>
+                        <td>-8,388,608 ~ 8,388,607</td>
+                        <td>Hi-Res Audio, 스튜디오</td>
+                    </tr>
+                    <tr>
+                        <td><code>32-bit (int)</code></td>
+                        <td>~192 dB</td>
+                        <td>-2^31 ~ 2^31-1</td>
+                        <td>프로페셔널 마스터링</td>
+                    </tr>
+                    <tr>
+                        <td><code>32-bit (float)</code></td>
+                        <td>~1,528 dB</td>
+                        <td>IEEE 754</td>
+                        <td>내부 처리, 믹싱</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 8: Channel Configuration -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                채널 구성 (Channel Configuration)
+            </h2>
+            <p class="section-description">
+                Android가 지원하는 오디오 채널 레이아웃입니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                        subgraph STEREO["스테레오 (2.0)"]
+                            FL1["Front Left"]
+                            FR1["Front Right"]
+                        end
+
+                        subgraph SURROUND51["5.1 서라운드"]
+                            FL2["Front Left"]
+                            FC2["Front Center"]
+                            FR2["Front Right"]
+                            SL2["Surround Left"]
+                            SR2["Surround Right"]
+                            LFE2["LFE (Subwoofer)"]
+                        end
+
+                        subgraph SURROUND71["7.1 서라운드"]
+                            FL3["Front Left"]
+                            FC3["Front Center"]
+                            FR3["Front Right"]
+                            SL3["Side Left"]
+                            SR3["Side Right"]
+                            BL3["Back Left"]
+                            BR3["Back Right"]
+                            LFE3["LFE"]
+                        end
+                </div>
+            </div>
+
+            <table class="codec-table">
+                <thead>
+                    <tr>
+                        <th>채널 구성</th>
+                        <th>채널 수</th>
+                        <th>레이아웃</th>
+                        <th>Android 상수</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Mono</td>
+                        <td>1</td>
+                        <td>C</td>
+                        <td><code>CHANNEL_OUT_MONO</code></td>
+                    </tr>
+                    <tr>
+                        <td>Stereo</td>
+                        <td>2</td>
+                        <td>L, R</td>
+                        <td><code>CHANNEL_OUT_STEREO</code></td>
+                    </tr>
+                    <tr>
+                        <td>2.1</td>
+                        <td>3</td>
+                        <td>L, R, LFE</td>
+                        <td><code>CHANNEL_OUT_STEREO | CHANNEL_OUT_LOW_FREQUENCY</code></td>
+                    </tr>
+                    <tr>
+                        <td>5.1</td>
+                        <td>6</td>
+                        <td>L, R, C, LFE, SL, SR</td>
+                        <td><code>CHANNEL_OUT_5POINT1</code></td>
+                    </tr>
+                    <tr>
+                        <td>7.1</td>
+                        <td>8</td>
+                        <td>L, R, C, LFE, BL, BR, SL, SR</td>
+                        <td><code>CHANNEL_OUT_7POINT1_SURROUND</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 9: Codec Selection Guide -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                코덱 선택 가이드
+            </h2>
+            <p class="section-description">
+                용도에 따른 최적의 오디오 코덱 선택 가이드입니다.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        음악 스트리밍
+                    </h3>
+                    <div class="card-description">
+                        <strong>권장:</strong> AAC-LC (128-256kbps)<br/>
+                        <strong>대안:</strong> Opus (128kbps), Vorbis (160kbps)<br/>
+                        <strong>고품질:</strong> FLAC (무손실)
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📞</span>
+                        음성 통화 / VoIP
+                    </h3>
+                    <div class="card-description">
+                        <strong>권장:</strong> Opus (24-64kbps, VoIP 모드)<br/>
+                        <strong>대안:</strong> AAC ELD, AMR-WB<br/>
+                        <strong>저비트레이트:</strong> AMR-NB (4.75-12.2kbps)
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎮</span>
+                        게임 오디오
+                    </h3>
+                    <div class="card-description">
+                        <strong>권장:</strong> Vorbis (효과음), Opus (음성)<br/>
+                        <strong>대안:</strong> MP3 (배경음악)<br/>
+                        <strong>저지연:</strong> PCM (실시간 효과음)
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        영상 콘텐츠
+                    </h3>
+                    <div class="card-description">
+                        <strong>권장:</strong> AAC-LC (영상 동반)<br/>
+                        <strong>서라운드:</strong> AC-4, E-AC-3 (Dolby)<br/>
+                        <strong>방송:</strong> HE-AAC v2 (저비트레이트)
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎧</span>
+                        Hi-Res Audio
+                    </h3>
+                    <div class="card-description">
+                        <strong>권장:</strong> FLAC (96kHz/24-bit)<br/>
+                        <strong>대안:</strong> ALAC, WAV<br/>
+                        <strong>스트리밍:</strong> MQA (지원 시)
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        차량 오디오
+                    </h3>
+                    <div class="card-description">
+                        <strong>권장:</strong> AAC-LC, Opus<br/>
+                        <strong>Bluetooth:</strong> SBC, AAC, LDAC<br/>
+                        <strong>공간 오디오:</strong> Dolby Atmos
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 10: API Reference -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                API 레퍼런스
+            </h2>
+            <p class="section-description">
+                Android에서 오디오 코덱을 다루기 위한 주요 API입니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>MediaCodecList</strong>로 기기가 지원하는 코덱 목록을 조회할 수 있습니다.
+            </div>
+
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">// 지원 코덱 조회
+val codecList = MediaCodecList(MediaCodecList.ALL_CODECS)
+for (codecInfo in codecList.codecInfos) {
+    if (codecInfo.isEncoder) {
+        Log.d("Codec", "Encoder: ${codecInfo.name}")
+    } else {
+        Log.d("Codec", "Decoder: ${codecInfo.name}")
+    }
+
+    for (type in codecInfo.supportedTypes) {
+        Log.d("Codec", "  MIME: $type")
+        val caps = codecInfo.getCapabilitiesForType(type)
+        val audioCapabilities = caps.audioCapabilities
+
+        audioCapabilities?.let {
+            Log.d("Codec", "  Sample Rates: ${it.supportedSampleRates?.toList()}")
+            Log.d("Codec", "  Bitrate Range: ${it.bitrateRange}")
+            Log.d("Codec", "  Max Channels: ${it.maxInputChannelCount}")
+        }
+    }
+}</code></pre>
+
+            <h3 style="margin: 30px 0 20px; color: var(--color-text-primary);">주요 MIME 타입</h3>
+            <table class="codec-table">
+                <thead>
+                    <tr>
+                        <th>코덱</th>
+                        <th>MIME 타입</th>
+                        <th>MediaFormat 상수</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>AAC</td>
+                        <td><code>audio/mp4a-latm</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_AAC</code></td>
+                    </tr>
+                    <tr>
+                        <td>AMR-NB</td>
+                        <td><code>audio/3gpp</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_AMR_NB</code></td>
+                    </tr>
+                    <tr>
+                        <td>AMR-WB</td>
+                        <td><code>audio/amr-wb</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_AMR_WB</code></td>
+                    </tr>
+                    <tr>
+                        <td>FLAC</td>
+                        <td><code>audio/flac</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_FLAC</code></td>
+                    </tr>
+                    <tr>
+                        <td>MP3</td>
+                        <td><code>audio/mpeg</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_MPEG</code></td>
+                    </tr>
+                    <tr>
+                        <td>Opus</td>
+                        <td><code>audio/opus</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_OPUS</code></td>
+                    </tr>
+                    <tr>
+                        <td>Vorbis</td>
+                        <td><code>audio/vorbis</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_VORBIS</code></td>
+                    </tr>
+                    <tr>
+                        <td>RAW (PCM)</td>
+                        <td><code>audio/raw</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_RAW</code></td>
+                    </tr>
+                    <tr>
+                        <td>AC-4</td>
+                        <td><code>audio/ac4</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_AC4</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 11: References -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                참고 자료
+            </h2>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📚</span>
+                        공식 문서
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><a href="https://source.android.com/docs/core/media" target="_blank" style="color: var(--color-accent);">AOSP Media</a></li>
+                            <li><a href="https://developer.android.com/guide/topics/media/media-formats" target="_blank" style="color: var(--color-accent);">Supported Media Formats</a></li>
+                            <li><a href="https://source.android.com/docs/compatibility/cdd" target="_blank" style="color: var(--color-accent);">CDD (Compatibility Definition)</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔗</span>
+                        관련 페이지
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><a href="audio-framework.html" style="color: var(--color-accent);">Audio Framework</a></li>
+                            <li><a href="codec2.html" style="color: var(--color-accent);">Codec 2.0</a></li>
+                            <li><a href="dolby-codecs.html" style="color: var(--color-accent);">Dolby Codecs</a></li>
+                            <li><a href="media-playback.html" style="color: var(--color-accent);">Media Playback</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="scripts/mermaid-theme.js"></script>
+    <script src="scripts/copy-code.js"></script>
+    <script src="scripts/toc-generator.js"></script>
+    <script src="scripts/page-navigation.js"></script>
+    <script src="scripts/diagram-data.js"></script>
+    <script src="scripts/diagram-interactive.js"></script>
+    <script src="scripts/theme-toggle.js"></script>
+    <script src="scripts/lang-switch.js"></script>
+</body>
+
+</html>

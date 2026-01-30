@@ -980,10 +980,178 @@
             </div>
         </section>
 
-        <!-- Section 10: Related AAOS Pages -->
+        <!-- Section 10: User Management & Multi-User -->
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">10</span>
+                User Management & Multi-User
+            </h2>
+            <p class="section-description">
+                AAOS provides a sophisticated user management system for vehicles, supporting driver profiles, passenger modes, and occupant zones.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                        subgraph USERS["User Types in AAOS"]
+                            SYSTEM["System User<br/>(User 0)<br/>Background Only"]
+                            DRIVER["Driver User<br/>(Primary)<br/>Driver Profile"]
+                            PASSENGER["Passenger Users<br/>(Secondary)<br/>Passenger Profile"]
+                            GUEST["Guest User<br/>(Ephemeral)<br/>Temporary User"]
+                        end
+
+                        subgraph ZONES["Occupant Zones"]
+                            DRIVER_ZONE["Driver Zone<br/>Main Display"]
+                            FRONT_ZONE["Front Passenger Zone<br/>Passenger Display"]
+                            REAR_ZONE["Rear Zone<br/>Rear Display"]
+                        end
+
+                        subgraph SETTINGS["User-Specific Settings"]
+                            SEAT["Seat Position<br/>Mirror Angle"]
+                            MEDIA["Media History<br/>Radio Presets"]
+                            CLIMATE["AC Temperature<br/>Fan Settings"]
+                            APPS["App Data<br/>Login Info"]
+                        end
+
+                        DRIVER --> DRIVER_ZONE
+                        PASSENGER --> FRONT_ZONE
+                        PASSENGER --> REAR_ZONE
+                        GUEST --> REAR_ZONE
+
+                        DRIVER_ZONE --> SETTINGS
+                        FRONT_ZONE --> SETTINGS
+                        REAR_ZONE --> SETTINGS
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔧</span>
+                        System User (User ID 0)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Runs only as a background process</li>
+                            <li>User cannot interact with directly</li>
+                            <li>System service management</li>
+                            <li>headless mode in AAOS</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Driver User
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Primary user on vehicle startup</li>
+                            <li>Main display and primary audio zone</li>
+                            <li>Vehicle settings and driving data access</li>
+                            <li>Profile-based seat/mirror/HVAC preferences</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">👤</span>
+                        Passenger User
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Rear Seat Entertainment (RSE) display usage</li>
+                            <li>Independent audio zone</li>
+                            <li>Media/video playback allowed</li>
+                            <li>Isolation from driver's data</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">👥</span>
+                        Guest User
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Temporary user that requires no login</li>
+                            <li>All data deleted on session end</li>
+                            <li>Privacy protection for rental cars, car sharing, etc.</li>
+                            <li>Reset to initial state on each use</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin: 30px 0 20px; color: var(--color-text-primary);">CarUserManager API</h3>
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">val carUserManager = car.getCarManager(Car.CAR_USER_SERVICE) as CarUserManager
+
+// Get current user info
+val currentUser = carUserManager.currentUserInfo
+Log.d("User", "Current User: ${currentUser.name}, ID: ${currentUser.id}")
+
+// User lifecycle listener
+carUserManager.addListener(executor) { event ->
+    when (event.eventType) {
+        CarUserManager.USER_LIFECYCLE_EVENT_TYPE_SWITCHING ->
+            Log.d("User", "Switching to user: ${event.userId}")
+        CarUserManager.USER_LIFECYCLE_EVENT_TYPE_UNLOCKED ->
+            Log.d("User", "User unlocked: ${event.userId}")
+        CarUserManager.USER_LIFECYCLE_EVENT_TYPE_STOPPED ->
+            Log.d("User", "User stopped: ${event.userId}")
+    }
+}
+
+// Switch user (System permission required)
+carUserManager.switchUser(targetUserId, executor) { result ->
+    if (result.isSuccess) {
+        Log.d("User", "User switch successful")
+    }
+}</code></pre>
+
+            <h3 style="margin: 30px 0 20px; color: var(--color-text-primary);">CarOccupantZoneManager API</h3>
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">val zoneManager = car.getCarManager(Car.CAR_OCCUPANT_ZONE_SERVICE)
+    as CarOccupantZoneManager
+
+// Get all occupant zone list
+val allZones = zoneManager.allOccupantZones
+for (zone in allZones) {
+    val zoneType = zone.occupantType  // DRIVER, FRONT_PASSENGER, REAR_PASSENGER
+    val displays = zoneManager.getAllDisplaysForOccupant(zone)
+    val audioZoneId = zoneManager.getAudioZoneIdForOccupant(zone)
+    val userId = zoneManager.getUserForOccupant(zone)
+
+    Log.d("Zone", "Zone: $zoneType, Displays: ${displays.size}, AudioZone: $audioZoneId, User: $userId")
+}
+
+// Get my zone info
+val myZone = zoneManager.myOccupantZone
+Log.d("Zone", "My zone type: ${myZone?.occupantType}")
+
+// Zone-user mapping change listener
+zoneManager.registerOccupantZoneConfigChangeCallback(executor) { flags ->
+    if (flags and CarOccupantZoneManager.ZONE_CONFIG_CHANGE_FLAG_USER != 0) {
+        Log.d("Zone", "Zone-User mapping changed")
+        refreshUserZoneMapping()
+    }
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Multi-User Architecture Best Practices</strong><br/>
+                • <strong>Driver Profile</strong>: Personalized seat/mirror/HVAC settings linked to user ID<br/>
+                • <strong>RSE Passenger</strong>: Independent media control and video permission<br/>
+                • <strong>Guest Mode</strong>: Privacy protection for rental cars and car sharing<br/>
+                • <strong>Seamless Switching</strong>: Preserve app state with fast user switching
+            </div>
+        </section>
+
+        <!-- Section 11: Related AAOS Pages -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
                 AAOS Detailed Topics
             </h2>
             <p class="section-description">

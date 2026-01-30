@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Prevent Flash of Incorrect Theme (FOIT) -->
+    <script>
+    (function(){var t=localStorage.getItem('android-media-framework-theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme:light)').matches)document.documentElement.setAttribute('data-theme','light');})();
+    </script>
+    <title>AOSP Audio Codecs - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+    <style>
+        /* Page-specific styles */
+        .codec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+
+        .codec-table th,
+        .codec-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--color-surface-elevated);
+        }
+
+        .codec-table th {
+            background: var(--color-surface);
+            color: var(--color-accent);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+        }
+
+        .codec-table tr:hover {
+            background: var(--color-surface);
+        }
+
+        .codec-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-required {
+            background: rgba(38, 222, 129, 0.2);
+            color: #26de81;
+            border: 1px solid rgba(38, 222, 129, 0.4);
+        }
+
+        .badge-optional {
+            background: rgba(255, 159, 67, 0.2);
+            color: #ff9f43;
+            border: 1px solid rgba(255, 159, 67, 0.4);
+        }
+
+        .badge-recommended {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            border: 1px solid rgba(0, 212, 255, 0.4);
+        }
+
+        .badge-decode {
+            background: rgba(74, 158, 255, 0.2);
+            color: #4a9eff;
+        }
+
+        .badge-encode {
+            background: rgba(165, 94, 234, 0.2);
+            color: #a55eea;
+        }
+
+        .spec-box {
+            background: var(--color-surface);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid var(--color-accent);
+        }
+
+        .spec-box h4 {
+            color: var(--color-accent);
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+
+        .spec-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .spec-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .spec-label {
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .spec-value {
+            color: var(--color-text-primary);
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+
+        .format-card {
+            background: var(--color-surface);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--color-surface-elevated);
+            transition: all 0.3s ease;
+        }
+
+        .format-card:hover {
+            border-color: var(--color-accent);
+            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.1);
+        }
+
+        .format-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .format-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--color-text-primary);
+        }
+
+        .format-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .sample-rates {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .sample-rate-chip {
+            background: var(--color-bg-tertiary);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
+            color: var(--color-text-secondary);
+        }
+
+        .android-version {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(38, 222, 129, 0.1);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #26de81;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">AOSP Audio Codecs</h1>
+            <p class="page-subtitle">Comprehensive guide to audio codecs, formats, and specifications supported by Android</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Audio Codec Overview
+            </h2>
+            <p class="section-description">
+                Android supports a wide variety of audio codecs, with required and recommended codecs defined in the CDD (Compatibility Definition Document).
+            </p>
+
+            <div class="highlight-box">
+                <strong>CDD Requirements:</strong> Android devices must support the mandatory audio codecs defined in the CDD.
+                This ensures app developers can rely on the availability of certain codecs.
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                        subgraph LOSSY["Lossy Compression"]
+                            AAC["AAC / AAC-LC / HE-AAC"]
+                            MP3["MP3 (MPEG-1 Audio Layer 3)"]
+                            VORBIS["Vorbis (OGG)"]
+                            OPUS["Opus"]
+                            AMR["AMR-NB / AMR-WB"]
+                            AC4["Dolby AC-4"]
+                        end
+
+                        subgraph LOSSLESS["Lossless Compression"]
+                            FLAC["FLAC"]
+                            ALAC["ALAC (Apple Lossless)"]
+                        end
+
+                        subgraph RAW["Uncompressed (Raw)"]
+                            PCM["PCM / WAV"]
+                        end
+
+                        subgraph SPATIAL["Spatial Audio"]
+                            ATMOS["Dolby Atmos"]
+                            MPEG_H["MPEG-H 3D Audio"]
+                        end
+
+                        APP["Android App"] --> DECODER["Audio Decoder"]
+                        DECODER --> LOSSY
+                        DECODER --> LOSSLESS
+                        DECODER --> RAW
+                        DECODER --> SPATIAL
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">✅</span>
+                        Required Codecs (CDD)
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>AAC LC (Decode)</li>
+                            <li>HE-AAC v1 (AAC+) (Decode)</li>
+                            <li>HE-AAC v2 (eAAC+) (Decode)</li>
+                            <li>AAC ELD (Decode)</li>
+                            <li>AMR-NB (Encode/Decode)</li>
+                            <li>AMR-WB (Decode)</li>
+                            <li>FLAC (Decode)</li>
+                            <li>MP3 (Decode)</li>
+                            <li>Vorbis (Decode)</li>
+                            <li>Opus (Decode)</li>
+                            <li>PCM/WAVE (Decode)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⭐</span>
+                        Recommended Codecs
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>AAC (Encode)</li>
+                            <li>AMR-WB (Encode)</li>
+                            <li>FLAC (Encode)</li>
+                            <li>Opus (Encode)</li>
+                            <li>ALAC (Decode)</li>
+                            <li>AC-4 (Decode, Android 9+)</li>
+                            <li>MPEG-H 3D Audio (Android 13+)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Supported Specifications
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Sample Rate</strong>: 8kHz ~ 192kHz</li>
+                            <li><strong>Bit Depth</strong>: 8/16/24/32-bit</li>
+                            <li><strong>Channels</strong>: Mono ~ 7.1 Surround</li>
+                            <li><strong>Bitrate</strong>: 8kbps ~ 320kbps+</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: AAC Family -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                AAC Codec Family
+            </h2>
+            <p class="section-description">
+                AAC (Advanced Audio Coding) is the most widely used audio codec on Android, supporting multiple profiles.
+            </p>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">AAC-LC (Low Complexity)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="codec-badge badge-encode">Encode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    The most basic AAC profile, offering high compatibility and good audio quality.
+                    Used by most streaming services and music files.
+                </p>
+                <div class="spec-box">
+                    <h4>Specifications</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 96kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">Mono, Stereo, 5.1</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">8 ~ 320 kbps</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Container:</span>
+                            <span class="spec-value">MP4, M4A, 3GP, MKV, ADTS</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 12px;">
+                    <strong style="color: var(--color-text-secondary);">Recommended Sample Rates:</strong>
+                    <div class="sample-rates">
+                        <span class="sample-rate-chip">44100 Hz</span>
+                        <span class="sample-rate-chip">48000 Hz</span>
+                        <span class="sample-rate-chip">96000 Hz</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">HE-AAC v1 (AAC+)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Uses SBR (Spectral Band Replication) to provide excellent quality at low bitrates.
+                    Ideal for streaming services and radio broadcasting.
+                </p>
+                <div class="spec-box">
+                    <h4>Specifications</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">Mono, Stereo</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">24 ~ 128 kbps</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Feature:</span>
+                            <span class="spec-value">SBR (Spectral Band Replication)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">HE-AAC v2 (eAAC+)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Uses SBR + PS (Parametric Stereo) to provide stereo quality even at very low bitrates (24~48kbps).
+                </p>
+                <div class="spec-box">
+                    <h4>Specifications</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">Stereo (with PS)</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">24 ~ 64 kbps</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Feature:</span>
+                            <span class="spec-value">SBR + PS</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">AAC ELD (Enhanced Low Delay)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="codec-badge badge-encode">Encode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Low-latency codec designed for real-time communication (VoIP, video conferencing).
+                    Provides algorithmic delay under 15ms.
+                </p>
+                <div class="spec-box">
+                    <h4>Specifications</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">16kHz ~ 48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">Mono, Stereo</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Latency:</span>
+                            <span class="spec-value">&lt; 15ms</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Use Case:</span>
+                            <span class="spec-value">VoIP, Real-time Communication</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">xHE-AAC (Extended HE-AAC)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-recommended">Recommended</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="android-version">Android 9+</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    The latest AAC profile supporting a wide range from 12kbps ultra-low to high bitrates.
+                    Based on USAC (Unified Speech and Audio Coding).
+                </p>
+                <div class="spec-box">
+                    <h4>Specifications</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">12 ~ 500 kbps</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Feature:</span>
+                            <span class="spec-value">Unified Speech+Audio, Loudness Management</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Lossless Codecs -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Lossless Codecs
+            </h2>
+            <p class="section-description">
+                Compresses original audio data without loss, providing CD quality or better.
+            </p>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">FLAC (Free Lossless Audio Codec)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="codec-badge badge-encode">Encode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    The most widely used open-source lossless codec. Offers 40~60% compression ratio with fast decoding speed.
+                </p>
+                <div class="spec-box">
+                    <h4>Specifications</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">1Hz ~ 655,350Hz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bit Depth:</span>
+                            <span class="spec-value">4 ~ 32-bit</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">1 ~ 8 channels</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Container:</span>
+                            <span class="spec-value">.flac, MKV, OGG</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 12px;">
+                    <strong style="color: var(--color-text-secondary);">Hi-Res Audio Sample Rates:</strong>
+                    <div class="sample-rates">
+                        <span class="sample-rate-chip">44100 Hz (CD)</span>
+                        <span class="sample-rate-chip">48000 Hz</span>
+                        <span class="sample-rate-chip">88200 Hz</span>
+                        <span class="sample-rate-chip">96000 Hz</span>
+                        <span class="sample-rate-chip">176400 Hz</span>
+                        <span class="sample-rate-chip">192000 Hz</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">ALAC (Apple Lossless Audio Codec)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-optional">Optional</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Lossless codec developed by Apple. Primarily used by iTunes and Apple Music, also supported for decoding on Android.
+                </p>
+                <div class="spec-box">
+                    <h4>Specifications</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">1Hz ~ 384kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bit Depth:</span>
+                            <span class="spec-value">16/24/32-bit</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">1 ~ 8 channels</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Container:</span>
+                            <span class="spec-value">M4A, MOV, CAF</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">PCM / WAV (Uncompressed)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="codec-badge badge-encode">Encode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Uncompressed raw audio data. Used for editing and mastering, but results in large file sizes.
+                </p>
+                <div class="spec-box">
+                    <h4>Specifications</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 192kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bit Depth:</span>
+                            <span class="spec-value">8/16/24/32-bit (int), 32-bit (float)</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">Mono ~ 7.1</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Container:</span>
+                            <span class="spec-value">.wav, .aiff</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Voice Codecs -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                Voice/Speech Codecs
+            </h2>
+            <p class="section-description">
+                Low-bitrate codecs optimized for voice calls and voice recording.
+            </p>
+
+            <div class="content-grid">
+                <div class="format-card">
+                    <div class="format-header">
+                        <div class="format-title">AMR-NB (Narrowband)</div>
+                        <div class="format-badges">
+                            <span class="codec-badge badge-required">CDD Required</span>
+                            <span class="codec-badge badge-decode">Decode</span>
+                            <span class="codec-badge badge-encode">Encode</span>
+                        </div>
+                    </div>
+                    <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                        Standard codec used for 2G/3G voice calls.
+                    </p>
+                    <div class="spec-box">
+                        <h4>Specifications</h4>
+                        <div class="spec-list">
+                            <div class="spec-item">
+                                <span class="spec-label">Sample Rate:</span>
+                                <span class="spec-value">8000 Hz</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Bitrate:</span>
+                                <span class="spec-value">4.75 ~ 12.2 kbps</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Channels:</span>
+                                <span class="spec-value">Mono</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Container:</span>
+                                <span class="spec-value">.amr, 3GP</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="format-card">
+                    <div class="format-header">
+                        <div class="format-title">AMR-WB (Wideband)</div>
+                        <div class="format-badges">
+                            <span class="codec-badge badge-required">CDD Required</span>
+                            <span class="codec-badge badge-decode">Decode</span>
+                            <span class="codec-badge badge-encode">Encode (Optional)</span>
+                        </div>
+                    </div>
+                    <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                        High-quality voice codec used for HD Voice (VoLTE).
+                    </p>
+                    <div class="spec-box">
+                        <h4>Specifications</h4>
+                        <div class="spec-list">
+                            <div class="spec-item">
+                                <span class="spec-label">Sample Rate:</span>
+                                <span class="spec-value">16000 Hz</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Bitrate:</span>
+                                <span class="spec-value">6.6 ~ 23.85 kbps</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Channels:</span>
+                                <span class="spec-value">Mono</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Container:</span>
+                                <span class="spec-value">.awb, 3GP</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Open Source Codecs -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                Open Source Codecs
+            </h2>
+            <p class="section-description">
+                Royalty-free open source audio codecs.
+            </p>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">Opus</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="codec-badge badge-encode">Encode</span>
+                        <span class="android-version">Android 5.0+</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    IETF standard codec that provides excellent performance for both voice and music.
+                    Used by WebRTC, Discord, WhatsApp, and more.
+                </p>
+                <div class="spec-box">
+                    <h4>Specifications</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">6 ~ 510 kbps</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">1 ~ 255 channels</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Latency:</span>
+                            <span class="spec-value">2.5ms ~ 60ms (configurable)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="highlight-box" style="margin-top: 16px;">
+                    <strong>Opus Modes:</strong><br/>
+                    • <strong>SILK</strong>: Voice optimized (low bitrate)<br/>
+                    • <strong>CELT</strong>: Music optimized (high quality)<br/>
+                    • <strong>Hybrid</strong>: Combined voice+music
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">Vorbis (OGG)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Open source lossy codec developed by Xiph.Org.
+                    Widely used in game audio and streaming services.
+                </p>
+                <div class="spec-box">
+                    <h4>Specifications</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 192kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">45 ~ 500 kbps</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">1 ~ 255 channels</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Container:</span>
+                            <span class="spec-value">.ogg, .ogv, MKV, WebM</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">MP3 (MPEG-1 Audio Layer 3)</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-required">CDD Required</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    The most well-known audio format. Patents expired in 2017, now freely usable.
+                </p>
+                <div class="spec-box">
+                    <h4>Specifications</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">8kHz ~ 48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">8 ~ 320 kbps (CBR/VBR)</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">Mono, Stereo, Joint Stereo</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Container:</span>
+                            <span class="spec-value">.mp3</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Spatial Audio -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                Spatial Audio
+            </h2>
+            <p class="section-description">
+                Immersive audio codecs providing 3D audio experiences.
+            </p>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">Dolby AC-4</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-optional">Optional</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="android-version">Android 9+</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Dolby's next-generation audio codec optimized for broadcast, streaming, and mobile.
+                    The default codec for Dolby Atmos content.
+                </p>
+                <div class="spec-box">
+                    <h4>Specifications</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Bitrate:</span>
+                            <span class="spec-value">64 ~ 2048 kbps</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">Up to 7.1.4 (Dolby Atmos)</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Feature:</span>
+                            <span class="spec-value">Object-based Audio, Loudness Management</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title">MPEG-H 3D Audio</div>
+                    <div class="format-badges">
+                        <span class="codec-badge badge-optional">Optional</span>
+                        <span class="codec-badge badge-decode">Decode</span>
+                        <span class="android-version">Android 13+</span>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    MPEG standard next-generation 3D audio codec. Adopted for Korea's ATSC 3.0 broadcast standard.
+                </p>
+                <div class="spec-box">
+                    <h4>Specifications</h4>
+                    <div class="spec-list">
+                        <div class="spec-item">
+                            <span class="spec-label">Sample Rate:</span>
+                            <span class="spec-value">14.7kHz ~ 48kHz</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Channels:</span>
+                            <span class="spec-value">Up to 64 channels + Objects</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Feature:</span>
+                            <span class="spec-value">Personalized Audio, Loudness Management</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Sample Rate & Bit Depth -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                Sample Rate & Bit Depth
+            </h2>
+            <p class="section-description">
+                Key parameters that determine audio quality.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Nyquist Theorem:</strong> Sample rate must be at least twice the maximum frequency to be reproduced.
+                To reproduce human hearing range (20Hz~20kHz), a minimum of 40kHz is required.
+            </div>
+
+            <h3 style="margin: 30px 0 20px; color: var(--color-text-primary);">Sample Rate Comparison</h3>
+            <table class="codec-table">
+                <thead>
+                    <tr>
+                        <th>Sample Rate</th>
+                        <th>Frequency Range</th>
+                        <th>Use Case</th>
+                        <th>Quality</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>8,000 Hz</code></td>
+                        <td>~4 kHz</td>
+                        <td>Phone calls (NB)</td>
+                        <td>Telephone</td>
+                    </tr>
+                    <tr>
+                        <td><code>16,000 Hz</code></td>
+                        <td>~8 kHz</td>
+                        <td>VoIP, HD Voice (WB)</td>
+                        <td>Wideband</td>
+                    </tr>
+                    <tr>
+                        <td><code>22,050 Hz</code></td>
+                        <td>~11 kHz</td>
+                        <td>FM Radio</td>
+                        <td>FM Quality</td>
+                    </tr>
+                    <tr>
+                        <td><code>44,100 Hz</code></td>
+                        <td>~22 kHz</td>
+                        <td>CD Audio</td>
+                        <td>CD Quality</td>
+                    </tr>
+                    <tr>
+                        <td><code>48,000 Hz</code></td>
+                        <td>~24 kHz</td>
+                        <td>DVD, Broadcast, Video</td>
+                        <td>Professional</td>
+                    </tr>
+                    <tr>
+                        <td><code>96,000 Hz</code></td>
+                        <td>~48 kHz</td>
+                        <td>Hi-Res Audio</td>
+                        <td>High Resolution</td>
+                    </tr>
+                    <tr>
+                        <td><code>192,000 Hz</code></td>
+                        <td>~96 kHz</td>
+                        <td>Studio Master</td>
+                        <td>Ultra High Resolution</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="margin: 30px 0 20px; color: var(--color-text-primary);">Bit Depth Comparison</h3>
+            <table class="codec-table">
+                <thead>
+                    <tr>
+                        <th>Bit Depth</th>
+                        <th>Dynamic Range</th>
+                        <th>Value Range</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>8-bit</code></td>
+                        <td>~48 dB</td>
+                        <td>0 ~ 255</td>
+                        <td>Low Quality, Game SFX</td>
+                    </tr>
+                    <tr>
+                        <td><code>16-bit</code></td>
+                        <td>~96 dB</td>
+                        <td>-32,768 ~ 32,767</td>
+                        <td>CD Quality (Standard)</td>
+                    </tr>
+                    <tr>
+                        <td><code>24-bit</code></td>
+                        <td>~144 dB</td>
+                        <td>-8,388,608 ~ 8,388,607</td>
+                        <td>Hi-Res Audio, Studio</td>
+                    </tr>
+                    <tr>
+                        <td><code>32-bit (int)</code></td>
+                        <td>~192 dB</td>
+                        <td>-2^31 ~ 2^31-1</td>
+                        <td>Professional Mastering</td>
+                    </tr>
+                    <tr>
+                        <td><code>32-bit (float)</code></td>
+                        <td>~1,528 dB</td>
+                        <td>IEEE 754</td>
+                        <td>Internal Processing, Mixing</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 8: Channel Configuration -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                Channel Configuration
+            </h2>
+            <p class="section-description">
+                Audio channel layouts supported by Android.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                        subgraph STEREO["Stereo (2.0)"]
+                            FL1["Front Left"]
+                            FR1["Front Right"]
+                        end
+
+                        subgraph SURROUND51["5.1 Surround"]
+                            FL2["Front Left"]
+                            FC2["Front Center"]
+                            FR2["Front Right"]
+                            SL2["Surround Left"]
+                            SR2["Surround Right"]
+                            LFE2["LFE (Subwoofer)"]
+                        end
+
+                        subgraph SURROUND71["7.1 Surround"]
+                            FL3["Front Left"]
+                            FC3["Front Center"]
+                            FR3["Front Right"]
+                            SL3["Side Left"]
+                            SR3["Side Right"]
+                            BL3["Back Left"]
+                            BR3["Back Right"]
+                            LFE3["LFE"]
+                        end
+                </div>
+            </div>
+
+            <table class="codec-table">
+                <thead>
+                    <tr>
+                        <th>Configuration</th>
+                        <th>Channels</th>
+                        <th>Layout</th>
+                        <th>Android Constant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Mono</td>
+                        <td>1</td>
+                        <td>C</td>
+                        <td><code>CHANNEL_OUT_MONO</code></td>
+                    </tr>
+                    <tr>
+                        <td>Stereo</td>
+                        <td>2</td>
+                        <td>L, R</td>
+                        <td><code>CHANNEL_OUT_STEREO</code></td>
+                    </tr>
+                    <tr>
+                        <td>2.1</td>
+                        <td>3</td>
+                        <td>L, R, LFE</td>
+                        <td><code>CHANNEL_OUT_STEREO | CHANNEL_OUT_LOW_FREQUENCY</code></td>
+                    </tr>
+                    <tr>
+                        <td>5.1</td>
+                        <td>6</td>
+                        <td>L, R, C, LFE, SL, SR</td>
+                        <td><code>CHANNEL_OUT_5POINT1</code></td>
+                    </tr>
+                    <tr>
+                        <td>7.1</td>
+                        <td>8</td>
+                        <td>L, R, C, LFE, BL, BR, SL, SR</td>
+                        <td><code>CHANNEL_OUT_7POINT1_SURROUND</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 9: Codec Selection Guide -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                Codec Selection Guide
+            </h2>
+            <p class="section-description">
+                Choosing the optimal audio codec based on use case.
+            </p>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        Music Streaming
+                    </h3>
+                    <div class="card-description">
+                        <strong>Recommended:</strong> AAC-LC (128-256kbps)<br/>
+                        <strong>Alternative:</strong> Opus (128kbps), Vorbis (160kbps)<br/>
+                        <strong>High Quality:</strong> FLAC (lossless)
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📞</span>
+                        Voice Call / VoIP
+                    </h3>
+                    <div class="card-description">
+                        <strong>Recommended:</strong> Opus (24-64kbps, VoIP mode)<br/>
+                        <strong>Alternative:</strong> AAC ELD, AMR-WB<br/>
+                        <strong>Low Bitrate:</strong> AMR-NB (4.75-12.2kbps)
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎮</span>
+                        Game Audio
+                    </h3>
+                    <div class="card-description">
+                        <strong>Recommended:</strong> Vorbis (SFX), Opus (voice)<br/>
+                        <strong>Alternative:</strong> MP3 (BGM)<br/>
+                        <strong>Low Latency:</strong> PCM (real-time SFX)
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📺</span>
+                        Video Content
+                    </h3>
+                    <div class="card-description">
+                        <strong>Recommended:</strong> AAC-LC (with video)<br/>
+                        <strong>Surround:</strong> AC-4, E-AC-3 (Dolby)<br/>
+                        <strong>Broadcast:</strong> HE-AAC v2 (low bitrate)
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎧</span>
+                        Hi-Res Audio
+                    </h3>
+                    <div class="card-description">
+                        <strong>Recommended:</strong> FLAC (96kHz/24-bit)<br/>
+                        <strong>Alternative:</strong> ALAC, WAV<br/>
+                        <strong>Streaming:</strong> MQA (if supported)
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        Automotive Audio
+                    </h3>
+                    <div class="card-description">
+                        <strong>Recommended:</strong> AAC-LC, Opus<br/>
+                        <strong>Bluetooth:</strong> SBC, AAC, LDAC<br/>
+                        <strong>Spatial:</strong> Dolby Atmos
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 10: API Reference -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                API Reference
+            </h2>
+            <p class="section-description">
+                Key APIs for working with audio codecs on Android.
+            </p>
+
+            <div class="highlight-box">
+                Use <strong>MediaCodecList</strong> to query the list of codecs supported by the device.
+            </div>
+
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">// Query supported codecs
+val codecList = MediaCodecList(MediaCodecList.ALL_CODECS)
+for (codecInfo in codecList.codecInfos) {
+    if (codecInfo.isEncoder) {
+        Log.d("Codec", "Encoder: ${codecInfo.name}")
+    } else {
+        Log.d("Codec", "Decoder: ${codecInfo.name}")
+    }
+
+    for (type in codecInfo.supportedTypes) {
+        Log.d("Codec", "  MIME: $type")
+        val caps = codecInfo.getCapabilitiesForType(type)
+        val audioCapabilities = caps.audioCapabilities
+
+        audioCapabilities?.let {
+            Log.d("Codec", "  Sample Rates: ${it.supportedSampleRates?.toList()}")
+            Log.d("Codec", "  Bitrate Range: ${it.bitrateRange}")
+            Log.d("Codec", "  Max Channels: ${it.maxInputChannelCount}")
+        }
+    }
+}</code></pre>
+
+            <h3 style="margin: 30px 0 20px; color: var(--color-text-primary);">Common MIME Types</h3>
+            <table class="codec-table">
+                <thead>
+                    <tr>
+                        <th>Codec</th>
+                        <th>MIME Type</th>
+                        <th>MediaFormat Constant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>AAC</td>
+                        <td><code>audio/mp4a-latm</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_AAC</code></td>
+                    </tr>
+                    <tr>
+                        <td>AMR-NB</td>
+                        <td><code>audio/3gpp</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_AMR_NB</code></td>
+                    </tr>
+                    <tr>
+                        <td>AMR-WB</td>
+                        <td><code>audio/amr-wb</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_AMR_WB</code></td>
+                    </tr>
+                    <tr>
+                        <td>FLAC</td>
+                        <td><code>audio/flac</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_FLAC</code></td>
+                    </tr>
+                    <tr>
+                        <td>MP3</td>
+                        <td><code>audio/mpeg</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_MPEG</code></td>
+                    </tr>
+                    <tr>
+                        <td>Opus</td>
+                        <td><code>audio/opus</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_OPUS</code></td>
+                    </tr>
+                    <tr>
+                        <td>Vorbis</td>
+                        <td><code>audio/vorbis</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_VORBIS</code></td>
+                    </tr>
+                    <tr>
+                        <td>RAW (PCM)</td>
+                        <td><code>audio/raw</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_RAW</code></td>
+                    </tr>
+                    <tr>
+                        <td>AC-4</td>
+                        <td><code>audio/ac4</code></td>
+                        <td><code>MediaFormat.MIMETYPE_AUDIO_AC4</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 11: References -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                References
+            </h2>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📚</span>
+                        Official Documentation
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><a href="https://source.android.com/docs/core/media" target="_blank" style="color: var(--color-accent);">AOSP Media</a></li>
+                            <li><a href="https://developer.android.com/guide/topics/media/media-formats" target="_blank" style="color: var(--color-accent);">Supported Media Formats</a></li>
+                            <li><a href="https://source.android.com/docs/compatibility/cdd" target="_blank" style="color: var(--color-accent);">CDD (Compatibility Definition)</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔗</span>
+                        Related Pages
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><a href="audio-framework.html" style="color: var(--color-accent);">Audio Framework</a></li>
+                            <li><a href="codec2.html" style="color: var(--color-accent);">Codec 2.0</a></li>
+                            <li><a href="dolby-codecs.html" style="color: var(--color-accent);">Dolby Codecs</a></li>
+                            <li><a href="media-playback.html" style="color: var(--color-accent);">Media Playback</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>

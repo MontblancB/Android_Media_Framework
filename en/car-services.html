@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Prevent Flash of Incorrect Theme (FOIT) -->
+    <script>
+    (function(){var t=localStorage.getItem('android-media-framework-theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme:light)').matches)document.documentElement.setAttribute('data-theme','light');})();
+    </script>
+    <title>AAOS Car Services - Android Media Framework</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+
+    <style>
+        /* Page-specific styles */
+        .service-card {
+            background: var(--color-surface);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--color-surface-elevated);
+            transition: all 0.3s ease;
+        }
+
+        .service-card:hover {
+            border-color: var(--color-accent);
+            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.1);
+        }
+
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .service-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--color-accent);
+            font-family: var(--font-mono);
+        }
+
+        .service-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-system {
+            background: rgba(165, 94, 234, 0.2);
+            color: #a55eea;
+            border: 1px solid rgba(165, 94, 234, 0.4);
+        }
+
+        .badge-privileged {
+            background: rgba(255, 159, 67, 0.2);
+            color: #ff9f43;
+            border: 1px solid rgba(255, 159, 67, 0.4);
+        }
+
+        .badge-public {
+            background: rgba(38, 222, 129, 0.2);
+            color: #26de81;
+            border: 1px solid rgba(38, 222, 129, 0.4);
+        }
+
+        .badge-oem {
+            background: rgba(238, 90, 111, 0.2);
+            color: #ee5a6f;
+            border: 1px solid rgba(238, 90, 111, 0.4);
+        }
+
+        .api-box {
+            background: var(--color-bg-tertiary);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .api-method {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--color-text-primary);
+            margin: 8px 0;
+            padding: 8px 12px;
+            background: var(--color-surface);
+            border-radius: 8px;
+            border-left: 3px solid var(--color-accent);
+        }
+
+        .permission-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .permission-chip {
+            background: rgba(74, 158, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
+            color: var(--color-arch);
+            border: 1px solid rgba(74, 158, 255, 0.3);
+        }
+
+        .architecture-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .architecture-table th,
+        .architecture-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--color-surface-elevated);
+        }
+
+        .architecture-table th {
+            background: var(--color-surface);
+            color: var(--color-accent);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .source-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--color-accent);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-top: 12px;
+        }
+
+        .source-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-button">
+            ← AOSP Media Framework
+        </a>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="page-title">🚗 AAOS Car Services</h1>
+            <p class="page-subtitle">Comprehensive guide to core Car Service components in Android Automotive OS</p>
+        </header>
+
+        <!-- Section 1: Overview -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">1</span>
+                Car Services Overview
+            </h2>
+            <p class="section-description">
+                AAOS Car Services are a collection of system services that provide vehicle-specific functionality to Android apps.
+            </p>
+
+            <div class="highlight-box">
+                <strong>What are Car Services?</strong> System services that sit between the Vehicle HAL and Android Framework,
+                providing vehicle-specific capabilities such as vehicle data access, media control, power management, and user management.
+            </div>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                        subgraph APP_LAYER["Application Layer"]
+                            MEDIA_APP["Media App"]
+                            NAV_APP["Navigation App"]
+                            OEM_APP["OEM System App"]
+                        end
+
+                        subgraph CAR_API["android.car API"]
+                            CAR_CLASS["Car.java<br/>(Entry Point)"]
+                        end
+
+                        subgraph CAR_SERVICES["Car Services (System Server)"]
+                            CAR_SERVICE["CarService<br/>(Main Service)"]
+
+                            subgraph MANAGERS["Car Managers"]
+                                CAR_AUDIO["CarAudioManager"]
+                                CAR_MEDIA["CarMediaManager"]
+                                CAR_PROPERTY["CarPropertyManager"]
+                                CAR_POWER["CarPowerManager"]
+                                CAR_UX["CarUxRestrictionsManager"]
+                                CAR_USER["CarUserManager"]
+                                CAR_INPUT["CarInputManager"]
+                                CAR_INFO["CarInfoManager"]
+                                CAR_DRIVING["CarDrivingStateManager"]
+                                CAR_OCCUPANT["CarOccupantZoneManager"]
+                            end
+                        end
+
+                        subgraph VHAL["Vehicle HAL"]
+                            VHAL_SERVICE["IVehicle<br/>(HIDL/AIDL)"]
+                            CAN_BUS["CAN Bus / ECU"]
+                        end
+
+                        APP_LAYER --> CAR_CLASS
+                        CAR_CLASS --> CAR_SERVICE
+                        CAR_SERVICE --> MANAGERS
+                        MANAGERS --> VHAL_SERVICE
+                        VHAL_SERVICE --> CAN_BUS
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🏗️</span>
+                        Architecture Features
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Car.java</strong>: Entry point for all Car Managers</li>
+                            <li><strong>Binder IPC</strong>: App ↔ CarService communication</li>
+                            <li><strong>HIDL/AIDL</strong>: CarService ↔ VHAL communication</li>
+                            <li><strong>Privileged API</strong>: Most require system/signature permissions</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔒</span>
+                        Permission Levels
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>Public API</strong>: Available to all apps</li>
+                            <li><strong>System API</strong>: System apps only</li>
+                            <li><strong>Privileged</strong>: Requires platform signature</li>
+                            <li><strong>OEM Only</strong>: Manufacturer exclusive</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📦</span>
+                        Package Structure
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>android.car</code>: Public API</li>
+                            <li><code>android.car.media</code>: Media related</li>
+                            <li><code>android.car.hardware</code>: Vehicle hardware</li>
+                            <li><code>android.car.drivingstate</code>: Driving state</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Car.java Entry Point -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                Car.java - Entry Point
+            </h2>
+            <p class="section-description">
+                The starting point for accessing all Car Managers.
+            </p>
+
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">// Create Car instance (synchronous)
+val car = Car.createCar(context)
+
+// Create Car instance (asynchronous, recommended)
+Car.createCar(context, null, Car.CAR_WAIT_TIMEOUT_WAIT_FOREVER) { car, ready ->
+    if (ready) {
+        // Get Car Managers
+        val audioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+        val mediaManager = car.getCarManager(Car.CAR_MEDIA_SERVICE) as CarMediaManager
+        val propertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+        val powerManager = car.getCarManager(Car.POWER_SERVICE) as CarPowerManager
+    }
+}
+
+// Disconnect Car (when Activity/Service is destroyed)
+override fun onDestroy() {
+    super.onDestroy()
+    car.disconnect()
+}</code></pre>
+
+            <h3 style="margin: 30px 0 20px; color: var(--color-text-primary);">Car Manager Constants</h3>
+            <table class="architecture-table">
+                <thead>
+                    <tr>
+                        <th>Constant</th>
+                        <th>Manager Class</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>Car.AUDIO_SERVICE</code></td>
+                        <td>CarAudioManager</td>
+                        <td>Audio zone, volume control</td>
+                    </tr>
+                    <tr>
+                        <td><code>Car.CAR_MEDIA_SERVICE</code></td>
+                        <td>CarMediaManager</td>
+                        <td>Media source management</td>
+                    </tr>
+                    <tr>
+                        <td><code>Car.PROPERTY_SERVICE</code></td>
+                        <td>CarPropertyManager</td>
+                        <td>Vehicle property read/write</td>
+                    </tr>
+                    <tr>
+                        <td><code>Car.POWER_SERVICE</code></td>
+                        <td>CarPowerManager</td>
+                        <td>Power state management</td>
+                    </tr>
+                    <tr>
+                        <td><code>Car.CAR_UX_RESTRICTION_SERVICE</code></td>
+                        <td>CarUxRestrictionsManager</td>
+                        <td>UX restrictions management</td>
+                    </tr>
+                    <tr>
+                        <td><code>Car.CAR_USER_SERVICE</code></td>
+                        <td>CarUserManager</td>
+                        <td>User management</td>
+                    </tr>
+                    <tr>
+                        <td><code>Car.CAR_INPUT_SERVICE</code></td>
+                        <td>CarInputManager</td>
+                        <td>Input event handling</td>
+                    </tr>
+                    <tr>
+                        <td><code>Car.INFO_SERVICE</code></td>
+                        <td>CarInfoManager</td>
+                        <td>Vehicle info query</td>
+                    </tr>
+                    <tr>
+                        <td><code>Car.CAR_DRIVING_STATE_SERVICE</code></td>
+                        <td>CarDrivingStateManager</td>
+                        <td>Driving state detection</td>
+                    </tr>
+                    <tr>
+                        <td><code>Car.CAR_OCCUPANT_ZONE_SERVICE</code></td>
+                        <td>CarOccupantZoneManager</td>
+                        <td>Occupant zone management</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 3: CarPropertyManager -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                CarPropertyManager
+            </h2>
+            <p class="section-description">
+                The core service for reading and writing vehicle properties through the Vehicle HAL.
+            </p>
+
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-title">CarPropertyManager</div>
+                    <div class="service-badges">
+                        <span class="service-badge badge-public">Public API</span>
+                        <span class="service-badge badge-privileged">Some Privileged</span>
+                    </div>
+                </div>
+
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    The most essential Manager that enables Android apps to access Vehicle HAL Properties.
+                    It can read and write all vehicle data including speed, gear, fuel level, and door status.
+                </p>
+
+                <div class="permission-list">
+                    <span class="permission-chip">android.car.permission.CAR_INFO</span>
+                    <span class="permission-chip">android.car.permission.CAR_SPEED</span>
+                    <span class="permission-chip">android.car.permission.CAR_ENERGY</span>
+                    <span class="permission-chip">android.car.permission.CONTROL_CAR_DOORS</span>
+                </div>
+
+                <div class="api-box">
+                    <strong style="color: var(--color-text-primary);">Key APIs</strong>
+                    <div class="api-method">getProperty(propertyId: Int, areaId: Int): CarPropertyValue</div>
+                    <div class="api-method">setProperty(clazz: Class, propertyId: Int, areaId: Int, val: T)</div>
+                    <div class="api-method">registerCallback(callback: CarPropertyEventCallback, propertyId: Int, rate: Float)</div>
+                    <div class="api-method">unregisterCallback(callback: CarPropertyEventCallback)</div>
+                </div>
+            </div>
+
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">val propertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+
+// Read vehicle speed
+val speedValue = propertyManager.getProperty&lt;Float&gt;(
+    VehiclePropertyIds.PERF_VEHICLE_SPEED,
+    VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL
+)
+Log.d("Car", "Current Speed: ${speedValue.value} m/s")
+
+// Read gear state
+val gearValue = propertyManager.getIntProperty(
+    VehiclePropertyIds.GEAR_SELECTION,
+    VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL
+)
+when (gearValue) {
+    VehicleGear.GEAR_PARK -> Log.d("Car", "Gear: P")
+    VehicleGear.GEAR_DRIVE -> Log.d("Car", "Gear: D")
+    VehicleGear.GEAR_REVERSE -> Log.d("Car", "Gear: R")
+}
+
+// Register property change listener
+propertyManager.registerCallback(
+    object : CarPropertyManager.CarPropertyEventCallback {
+        override fun onChangeEvent(value: CarPropertyValue&lt;*&gt;) {
+            Log.d("Car", "Property changed: ${value.propertyId} = ${value.value}")
+        }
+
+        override fun onErrorEvent(propId: Int, zone: Int) {
+            Log.e("Car", "Error for property: $propId")
+        }
+    },
+    VehiclePropertyIds.PERF_VEHICLE_SPEED,
+    CarPropertyManager.SENSOR_RATE_NORMAL  // 1Hz
+)
+
+// Set door lock (write)
+propertyManager.setBooleanProperty(
+    VehiclePropertyIds.DOOR_LOCK,
+    VehicleAreaDoor.DOOR_ROW_1_LEFT,
+    true  // Lock
+)</code></pre>
+
+            <h3 style="margin: 30px 0 20px; color: var(--color-text-primary);">Key VehiclePropertyIds</h3>
+            <table class="architecture-table">
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Permission</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>PERF_VEHICLE_SPEED</code></td>
+                        <td>Float</td>
+                        <td>Vehicle speed (m/s)</td>
+                        <td>CAR_SPEED</td>
+                    </tr>
+                    <tr>
+                        <td><code>GEAR_SELECTION</code></td>
+                        <td>Int</td>
+                        <td>Current gear (P/R/N/D)</td>
+                        <td>CAR_POWERTRAIN</td>
+                    </tr>
+                    <tr>
+                        <td><code>FUEL_LEVEL</code></td>
+                        <td>Float</td>
+                        <td>Fuel level (mL)</td>
+                        <td>CAR_ENERGY</td>
+                    </tr>
+                    <tr>
+                        <td><code>EV_BATTERY_LEVEL</code></td>
+                        <td>Float</td>
+                        <td>EV battery level (Wh)</td>
+                        <td>CAR_ENERGY</td>
+                    </tr>
+                    <tr>
+                        <td><code>DOOR_LOCK</code></td>
+                        <td>Boolean</td>
+                        <td>Door lock status</td>
+                        <td>CONTROL_CAR_DOORS</td>
+                    </tr>
+                    <tr>
+                        <td><code>HVAC_TEMPERATURE_SET</code></td>
+                        <td>Float</td>
+                        <td>AC temperature setting</td>
+                        <td>CONTROL_CAR_CLIMATE</td>
+                    </tr>
+                    <tr>
+                        <td><code>TURN_SIGNAL_STATE</code></td>
+                        <td>Int</td>
+                        <td>Turn signal status</td>
+                        <td>CAR_EXTERIOR_LIGHTS</td>
+                    </tr>
+                    <tr>
+                        <td><code>PARKING_BRAKE_ON</code></td>
+                        <td>Boolean</td>
+                        <td>Parking brake</td>
+                        <td>CAR_POWERTRAIN</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 4: CarAudioManager -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">4</span>
+                CarAudioManager
+            </h2>
+            <p class="section-description">
+                Service for controlling the vehicle audio system. Manages multi-zone audio, volume groups, and more.
+            </p>
+
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-title">CarAudioManager</div>
+                    <div class="service-badges">
+                        <span class="service-badge badge-system">System API</span>
+                        <span class="service-badge badge-privileged">Privileged</span>
+                    </div>
+                </div>
+
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Manages the vehicle's multi-zone audio system. Controls volume groups, audio zones, and dynamic routing.
+                </p>
+
+                <div class="permission-list">
+                    <span class="permission-chip">android.car.permission.CAR_CONTROL_AUDIO_VOLUME</span>
+                    <span class="permission-chip">android.car.permission.CAR_CONTROL_AUDIO_SETTINGS</span>
+                </div>
+
+                <div class="api-box">
+                    <strong style="color: var(--color-text-primary);">Key APIs</strong>
+                    <div class="api-method">getVolumeGroupCount(zoneId: Int): Int</div>
+                    <div class="api-method">getGroupVolume(zoneId: Int, groupId: Int): Int</div>
+                    <div class="api-method">setGroupVolume(zoneId: Int, groupId: Int, index: Int, flags: Int)</div>
+                    <div class="api-method">getAudioZoneIds(): IntArray</div>
+                    <div class="api-method">isAudioFeatureEnabled(feature: Int): Boolean</div>
+                </div>
+            </div>
+
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">val audioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+
+// Audio zone list
+val zoneIds = audioManager.audioZoneIds
+for (zoneId in zoneIds) {
+    Log.d("Audio", "Zone ID: $zoneId")
+
+    // Volume group count per zone
+    val groupCount = audioManager.getVolumeGroupCount(zoneId)
+    for (groupId in 0 until groupCount) {
+        val volume = audioManager.getGroupVolume(zoneId, groupId)
+        val maxVolume = audioManager.getGroupMaxVolume(zoneId, groupId)
+        Log.d("Audio", "  Group $groupId: $volume / $maxVolume")
+    }
+}
+
+// Set volume
+audioManager.setGroupVolume(
+    CarAudioManager.PRIMARY_AUDIO_ZONE,  // zoneId
+    0,  // groupId (Media)
+    15, // volume index
+    0   // flags
+)
+
+// Volume change callback
+audioManager.registerCarVolumeCallback(object : CarAudioManager.CarVolumeCallback() {
+    override fun onGroupVolumeChanged(zoneId: Int, groupId: Int, flags: Int) {
+        val newVolume = audioManager.getGroupVolume(zoneId, groupId)
+        Log.d("Audio", "Volume changed: Zone=$zoneId, Group=$groupId, Vol=$newVolume")
+    }
+
+    override fun onMasterMuteChanged(zoneId: Int, flags: Int) {
+        Log.d("Audio", "Master mute changed for zone: $zoneId")
+    }
+})</code></pre>
+        </section>
+
+        <!-- Section 5: CarMediaManager -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                CarMediaManager
+            </h2>
+            <p class="section-description">
+                Manages active media sources and provides media browsing functionality.
+            </p>
+
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-title">CarMediaManager</div>
+                    <div class="service-badges">
+                        <span class="service-badge badge-system">System API</span>
+                    </div>
+                </div>
+
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Manages the currently playing media source (app) and handles transitions between media apps.
+                    Also responsible for saving/restoring the Last Media Source.
+                </p>
+
+                <div class="permission-list">
+                    <span class="permission-chip">android.car.permission.MEDIA_PLAYBACK_CONTROL</span>
+                </div>
+
+                <div class="api-box">
+                    <strong style="color: var(--color-text-primary);">Key APIs</strong>
+                    <div class="api-method">getMediaSource(mode: Int): ComponentName?</div>
+                    <div class="api-method">setMediaSource(componentName: ComponentName, mode: Int)</div>
+                    <div class="api-method">registerMediaSourceListener(callback: MediaSourceChangedListener)</div>
+                    <div class="api-method">getLastMediaSources(mode: Int): List&lt;ComponentName&gt;</div>
+                </div>
+            </div>
+
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">val mediaManager = car.getCarManager(Car.CAR_MEDIA_SERVICE) as CarMediaManager
+
+// Get current media source
+val currentSource = mediaManager.getMediaSource(CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK)
+Log.d("Media", "Current source: ${currentSource?.packageName}")
+
+// Change media source
+val spotifyComponent = ComponentName("com.spotify.music", "com.spotify.music.MainActivity")
+mediaManager.setMediaSource(spotifyComponent, CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK)
+
+// Media source change listener
+mediaManager.registerMediaSourceListener(object : CarMediaManager.MediaSourceChangedListener {
+    override fun onMediaSourceChanged(componentName: ComponentName?) {
+        Log.d("Media", "Media source changed to: ${componentName?.packageName}")
+    }
+})
+
+// Last media sources list (by recent usage)
+val lastSources = mediaManager.getLastMediaSources(CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK)
+for (source in lastSources) {
+    Log.d("Media", "Recent source: ${source.packageName}")
+}</code></pre>
+        </section>
+
+        <!-- Section 6: CarDrivingStateManager -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                CarDrivingStateManager
+            </h2>
+            <p class="section-description">
+                Service that detects the vehicle's driving state (parked/idling/moving) to adjust app UX.
+            </p>
+
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-title">CarDrivingStateManager</div>
+                    <div class="service-badges">
+                        <span class="service-badge badge-public">Public API</span>
+                    </div>
+                </div>
+
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Determines the current driving state based on gear status, speed, etc.
+                    Works with CarUxRestrictionsManager to apply UX restrictions.
+                </p>
+
+                <div class="api-box">
+                    <strong style="color: var(--color-text-primary);">Driving States</strong>
+                    <div class="api-method">DRIVING_STATE_PARKED - Parked (Gear P)</div>
+                    <div class="api-method">DRIVING_STATE_IDLING - Idling (Gear D/R, Speed 0)</div>
+                    <div class="api-method">DRIVING_STATE_MOVING - Moving</div>
+                    <div class="api-method">DRIVING_STATE_UNKNOWN - Unknown</div>
+                </div>
+            </div>
+
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">val drivingStateManager = car.getCarManager(Car.CAR_DRIVING_STATE_SERVICE)
+    as CarDrivingStateManager
+
+// Current driving state
+val currentState = drivingStateManager.currentCarDrivingState
+when (currentState.eventValue) {
+    CarDrivingStateEvent.DRIVING_STATE_PARKED -> {
+        Log.d("Driving", "Vehicle is parked")
+        // All features available
+    }
+    CarDrivingStateEvent.DRIVING_STATE_IDLING -> {
+        Log.d("Driving", "Vehicle is idling")
+        // Some features may be restricted
+    }
+    CarDrivingStateEvent.DRIVING_STATE_MOVING -> {
+        Log.d("Driving", "Vehicle is moving")
+        // UX restrictions apply
+    }
+}
+
+// Driving state change listener
+drivingStateManager.registerListener(object : CarDrivingStateManager.CarDrivingStateEventListener {
+    override fun onDrivingStateChanged(event: CarDrivingStateEvent) {
+        Log.d("Driving", "Driving state changed: ${event.eventValue}")
+        updateUIForDrivingState(event.eventValue)
+    }
+})</code></pre>
+        </section>
+
+        <!-- Section 7: CarUxRestrictionsManager -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                CarUxRestrictionsManager
+            </h2>
+            <p class="section-description">
+                Service that manages UX restrictions for driver safety during driving.
+            </p>
+
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-title">CarUxRestrictionsManager</div>
+                    <div class="service-badges">
+                        <span class="service-badge badge-public">Public API</span>
+                    </div>
+                </div>
+
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Defines UX restrictions to prevent driver distraction while driving.
+                    Essential for compliance with Car App Quality guidelines.
+                </p>
+
+                <div class="api-box">
+                    <strong style="color: var(--color-text-primary);">UX Restriction Flags</strong>
+                    <div class="api-method">UX_RESTRICTIONS_NO_DIALPAD - No dialpad</div>
+                    <div class="api-method">UX_RESTRICTIONS_NO_FILTERING - No filtering</div>
+                    <div class="api-method">UX_RESTRICTIONS_LIMIT_STRING_LENGTH - Limit string length</div>
+                    <div class="api-method">UX_RESTRICTIONS_NO_KEYBOARD - No keyboard input</div>
+                    <div class="api-method">UX_RESTRICTIONS_NO_VIDEO - No video playback</div>
+                    <div class="api-method">UX_RESTRICTIONS_LIMIT_CONTENT - Limit content</div>
+                    <div class="api-method">UX_RESTRICTIONS_NO_SETUP - No setup</div>
+                    <div class="api-method">UX_RESTRICTIONS_NO_TEXT_MESSAGE - No text messaging</div>
+                </div>
+            </div>
+
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">val uxManager = car.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE)
+    as CarUxRestrictionsManager
+
+// Check current UX restrictions
+val restrictions = uxManager.currentCarUxRestrictions
+if (restrictions.isRequiresDistractionOptimization) {
+    Log.d("UX", "Distraction optimization required")
+
+    // Check individual restrictions
+    val activeRestrictions = restrictions.activeRestrictions
+
+    if (activeRestrictions and CarUxRestrictions.UX_RESTRICTIONS_NO_KEYBOARD != 0) {
+        // Hide keyboard
+        hideKeyboard()
+    }
+
+    if (activeRestrictions and CarUxRestrictions.UX_RESTRICTIONS_NO_VIDEO != 0) {
+        // Pause video
+        pauseVideo()
+    }
+
+    if (activeRestrictions and CarUxRestrictions.UX_RESTRICTIONS_LIMIT_STRING_LENGTH != 0) {
+        // Apply string length limit
+        val maxLength = restrictions.maxRestrictedStringLength
+        truncateStrings(maxLength)
+    }
+
+    if (activeRestrictions and CarUxRestrictions.UX_RESTRICTIONS_LIMIT_CONTENT != 0) {
+        // Apply content limit
+        val maxItems = restrictions.maxCumulativeContentItems
+        limitListItems(maxItems)
+    }
+}
+
+// UX restriction change listener
+uxManager.registerListener { restrictions ->
+    Log.d("UX", "UX restrictions changed: ${restrictions.activeRestrictions}")
+    updateUIForRestrictions(restrictions)
+}</code></pre>
+        </section>
+
+        <!-- Section 8: CarPowerManager -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                CarPowerManager
+            </h2>
+            <p class="section-description">
+                Service that manages vehicle power state and handles Suspend/Resume events.
+            </p>
+
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-title">CarPowerManager</div>
+                    <div class="service-badges">
+                        <span class="service-badge badge-system">System API</span>
+                        <span class="service-badge badge-privileged">Privileged</span>
+                    </div>
+                </div>
+
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Tracks vehicle power state (ON/OFF/SUSPEND) and allows apps to save state before entering Deep Sleep.
+                </p>
+
+                <div class="permission-list">
+                    <span class="permission-chip">android.car.permission.CAR_POWER</span>
+                    <span class="permission-chip">android.car.permission.CONTROL_CAR_POWER_POLICY</span>
+                </div>
+
+                <div class="api-box">
+                    <strong style="color: var(--color-text-primary);">Power States</strong>
+                    <div class="api-method">STATE_ON - Vehicle power ON</div>
+                    <div class="api-method">STATE_SHUTDOWN_PREPARE - Preparing for shutdown</div>
+                    <div class="api-method">STATE_SHUTDOWN_ENTER - Entering shutdown</div>
+                    <div class="api-method">STATE_SUSPEND_ENTER - Entering suspend</div>
+                    <div class="api-method">STATE_SUSPEND_EXIT - Exiting suspend</div>
+                    <div class="api-method">STATE_HIBERNATION_ENTER - Entering hibernation</div>
+                </div>
+            </div>
+
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">val powerManager = car.getCarManager(Car.POWER_SERVICE) as CarPowerManager
+
+// Current power state
+val powerState = powerManager.powerState
+Log.d("Power", "Current power state: $powerState")
+
+// Power state change listener (for suspend preparation)
+powerManager.setListener(executor) { state, completableFuture ->
+    when (state) {
+        CarPowerManager.STATE_SHUTDOWN_PREPARE,
+        CarPowerManager.STATE_SUSPEND_ENTER -> {
+            Log.d("Power", "Preparing for suspend/shutdown")
+
+            // Perform state saving tasks
+            saveAppState()
+            saveMediaPlaybackPosition()
+
+            // Notify completion (within 5 seconds recommended)
+            completableFuture?.complete(null)
+        }
+
+        CarPowerManager.STATE_SUSPEND_EXIT -> {
+            Log.d("Power", "Resuming from suspend")
+
+            // Restore state
+            restoreAppState()
+            resumeMediaPlayback()
+        }
+
+        CarPowerManager.STATE_ON -> {
+            Log.d("Power", "Power is ON")
+        }
+    }
+}
+
+// Power policy change listener
+powerManager.addPowerPolicyListener(executor) { policy ->
+    Log.d("Power", "Power policy changed: ${policy.policyId}")
+
+    // Enable/disable components based on policy
+    if (policy.isComponentEnabled(PowerComponent.AUDIO)) {
+        enableAudio()
+    } else {
+        disableAudio()
+    }
+}</code></pre>
+        </section>
+
+        <!-- Section 9: CarInputManager -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">9</span>
+                CarInputManager
+            </h2>
+            <p class="section-description">
+                Service that handles vehicle input devices such as steering wheel buttons and rotary controllers.
+            </p>
+
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-title">CarInputManager</div>
+                    <div class="service-badges">
+                        <span class="service-badge badge-system">System API</span>
+                        <span class="service-badge badge-oem">OEM Only</span>
+                    </div>
+                </div>
+
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Handles hardware input from steering wheel buttons (play/pause, volume, voice), rotary dials, and more.
+                </p>
+
+                <div class="permission-list">
+                    <span class="permission-chip">android.car.permission.CAR_MONITOR_INPUT</span>
+                </div>
+
+                <div class="api-box">
+                    <strong style="color: var(--color-text-primary);">Input Types</strong>
+                    <div class="api-method">INPUT_TYPE_ROTARY_NAVIGATION - Rotary rotation</div>
+                    <div class="api-method">INPUT_TYPE_DPAD_KEYS - D-Pad keys</div>
+                    <div class="api-method">INPUT_TYPE_NAVIGATE_KEYS - Navigation keys</div>
+                    <div class="api-method">INPUT_TYPE_SYSTEM_NAVIGATE_KEYS - System navigation</div>
+                </div>
+            </div>
+
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">val inputManager = car.getCarManager(Car.CAR_INPUT_SERVICE) as CarInputManager
+
+// Request input capture (system apps only)
+inputManager.requestInputEventCapture(
+    CarOccupantZoneManager.DISPLAY_TYPE_MAIN,
+    intArrayOf(
+        CarInputManager.INPUT_TYPE_ROTARY_NAVIGATION,
+        CarInputManager.INPUT_TYPE_DPAD_KEYS
+    ),
+    CarInputManager.CAPTURE_REQ_FLAGS_ALLOW_DELAYED_GRANT,
+    object : CarInputManager.CarInputCaptureCallback {
+        override fun onKeyEvents(
+            targetDisplayType: Int,
+            events: List&lt;KeyEvent&gt;
+        ) {
+            for (event in events) {
+                when (event.keyCode) {
+                    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> handlePlayPause()
+                    KeyEvent.KEYCODE_MEDIA_NEXT -> handleNext()
+                    KeyEvent.KEYCODE_MEDIA_PREVIOUS -> handlePrevious()
+                    KeyEvent.KEYCODE_VOLUME_UP -> handleVolumeUp()
+                    KeyEvent.KEYCODE_VOLUME_DOWN -> handleVolumeDown()
+                }
+            }
+        }
+
+        override fun onRotaryEvents(
+            targetDisplayType: Int,
+            events: List&lt;RotaryEvent&gt;
+        ) {
+            for (event in events) {
+                val clicks = event.numberOfClicks
+                val clockwise = event.isClockwise
+                Log.d("Input", "Rotary: $clicks clicks, clockwise=$clockwise")
+            }
+        }
+
+        override fun onCaptureStateChanged(
+            targetDisplayType: Int,
+            activeInputTypes: IntArray
+        ) {
+            Log.d("Input", "Capture state changed")
+        }
+    }
+)</code></pre>
+        </section>
+
+        <!-- Section 10: CarInfoManager -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">10</span>
+                CarInfoManager
+            </h2>
+            <p class="section-description">
+                Service that provides basic vehicle information (manufacturer, model, year, etc.).
+            </p>
+
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-title">CarInfoManager</div>
+                    <div class="service-badges">
+                        <span class="service-badge badge-public">Public API</span>
+                    </div>
+                </div>
+
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Queries static vehicle information such as vehicle identification, fuel type, and seat configuration.
+                </p>
+
+                <div class="permission-list">
+                    <span class="permission-chip">android.car.permission.CAR_INFO</span>
+                </div>
+
+                <div class="api-box">
+                    <strong style="color: var(--color-text-primary);">Key APIs (Deprecated, use CarPropertyManager instead)</strong>
+                    <div class="api-method">getManufacturer(): String</div>
+                    <div class="api-method">getModel(): String</div>
+                    <div class="api-method">getModelYear(): String</div>
+                    <div class="api-method">getVehicleId(): String</div>
+                    <div class="api-method">getEvConnectorTypes(): IntArray</div>
+                    <div class="api-method">getFuelTypes(): IntArray</div>
+                </div>
+            </div>
+
+            <pre style="background: var(--color-surface); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--color-text-primary); font-family: var(--font-mono);">// CarInfoManager (partially deprecated)
+val infoManager = car.getCarManager(Car.INFO_SERVICE) as CarInfoManager
+
+// Basic vehicle info (Deprecated - use CarPropertyManager instead)
+Log.d("CarInfo", "Manufacturer: ${infoManager.manufacturer}")
+Log.d("CarInfo", "Model: ${infoManager.model}")
+Log.d("CarInfo", "Model Year: ${infoManager.modelYear}")
+
+// Get info via CarPropertyManager (recommended)
+val propertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+
+// VIN (Vehicle Identification Number)
+val vin = propertyManager.getProperty&lt;String&gt;(
+    VehiclePropertyIds.INFO_VIN,
+    VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL
+)?.value
+Log.d("CarInfo", "VIN: $vin")
+
+// Fuel type
+val fuelType = propertyManager.getIntProperty(
+    VehiclePropertyIds.INFO_FUEL_TYPE,
+    VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL
+)
+when (fuelType) {
+    FuelType.FUEL_TYPE_GASOLINE -> Log.d("CarInfo", "Gasoline")
+    FuelType.FUEL_TYPE_DIESEL -> Log.d("CarInfo", "Diesel")
+    FuelType.FUEL_TYPE_ELECTRIC -> Log.d("CarInfo", "Electric")
+    FuelType.FUEL_TYPE_HYDROGEN -> Log.d("CarInfo", "Hydrogen")
+}
+
+// EV connector type
+val evConnector = propertyManager.getIntProperty(
+    VehiclePropertyIds.INFO_EV_CONNECTOR_TYPE,
+    VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL
+)
+Log.d("CarInfo", "EV Connector: $evConnector")</code></pre>
+        </section>
+
+        <!-- Section 11: Service Architecture -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">11</span>
+                Car Service Architecture
+            </h2>
+            <p class="section-description">
+                Internal structure of Car Services and how they interact with the VHAL.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                        subgraph SYSTEM_SERVER["System Server Process"]
+                            CAR_SERVICE_HELPER["CarServiceHelperService<br/>(Starts at boot)"]
+                        end
+
+                        subgraph CAR_SERVICE_PROCESS["CarService Process"]
+                            ICAR["ICarImpl<br/>(Binder Interface)"]
+
+                            subgraph INTERNAL_SERVICES["Internal Services"]
+                                CAR_PROPERTY_SVC["CarPropertyService"]
+                                CAR_AUDIO_SVC["CarAudioService"]
+                                CAR_MEDIA_SVC["CarMediaService"]
+                                CAR_POWER_SVC["CarPowerManagementService"]
+                                CAR_UX_SVC["CarUxRestrictionsManagerService"]
+                                CAR_USER_SVC["CarUserService"]
+                                CAR_INPUT_SVC["CarInputService"]
+                                CAR_OCCUPANT_SVC["CarOccupantZoneService"]
+                            end
+                        end
+
+                        subgraph VHAL_PROCESS["Vehicle HAL Process"]
+                            VHAL_IMPL["VehicleHal<br/>(HIDL/AIDL)"]
+                            VHAL_EMULATOR["Vehicle HAL Emulator<br/>(for development)"]
+                        end
+
+                        subgraph HARDWARE["Hardware Layer"]
+                            CAN["CAN Bus"]
+                            ECU["ECU"]
+                        end
+
+                        CAR_SERVICE_HELPER -->|starts| ICAR
+                        ICAR --> INTERNAL_SERVICES
+                        INTERNAL_SERVICES -->|HIDL/AIDL| VHAL_IMPL
+                        VHAL_IMPL --> CAN
+                        CAN --> ECU
+                        VHAL_EMULATOR -.->|dev/test| VHAL_IMPL
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Boot Sequence
+                    </h3>
+                    <div class="card-description">
+                        <ol style="padding-left: 20px;">
+                            <li>System Server starts</li>
+                            <li>CarServiceHelperService initializes</li>
+                            <li>CarService process starts</li>
+                            <li>VHAL connection established</li>
+                            <li>Internal Services initialize</li>
+                            <li>Apps can call Car.createCar()</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📁</span>
+                        Source Code Location
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>packages/services/Car/</code></li>
+                            <li><code>car-lib/</code>: Public API</li>
+                            <li><code>service/</code>: CarService implementation</li>
+                            <li><code>car-builtin-lib/</code>: Built-in API</li>
+                            <li><code>hardware/interfaces/automotive/</code>: VHAL interfaces</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🧪</span>
+                        Development & Testing
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><strong>DHU</strong>: Desktop Head Unit emulator</li>
+                            <li><strong>VHAL Emulator</strong>: Vehicle property simulation</li>
+                            <li><code>adb shell dumpsys car_service</code></li>
+                            <li><code>adb shell cmd car_service</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 12: References -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">12</span>
+                References
+            </h2>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📚</span>
+                        Official Documentation
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><a href="https://source.android.com/docs/automotive" target="_blank" style="color: var(--color-accent);">AOSP Automotive</a></li>
+                            <li><a href="https://developer.android.com/training/cars" target="_blank" style="color: var(--color-accent);">Android for Cars</a></li>
+                            <li><a href="https://source.android.com/docs/automotive/vhal" target="_blank" style="color: var(--color-accent);">Vehicle HAL</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔗</span>
+                        Related Pages
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><a href="aaos.html" style="color: var(--color-accent);">AAOS Overview</a></li>
+                            <li><a href="carmedia.html" style="color: var(--color-accent);">Car Media Service</a></li>
+                            <li><a href="vehicle-hal-media.html" style="color: var(--color-accent);">Vehicle HAL Media Integration</a></li>
+                            <li><a href="aaos-key-events.html" style="color: var(--color-accent);">Key Event Handling</a></li>
+                            <li><a href="power-policy-suspend.html" style="color: var(--color-accent);">Power Policy & Suspend</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="../scripts/mermaid-theme.js"></script>
+    <script src="../scripts/copy-code.js"></script>
+    <script src="../scripts/toc-generator.js"></script>
+    <script src="../scripts/page-navigation.js"></script>
+    <script src="../scripts/diagram-data.js"></script>
+    <script src="../scripts/diagram-interactive.js"></script>
+    <script src="../scripts/theme-toggle.js"></script>
+    <script src="../scripts/lang-switch.js"></script>
+</body>
+
+</html>
