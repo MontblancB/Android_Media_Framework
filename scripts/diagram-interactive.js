@@ -20,18 +20,6 @@ const log = DEBUG ? console.log.bind(console) : () => {};
 const warn = DEBUG ? console.warn.bind(console) : () => {};
 
 /**
- * iOS standalone 모드 감지 (홈 화면에 추가된 웹앱)
- */
-const isIOSStandalone = (function() {
-    return ('standalone' in window.navigator) && window.navigator.standalone === true;
-})();
-
-/**
- * 터치 디바이스 감지
- */
-const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-
-/**
  * 현재 언어 감지
  */
 function getCurrentLanguage() {
@@ -118,58 +106,16 @@ function getDiagramData() {
     return DIAGRAM_NODE_DATA;
 }
 
-/**
- * Mermaid 렌더링 완료 대기
- * - 모바일: 2.5초 대기 (렌더링 느림)
- * - 데스크톱: 1.5초 대기
- * - SVG가 이미 있으면 즉시 실행하되 안정화 딜레이 적용
- */
-function waitForMermaidRender() {
-    return new Promise((resolve) => {
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        const BASE_DELAY = isMobile ? 2500 : 1500; // 모바일은 더 긴 대기 시간
-        const STABILIZATION_DELAY = isMobile ? 800 : 500; // 안정화 딜레이
-
-        log(`📱 디바이스: ${isMobile ? '모바일' : '데스크톱'}, 대기시간: ${BASE_DELAY}ms`);
-
-        // 이미 Mermaid SVG가 렌더링되어 있는지 확인
-        const existingSvgs = document.querySelectorAll('.mermaid svg');
-        if (existingSvgs.length > 0) {
-            log('✅ Mermaid SVG 이미 렌더링됨, 안정화 대기 중...');
-            setTimeout(() => {
-                log('✅ 안정화 딜레이 완료');
-                resolve();
-            }, STABILIZATION_DELAY);
-            return;
-        }
-
-        // SVG가 없으면 기본 대기 시간 적용
-        log('⏳ Mermaid SVG 대기 중...');
-        setTimeout(() => {
-            const svgs = document.querySelectorAll('.mermaid svg');
-            if (svgs.length > 0) {
-                log('✅ Mermaid SVG 렌더링 완료');
-            } else {
-                warn('⚠️ Mermaid SVG를 찾을 수 없음');
-            }
-            resolve();
-        }, BASE_DELAY);
-    });
-}
-
 // DOM 로드 완료 후 초기화
 document.addEventListener('DOMContentLoaded', () => {
     log('🚀 diagram-interactive.js 로드됨!');
-    log('📦 DIAGRAM_NODE_DATA:', typeof DIAGRAM_NODE_DATA !== 'undefined');
-    log('🔧 DEBUG:', DEBUG);
-    log('📱 Touch:', isTouchDevice);
-    log('📱 iOS Standalone:', isIOSStandalone);
+    log('📦 DIAGRAM_NODE_DATA 정의 여부:', typeof DIAGRAM_NODE_DATA !== 'undefined');
 
-    // Mermaid 렌더링 완료 대기 후 초기화
-    waitForMermaidRender().then(() => {
-        log('⏰ 대기 완료, 초기화 시작...');
+    // Mermaid 렌더링 완료 대기 (1초)
+    setTimeout(() => {
+        log('⏰ 1초 대기 완료, 초기화 시작...');
         initializeDiagramInteractivity();
-    });
+    }, 1000);
 });
 
 /**
@@ -185,127 +131,11 @@ function initializeDiagramInteractivity() {
 
     log(`📊 인터랙티브 다이어그램: ${mermaidContainers.length}개의 다이어그램 발견`);
 
-    // 노드 ID 맵 생성 (노드 요소 → nodeId 매핑)
-    window.nodeIdMap = new WeakMap();
-
     mermaidContainers.forEach((container, index) => {
         attachInteractiveHandlers(container, index);
     });
 
-    // iOS standalone 모드에서는 document 레벨에서 터치 이벤트 캡처
-    if (isIOSStandalone) {
-        setupDocumentLevelTouchHandler();
-    }
-
     log('✅ 인터랙티브 다이어그램 초기화 완료');
-}
-
-/**
- * iOS standalone 모드를 위한 document 레벨 터치 핸들러
- * SVG 내부 요소에 이벤트가 전달되지 않는 문제를 우회
- */
-function setupDocumentLevelTouchHandler() {
-    log('📱 iOS Standalone: Document 레벨 터치 핸들러 설정');
-
-    let touchStartTime = 0;
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchedNode = null;
-
-    document.addEventListener('touchstart', (e) => {
-        if (e.touches.length !== 1) return;
-
-        const touch = e.touches[0];
-        touchStartTime = Date.now();
-        touchStartX = touch.clientX;
-        touchStartY = touch.clientY;
-
-        // 터치 위치에서 노드 찾기
-        touchedNode = findNodeAtPoint(touch.clientX, touch.clientY);
-
-        if (touchedNode) {
-            touchedNode.element.style.transform = 'scale(1.05)';
-            touchedNode.element.style.opacity = '0.8';
-            log(`📱 Document touchstart: ${touchedNode.nodeId}`);
-        }
-    }, { passive: true });
-
-    document.addEventListener('touchend', (e) => {
-        if (!touchedNode) return;
-
-        const touch = e.changedTouches[0];
-        const duration = Date.now() - touchStartTime;
-        const deltaX = Math.abs(touch.clientX - touchStartX);
-        const deltaY = Math.abs(touch.clientY - touchStartY);
-
-        // 시각적 피드백 복원
-        touchedNode.element.style.transform = '';
-        touchedNode.element.style.opacity = '';
-
-        // 탭 판정: 500ms 이하 + 이동 거리 20px 이하
-        if (duration < 500 && deltaX < 20 && deltaY < 20) {
-            log(`📱 Document tap: ${touchedNode.nodeId} (${duration}ms)`);
-            handleNodeClick(touchedNode.nodeId, touchedNode.element);
-            e.preventDefault(); // 클릭 이벤트 방지
-        }
-
-        touchedNode = null;
-    }, { passive: false });
-
-    document.addEventListener('touchmove', (e) => {
-        if (!touchedNode) return;
-
-        const touch = e.touches[0];
-        const deltaX = Math.abs(touch.clientX - touchStartX);
-        const deltaY = Math.abs(touch.clientY - touchStartY);
-
-        // 20px 이상 이동하면 취소
-        if (deltaX > 20 || deltaY > 20) {
-            touchedNode.element.style.transform = '';
-            touchedNode.element.style.opacity = '';
-            touchedNode = null;
-        }
-    }, { passive: true });
-
-    document.addEventListener('touchcancel', () => {
-        if (touchedNode) {
-            touchedNode.element.style.transform = '';
-            touchedNode.element.style.opacity = '';
-            touchedNode = null;
-        }
-    }, { passive: true });
-}
-
-/**
- * 특정 좌표에서 노드 찾기
- */
-function findNodeAtPoint(x, y) {
-    // elementFromPoint로 해당 위치의 요소 찾기
-    const element = document.elementFromPoint(x, y);
-    if (!element) return null;
-
-    // 노드 요소 또는 그 부모 중에서 .node 클래스 찾기
-    let nodeElement = element.closest('.node');
-
-    // closest가 안 되는 경우 수동으로 찾기
-    if (!nodeElement) {
-        let current = element;
-        while (current && current !== document.body) {
-            if (current.classList && current.classList.contains('node')) {
-                nodeElement = current;
-                break;
-            }
-            current = current.parentElement;
-        }
-    }
-
-    if (!nodeElement) return null;
-
-    // 노드 ID 가져오기
-    const nodeId = window.nodeIdMap.get(nodeElement);
-    if (!nodeId) return null;
-
-    return { element: nodeElement, nodeId: nodeId };
 }
 
 /**
@@ -331,154 +161,56 @@ function attachInteractiveHandlers(container, diagramIndex) {
             return;
         }
 
-        // 노드 ID를 WeakMap에 저장 (iOS standalone document 레벨 핸들러용)
-        window.nodeIdMap.set(node, nodeId);
-
         // 모든 노드에 인터랙티브 적용 (데이터가 없으면 자동 생성)
-        // 커서 및 터치 관련 CSS 설정
+        // 커서 변경
         node.style.cursor = 'pointer';
         node.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
 
-        // iOS standalone 모드 및 터치 디바이스를 위한 CSS 속성 추가
-        node.style.touchAction = 'manipulation'; // 더블탭 줌 방지, 탭은 허용
-        node.style.webkitTouchCallout = 'none';  // 길게 누르기 콜아웃 방지
-        node.style.webkitUserSelect = 'none';    // 텍스트 선택 방지
-        node.style.userSelect = 'none';
+        // 터치 디바이스 감지
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-        // SVG 요소에 pointer-events 명시적 설정
-        node.setAttribute('pointer-events', 'all');
+        // 클릭 이벤트 (마우스)
+        node.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleNodeClick(nodeId, node);
+        });
 
-        // 터치/클릭 상태 관리
-        let interactionStartTime = 0;
-        let interactionStartX = 0;
-        let interactionStartY = 0;
-        let isInteracting = false;
-
-        /**
-         * 인터랙션 시작 핸들러 (터치/포인터 공용)
-         */
-        function handleInteractionStart(clientX, clientY, type) {
-            isInteracting = true;
-            interactionStartTime = Date.now();
-            interactionStartX = clientX;
-            interactionStartY = clientY;
-
-            // 시각적 피드백
-            node.style.transform = 'scale(1.05)';
-            node.style.opacity = '0.8';
-            log(`👆 ${type} start: ${nodeId}`);
-        }
-
-        /**
-         * 인터랙션 종료 핸들러 (터치/포인터 공용)
-         */
-        function handleInteractionEnd(clientX, clientY, type) {
-            if (!isInteracting) return;
-            isInteracting = false;
-
-            const duration = Date.now() - interactionStartTime;
-            const deltaX = Math.abs(clientX - interactionStartX);
-            const deltaY = Math.abs(clientY - interactionStartY);
-
-            // 시각적 피드백 복원
-            node.style.transform = '';
-            node.style.opacity = '';
-
-            // 탭/클릭 판정: 500ms 이하 + 이동 거리 15px 이하
-            if (duration < 500 && deltaX < 15 && deltaY < 15) {
-                log(`✅ ${type} 탭/클릭: ${nodeId} (${duration}ms)`);
-                handleNodeClick(nodeId, node);
-            }
-        }
-
-        /**
-         * 인터랙션 취소 핸들러
-         */
-        function handleInteractionCancel() {
-            isInteracting = false;
-            node.style.transform = '';
-            node.style.opacity = '';
-        }
-
-        // iOS standalone 모드에서는 document 레벨 핸들러 사용 (노드 레벨 터치 비활성화)
-        // 일반 터치 디바이스에서만 노드 레벨 터치 이벤트 사용
-        if (isTouchDevice && !isIOSStandalone) {
-            log(`📱 터치 이벤트 등록: ${nodeId}`);
+        // 터치 이벤트 (모바일/태블릿)
+        if (isTouchDevice) {
+            let touchStartTime = 0;
 
             node.addEventListener('touchstart', (e) => {
-                // 단일 터치만 처리
-                if (e.touches.length !== 1) return;
-
-                const touch = e.touches[0];
-                handleInteractionStart(touch.clientX, touch.clientY, 'touch');
-
-                // iOS standalone에서 기본 동작 방지 (스크롤 제외)
-                // e.preventDefault()는 passive 리스너에서 사용 불가
-            }, { passive: true });
+                touchStartTime = Date.now();
+                // 터치 시작 시 시각적 피드백
+                node.style.transform = 'scale(1.05)';
+                node.style.opacity = '0.8';
+            });
 
             node.addEventListener('touchend', (e) => {
-                if (e.changedTouches.length !== 1) return;
-
-                const touch = e.changedTouches[0];
-                handleInteractionEnd(touch.clientX, touch.clientY, 'touch');
-
-                // 클릭 이벤트 중복 방지
                 e.preventDefault();
-            }, { passive: false });
+                e.stopPropagation();
 
-            node.addEventListener('touchcancel', handleInteractionCancel, { passive: true });
-
-            node.addEventListener('touchmove', (e) => {
-                // 터치 이동 시 상호작용 취소
-                if (isInteracting && e.touches.length === 1) {
-                    const touch = e.touches[0];
-                    const deltaX = Math.abs(touch.clientX - interactionStartX);
-                    const deltaY = Math.abs(touch.clientY - interactionStartY);
-
-                    // 15px 이상 이동하면 취소
-                    if (deltaX > 15 || deltaY > 15) {
-                        handleInteractionCancel();
-                    }
-                }
-            }, { passive: true });
-        }
-
-        // Pointer Events (데스크톱 및 백업용)
-        if (!isIOSStandalone) {
-            node.addEventListener('pointerdown', (e) => {
-                // 터치 디바이스에서 터치 이벤트 사용 중이면 무시
-                if (isTouchDevice && e.pointerType === 'touch') return;
-
-                handleInteractionStart(e.clientX, e.clientY, `pointer(${e.pointerType})`);
-            });
-
-            node.addEventListener('pointerup', (e) => {
-                if (isTouchDevice && e.pointerType === 'touch') return;
-
-                handleInteractionEnd(e.clientX, e.clientY, `pointer(${e.pointerType})`);
-            });
-
-            node.addEventListener('pointercancel', handleInteractionCancel);
-
-            node.addEventListener('pointerleave', () => {
-                if (isInteracting) {
-                    handleInteractionCancel();
-                }
-            });
-        }
-
-        // 데스크톱 클릭 이벤트 (마우스 전용 백업)
-        if (!isTouchDevice) {
-            node.addEventListener('click', (e) => {
-                // 이미 처리된 경우 무시
-                if (!isInteracting) {
-                    log(`🖱️ click 이벤트: ${nodeId}`);
+                // 터치 시간이 500ms 이하면 탭으로 간주
+                const touchDuration = Date.now() - touchStartTime;
+                if (touchDuration < 500) {
                     handleNodeClick(nodeId, node);
                 }
+
+                // 시각적 피드백 복원
+                setTimeout(() => {
+                    node.style.transform = '';
+                    node.style.opacity = '';
+                }, 100);
+            });
+
+            node.addEventListener('touchcancel', () => {
+                node.style.transform = '';
+                node.style.opacity = '';
             });
         }
 
-        // 호버 이벤트 (마우스/데스크톱 전용)
+        // 호버 이벤트 (데스크톱만)
         if (!isTouchDevice) {
             node.addEventListener('mouseenter', (e) => {
                 handleNodeHover(e, nodeId, node);
@@ -489,13 +221,10 @@ function attachInteractiveHandlers(container, diagramIndex) {
             });
         }
 
-        // 데이터 유무 표시 (디버그 모드에서만)
-        if (DEBUG) {
-            const diagramData = getDiagramData();
-            const hasData = !!diagramData[nodeId];
-            const mode = isIOSStandalone ? 'iOS-standalone' : (isTouchDevice ? '터치' : '마우스');
-            log(`    ✓ 노드 "${nodeId}" 인터랙티브 활성화 (${mode} 모드, 데이터: ${hasData ? '있음' : '자동생성'})`);
-        }
+        // 데이터 유무 표시
+        const diagramData = getDiagramData();
+        const hasData = !!diagramData[nodeId];
+        log(`    ✓ 노드 "${nodeId}" 인터랙티브 활성화 (${isTouchDevice ? '터치' : '마우스'} 모드, 데이터: ${hasData ? '있음' : '자동생성'})`);
     });
 }
 
