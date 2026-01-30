@@ -20,6 +20,18 @@ const log = DEBUG ? console.log.bind(console) : () => {};
 const warn = DEBUG ? console.warn.bind(console) : () => {};
 
 /**
+ * iOS standalone 모드 감지 (홈 화면에 추가된 웹앱)
+ */
+const isIOSStandalone = (function() {
+    return ('standalone' in window.navigator) && window.navigator.standalone === true;
+})();
+
+/**
+ * 터치 디바이스 감지
+ */
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+/**
  * 현재 언어 감지
  */
 function getCurrentLanguage() {
@@ -150,7 +162,8 @@ document.addEventListener('DOMContentLoaded', () => {
     log('🚀 diagram-interactive.js 로드됨!');
     log('📦 DIAGRAM_NODE_DATA:', typeof DIAGRAM_NODE_DATA !== 'undefined');
     log('🔧 DEBUG:', DEBUG);
-    log('📱 Touch:', 'ontouchstart' in window);
+    log('📱 Touch:', isTouchDevice);
+    log('📱 iOS Standalone:', isIOSStandalone);
 
     // Mermaid 렌더링 완료 대기 후 초기화
     waitForMermaidRender().then(() => {
@@ -203,35 +216,50 @@ function attachInteractiveHandlers(container, diagramIndex) {
         }
 
         // 모든 노드에 인터랙티브 적용 (데이터가 없으면 자동 생성)
-        // 커서 변경
+        // 커서 및 터치 관련 CSS 설정
         node.style.cursor = 'pointer';
         node.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
 
-        // Pointer Events 사용 (마우스 + 터치 통합, iOS standalone 모드 지원)
-        let pointerStartTime = 0;
-        let pointerStartX = 0;
-        let pointerStartY = 0;
-        let isPointerDown = false;
+        // iOS standalone 모드 및 터치 디바이스를 위한 CSS 속성 추가
+        node.style.touchAction = 'manipulation'; // 더블탭 줌 방지, 탭은 허용
+        node.style.webkitTouchCallout = 'none';  // 길게 누르기 콜아웃 방지
+        node.style.webkitUserSelect = 'none';    // 텍스트 선택 방지
+        node.style.userSelect = 'none';
 
-        node.addEventListener('pointerdown', (e) => {
-            isPointerDown = true;
-            pointerStartTime = Date.now();
-            pointerStartX = e.clientX;
-            pointerStartY = e.clientY;
+        // SVG 요소에 pointer-events 명시적 설정
+        node.setAttribute('pointer-events', 'all');
+
+        // 터치/클릭 상태 관리
+        let interactionStartTime = 0;
+        let interactionStartX = 0;
+        let interactionStartY = 0;
+        let isInteracting = false;
+
+        /**
+         * 인터랙션 시작 핸들러 (터치/포인터 공용)
+         */
+        function handleInteractionStart(clientX, clientY, type) {
+            isInteracting = true;
+            interactionStartTime = Date.now();
+            interactionStartX = clientX;
+            interactionStartY = clientY;
 
             // 시각적 피드백
             node.style.transform = 'scale(1.05)';
             node.style.opacity = '0.8';
-            log(`👆 pointerdown: ${nodeId} (${e.pointerType})`);
-        });
+            log(`👆 ${type} start: ${nodeId}`);
+        }
 
-        node.addEventListener('pointerup', (e) => {
-            if (!isPointerDown) return;
-            isPointerDown = false;
+        /**
+         * 인터랙션 종료 핸들러 (터치/포인터 공용)
+         */
+        function handleInteractionEnd(clientX, clientY, type) {
+            if (!isInteracting) return;
+            isInteracting = false;
 
-            const duration = Date.now() - pointerStartTime;
-            const deltaX = Math.abs(e.clientX - pointerStartX);
-            const deltaY = Math.abs(e.clientY - pointerStartY);
+            const duration = Date.now() - interactionStartTime;
+            const deltaX = Math.abs(clientX - interactionStartX);
+            const deltaY = Math.abs(clientY - interactionStartY);
 
             // 시각적 피드백 복원
             node.style.transform = '';
@@ -239,41 +267,114 @@ function attachInteractiveHandlers(container, diagramIndex) {
 
             // 탭/클릭 판정: 500ms 이하 + 이동 거리 15px 이하
             if (duration < 500 && deltaX < 15 && deltaY < 15) {
-                log(`✅ 탭/클릭: ${nodeId} (${duration}ms, ${e.pointerType})`);
+                log(`✅ ${type} 탭/클릭: ${nodeId} (${duration}ms)`);
                 handleNodeClick(nodeId, node);
             }
-        });
+        }
 
-        node.addEventListener('pointercancel', () => {
-            isPointerDown = false;
+        /**
+         * 인터랙션 취소 핸들러
+         */
+        function handleInteractionCancel() {
+            isInteracting = false;
             node.style.transform = '';
             node.style.opacity = '';
-        });
+        }
 
-        node.addEventListener('pointerleave', () => {
-            if (isPointerDown) {
-                isPointerDown = false;
-                node.style.transform = '';
-                node.style.opacity = '';
-            }
-        });
+        // iOS standalone 모드에서는 터치 이벤트를 우선 사용
+        if (isIOSStandalone || isTouchDevice) {
+            log(`📱 터치 이벤트 등록: ${nodeId} (iOS Standalone: ${isIOSStandalone})`);
 
-        // 호버 이벤트 (마우스만)
-        node.addEventListener('mouseenter', (e) => {
-            if (e.pointerType !== 'touch') {
+            node.addEventListener('touchstart', (e) => {
+                // 단일 터치만 처리
+                if (e.touches.length !== 1) return;
+
+                const touch = e.touches[0];
+                handleInteractionStart(touch.clientX, touch.clientY, 'touch');
+
+                // iOS standalone에서 기본 동작 방지 (스크롤 제외)
+                // e.preventDefault()는 passive 리스너에서 사용 불가
+            }, { passive: true });
+
+            node.addEventListener('touchend', (e) => {
+                if (e.changedTouches.length !== 1) return;
+
+                const touch = e.changedTouches[0];
+                handleInteractionEnd(touch.clientX, touch.clientY, 'touch');
+
+                // 클릭 이벤트 중복 방지
+                e.preventDefault();
+            }, { passive: false });
+
+            node.addEventListener('touchcancel', handleInteractionCancel, { passive: true });
+
+            node.addEventListener('touchmove', (e) => {
+                // 터치 이동 시 상호작용 취소
+                if (isInteracting && e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    const deltaX = Math.abs(touch.clientX - interactionStartX);
+                    const deltaY = Math.abs(touch.clientY - interactionStartY);
+
+                    // 15px 이상 이동하면 취소
+                    if (deltaX > 15 || deltaY > 15) {
+                        handleInteractionCancel();
+                    }
+                }
+            }, { passive: true });
+        }
+
+        // Pointer Events (데스크톱 및 백업용)
+        if (!isIOSStandalone) {
+            node.addEventListener('pointerdown', (e) => {
+                // 터치 디바이스에서 터치 이벤트 사용 중이면 무시
+                if (isTouchDevice && e.pointerType === 'touch') return;
+
+                handleInteractionStart(e.clientX, e.clientY, `pointer(${e.pointerType})`);
+            });
+
+            node.addEventListener('pointerup', (e) => {
+                if (isTouchDevice && e.pointerType === 'touch') return;
+
+                handleInteractionEnd(e.clientX, e.clientY, `pointer(${e.pointerType})`);
+            });
+
+            node.addEventListener('pointercancel', handleInteractionCancel);
+
+            node.addEventListener('pointerleave', () => {
+                if (isInteracting) {
+                    handleInteractionCancel();
+                }
+            });
+        }
+
+        // 데스크톱 클릭 이벤트 (마우스 전용 백업)
+        if (!isTouchDevice) {
+            node.addEventListener('click', (e) => {
+                // 이미 처리된 경우 무시
+                if (!isInteracting) {
+                    log(`🖱️ click 이벤트: ${nodeId}`);
+                    handleNodeClick(nodeId, node);
+                }
+            });
+        }
+
+        // 호버 이벤트 (마우스/데스크톱 전용)
+        if (!isTouchDevice) {
+            node.addEventListener('mouseenter', (e) => {
                 handleNodeHover(e, nodeId, node);
-            }
-        });
+            });
 
-        node.addEventListener('mouseleave', () => {
-            handleNodeLeave(node);
-        });
+            node.addEventListener('mouseleave', () => {
+                handleNodeLeave(node);
+            });
+        }
 
         // 데이터 유무 표시 (디버그 모드에서만)
         if (DEBUG) {
             const diagramData = getDiagramData();
             const hasData = !!diagramData[nodeId];
-            log(`    ✓ 노드 "${nodeId}" 인터랙티브 활성화 (${isTouchDevice ? '터치' : '마우스'} 모드, 데이터: ${hasData ? '있음' : '자동생성'})`);
+            const mode = isIOSStandalone ? 'iOS-standalone' : (isTouchDevice ? '터치' : '마우스');
+            log(`    ✓ 노드 "${nodeId}" 인터랙티브 활성화 (${mode} 모드, 데이터: ${hasData ? '있음' : '자동생성'})`);
         }
     });
 }
