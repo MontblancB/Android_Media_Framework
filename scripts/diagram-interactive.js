@@ -108,13 +108,17 @@ function getDiagramData() {
 
 /**
  * Mermaid 렌더링 완료 대기
- * - 기본: 1.5초 대기 (기존 1초에서 증가)
+ * - 모바일: 2.5초 대기 (렌더링 느림)
+ * - 데스크톱: 1.5초 대기
  * - SVG가 이미 있으면 즉시 실행하되 안정화 딜레이 적용
  */
 function waitForMermaidRender() {
     return new Promise((resolve) => {
-        const BASE_DELAY = 1500; // 기본 대기 시간 (ms)
-        const STABILIZATION_DELAY = 500; // 안정화 딜레이 (ms)
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const BASE_DELAY = isMobile ? 2500 : 1500; // 모바일은 더 긴 대기 시간
+        const STABILIZATION_DELAY = isMobile ? 800 : 500; // 안정화 딜레이
+
+        log(`📱 디바이스: ${isMobile ? '모바일' : '데스크톱'}, 대기시간: ${BASE_DELAY}ms`);
 
         // 이미 Mermaid SVG가 렌더링되어 있는지 확인
         const existingSvgs = document.querySelectorAll('.mermaid svg');
@@ -206,45 +210,35 @@ function attachInteractiveHandlers(container, diagramIndex) {
         // 터치 디바이스 감지
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-        // 클릭 이벤트 (마우스)
+        // 클릭 이벤트 (모든 디바이스에서 동작)
+        // 모바일에서 터치 → 클릭 이벤트 자동 변환됨
         node.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            log(`🖱️ 클릭 이벤트 발생: ${nodeId}`);
             handleNodeClick(nodeId, node);
         });
 
-        // 터치 이벤트 (모바일/태블릿)
+        // 터치 피드백 (모바일/태블릿) - 시각적 효과만
         if (isTouchDevice) {
-            let touchStartTime = 0;
-
             node.addEventListener('touchstart', (e) => {
-                touchStartTime = Date.now();
-                // 터치 시작 시 시각적 피드백
+                // 시각적 피드백
                 node.style.transform = 'scale(1.05)';
                 node.style.opacity = '0.8';
-            });
+            }, { passive: true });
 
             node.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                // 터치 시간이 500ms 이하면 탭으로 간주
-                const touchDuration = Date.now() - touchStartTime;
-                if (touchDuration < 500) {
-                    handleNodeClick(nodeId, node);
-                }
-
-                // 시각적 피드백 복원
+                // 시각적 피드백 복원 (클릭 이벤트가 처리함)
                 setTimeout(() => {
                     node.style.transform = '';
                     node.style.opacity = '';
                 }, 100);
-            });
+            }, { passive: true });
 
             node.addEventListener('touchcancel', () => {
                 node.style.transform = '';
                 node.style.opacity = '';
-            });
+            }, { passive: true });
         }
 
         // 호버 이벤트 (데스크톱만)
