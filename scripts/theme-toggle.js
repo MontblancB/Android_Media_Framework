@@ -75,24 +75,15 @@
     }
 
     /**
-     * Check if current page is main page (index.html)
-     */
-    function isMainPage() {
-        const path = window.location.pathname;
-        // Main page patterns: /, /index.html, /en/, /en/index.html
-        return path === '/' ||
-               path.endsWith('/index.html') ||
-               path.endsWith('/index') ||
-               path === '/en/' ||
-               path === '/en';
-    }
-
-    /**
      * Create and inject theme toggle button (only on main page)
+     * Main page is identified by having .nav-links element in nav
      */
     function createThemeToggle() {
-        // Only create theme toggle button on main page
-        if (!isMainPage()) {
+        const nav = document.querySelector('nav');
+        const navLinks = nav ? nav.querySelector('.nav-links') : null;
+
+        // Only create theme toggle on main page (pages with .nav-links)
+        if (!navLinks) {
             return;
         }
 
@@ -121,17 +112,11 @@
             </div>
         `;
 
-        // Try to insert into navigation first
-        const nav = document.querySelector('nav');
-        const navLinks = nav ? nav.querySelector('.nav-links') : null;
-
-        if (navLinks) {
-            // Main page: add to nav-links
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = themeToggleHTML;
-            const themeToggle = tempDiv.firstElementChild;
-            navLinks.appendChild(themeToggle);
-        }
+        // Main page: add to nav-links
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = themeToggleHTML;
+        const themeToggle = tempDiv.firstElementChild;
+        navLinks.appendChild(themeToggle);
 
         // Add event listener
         const toggleBtn = document.querySelector('.theme-toggle-btn');
