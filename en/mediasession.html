@@ -1346,10 +1346,1024 @@ adb shell input keyevent KEYCODE_HEADSETHOOK</code></pre>
             </div>
         </section>
 
-        <!-- Section 13: Related Documentation -->
+        <!-- Section 13: Media Source Change -->
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">13</span>
+                Media Source Change
+            </h2>
+            <p class="section-description">
+                Detailed explanation of media source change scenarios in MediaSession and their internal operations at the API level.
+            </p>
+
+            <div class="highlight-box">
+                <strong>What is Source Change?</strong> It refers to switching from the currently playing media source to a different source.
+                This includes various scenarios such as inter-app switching (Spotify → YouTube Music), in-app track changes, and media app switching in AAOS.
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.4rem;">📊 Source Change Types</h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Inter-App Session Switch
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Inter-App Session Switch</strong></p>
+                        <ul>
+                            <li>Switch active session from one app to another</li>
+                            <li>Example: Playing Spotify → Start YouTube Music</li>
+                            <li>Deactivate existing session, activate new session</li>
+                            <li>MediaSessionService mediates</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        In-App Track Change
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>In-App Track Change</strong></p>
+                        <ul>
+                            <li>Change playback content within the same app</li>
+                            <li>Example: Play next song in playlist</li>
+                            <li>ExoPlayer MediaSource replacement</li>
+                            <li>MediaMetadata update</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        AAOS Source Change
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>CarMediaService Source Change</strong></p>
+                        <ul>
+                            <li>Media source switching in vehicle environment</li>
+                            <li>CarMediaManager.setMediaSource() call</li>
+                            <li>MediaSourceChangedListener callback</li>
+                            <li>Last Media Source save/restore</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">🏗️ Source Change Architecture</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Overall architecture where MediaSession source changes occur.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                        subgraph APPS["Media Applications"]
+                            APP_A["App A<br/>(Spotify)"]
+                            APP_B["App B<br/>(YouTube Music)"]
+                            APP_C["App C<br/>(Local Player)"]
+                        end
+
+                        subgraph SESSIONS["MediaSessions"]
+                            SESSION_A["MediaSession A<br/>(Active)"]
+                            SESSION_B["MediaSession B<br/>(Inactive)"]
+                            SESSION_C["MediaSession C<br/>(Inactive)"]
+                        end
+
+                        subgraph SYSTEM["System Server"]
+                            MSS["MediaSessionService<br/>• Session Priority Queue<br/>• Active Session Management"]
+                            AMSF["ActiveMediaSessionFinder<br/>• Determine Active Session"]
+                        end
+
+                        subgraph CONTROLLERS["MediaControllers"]
+                            NOTIFICATION["Notification<br/>MediaStyle"]
+                            AUTO["Android Auto<br/>MediaBrowser"]
+                            ASSISTANT["Google<br/>Assistant"]
+                            WEAR["Wear OS"]
+                        end
+
+                        subgraph AAOS["AAOS Layer (Optional)"]
+                            CMS["CarMediaService"]
+                            CMM["CarMediaManager"]
+                        end
+
+                        APP_A --> SESSION_A
+                        APP_B --> SESSION_B
+                        APP_C --> SESSION_C
+
+                        SESSION_A & SESSION_B & SESSION_C --> MSS
+                        MSS --> AMSF
+
+                        AMSF -->|Active Session| CONTROLLERS
+
+                        CMS --> MSS
+                        CMM --> CMS
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">📱 Inter-App Session Switch Flow</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Detailed flow when App B starts playback while App A is playing.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                        autonumber
+                        participant AppA as App A (Spotify)
+                        participant SessionA as MediaSession A
+                        participant MSS as MediaSessionService
+                        participant AF as AudioFocusManager
+                        participant AppB as App B (YouTube Music)
+                        participant SessionB as MediaSession B
+                        participant Controller as MediaController
+
+                        Note over AppA,Controller: App A is playing
+                        AppA->>SessionA: setPlaybackState(PLAYING)
+                        SessionA->>MSS: onPlaybackStateChanged()
+                        MSS->>Controller: Active Session = Session A
+
+                        Note over AppA,Controller: App B requests playback
+                        AppB->>AF: requestAudioFocus()
+                        AF->>AF: Check focus policy
+                        AF-->>AppA: onAudioFocusChange(LOSS)
+
+                        Note over AppA: Handle audio focus loss
+                        AppA->>AppA: pause() or duck()
+                        AppA->>SessionA: setPlaybackState(PAUSED)
+                        SessionA->>MSS: onPlaybackStateChanged()
+
+                        AF-->>AppB: onAudioFocusChange(GAIN)
+                        AppB->>AppB: Start playback
+                        AppB->>SessionB: setActive(true)
+                        AppB->>SessionB: setPlaybackState(PLAYING)
+
+                        SessionB->>MSS: onSessionCreated/onPlaybackStateChanged
+                        MSS->>MSS: Reorder Priority Queue
+                        MSS->>MSS: Active Session = Session B
+
+                        MSS->>Controller: onActiveSessionChanged()
+                        Controller->>Controller: Connect to Session B
+
+                        Note over Controller: UI Update
+                        Controller->>SessionB: getMetadata()
+                        SessionB-->>Controller: MediaMetadata (new app)
+                        Controller->>Controller: Update notification/UI
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">🎵 In-App Media Source Change Flow</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Detailed flow of replacing the currently playing track with another track in ExoPlayer.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                        autonumber
+                        participant UI as Player UI
+                        participant Player as ExoPlayer
+                        participant MS as MediaSession
+                        participant MSS as MediaSessionService
+                        participant Controller as MediaController
+
+                        Note over UI,Controller: User selects next track
+                        UI->>Player: seekToNextMediaItem()
+
+                        Note over Player: MediaSource transition
+                        Player->>Player: Stop current track
+                        Player->>Player: Load new MediaSource
+                        Player->>Player: Start buffering
+
+                        Player->>MS: Listener.onMediaItemTransition()
+                        MS->>MS: Update MediaMetadata
+                        MS->>MSS: onMetadataChanged()
+                        MSS->>Controller: onMetadataChanged()
+
+                        Note over Controller: Metadata refresh
+                        Controller->>Controller: Update title/artist/album art
+
+                        Player->>Player: Buffering complete
+                        Player->>MS: Listener.onPlaybackStateChanged(READY)
+                        Player->>Player: Start playback
+
+                        MS->>MSS: onPlaybackStateChanged()
+                        MSS->>Controller: onPlaybackStateChanged(PLAYING)
+
+                        Note over Controller: Playback state refresh
+                        Controller->>Controller: Update play button state
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">🚗 AAOS Source Change Flow</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Media source change flow through CarMediaService.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                        autonumber
+                        participant User as User/System
+                        participant CMM as CarMediaManager
+                        participant CMS as CarMediaService
+                        participant MSS as MediaSessionService
+                        participant OldApp as Old App (Spotify)
+                        participant NewApp as New App (Radio)
+                        participant UI as Car Media UI
+
+                        Note over User,UI: Source change request
+                        User->>CMM: setMediaSource(Radio)
+                        CMM->>CMS: setMediaSource(ComponentName)
+
+                        CMS->>CMS: Save current source (Last Media)
+                        CMS->>MSS: getActiveSessions()
+
+                        Note over OldApp: Stop old app
+                        CMS->>OldApp: pause() via MediaController
+                        OldApp->>OldApp: Stop playback
+
+                        Note over NewApp: Activate new app
+                        CMS->>NewApp: MediaBrowser.connect()
+                        NewApp->>NewApp: Service bind
+                        NewApp-->>CMS: onConnected()
+
+                        CMS->>NewApp: play() via MediaController
+                        NewApp->>NewApp: Start playback
+                        NewApp->>MSS: setActive(true)
+
+                        MSS->>MSS: Change Active Session
+
+                        CMS->>CMS: Call MediaSourceChangedListener
+                        CMS->>UI: onMediaSourceChanged(Radio)
+
+                        UI->>UI: Refresh media UI
+                        UI->>NewApp: getMetadata()
+                        NewApp-->>UI: MediaMetadata
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">🔧 Core API Details</h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📡</span>
+                        MediaSessionService API
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Core Session Management API</strong></p>
+                        <ul>
+                            <li><code>getActiveSessions()</code>: Active session list</li>
+                            <li><code>addOnActiveSessionsChangedListener()</code>: Detect active session changes</li>
+                            <li><code>getSession2Tokens()</code>: Media3 session tokens</li>
+                        </ul>
+                        <p style="margin-top: 10px; color: var(--text-tertiary); font-size: 0.85rem;">
+                            Permission: <code>MEDIA_CONTENT_CONTROL</code> required
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎮</span>
+                        MediaController API
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Session Control and State Receiving</strong></p>
+                        <ul>
+                            <li><code>getTransportControls()</code>: play/pause/stop</li>
+                            <li><code>registerCallback()</code>: Receive state changes</li>
+                            <li><code>getPlaybackState()</code>: Current playback state</li>
+                            <li><code>getMetadata()</code>: Current media info</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔔</span>
+                        MediaController.Callback
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Source Change Detection Callback</strong></p>
+                        <ul>
+                            <li><code>onSessionDestroyed()</code>: Session ended</li>
+                            <li><code>onPlaybackStateChanged()</code>: Playback state changed</li>
+                            <li><code>onMetadataChanged()</code>: Metadata changed</li>
+                            <li><code>onQueueChanged()</code>: Queue changed</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">📞 External Interrupt Handling (BT Call, Navigation, etc.)</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                When high-priority external interrupts like Bluetooth calls or navigation guidance occur, current media playback is paused or volume is reduced.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Audio Focus Priority:</strong> Android manages priority between audio streams through the audio focus system.
+                <br/>Phone Call (USAGE_VOICE_COMMUNICATION) > Navigation (USAGE_ASSISTANCE_NAVIGATION_GUIDANCE) > Media (USAGE_MEDIA)
+            </div>
+
+            <h4 style="color: var(--text-primary); margin: 30px 0 15px 0;">🏗️ External Interrupt Architecture</h4>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                        subgraph INTERRUPT_SOURCES["Interrupt Sources"]
+                            BT_CALL["📞 BT Call<br/>(Bluetooth HFP)"]
+                            NAVI["🗺️ Navigation<br/>(TBT Guidance)"]
+                            ALARM["⏰ Alarm<br/>(System Alert)"]
+                            ASSIST["🎤 Voice Assistant<br/>(Google Assistant)"]
+                            NOTIF["🔔 Notification<br/>(Ringtone)"]
+                        end
+
+                        subgraph AUDIO_SYSTEM["Android Audio System"]
+                            AF_MGR["AudioFocusManager<br/>• Focus Request/Release<br/>• Priority Decision"]
+                            AUDIO_POLICY["AudioPolicyService<br/>• Ducking Policy<br/>• Stream Routing"]
+                            AUDIO_FLINGER["AudioFlinger<br/>• Volume Control<br/>• Mixing"]
+                        end
+
+                        subgraph MEDIA_APPS["Media Apps"]
+                            PLAYER["ExoPlayer<br/>MediaSession"]
+                            FOCUS_LISTENER["OnAudioFocusChangeListener"]
+                        end
+
+                        subgraph AAOS_LAYER["AAOS Layer (Optional)"]
+                            CAR_AUDIO["CarAudioService<br/>• Audio Zones<br/>• Duck Policy"]
+                            CAR_AUDIO_FOCUS["CarAudioFocus<br/>• Per-Zone Focus Management"]
+                        end
+
+                        BT_CALL -->|requestAudioFocus<br/>USAGE_VOICE_COMMUNICATION| AF_MGR
+                        NAVI -->|requestAudioFocus<br/>USAGE_ASSISTANCE_NAVIGATION| AF_MGR
+                        ALARM -->|requestAudioFocus<br/>USAGE_ALARM| AF_MGR
+                        ASSIST -->|requestAudioFocus<br/>USAGE_ASSISTANT| AF_MGR
+                        NOTIF -->|requestAudioFocus<br/>USAGE_NOTIFICATION| AF_MGR
+
+                        AF_MGR -->|AUDIOFOCUS_LOSS<br/>AUDIOFOCUS_LOSS_TRANSIENT<br/>AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK| FOCUS_LISTENER
+                        AF_MGR --> AUDIO_POLICY
+                        AUDIO_POLICY --> AUDIO_FLINGER
+
+                        FOCUS_LISTENER -->|pause/duck| PLAYER
+
+                        CAR_AUDIO --> AF_MGR
+                        CAR_AUDIO_FOCUS --> CAR_AUDIO
+                </div>
+            </div>
+
+            <h4 style="color: var(--text-primary); margin: 30px 0 15px 0;">📊 Audio Focus Type Behavior</h4>
+
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <thead>
+                    <tr style="background: var(--bg-tertiary);">
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--accent-primary);">Focus Change</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--accent-primary);">Trigger Example</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--accent-primary);">Media App Response</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--accent-primary);">Recovery</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid var(--bg-tertiary);">
+                        <td style="padding: 12px;"><code>AUDIOFOCUS_LOSS</code></td>
+                        <td style="padding: 12px;">Another app starts long playback<br/>(YouTube Music launched)</td>
+                        <td style="padding: 12px;"><strong>Stop playback</strong><br/>Release resources</td>
+                        <td style="padding: 12px;">No auto recovery<br/>User restart required</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--bg-tertiary);">
+                        <td style="padding: 12px;"><code>AUDIOFOCUS_LOSS_TRANSIENT</code></td>
+                        <td style="padding: 12px;"><strong>📞 BT Call incoming</strong><br/>Voice guidance</td>
+                        <td style="padding: 12px;"><strong>Pause</strong><br/>Save state</td>
+                        <td style="padding: 12px;"><strong>Auto resume</strong><br/>On AUDIOFOCUS_GAIN</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--bg-tertiary);">
+                        <td style="padding: 12px;"><code>AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK</code></td>
+                        <td style="padding: 12px;"><strong>🗺️ Navigation TBT</strong><br/>Notification sound</td>
+                        <td style="padding: 12px;"><strong>Reduce volume (Duck)</strong><br/>Continue playback</td>
+                        <td style="padding: 12px;"><strong>Restore volume</strong><br/>On AUDIOFOCUS_GAIN</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px;"><code>AUDIOFOCUS_GAIN</code></td>
+                        <td style="padding: 12px;">Call ended<br/>Guidance complete</td>
+                        <td style="padding: 12px;"><strong>Resume playback</strong><br/>Restore volume</td>
+                        <td style="padding: 12px;">-</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4 style="color: var(--text-primary); margin: 30px 0 15px 0;">📞 BT Call Interrupt Detailed Flow</h4>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Complete flow where media playback is paused when a Bluetooth call is received and automatically resumed after the call ends.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                        autonumber
+                        participant BT as Bluetooth HFP
+                        participant Telecom as TelecomManager
+                        participant AF as AudioFocusManager
+                        participant Policy as AudioPolicyService
+                        participant Player as MediaPlayer/ExoPlayer
+                        participant MS as MediaSession
+                        participant UI as Notification/UI
+
+                        Note over BT,UI: 📱 Media playing
+                        Player->>AF: holdAudioFocus(USAGE_MEDIA)
+                        Player->>MS: setPlaybackState(PLAYING)
+
+                        Note over BT,UI: 📞 BT Call incoming
+                        BT->>Telecom: Incoming Call (HFP)
+                        Telecom->>Telecom: Call State: RINGING
+
+                        Telecom->>AF: requestAudioFocus(<br/>USAGE_VOICE_COMMUNICATION,<br/>AUDIOFOCUS_GAIN_TRANSIENT)
+
+                        AF->>AF: Priority comparison<br/>VOICE > MEDIA
+
+                        AF->>Player: onAudioFocusChange(<br/>AUDIOFOCUS_LOSS_TRANSIENT)
+
+                        Note over Player: 🔇 Pause media
+                        Player->>Player: pause()
+                        Player->>Player: Save playback position
+                        Player->>MS: setPlaybackState(PAUSED)
+                        MS->>UI: onPlaybackStateChanged(PAUSED)
+
+                        AF-->>Telecom: Focus Granted
+                        Telecom->>BT: Audio Route to BT SCO
+
+                        Note over BT,UI: 📞 On call...
+                        BT->>BT: Voice Communication Active
+
+                        Note over BT,UI: 📞 Call ended
+                        BT->>Telecom: Call Ended (HFP)
+                        Telecom->>Telecom: Call State: IDLE
+                        Telecom->>AF: abandonAudioFocus()
+
+                        AF->>Player: onAudioFocusChange(<br/>AUDIOFOCUS_GAIN)
+
+                        Note over Player: ▶️ Resume media
+                        Player->>Player: play()
+                        Player->>MS: setPlaybackState(PLAYING)
+                        MS->>UI: onPlaybackStateChanged(PLAYING)
+                </div>
+            </div>
+
+            <h4 style="color: var(--text-primary); margin: 30px 0 15px 0;">🗺️ Navigation Ducking Flow</h4>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Flow where media volume is reduced (ducked) during navigation Turn-by-Turn (TBT) guidance and restored after guidance ends.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                        autonumber
+                        participant Navi as Navigation App
+                        participant AF as AudioFocusManager
+                        participant Flinger as AudioFlinger
+                        participant Player as MediaPlayer
+                        participant MS as MediaSession
+
+                        Note over Navi,MS: 🎵 Media playing (Volume: 100%)
+                        Player->>MS: setPlaybackState(PLAYING)
+
+                        Note over Navi,MS: 🗺️ TBT guidance starts
+                        Navi->>AF: requestAudioFocus(<br/>USAGE_ASSISTANCE_NAVIGATION_GUIDANCE,<br/>AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+
+                        AF->>Player: onAudioFocusChange(<br/>AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK)
+
+                        Note over Player: 🔉 Volume reduction (Duck)
+                        alt Auto Ducking (Android 8.0+)
+                            AF->>Flinger: setStreamVolume(MUSIC, 20%)
+                            Note over Flinger: System auto ducking
+                        else Manual Ducking (Legacy)
+                            Player->>Player: setVolume(0.2f)
+                            Note over Player: App-level ducking
+                        end
+
+                        Navi->>Navi: "Turn left in 300m"
+                        Navi->>Navi: TTS Playback
+
+                        Note over Navi,MS: 🗺️ TBT guidance ends
+                        Navi->>AF: abandonAudioFocus()
+
+                        AF->>Player: onAudioFocusChange(<br/>AUDIOFOCUS_GAIN)
+
+                        Note over Player: 🔊 Volume restored (100%)
+                        alt Auto Ducking
+                            AF->>Flinger: setStreamVolume(MUSIC, 100%)
+                        else Manual Ducking
+                            Player->>Player: setVolume(1.0f)
+                        end
+                </div>
+            </div>
+
+            <h4 style="color: var(--text-primary); margin: 30px 0 15px 0;">🚗 Interrupt Handling in AAOS</h4>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                In AAOS, CarAudioService applies additional audio policies.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                        subgraph AAOS_INTERRUPT["AAOS Interrupt Handling"]
+                            subgraph ZONE_1["Primary Audio Zone (Driver)"]
+                                MEDIA_Z1["Media<br/>(Music App)"]
+                                CALL_Z1["Phone Call<br/>(BT HFP)"]
+                                NAVI_Z1["Navigation<br/>(TBT)"]
+                            end
+
+                            subgraph ZONE_2["Secondary Audio Zone (Rear)"]
+                                MEDIA_Z2["Media<br/>(Video App)"]
+                                GAME_Z2["Game Audio"]
+                            end
+
+                            subgraph CAR_AUDIO["CarAudioService"]
+                                FOCUS_MGR["CarAudioFocus<br/>• Per-Zone Focus Management<br/>• Cross-zone Policy"]
+                                DUCK_POLICY["Duck Policy<br/>• DUCK_MEDIA<br/>• PAUSE_MEDIA<br/>• MUTE_MEDIA"]
+                                CONTEXT["Audio Context<br/>• CALL<br/>• NAVIGATION<br/>• MUSIC"]
+                            end
+                        end
+
+                        CALL_Z1 -->|Highest Priority| FOCUS_MGR
+                        NAVI_Z1 -->|High Priority| FOCUS_MGR
+                        MEDIA_Z1 -->|Normal Priority| FOCUS_MGR
+
+                        FOCUS_MGR -->|Zone 1: Duck Media| DUCK_POLICY
+                        FOCUS_MGR -->|Zone 2: No Change| MEDIA_Z2
+
+                        DUCK_POLICY --> CONTEXT
+                </div>
+            </div>
+
+            <div class="content-grid" style="margin-top: 20px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Per-Zone Independent Processing
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Rear seat media unaffected during driver call</li>
+                            <li>Independent Audio Focus per zone</li>
+                            <li><code>CarAudioManager.getAudioZoneIds()</code></li>
+                            <li>Cross-zone interrupt policy configurable</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        Duck Policy Options
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>DUCK_MEDIA</code>: Reduce volume (default)</li>
+                            <li><code>PAUSE_MEDIA</code>: Pause</li>
+                            <li><code>MUTE_MEDIA</code>: Mute</li>
+                            <li>Configured in <code>car_audio_configuration.xml</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Emergency Handling
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Emergency calls affect all zones</li>
+                            <li><code>USAGE_EMERGENCY</code> highest priority</li>
+                            <li>eCall (emergency call) system integration</li>
+                            <li>Immediately mute all media</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h4 style="color: var(--text-primary); margin: 30px 0 15px 0;">💻 External Interrupt Handling Implementation</h4>
+
+            <pre style="background: var(--bg-tertiary); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--text-primary); font-family: var(--font-mono);">// Audio focus listener implementation (handles BT Call, Navigation, etc.)
+class MediaPlayerService : Service() {
+    private lateinit var player: ExoPlayer
+    private lateinit var audioManager: AudioManager
+    private var playbackDelayed = false
+    private var resumeOnFocusGain = false
+    private var wasPlayingBeforeInterrupt = false
+
+    // Audio focus request
+    private val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
+        )
+        .setAcceptsDelayedFocusGain(true)  // Allow delayed focus gain
+        .setOnAudioFocusChangeListener(focusChangeListener)
+        .build()
+
+    // 📞 Core: Audio focus change listener
+    private val focusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            // 🔇 Complete loss - another app started long playback
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                Log.d(TAG, "AUDIOFOCUS_LOSS - Stop playback")
+                wasPlayingBeforeInterrupt = player.isPlaying
+                player.pause()
+                resumeOnFocusGain = false  // No auto resume
+            }
+
+            // ⏸️ Transient loss - BT Call, voice guidance, etc.
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                Log.d(TAG, "AUDIOFOCUS_LOSS_TRANSIENT - BT Call interrupt")
+                wasPlayingBeforeInterrupt = player.isPlaying
+                if (wasPlayingBeforeInterrupt) {
+                    player.pause()
+                    resumeOnFocusGain = true  // Auto resume after interrupt
+                }
+            }
+
+            // 🔉 Transient loss with duck - Navigation TBT, etc.
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                Log.d(TAG, "AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK - Navigation")
+                // Android 8.0+ handles auto ducking
+                // Manual volume control if needed
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                    player.volume = 0.2f  // Reduce to 20%
+                }
+                // Continue playback
+            }
+
+            // ▶️ Focus gained - recovery after interrupt
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                Log.d(TAG, "AUDIOFOCUS_GAIN - Focus recovered")
+
+                // Restore volume
+                player.volume = 1.0f
+
+                // Resume if was paused
+                if (resumeOnFocusGain && wasPlayingBeforeInterrupt) {
+                    Log.d(TAG, "Interrupt ended, resuming playback")
+                    player.play()
+                    resumeOnFocusGain = false
+                }
+
+                // Handle delayed playback
+                if (playbackDelayed) {
+                    playbackDelayed = false
+                    player.play()
+                }
+            }
+
+            // Transient focus gain
+            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT,
+            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK -> {
+                Log.d(TAG, "AUDIOFOCUS_GAIN_TRANSIENT")
+                player.volume = 1.0f
+                if (resumeOnFocusGain) {
+                    player.play()
+                    resumeOnFocusGain = false
+                }
+            }
+        }
+    }
+
+    // Request focus when starting playback
+    fun startPlayback() {
+        val result = audioManager.requestAudioFocus(focusRequest)
+
+        when (result) {
+            AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> {
+                Log.d(TAG, "Focus granted, start playback")
+                player.play()
+            }
+            AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> {
+                Log.d(TAG, "Focus delayed (on call, etc.), waiting")
+                playbackDelayed = true
+            }
+            AudioManager.AUDIOFOCUS_REQUEST_FAILED -> {
+                Log.d(TAG, "Focus request failed")
+            }
+        }
+    }
+
+    // Release focus when stopping playback
+    fun stopPlayback() {
+        player.stop()
+        audioManager.abandonAudioFocusRequest(focusRequest)
+    }
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); margin: 20px 0 15px 0;">AAOS CarAudioFocus Handling</h4>
+
+            <pre style="background: var(--bg-tertiary); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--text-primary); font-family: var(--font-mono);">// Audio focus handling in AAOS environment
+class CarMediaPlayerService : Service() {
+    private lateinit var car: Car
+    private lateinit var carAudioManager: CarAudioManager
+
+    override fun onCreate() {
+        super.onCreate()
+        car = Car.createCar(this)
+        carAudioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+
+        // Check current Audio Zone
+        val zoneId = carAudioManager.getZoneIdForUid(Process.myUid())
+        Log.d(TAG, "Current Audio Zone: $zoneId")
+
+        // Check volume groups per zone
+        val volumeGroupCount = carAudioManager.getVolumeGroupCount(zoneId)
+        for (groupId in 0 until volumeGroupCount) {
+            val volume = carAudioManager.getGroupVolume(zoneId, groupId)
+            val maxVolume = carAudioManager.getGroupMaxVolume(zoneId, groupId)
+            Log.d(TAG, "Zone $zoneId, Group $groupId: $volume / $maxVolume")
+        }
+    }
+
+    // CarAudioFocus request (Zone-aware)
+    fun requestCarAudioFocus(): Boolean {
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .build()
+
+        // In AAOS, requests via AudioManager are
+        // processed per-zone by CarAudioService
+        val result = audioManager.requestAudioFocus(
+            AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(audioAttributes)
+                .setOnAudioFocusChangeListener { focusChange ->
+                    handleCarAudioFocusChange(focusChange)
+                }
+                .build()
+        )
+
+        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    }
+
+    private fun handleCarAudioFocusChange(focusChange: Int) {
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                // In AAOS, behavior varies by Duck Policy
+                // Check car_audio_configuration.xml settings
+                Log.d(TAG, "AAOS: Focus loss transient (BT Call, etc.)")
+                // Based on CarAudioService Duck Policy:
+                // - DUCK_MEDIA: Only reduce volume (continue playback)
+                // - PAUSE_MEDIA: Pause
+                // - MUTE_MEDIA: Mute
+                player.pause()  // Safe to pause
+            }
+
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                // Navigation TBT, etc.
+                Log.d(TAG, "AAOS: Focus loss can duck (Navigation)")
+                // AAOS supports auto ducking
+                // No additional app processing needed
+            }
+
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                Log.d(TAG, "AAOS: Focus gained, resume playback")
+                player.play()
+            }
+        }
+    }
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 External Interrupt Debugging</strong>
+                <pre style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;"><code># Track audio focus changes
+adb logcat -s AudioManager:V AudioFocus:V | grep -i focus
+
+# Check TelecomManager call state
+adb shell dumpsys telecom | grep -E "state|Call"
+
+# AAOS CarAudioService state
+adb shell dumpsys car_service --services CarAudioService
+
+# Bluetooth HFP connection status
+adb shell dumpsys bluetooth_manager | grep -i hfp</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">💻 Implementation Examples</h3>
+
+            <h4 style="color: var(--text-primary); margin: 20px 0 15px 0;">1. Detect Inter-App Session Switch (MediaController)</h4>
+            <pre style="background: var(--bg-tertiary); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--text-primary); font-family: var(--font-mono);">// Detect active session changes via MediaSessionManager
+val mediaSessionManager = getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
+
+// Active session change listener
+val sessionListener = MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
+    if (controllers.isNullOrEmpty()) {
+        Log.d(TAG, "No active sessions")
+        return@OnActiveSessionsChangedListener
+    }
+
+    // Highest priority session (first one)
+    val activeController = controllers[0]
+    Log.d(TAG, "Active session changed: ${activeController.packageName}")
+
+    // Register callback to new session
+    activeController.registerCallback(object : MediaController.Callback() {
+        override fun onPlaybackStateChanged(state: PlaybackState?) {
+            Log.d(TAG, "Playback state: ${state?.state}")
+        }
+
+        override fun onMetadataChanged(metadata: MediaMetadata?) {
+            val title = metadata?.getString(MediaMetadata.METADATA_KEY_TITLE)
+            val artist = metadata?.getString(MediaMetadata.METADATA_KEY_ARTIST)
+            Log.d(TAG, "Now playing: $title - $artist")
+        }
+
+        override fun onSessionDestroyed() {
+            Log.d(TAG, "Session destroyed, waiting for new session")
+        }
+    })
+}
+
+// Register listener (requires MEDIA_CONTENT_CONTROL permission)
+mediaSessionManager.addOnActiveSessionsChangedListener(
+    sessionListener,
+    ComponentName(this, NotificationListenerService::class.java)
+)</code></pre>
+
+            <h4 style="color: var(--text-primary); margin: 20px 0 15px 0;">2. ExoPlayer In-App Source Change</h4>
+            <pre style="background: var(--bg-tertiary); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--text-primary); font-family: var(--font-mono);">// Create ExoPlayer instance and MediaSession
+val player = ExoPlayer.Builder(context).build()
+
+val mediaSession = MediaSession.Builder(context, player)
+    .setSessionCallback(MySessionCallback())
+    .build()
+
+// Detect source transitions with Player.Listener
+player.addListener(object : Player.Listener {
+    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+        val reasonStr = when (reason) {
+            Player.MEDIA_ITEM_TRANSITION_REASON_AUTO -> "AUTO (auto transition)"
+            Player.MEDIA_ITEM_TRANSITION_REASON_SEEK -> "SEEK (user seek)"
+            Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED -> "PLAYLIST_CHANGED"
+            Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT -> "REPEAT"
+            else -> "UNKNOWN"
+        }
+        Log.d(TAG, "Media item transition: ${mediaItem?.mediaId}, reason: $reasonStr")
+
+        // MediaSession metadata is auto-updated by ExoPlayer
+        // Set custom metadata if needed
+        updateCustomMetadata(mediaItem)
+    }
+
+    override fun onPlaybackStateChanged(playbackState: Int) {
+        val stateStr = when (playbackState) {
+            Player.STATE_IDLE -> "IDLE"
+            Player.STATE_BUFFERING -> "BUFFERING"
+            Player.STATE_READY -> "READY"
+            Player.STATE_ENDED -> "ENDED"
+            else -> "UNKNOWN"
+        }
+        Log.d(TAG, "Playback state: $stateStr")
+    }
+})
+
+// Programmatic source change
+fun switchToNewSource(newUri: Uri) {
+    val newMediaItem = MediaItem.Builder()
+        .setUri(newUri)
+        .setMediaMetadata(
+            MediaMetadata.Builder()
+                .setTitle("New Track Title")
+                .setArtist("Artist Name")
+                .build()
+        )
+        .build()
+
+    // Replace currently playing source with new source
+    player.setMediaItem(newMediaItem)
+    player.prepare()
+    player.play()
+}
+
+// Move to next track in playlist
+fun playNextTrack() {
+    if (player.hasNextMediaItem()) {
+        player.seekToNextMediaItem()
+    }
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); margin: 20px 0 15px 0;">3. AAOS CarMediaManager Source Change</h4>
+            <pre style="background: var(--bg-tertiary); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--text-primary); font-family: var(--font-mono);">// Get CarMediaManager
+val car = Car.createCar(context)
+val carMediaManager = car.getCarManager(Car.CAR_MEDIA_SERVICE) as CarMediaManager
+
+// Query current media source
+val currentSource = carMediaManager.getMediaSource(CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK)
+Log.d(TAG, "Current source: ${currentSource?.packageName}")
+
+// Register source change listener
+carMediaManager.registerMediaSourceListener(
+    object : CarMediaManager.MediaSourceChangedListener {
+        override fun onMediaSourceChanged(componentName: ComponentName?) {
+            Log.d(TAG, "===== MEDIA SOURCE CHANGED =====")
+            Log.d(TAG, "New source: ${componentName?.flattenToShortString()}")
+            Log.d(TAG, "Package: ${componentName?.packageName}")
+            Log.d(TAG, "Class: ${componentName?.className}")
+
+            // UI update or additional processing
+            componentName?.let { updateMediaUI(it) }
+        }
+    }
+)
+
+// Programmatic source change
+fun switchMediaSource(packageName: String, className: String) {
+    val newSource = ComponentName(packageName, className)
+
+    // MEDIA_SOURCE_MODE_PLAYBACK: Playback source
+    // MEDIA_SOURCE_MODE_BROWSE: Browse source
+    carMediaManager.setMediaSource(newSource, CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK)
+
+    Log.d(TAG, "Requested source change to: ${newSource.flattenToShortString()}")
+}
+
+// Query last media source history
+fun getRecentSources(): List<ComponentName> {
+    return carMediaManager.getLastMediaSources(CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK)
+}
+
+// Example: Switch source to Spotify
+switchMediaSource(
+    "com.spotify.music",
+    "com.spotify.music.MainActivity"
+)</code></pre>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">⚠️ Source Change Considerations</h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎧</span>
+                        Audio Focus Handling
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Always request audio focus before source change</li>
+                            <li>Stop playback on <code>AUDIOFOCUS_LOSS</code></li>
+                            <li>Pause on <code>AUDIOFOCUS_LOSS_TRANSIENT</code></li>
+                            <li>Reduce volume on <code>AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💾</span>
+                        State Save/Restore
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Save current playback position before source change</li>
+                            <li>AAOS CarMediaService auto-saves Last Media</li>
+                            <li>Consider state persistence on app termination</li>
+                            <li>Use SharedPreferences or Database</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏱️</span>
+                        Transition Time Optimization
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>Minimize gaps during source change</li>
+                            <li>Reduce transition time with pre-buffering</li>
+                            <li>AAOS recommends transition within 5 seconds</li>
+                            <li>Consider gapless playback support</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 Debugging Tips</strong>
+                <pre style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;"><code># Check active MediaSessions
+adb shell dumpsys media_session
+
+# Track AAOS media source changes
+adb logcat -s CarMediaService:V | grep -E "setMediaSource|onMediaSourceChanged"
+
+# Track audio focus changes
+adb logcat -s AudioManager:V AudioFocus:V</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 14: Related Documentation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
                 Related Documentation
             </h2>
             <p class="section-description">
