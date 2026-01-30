@@ -666,32 +666,32 @@ private fun connectToMediaBrowser(component: ComponentName, autoplay: Boolean) {
                     gantt
                     title AAOS Last Media Restoration Timeline
                     dateFormat X
-                    axisFormat %L ms
+                    axisFormat %s s
 
                     section Boot
-                    Vehicle Ignition ON           :0, 0
-                    Kernel Boot                   :0, 1500
-                    Android Init                  :1500, 3000
+                    Vehicle Ignition ON           :milestone, m1, 0, 0
+                    Kernel Boot                   :a1, 0, 1500
+                    Android Init                  :a2, 1500, 1500
 
                     section CarService
-                    CarService.onCreate()         :3000, 500
-                    VHAL Connection               :3500, 500
-                    Power Policy Init             :4000, 300
+                    CarService.onCreate()         :b1, 3000, 500
+                    VHAL Connection               :b2, 3500, 500
+                    Power Policy Init             :b3, 4000, 300
 
                     section User
-                    User Unlock (HEAD_USER)       :4300, 700
+                    User Unlock (HEAD_USER)       :c1, 4300, 700
 
                     section CarMediaService
-                    CarMediaService.onCreate()    :5000, 200
-                    Load SharedPreferences        :5200, 100
-                    getLastMediaSource()          :5300, 50
-                    shouldStartPlayback()         :5350, 50
+                    CarMediaService.onCreate()    :d1, 5000, 200
+                    Load SharedPreferences        :d2, 5200, 100
+                    getLastMediaSource()          :d3, 5300, 50
+                    shouldStartPlayback()         :d4, 5350, 50
 
                     section Media App
-                    Start MediaConnectorService   :5400, 200
-                    MediaBrowser.connect()        :5600, 300
-                    MediaSession Ready            :5900, 100
-                    Autoplay (if enabled)         :6000, 200
+                    Start MediaConnectorService   :e1, 5400, 200
+                    MediaBrowser.connect()        :e2, 5600, 300
+                    MediaSession Ready            :e3, 5900, 100
+                    Autoplay (if enabled)         :e4, 6000, 200
                 </div>
             </div>
 
