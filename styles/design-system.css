@@ -328,11 +328,12 @@ body::before {
     stroke-width: 2.5;
 }
 
-/* Theme toggle in nav for document pages */
+/* Theme toggle and language switch in nav for document pages */
 .nav-controls {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
+    margin-left: auto;
 }
 
 /* Fixed position for document pages (when nav is position:fixed) */

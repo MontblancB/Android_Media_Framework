@@ -75,6 +75,19 @@
     }
 
     /**
+     * Get or create nav-controls container for grouping controls on the right
+     */
+    function getNavControls(nav) {
+        let navControls = nav.querySelector('.nav-controls');
+        if (!navControls) {
+            navControls = document.createElement('div');
+            navControls.className = 'nav-controls';
+            nav.appendChild(navControls);
+        }
+        return navControls;
+    }
+
+    /**
      * Create and inject theme toggle button
      */
     function createThemeToggle() {
@@ -114,11 +127,12 @@
             const themeToggle = tempDiv.firstElementChild;
             navLinks.appendChild(themeToggle);
         } else if (nav && nav.classList.contains('nav')) {
-            // Document page: add after nav-button
+            // Document page: add to nav-controls container (right side)
+            const navControls = getNavControls(nav);
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = themeToggleHTML;
             const themeToggle = tempDiv.firstElementChild;
-            nav.appendChild(themeToggle);
+            navControls.appendChild(themeToggle);
         } else {
             // Fallback: insert at body start
             const tempDiv = document.createElement('div');

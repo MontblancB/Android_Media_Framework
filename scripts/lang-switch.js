@@ -41,6 +41,19 @@
     }
 
     /**
+     * Get or create nav-controls container for grouping controls on the right
+     */
+    function getNavControls(nav) {
+        let navControls = nav.querySelector('.nav-controls');
+        if (!navControls) {
+            navControls = document.createElement('div');
+            navControls.className = 'nav-controls';
+            nav.appendChild(navControls);
+        }
+        return navControls;
+    }
+
+    /**
      * Create and inject language switch button
      */
     function createLangSwitch() {
@@ -75,16 +88,17 @@
                 navLinks.appendChild(langSwitch);
             }
         } else if (nav && nav.classList.contains('nav')) {
-            // Document page: add before theme toggle
+            // Document page: add to nav-controls container (before theme toggle)
+            const navControls = getNavControls(nav);
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = langSwitchHTML;
             const langSwitch = tempDiv.firstElementChild;
 
-            const themeToggle = nav.querySelector('.theme-toggle');
+            const themeToggle = navControls.querySelector('.theme-toggle');
             if (themeToggle) {
-                nav.insertBefore(langSwitch, themeToggle);
+                navControls.insertBefore(langSwitch, themeToggle);
             } else {
-                nav.appendChild(langSwitch);
+                navControls.appendChild(langSwitch);
             }
         }
 
