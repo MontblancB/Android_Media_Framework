@@ -5,6 +5,7 @@
  * - Ctrl+K 또는 / 키로 검색 모달 열기
  * - Fuse.js를 사용한 퍼지 검색
  * - 페이지, 다이어그램 노드, 용어집, 트러블슈팅 검색
+ * - 다국어 지원 (한국어/영어)
  */
 
 (function() {
@@ -15,6 +16,56 @@
     let searchResults = null;
     let fuse = null;
     let selectedIndex = -1;
+
+    /**
+     * Get current language from URL path
+     */
+    function getCurrentLang() {
+        const path = window.location.pathname;
+        return path.startsWith('/en/') || path === '/en' ? 'en' : 'ko';
+    }
+
+    /**
+     * Localized strings
+     */
+    const i18n = {
+        ko: {
+            searchPlaceholder: '페이지, 용어, 트러블슈팅 검색...',
+            closeLabel: '닫기',
+            keyNavigation: '이동',
+            keySelect: '선택',
+            keyClose: '닫기',
+            searchButtonText: '검색',
+            emptyStateText: '검색어를 입력하세요',
+            noResultsText: '검색 결과가 없습니다',
+            groupPages: '페이지',
+            groupIssues: '트러블슈팅',
+            groupGlossary: '용어집',
+            hintExamples: ['MediaPlayer', '버퍼링', 'Codec2', 'Widevine']
+        },
+        en: {
+            searchPlaceholder: 'Search pages, terms, troubleshooting...',
+            closeLabel: 'Close',
+            keyNavigation: 'Navigate',
+            keySelect: 'Select',
+            keyClose: 'Close',
+            searchButtonText: 'Search',
+            emptyStateText: 'Enter a search query',
+            noResultsText: 'No results found',
+            groupPages: 'Pages',
+            groupIssues: 'Troubleshooting',
+            groupGlossary: 'Glossary',
+            hintExamples: ['MediaPlayer', 'Buffering', 'Codec2', 'Widevine']
+        }
+    };
+
+    /**
+     * Get localized text
+     */
+    function t(key) {
+        const lang = getCurrentLang();
+        return i18n[lang][key] || i18n.ko[key];
+    }
 
     /**
      * Fuse.js 인스턴스 초기화
@@ -48,14 +99,14 @@
                     <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                     </svg>
-                    <input type="text" class="search-input" placeholder="페이지, 용어, 트러블슈팅 검색..." autocomplete="off" />
-                    <button type="button" class="search-close-btn" aria-label="닫기" onclick="closeSearch()">ESC</button>
+                    <input type="text" class="search-input" placeholder="${t('searchPlaceholder')}" autocomplete="off" />
+                    <button type="button" class="search-close-btn" aria-label="${t('closeLabel')}" onclick="closeSearch()">ESC</button>
                 </div>
                 <div class="search-results"></div>
                 <div class="search-footer">
-                    <span><kbd>↑</kbd><kbd>↓</kbd> 이동</span>
-                    <span><kbd>Enter</kbd> 선택</span>
-                    <span><kbd>ESC</kbd> 닫기</span>
+                    <span><kbd>↑</kbd><kbd>↓</kbd> ${t('keyNavigation')}</span>
+                    <span><kbd>Enter</kbd> ${t('keySelect')}</span>
+                    <span><kbd>ESC</kbd> ${t('keyClose')}</span>
                 </div>
             </div>
         `;
@@ -176,14 +227,12 @@
      * 빈 상태 렌더링
      */
     function renderEmptyState() {
+        const hints = t('hintExamples');
         return `
             <div class="search-empty">
-                <p>검색어를 입력하세요</p>
+                <p>${t('emptyStateText')}</p>
                 <div class="search-hints">
-                    <span class="search-hint">MediaPlayer</span>
-                    <span class="search-hint">버퍼링</span>
-                    <span class="search-hint">Codec2</span>
-                    <span class="search-hint">Widevine</span>
+                    ${hints.map(hint => `<span class="search-hint">${hint}</span>`).join('')}
                 </div>
             </div>
         `;
@@ -196,7 +245,7 @@
         if (results.length === 0) {
             return `
                 <div class="search-empty">
-                    <p>검색 결과가 없습니다</p>
+                    <p>${t('noResultsText')}</p>
                 </div>
             `;
         }
@@ -220,7 +269,7 @@
         // 페이지 결과
         if (grouped.page.length > 0) {
             html += `<div class="search-group">
-                <div class="search-group-title">페이지</div>
+                <div class="search-group-title">${t('groupPages')}</div>
                 ${grouped.page.map(r => renderResultItem(r, 'page')).join('')}
             </div>`;
         }
@@ -228,7 +277,7 @@
         // 트러블슈팅 결과
         if (grouped.issue.length > 0) {
             html += `<div class="search-group">
-                <div class="search-group-title">트러블슈팅</div>
+                <div class="search-group-title">${t('groupIssues')}</div>
                 ${grouped.issue.map(r => renderResultItem(r, 'issue')).join('')}
             </div>`;
         }
@@ -236,7 +285,7 @@
         // 용어집 결과
         if (grouped.glossary.length > 0) {
             html += `<div class="search-group">
-                <div class="search-group-title">용어집</div>
+                <div class="search-group-title">${t('groupGlossary')}</div>
                 ${grouped.glossary.map(r => renderResultItem(r, 'glossary')).join('')}
             </div>`;
         }
@@ -311,7 +360,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
             </svg>
-            <span>검색</span>
+            <span>${t('searchButtonText')}</span>
             <kbd>/</kbd>
         `;
         button.addEventListener('click', openSearch);
