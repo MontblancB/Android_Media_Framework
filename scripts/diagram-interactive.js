@@ -5,10 +5,17 @@
 
 /**
  * 디버그 모드 설정
- * - localhost에서만 console.log 활성화
+ * - localhost, 127.0.0.1, 또는 파일 프로토콜에서 console.log 활성화
  * - 프로덕션에서는 빈 함수로 대체하여 성능 최적화
  */
-const DEBUG = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const DEBUG = (function() {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+    return hostname === 'localhost' ||
+           hostname === '127.0.0.1' ||
+           hostname === '' ||  // file:// 프로토콜
+           protocol === 'file:';
+})();
 const log = DEBUG ? console.log.bind(console) : () => {};
 const warn = DEBUG ? console.warn.bind(console) : () => {};
 
@@ -100,46 +107,37 @@ function getDiagramData() {
 }
 
 /**
- * Mermaid 렌더링 완료 대기 (MutationObserver 사용)
- * - 기존의 setTimeout(1000) 대신 DOM 변화 감지
- * - 네트워크 속도와 무관하게 정확한 타이밍에 실행
+ * Mermaid 렌더링 완료 대기
+ * - 기본: 1.5초 대기 (기존 1초에서 증가)
+ * - SVG가 이미 있으면 즉시 실행하되 안정화 딜레이 적용
  */
 function waitForMermaidRender() {
     return new Promise((resolve) => {
+        const BASE_DELAY = 1500; // 기본 대기 시간 (ms)
+        const STABILIZATION_DELAY = 500; // 안정화 딜레이 (ms)
+
         // 이미 Mermaid SVG가 렌더링되어 있는지 확인
         const existingSvgs = document.querySelectorAll('.mermaid svg');
         if (existingSvgs.length > 0) {
-            log('✅ Mermaid SVG 이미 렌더링됨');
-            resolve();
+            log('✅ Mermaid SVG 이미 렌더링됨, 안정화 대기 중...');
+            setTimeout(() => {
+                log('✅ 안정화 딜레이 완료');
+                resolve();
+            }, STABILIZATION_DELAY);
             return;
         }
 
-        // MutationObserver로 DOM 변화 감지
-        const observer = new MutationObserver((mutations, obs) => {
-            const svgs = document.querySelectorAll('.mermaid svg');
-            if (svgs.length > 0) {
-                log('✅ Mermaid SVG 렌더링 감지됨');
-                obs.disconnect();
-                resolve();
-            }
-        });
-
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-
-        // Fallback: 최대 10초 대기 후 타임아웃
+        // SVG가 없으면 기본 대기 시간 적용
+        log('⏳ Mermaid SVG 대기 중...');
         setTimeout(() => {
-            observer.disconnect();
             const svgs = document.querySelectorAll('.mermaid svg');
             if (svgs.length > 0) {
-                log('⏰ Mermaid SVG 렌더링 완료 (타임아웃 전)');
+                log('✅ Mermaid SVG 렌더링 완료');
             } else {
-                warn('⚠️ Mermaid SVG 렌더링 타임아웃 (10초)');
+                warn('⚠️ Mermaid SVG를 찾을 수 없음');
             }
             resolve();
-        }, 10000);
+        }, BASE_DELAY);
     });
 }
 
@@ -147,10 +145,12 @@ function waitForMermaidRender() {
 document.addEventListener('DOMContentLoaded', () => {
     log('🚀 diagram-interactive.js 로드됨!');
     log('📦 DIAGRAM_NODE_DATA 정의 여부:', typeof DIAGRAM_NODE_DATA !== 'undefined');
+    log('🔧 DEBUG 모드:', DEBUG);
+    log('🌐 hostname:', window.location.hostname);
 
     // Mermaid 렌더링 완료 대기 후 초기화
     waitForMermaidRender().then(() => {
-        log('⏰ Mermaid 렌더링 완료, 초기화 시작...');
+        log('⏰ 대기 완료, 초기화 시작...');
         initializeDiagramInteractivity();
     });
 });
