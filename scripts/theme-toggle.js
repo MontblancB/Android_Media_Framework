@@ -75,22 +75,27 @@
     }
 
     /**
-     * Get or create nav-controls container for grouping controls on the right
+     * Check if current page is main page (index.html)
      */
-    function getNavControls(nav) {
-        let navControls = nav.querySelector('.nav-controls');
-        if (!navControls) {
-            navControls = document.createElement('div');
-            navControls.className = 'nav-controls';
-            nav.appendChild(navControls);
-        }
-        return navControls;
+    function isMainPage() {
+        const path = window.location.pathname;
+        // Main page patterns: /, /index.html, /en/, /en/index.html
+        return path === '/' ||
+               path.endsWith('/index.html') ||
+               path.endsWith('/index') ||
+               path === '/en/' ||
+               path === '/en';
     }
 
     /**
-     * Create and inject theme toggle button
+     * Create and inject theme toggle button (only on main page)
      */
     function createThemeToggle() {
+        // Only create theme toggle button on main page
+        if (!isMainPage()) {
+            return;
+        }
+
         const themeToggleHTML = `
             <div class="theme-toggle">
                 <button class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle dark/light mode">
@@ -126,19 +131,6 @@
             tempDiv.innerHTML = themeToggleHTML;
             const themeToggle = tempDiv.firstElementChild;
             navLinks.appendChild(themeToggle);
-        } else if (nav && nav.classList.contains('nav')) {
-            // Document page: add to nav-controls container (right side)
-            const navControls = getNavControls(nav);
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = themeToggleHTML;
-            const themeToggle = tempDiv.firstElementChild;
-            navControls.appendChild(themeToggle);
-        } else {
-            // Fallback: insert at body start
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = themeToggleHTML;
-            const themeToggle = tempDiv.firstElementChild;
-            document.body.insertBefore(themeToggle, document.body.firstChild);
         }
 
         // Add event listener
