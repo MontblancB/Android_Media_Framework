@@ -4,6 +4,15 @@
  */
 
 /**
+ * 디버그 모드 설정
+ * - localhost에서만 console.log 활성화
+ * - 프로덕션에서는 빈 함수로 대체하여 성능 최적화
+ */
+const DEBUG = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const log = DEBUG ? console.log.bind(console) : () => {};
+const warn = DEBUG ? console.warn.bind(console) : () => {};
+
+/**
  * 현재 언어 감지
  */
 function getCurrentLanguage() {
@@ -90,16 +99,60 @@ function getDiagramData() {
     return DIAGRAM_NODE_DATA;
 }
 
+/**
+ * Mermaid 렌더링 완료 대기 (MutationObserver 사용)
+ * - 기존의 setTimeout(1000) 대신 DOM 변화 감지
+ * - 네트워크 속도와 무관하게 정확한 타이밍에 실행
+ */
+function waitForMermaidRender() {
+    return new Promise((resolve) => {
+        // 이미 Mermaid SVG가 렌더링되어 있는지 확인
+        const existingSvgs = document.querySelectorAll('.mermaid svg');
+        if (existingSvgs.length > 0) {
+            log('✅ Mermaid SVG 이미 렌더링됨');
+            resolve();
+            return;
+        }
+
+        // MutationObserver로 DOM 변화 감지
+        const observer = new MutationObserver((mutations, obs) => {
+            const svgs = document.querySelectorAll('.mermaid svg');
+            if (svgs.length > 0) {
+                log('✅ Mermaid SVG 렌더링 감지됨');
+                obs.disconnect();
+                resolve();
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        // Fallback: 최대 10초 대기 후 타임아웃
+        setTimeout(() => {
+            observer.disconnect();
+            const svgs = document.querySelectorAll('.mermaid svg');
+            if (svgs.length > 0) {
+                log('⏰ Mermaid SVG 렌더링 완료 (타임아웃 전)');
+            } else {
+                warn('⚠️ Mermaid SVG 렌더링 타임아웃 (10초)');
+            }
+            resolve();
+        }, 10000);
+    });
+}
+
 // DOM 로드 완료 후 초기화
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 diagram-interactive.js 로드됨!');
-    console.log('📦 DIAGRAM_NODE_DATA 정의 여부:', typeof DIAGRAM_NODE_DATA !== 'undefined');
+    log('🚀 diagram-interactive.js 로드됨!');
+    log('📦 DIAGRAM_NODE_DATA 정의 여부:', typeof DIAGRAM_NODE_DATA !== 'undefined');
 
-    // Mermaid 렌더링 완료 대기 (1초)
-    setTimeout(() => {
-        console.log('⏰ 1초 대기 완료, 초기화 시작...');
+    // Mermaid 렌더링 완료 대기 후 초기화
+    waitForMermaidRender().then(() => {
+        log('⏰ Mermaid 렌더링 완료, 초기화 시작...');
         initializeDiagramInteractivity();
-    }, 1000);
+    });
 });
 
 /**
@@ -109,17 +162,17 @@ function initializeDiagramInteractivity() {
     const mermaidContainers = document.querySelectorAll('.mermaid');
 
     if (mermaidContainers.length === 0) {
-        console.log('📊 인터랙티브 다이어그램: Mermaid 다이어그램을 찾을 수 없습니다.');
+        log('📊 인터랙티브 다이어그램: Mermaid 다이어그램을 찾을 수 없습니다.');
         return;
     }
 
-    console.log(`📊 인터랙티브 다이어그램: ${mermaidContainers.length}개의 다이어그램 발견`);
+    log(`📊 인터랙티브 다이어그램: ${mermaidContainers.length}개의 다이어그램 발견`);
 
     mermaidContainers.forEach((container, index) => {
         attachInteractiveHandlers(container, index);
     });
 
-    console.log('✅ 인터랙티브 다이어그램 초기화 완료');
+    log('✅ 인터랙티브 다이어그램 초기화 완료');
 }
 
 /**
@@ -129,14 +182,14 @@ function attachInteractiveHandlers(container, diagramIndex) {
     const svg = container.querySelector('svg');
 
     if (!svg) {
-        console.warn(`⚠️ SVG를 찾을 수 없습니다 (다이어그램 ${diagramIndex})`);
+        warn(`⚠️ SVG를 찾을 수 없습니다 (다이어그램 ${diagramIndex})`);
         return;
     }
 
     // Mermaid가 생성한 모든 노드 찾기
     const nodes = svg.querySelectorAll('.node');
 
-    console.log(`  다이어그램 ${diagramIndex}: ${nodes.length}개 노드 발견`);
+    log(`  다이어그램 ${diagramIndex}: ${nodes.length}개 노드 발견`);
 
     nodes.forEach((node, nodeIndex) => {
         const nodeId = extractNodeId(node);
@@ -205,10 +258,12 @@ function attachInteractiveHandlers(container, diagramIndex) {
             });
         }
 
-        // 데이터 유무 표시
-        const diagramData = getDiagramData();
-        const hasData = !!diagramData[nodeId];
-        console.log(`    ✓ 노드 "${nodeId}" 인터랙티브 활성화 (${isTouchDevice ? '터치' : '마우스'} 모드, 데이터: ${hasData ? '있음' : '자동생성'})`);
+        // 데이터 유무 표시 (디버그 모드에서만)
+        if (DEBUG) {
+            const diagramData = getDiagramData();
+            const hasData = !!diagramData[nodeId];
+            log(`    ✓ 노드 "${nodeId}" 인터랙티브 활성화 (${isTouchDevice ? '터치' : '마우스'} 모드, 데이터: ${hasData ? '있음' : '자동생성'})`);
+        }
     });
 }
 
@@ -226,7 +281,7 @@ function extractNodeId(node) {
     // 1. id 속성 시도 (예: "flowchart-APP-123")
     if (node.id) {
         rawId = node.id;
-        console.log(`      [ID 추출] id 속성: "${rawId}"`);
+        log(`      [ID 추출] id 속성: "${rawId}"`);
     }
 
     // 2. class에서 추출 시도
@@ -235,29 +290,29 @@ function extractNodeId(node) {
         const nodeClass = classList.find(c => c !== 'node' && c !== 'default');
         if (nodeClass) {
             rawId = nodeClass;
-            console.log(`      [ID 추출] class 속성: "${rawId}"`);
+            log(`      [ID 추출] class 속성: "${rawId}"`);
         }
     }
 
     // 3. data-id 시도
     if (!rawId && node.dataset && node.dataset.id) {
         rawId = node.dataset.id;
-        console.log(`      [ID 추출] data-id 속성: "${rawId}"`);
+        log(`      [ID 추출] data-id 속성: "${rawId}"`);
     }
 
     if (!rawId) {
-        console.warn('      [ID 추출 실패] 노드 ID를 찾을 수 없음');
+        warn('      [ID 추출 실패] 노드 ID를 찾을 수 없음');
         return null;
     }
 
     // ID 정리
     const cleanedId = cleanNodeId(rawId);
-    console.log(`      [ID 정리] "${rawId}" → "${cleanedId}"`);
+    log(`      [ID 정리] "${rawId}" → "${cleanedId}"`);
 
     // 매핑 테이블에서 사람이 읽을 수 있는 이름으로 변환
     if (typeof NODE_ID_MAPPING !== 'undefined' && NODE_ID_MAPPING[cleanedId]) {
         const mappedId = NODE_ID_MAPPING[cleanedId];
-        console.log(`      [ID 매핑] "${cleanedId}" → "${mappedId}"`);
+        log(`      [ID 매핑] "${cleanedId}" → "${mappedId}"`);
         return mappedId;
     }
 
@@ -301,25 +356,19 @@ function cleanNodeId(id) {
  * 노드 클릭 핸들러
  */
 function handleNodeClick(nodeId, node) {
-    console.log(`\n🖱️ 노드 클릭 이벤트 발생!`);
-    console.log(`   노드 ID: "${nodeId}"`);
-    console.log(`   노드 요소:`, node);
+    log(`\n🖱️ 노드 클릭: "${nodeId}"`);
 
     const diagramData = getDiagramData();
     let nodeData = diagramData[nodeId];
 
     // 데이터가 없으면 노드 텍스트에서 자동 생성
     if (!nodeData) {
-        console.warn(`⚠️ 노드 데이터 없음. 기본 정보 자동 생성...`);
+        warn(`⚠️ 노드 데이터 없음. 기본 정보 자동 생성...`);
         nodeData = generateFallbackNodeData(nodeId, node);
-        console.log(`✅ 자동 생성된 데이터:`, nodeData);
-    } else {
-        console.log(`✅ 노드 데이터 발견:`, nodeData);
     }
 
     // 기존 모달 닫기
     if (activeModal) {
-        console.log(`   기존 모달 제거`);
         activeModal.remove();
     }
 
@@ -327,7 +376,6 @@ function handleNodeClick(nodeId, node) {
     highlightNode(node);
 
     // 모달 표시
-    console.log(`   모달 생성 시작...`);
     showNodeModal(nodeData);
 }
 
@@ -524,19 +572,11 @@ function showNodeModal(nodeData) {
     document.body.appendChild(modal);
     activeModal = modal;
 
-    // 디버깅: 모달 생성 알림 (테스트용)
-    console.warn(`🚨 모달 생성! 제목: ${nodeData.title}`);
-    console.log(`   ✅ 모달이 DOM에 추가됨`);
-    console.log(`   모달 요소:`, modal);
-    console.log(`   모달 위치:`, modal.getBoundingClientRect());
-    console.log(`   모달 z-index:`, window.getComputedStyle(modal).zIndex);
+    log(`🚨 모달 생성: ${nodeData.title}`);
 
     // 애니메이션 시작
     requestAnimationFrame(() => {
         modal.classList.add('show');
-        console.log(`   ✅ 'show' 클래스 추가 (애니메이션 시작)`);
-        console.log(`   모달 opacity:`, window.getComputedStyle(modal).opacity);
-        console.log(`   모달 display:`, window.getComputedStyle(modal).display);
     });
 
     // 닫기 이벤트
@@ -545,18 +585,14 @@ function showNodeModal(nodeData) {
 
     if (closeBtn) {
         closeBtn.addEventListener('click', closeModal);
-        console.log(`   ✅ 닫기 버튼 이벤트 연결`);
     }
 
     if (overlay) {
         overlay.addEventListener('click', closeModal);
-        console.log(`   ✅ 오버레이 이벤트 연결`);
     }
 
     // ESC 키로 닫기
     document.addEventListener('keydown', handleEscKey);
-    console.log(`   ✅ ESC 키 이벤트 연결`);
-    console.log(`\n모달 표시 완료! 🎉\n`);
 }
 
 /**
