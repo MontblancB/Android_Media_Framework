@@ -641,35 +641,31 @@ private fun connectToMediaBrowser(component: ComponentName, autoplay: Boolean) {
             <h3 style="margin-top: 30px; margin-bottom: 16px; color: var(--accent-blue); font-size: 1.3rem;">9-1. Boot Timeline</h3>
             <div class="mermaid-container">
                 <div class="mermaid">
-                    gantt
-                    title AAOS Last Media Restoration Timeline
-                    dateFormat X
-                    axisFormat %s s
+                    timeline
+                        title AAOS Last Media Restoration Timeline
 
-                    section Boot
-                    Vehicle Ignition ON           :milestone, m1, 0, 0
-                    Kernel Boot                   :a1, 0, 1500
-                    Android Init                  :a2, 1500, 1500
+                        section 0~3s : Boot Phase
+                            0ms : Vehicle Ignition ON (IGN_ON)
+                            0~1.5s : Kernel Boot
+                            1.5~3s : Android Init
 
-                    section CarService
-                    CarService.onCreate()         :b1, 3000, 500
-                    VHAL Connection               :b2, 3500, 500
-                    Power Policy Init             :b3, 4000, 300
+                        section 3~5s : System Services
+                            3s : CarService.onCreate()
+                            3.5s : VHAL Connection
+                            4s : Power Policy Init
+                            4.3~5s : User Unlock (HEAD_USER)
 
-                    section User
-                    User Unlock (HEAD_USER)       :c1, 4300, 700
+                        section 5~6s : Media Restoration
+                            5s : CarMediaService.onCreate()
+                            5.2s : Load SharedPreferences
+                            5.3s : getLastMediaSource()
+                            5.35s : shouldStartPlayback()
 
-                    section CarMediaService
-                    CarMediaService.onCreate()    :d1, 5000, 200
-                    Load SharedPreferences        :d2, 5200, 100
-                    getLastMediaSource()          :d3, 5300, 50
-                    shouldStartPlayback()         :d4, 5350, 50
-
-                    section Media App
-                    Start MediaConnectorService   :e1, 5400, 200
-                    MediaBrowser.connect()        :e2, 5600, 300
-                    MediaSession Ready            :e3, 5900, 100
-                    Autoplay (if enabled)         :e4, 6000, 200
+                        section 6s+ : Media Playback
+                            5.4s : Start MediaConnectorService
+                            5.6s : MediaBrowser.connect()
+                            5.9s : MediaSession Ready
+                            6s : Autoplay (if enabled)
                 </div>
             </div>
 
