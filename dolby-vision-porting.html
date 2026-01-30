@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 
 <head>
     <meta charset="UTF-8">
@@ -9,150 +9,1130 @@
     (function(){var t=localStorage.getItem('android-media-framework-theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme:light)').matches)document.documentElement.setAttribute('data-theme','light');})();
     </script>
     <title>Dolby Vision Porting Guide | Android Media Framework</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-        <style>
-        /* Page-specific styles loaded from design-system.css */
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
+
+    <style>
+        /* Page-specific styles */
+        .alert {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-left: 4px solid #ffc107;
+            border-radius: 8px;
+            padding: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            color: #ffc107;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .alert p {
+            margin: 0;
+            color: var(--color-text-secondary);
+        }
+
+        .info-box {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-left: 4px solid var(--color-accent);
+            border-radius: 8px;
+            padding: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+        }
+
+        .info-box-title {
+            font-weight: 600;
+            color: var(--color-accent);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .success-box {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-left: 4px solid #22c55e;
+            border-radius: 8px;
+            padding: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+        }
+
+        .success-box-title {
+            font-weight: 600;
+            color: #22c55e;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: var(--color-accent);
+            color: var(--color-bg-primary);
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-right: var(--spacing-sm);
+        }
+
+        .code-block {
+            background: var(--color-surface);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: var(--spacing-lg);
+            margin: var(--spacing-md) 0;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .code-block code {
+            color: var(--color-text-primary);
+        }
+
+        .file-path {
+            display: inline-block;
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--color-accent);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            position: relative;
+            padding-left: 28px;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .checklist li::before {
+            content: '☐';
+            position: absolute;
+            left: 0;
+            color: var(--color-accent);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: var(--spacing-lg) 0;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: var(--spacing-md);
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .comparison-table th {
+            background: var(--color-surface);
+            color: var(--color-accent);
+            font-weight: 600;
+        }
+
+        .comparison-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .tag-required {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .tag-optional {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .tag-android15 {
+            background: rgba(168, 85, 247, 0.2);
+            color: #a855f7;
+        }
+
+        .tag-hdr {
+            background: rgba(251, 146, 60, 0.2);
+            color: #fb923c;
+        }
+
+        .mermaid-container {
+            background: var(--color-surface);
+            border-radius: 12px;
+            padding: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+            overflow-x: auto;
+        }
+
+        h3 {
+            color: var(--color-accent);
+            margin-top: var(--spacing-xl);
+            margin-bottom: var(--spacing-md);
+            font-size: 1.3rem;
+        }
+
+        h4 {
+            color: var(--color-text-primary);
+            margin-top: var(--spacing-lg);
+            margin-bottom: var(--spacing-sm);
+            font-size: 1.1rem;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--spacing-md);
+            margin: var(--spacing-lg) 0;
+        }
+
+        .profile-card {
+            background: var(--color-surface);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: var(--spacing-lg);
+            transition: all 0.3s ease;
+        }
+
+        .profile-card:hover {
+            border-color: var(--color-accent);
+            transform: translateY(-4px);
+        }
+
+        .profile-card h4 {
+            color: var(--color-accent);
+            margin-top: 0;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .profile-card p {
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .profile-meta {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 
 <body>
+    <nav class="nav">
+        <a href="dolby-codecs.html" class="nav-button">
+            ← Dolby Codecs
+        </a>
+    </nav>
+
     <div class="container">
         <header>
             <h1 class="page-title">Dolby Vision Porting Guide</h1>
-            <p class="page-subtitle">Detailed guide for integrating Dolby Vision HDR support into Android Codec2, MediaCodec,
-                and Display HAL.</p>
+            <p class="page-subtitle">Android Codec2, MediaCodec 및 Display HAL에 Dolby Vision HDR 지원을 통합하기 위한 상세 포팅 가이드</p>
         </header>
 
-        <!-- 1. Prerequisites -->
-        <section class="content-section section">
+        <!-- Section 1: Prerequisites -->
+        <section class="section">
             <h2 class="section-title">
-                <span class="step-number">1</span>
-                Prerequisites & Hardware
+                <span class="section-number">1</span>
+                사전 요구사항 & 하드웨어
             </h2>
-            <p>
-                Dolby Vision은 전체 비디오 파이프라인(디코더 → 디스플레이)에 걸친 통합이 필요합니다.
-                <strong>Android 15</strong>부터는 <strong>HDR Headroom Control</strong> API가 추가되어, SDR/HDR 혼합 콘텐츠의 밝기 밸런스를
-                제어할 수 있습니다.
+            <p class="section-description">
+                Dolby Vision은 전체 비디오 파이프라인(디코더 → 컴포지터 → 디스플레이)에 걸친 통합이 필요합니다.
+                소프트웨어만으로는 구현할 수 없으며, 반드시 인증된 하드웨어가 필요합니다.
             </p>
+
             <div class="alert">
-                <div class="alert-title">⚠️ Hardware Requirements</div>
-                <p>Dolby Vision은 소프트웨어만으로는 구현할 수 없습니다.
-                    <strong>Dolby Vision Certified SoC</strong>와 <strong>HDR 지원 디스플레이 패널</strong>이 필수적입니다.
+                <div class="alert-title">Hardware Certification Required</div>
+                <p>Dolby Vision은 <strong>Dolby Vision Certified SoC</strong>와 <strong>HDR 지원 디스플레이 패널</strong>이 필수입니다.
+                    Dolby Laboratories로부터 하드웨어 인증과 소프트웨어 라이선스를 모두 획득해야 합니다.</p>
+            </div>
+
+            <h3>1.1 하드웨어 요구사항</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>컴포넌트</th>
+                        <th>요구사항</th>
+                        <th>세부 사항</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Video Decoder</strong></td>
+                        <td>HEVC Main 10 + Dolby Vision 확장</td>
+                        <td>10-bit 디코딩, RPU 메타데이터 파싱 지원</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Display Panel</strong></td>
+                        <td>HDR10 또는 Dolby Vision 인증</td>
+                        <td>10-bit/12-bit 색심도, PQ/HLG EOTF</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Display Processor</strong></td>
+                        <td>Dolby Vision Processing Unit (VPU)</td>
+                        <td>동적 톤 매핑, 메타데이터 처리</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPU/DPU</strong></td>
+                        <td>BT.2020 색역 지원</td>
+                        <td>Wide Color Gamut 렌더링</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HDMI (TV용)</strong></td>
+                        <td>HDMI 2.0b+ with HDCP 2.2</td>
+                        <td>Dolby Vision 신호 전송</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>1.2 Android 버전별 Dolby Vision 지원</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Android 버전</th>
+                        <th>지원 기능</th>
+                        <th>비고</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Android 7.0+</td>
+                        <td>Playback 기본 지원</td>
+                        <td>MediaCodec, ExoPlayer</td>
+                    </tr>
+                    <tr>
+                        <td>Android 13+</td>
+                        <td>Capture (녹화) 지원</td>
+                        <td>Profile 8.4, Camera2 API</td>
+                    </tr>
+                    <tr>
+                        <td>Android 14+</td>
+                        <td>AIDL HAL 필수</td>
+                        <td>Codec2 AIDL 인터페이스</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Android 15+</strong></td>
+                        <td>HDR Headroom Control</td>
+                        <td><code>setDesiredHdrHeadroom()</code> API</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>1.3 지원 Dolby Vision 프로파일</h3>
+            <div class="profile-grid">
+                <div class="profile-card">
+                    <h4>Profile 5</h4>
+                    <p>스트리밍 서비스(Netflix, Disney+ 등)에서 주로 사용. IPTPQc2 색공간 기반.</p>
+                    <div class="profile-meta">
+                        <span class="tag tag-required">Streaming</span>
+                        <span class="tag tag-hdr">Single Layer</span>
+                    </div>
+                </div>
+                <div class="profile-card">
+                    <h4>Profile 7</h4>
+                    <p>Blu-ray 미디어용. Dual Layer (Base + Enhancement).</p>
+                    <div class="profile-meta">
+                        <span class="tag tag-optional">Blu-ray</span>
+                        <span class="tag tag-hdr">Dual Layer</span>
+                    </div>
+                </div>
+                <div class="profile-card">
+                    <h4>Profile 8.1</h4>
+                    <p>HDR10과 하위 호환. Cross-compatible 메타데이터.</p>
+                    <div class="profile-meta">
+                        <span class="tag tag-required">HDR10 Compatible</span>
+                        <span class="tag tag-hdr">Single Layer</span>
+                    </div>
+                </div>
+                <div class="profile-card">
+                    <h4>Profile 8.4</h4>
+                    <p>HLG 기반. 방송 및 사용자 제작 콘텐츠(UGC)에 적합.</p>
+                    <div class="profile-meta">
+                        <span class="tag tag-android15">Android 13+ Capture</span>
+                        <span class="tag tag-hdr">HLG Base</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">2</span>
+                통합 아키텍처
+            </h2>
+            <p class="section-description">
+                Dolby Vision 통합은 크게 세 부분으로 나뉩니다: <strong>Codec2 컴포넌트</strong> (디코딩),
+                <strong>SurfaceFlinger/HWC</strong> (합성), <strong>Display HAL</strong> (톤 매핑).
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TD
+                        subgraph Application
+                            App[ExoPlayer / Media3]
+                        end
+
+                        subgraph MediaFramework ["Media Framework"]
+                            MC[MediaCodec API]
+                            Extractor[MediaExtractor<br/>dvcC / dvvC box 파싱]
+                        end
+
+                        subgraph Codec2 ["Codec2 Framework"]
+                            C2FW[C2 Component Store]
+                            C2Comp[c2.vendor.dv.decoder]
+                        end
+
+                        subgraph VendorHW ["Vendor Hardware"]
+                            HWDecoder[HW Video Decoder<br/>HEVC Main 10]
+                            RPUParser[RPU Parser<br/>메타데이터 추출]
+                        end
+
+                        subgraph Graphics ["Graphics Pipeline"]
+                            GB[GraphicBuffer<br/>YUV P010 + Metadata]
+                            SF[SurfaceFlinger]
+                            HWC[HWComposer]
+                        end
+
+                        subgraph Display ["Display HAL"]
+                            VPU[Dolby VPU<br/>Tone Mapping]
+                            Panel[HDR Display Panel]
+                        end
+
+                        App --> MC
+                        App --> Extractor
+                        Extractor --> MC
+                        MC --> C2FW
+                        C2FW --> C2Comp
+                        C2Comp --> HWDecoder
+                        C2Comp --> RPUParser
+                        HWDecoder --> GB
+                        RPUParser --> GB
+                        GB --> SF
+                        SF --> HWC
+                        HWC --> VPU
+                        VPU --> Panel
+                </div>
+            </div>
+
+            <h3>2.1 Dolby Vision 스트림 구조</h3>
+            <div class="info-box">
+                <div class="info-box-title">스트림 구성요소</div>
+                <p>
+                    <strong>Base Layer (BL):</strong> HEVC Main 10 인코딩된 기본 영상<br>
+                    <strong>Enhancement Layer (EL):</strong> 추가 화질 정보 (Profile 7 전용)<br>
+                    <strong>RPU (Reference Picture Unit):</strong> 동적 메타데이터 (장면별 밝기/색상 정보)
                 </p>
             </div>
-            <ul>
-                <li><strong>Android Version:</strong> Android 7.0+ (Playback), Android 13+ (Capture), Android 15+ (HDR
-                    Headroom).</li>
-                <li><strong>Video Decoder:</strong> HEVC Main 10 프로파일 및 Dolby Vision 확장 지원 하드웨어 디코더.</li>
-                <li><strong>Display Pipeline:</strong> 10-bit/12-bit 색심도 처리 및 동적 메타데이터(Dynamic Metadata) 전송 지원.</li>
-            </ul>
-        </section>
 
-        <!-- 2. Integration Architecture -->
-        <section class="content-section section">
-            <h2 class="section-title">
-                <span class="step-number">2</span>
-                Integration Architecture
-            </h2>
-            <p>
-                Dolby Vision 통합은 <strong>Codec2</strong> 컴포넌트 구현과 <strong>Display HAL</strong>의 메타데이터 처리로 나뉩니다.
-            </p>
-            <div class="mermaid">
-                graph TD
-                App[ExoPlayer / Media3] --> MC[MediaCodec API]
-                MC --> C2[Codec2 Framework]
-
-                subgraph Vendor [Vendor Implementation]
-                C2Comp[C2 Component<br />c2.vendor.dv.decoder] --> HW[HW Decoder]
-                HW -- "YUV P010 + RPU Data" --> Buffer[Graphic Buffer]
-                Buffer --> DisplayHAL[Display HAL / HWC]
-                DisplayHAL -- "Tone Mapping" --> Panel[HDR Display Panel]
-                end
-
+            <div class="code-block">
+<code># Dolby Vision 컨테이너 박스 (MP4/MKV)
+dvcC / dvvC Box:
+├── dv_version_major: 1
+├── dv_version_minor: 0
+├── dv_profile: 8 (Profile 8.x)
+├── dv_level: 6 (4K60)
+├── rpu_present_flag: 1
+├── el_present_flag: 0 (Single Layer)
+├── bl_present_flag: 1
+└── dv_bl_signal_compatibility_id: 1 (HDR10 compatible)</code>
             </div>
         </section>
 
-        <!-- 3. Codec2 & MediaCodec Integration -->
-        <section class="content-section section">
+        <!-- Section 3: Codec2 Implementation -->
+        <section class="section">
             <h2 class="section-title">
-                <span class="step-number">3</span>
-                Codec2 & MediaCodec Integration
+                <span class="section-number">3</span>
+                Codec2 컴포넌트 구현
             </h2>
 
-            <h3>3.1 Codec Registration</h3>
-            <p><code>media_codecs.xml</code>에 Dolby Vision 디코더를 등록하고 지원하는 프로파일을 명시해야 합니다.</p>
-            <pre><code class="language-xml">&lt;MediaCodec name="c2.vendor.dv.decoder" type="video/dolby-vision"&gt;
-    &lt;Limit name="size" min="176x144" max="3840x2160" /&gt;
-    &lt;Limit name="alignment" value="2x2" /&gt;
-    &lt;Limit name="block-size" value="16x16" /&gt;
-    &lt;Feature name="adaptive-playback" /&gt;
-    &lt;Feature name="secure-playback" required="true" /&gt;
-    &lt;!-- Dolby Vision Profiles --&gt;
-    &lt;Limit name="concurrent-instances" max="16" /&gt;
-&lt;/MediaCodec&gt;</code></pre>
+            <h3>3.1 C2 컴포넌트 등록</h3>
+            <p><span class="file-path">media_codecs.xml</span>에 Dolby Vision 디코더를 등록합니다:</p>
 
-            <h3>3.2 Extractor Support</h3>
-            <p>
-                Dolby Vision 콘텐츠는 Base Layer와 Enhancement Layer, 그리고 RPU(Reference Picture Unit) 메타데이터로 구성됩니다.
-                <code>MediaExtractor</code>가 <code>dvcC</code>, <code>dvvv</code> 박스를 파싱할 수 있도록 Dolby Vision-aware
-                Extractor가 필요합니다.
-            </p>
+            <div class="code-block">
+<code class="language-xml">&lt;MediaCodecs&gt;
+    &lt;Decoders&gt;
+        &lt;!-- Dolby Vision HEVC Decoder --&gt;
+        &lt;MediaCodec name="c2.vendor.dv.decoder" type="video/dolby-vision"&gt;
+            &lt;!-- 해상도 제한 --&gt;
+            &lt;Limit name="size" min="176x144" max="3840x2160" /&gt;
+            &lt;Limit name="alignment" value="2x2" /&gt;
+            &lt;Limit name="block-size" value="16x16" /&gt;
+
+            &lt;!-- 프레임레이트 --&gt;
+            &lt;Limit name="frame-rate" range="1-60" /&gt;
+
+            &lt;!-- 비트레이트 (HEVC Main 10 기준) --&gt;
+            &lt;Limit name="bitrate" range="1-60000000" /&gt;
+
+            &lt;!-- 동시 인스턴스 --&gt;
+            &lt;Limit name="concurrent-instances" max="16" /&gt;
+
+            &lt;!-- 기능 플래그 --&gt;
+            &lt;Feature name="adaptive-playback" /&gt;
+            &lt;Feature name="secure-playback" required="true" /&gt;
+            &lt;Feature name="tunneled-playback" /&gt;
+
+            &lt;!-- Dolby Vision 프로파일 지원 --&gt;
+            &lt;!-- Profile 5, 8.1, 8.4 지원 명시 --&gt;
+        &lt;/MediaCodec&gt;
+
+        &lt;!-- Secure Dolby Vision Decoder (DRM 콘텐츠용) --&gt;
+        &lt;MediaCodec name="c2.vendor.dv.decoder.secure" type="video/dolby-vision"&gt;
+            &lt;Limit name="size" min="176x144" max="3840x2160" /&gt;
+            &lt;Feature name="secure-playback" required="true" /&gt;
+            &lt;Feature name="tunneled-playback" required="true" /&gt;
+        &lt;/MediaCodec&gt;
+    &lt;/Decoders&gt;
+&lt;/MediaCodecs&gt;</code>
+            </div>
+
+            <h3>3.2 C2 컴포넌트 구현 (핵심)</h3>
+            <p><span class="file-path">C2DolbyVisionDec.cpp</span> 주요 구현:</p>
+
+            <div class="code-block">
+<code class="language-cpp">// C2DolbyVisionDec.cpp - Codec2 Dolby Vision Decoder
+
+class C2DolbyVisionDec : public C2Component {
+public:
+    C2DolbyVisionDec(const char* name, c2_node_id_t id,
+                     const std::shared_ptr<C2ComponentInterface>& intf)
+        : C2Component(intf), mName(name), mId(id) {
+        // Dolby Vision 디코더 초기화
+        initDolbyVisionDecoder();
+    }
+
+    c2_status_t onInit() override {
+        // HW 디코더 초기화
+        mHwDecoder = createHwDecoder(CODEC_HEVC_MAIN10);
+
+        // RPU 파서 초기화
+        mRpuParser = createRpuParser();
+
+        // 메타데이터 핸들러 초기화
+        mMetadataHandler = createDvMetadataHandler();
+
+        return C2_OK;
+    }
+
+    c2_status_t queue_nb(std::list<std::unique_ptr<C2Work>>* const items) override {
+        for (auto& work : *items) {
+            processWork(std::move(work));
+        }
+        return C2_OK;
+    }
+
+private:
+    void processWork(std::unique_ptr<C2Work> work) {
+        // 1. 입력 버퍼에서 HEVC + RPU 데이터 분리
+        const C2ConstLinearBlock& input = work->input.buffers[0]->data();
+        uint8_t* data = const_cast<uint8_t*>(input.data());
+        size_t size = input.size();
+
+        HevcFrame hevcFrame;
+        RpuData rpuData;
+        separateDolbyVisionData(data, size, &hevcFrame, &rpuData);
+
+        // 2. HEVC 디코딩 (HW 가속)
+        DecodedFrame decodedFrame;
+        mHwDecoder->decode(hevcFrame, &decodedFrame);
+
+        // 3. RPU 메타데이터 파싱
+        DolbyVisionMetadata dvMetadata;
+        mRpuParser->parse(rpuData, &dvMetadata);
+
+        // 4. 출력 버퍼 생성 (YUV P010 + 메타데이터)
+        std::shared_ptr<C2GraphicBlock> outputBlock;
+        createOutputBuffer(&outputBlock, decodedFrame, dvMetadata);
+
+        // 5. 메타데이터를 GraphicBuffer에 첨부
+        attachDvMetadata(outputBlock, dvMetadata);
+
+        // 6. 작업 완료 처리
+        work->worklets.front()->output.buffers.push_back(
+            createBuffer(outputBlock)
+        );
+        work->worklets.front()->output.ordinal = work->input.ordinal;
+        work->result = C2_OK;
+
+        // Listener에게 완료 알림
+        mListener->onWorkDone_nb(this, std::move(work));
+    }
+
+    void attachDvMetadata(std::shared_ptr<C2GraphicBlock>& block,
+                          const DolbyVisionMetadata& metadata) {
+        // GraphicBuffer 네이티브 핸들 획득
+        native_handle_t* handle = block->handle();
+
+        // Gralloc 메타데이터 설정
+        android::gralloc4::MetadataType type =
+            android::gralloc4::MetadataType_DolbyVisionMetadata;
+
+        std::vector<uint8_t> metadataBlob;
+        serializeMetadata(metadata, &metadataBlob);
+
+        android::gralloc4::set(handle, type, metadataBlob);
+
+        // HDR Static Info 설정 (Display에서 사용)
+        HdrStaticInfo hdrInfo = {
+            .maxDisplayLuminance = metadata.maxCll,
+            .maxContentLightLevel = metadata.maxCll,
+            .maxFrameAverageLightLevel = metadata.maxFall,
+            .minDisplayLuminance = metadata.minLuminance,
+        };
+        setHdrStaticInfo(block, hdrInfo);
+    }
+};</code>
+            </div>
+
+            <h3>3.3 Extractor 연동</h3>
+            <p>Dolby Vision 콘텐츠를 올바르게 파싱하기 위한 Extractor 설정:</p>
+
+            <div class="code-block">
+<code class="language-cpp">// MediaExtractor가 Dolby Vision 포맷을 인식하도록 설정
+
+// MIME 타입 등록
+static const char* kDolbyVisionMimeType = "video/dolby-vision";
+
+// dvcC/dvvC 박스 파싱
+void parseDolbyVisionConfig(const uint8_t* data, size_t size,
+                            DolbyVisionConfig* config) {
+    // dvcC 박스 구조
+    // offset 0: dv_version_major (8 bits)
+    // offset 1: dv_version_minor (8 bits)
+    // offset 2-3: dv_profile (7 bits) + dv_level (6 bits) + ...
+
+    config->profile = (data[2] >> 1) & 0x7F;
+    config->level = ((data[2] & 0x01) << 5) | ((data[3] >> 3) & 0x1F);
+    config->rpuPresentFlag = (data[3] >> 2) & 0x01;
+    config->elPresentFlag = (data[3] >> 1) & 0x01;
+    config->blPresentFlag = data[3] & 0x01;
+    config->blSignalCompatibilityId = (data[4] >> 4) & 0x0F;
+}
+
+// MediaFormat에 Dolby Vision 정보 추가
+void addDolbyVisionFormat(AMediaFormat* format,
+                          const DolbyVisionConfig& config) {
+    AMediaFormat_setString(format, AMEDIAFORMAT_KEY_MIME, kDolbyVisionMimeType);
+    AMediaFormat_setInt32(format, "dv-profile", config.profile);
+    AMediaFormat_setInt32(format, "dv-level", config.level);
+    AMediaFormat_setInt32(format, "dv-bl-compatibility-id",
+                          config.blSignalCompatibilityId);
+}</code>
+            </div>
         </section>
 
-        <!-- 4. Display HAL Integration -->
-        <section class="content-section section">
+        <!-- Section 4: Display HAL Integration -->
+        <section class="section">
             <h2 class="section-title">
-                <span class="step-number">4</span>
-                Display HAL Integration
+                <span class="section-number">4</span>
+                Display HAL 연동
             </h2>
-            <p>
-                디코더에서 추출된 동적 메타데이터(RPU)는 디스플레이 프로세서로 전달되어 톤 매핑(Tone Mapping)에 사용되어야 합니다.
-            </p>
-            <ul>
-                <li><strong>HdrCapabilities:</strong> <code>Display.getHdrCapabilities()</code>가
-                    <code>HDR_TYPE_DOLBY_VISION</code>을 반환해야 합니다.</li>
-                <li><strong>Metadata Propagation:</strong> 디코딩된 버퍼(GraphicBuffer)에 메타데이터를 첨부하여 SurfaceFlinger 및
-                    HWC(Hardware Composer)로 전달.</li>
-                <li><strong>Color Gamut:</strong> BT.2020 색역 및 PQ(Perceptual Quantizer) EOTF 지원 확인.</li>
-                <li><strong>Tone Mapping:</strong> 디스플레이 패널의 최대 밝기(Nits)에 맞춰 장면별 밝기를 조절하는 Dolby Vision Processing
-                    Unit(VPU) 통합.</li>
+
+            <h3>4.1 HWComposer 메타데이터 전달</h3>
+            <p>디코딩된 Dolby Vision 프레임의 메타데이터를 Display HAL로 전달합니다:</p>
+
+            <div class="code-block">
+<code class="language-cpp">// HWC2 Implementation - Dolby Vision 메타데이터 처리
+
+HWC2::Error HwcDisplay::setLayerBuffer(hwc2_layer_t layerId,
+                                        buffer_handle_t buffer,
+                                        int32_t acquireFence) {
+    HwcLayer* layer = getLayer(layerId);
+
+    // 1. GraphicBuffer에서 Dolby Vision 메타데이터 추출
+    DolbyVisionMetadata dvMetadata;
+    if (extractDolbyVisionMetadata(buffer, &dvMetadata)) {
+        layer->setDolbyVisionMetadata(dvMetadata);
+
+        // 2. 디스플레이 모드를 Dolby Vision으로 설정
+        setDisplayHdrMode(HDR_MODE_DOLBY_VISION);
+
+        // 3. VPU에 메타데이터 전달
+        mDolbyVpu->setMetadata(dvMetadata);
+    }
+
+    return HWC2::Error::None;
+}
+
+// HDR Capabilities 보고
+void HwcDisplay::getHdrCapabilities(uint32_t* outNumTypes,
+                                    int32_t* outTypes,
+                                    float* outMaxLuminance,
+                                    float* outMaxAverageLuminance,
+                                    float* outMinLuminance) {
+    // Dolby Vision 지원 명시
+    std::vector<int32_t> types = {
+        HAL_HDR_DOLBY_VISION,
+        HAL_HDR_HDR10,
+        HAL_HDR_HLG,
+    };
+
+    *outNumTypes = types.size();
+    std::copy(types.begin(), types.end(), outTypes);
+
+    // 패널 밝기 특성
+    *outMaxLuminance = mPanelMaxLuminance;        // e.g., 1000 nits
+    *outMaxAverageLuminance = mPanelAvgLuminance; // e.g., 500 nits
+    *outMinLuminance = mPanelMinLuminance;        // e.g., 0.01 nits
+}</code>
+            </div>
+
+            <h3>4.2 톤 매핑 (Tone Mapping)</h3>
+            <p>Dolby VPU는 콘텐츠의 동적 메타데이터와 디스플레이 특성을 기반으로 톤 매핑을 수행합니다:</p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                        subgraph Input ["입력 신호"]
+                            Frame[YUV P010 Frame<br/>BT.2020 / PQ]
+                            Meta[RPU Metadata<br/>Scene-by-scene]
+                        end
+
+                        subgraph VPU ["Dolby VPU"]
+                            TM[Tone Mapping Engine]
+                            CM[Color Mapping]
+                        end
+
+                        subgraph Output ["출력 신호"]
+                            Panel[Display Panel<br/>패널 특성에 맞춤]
+                        end
+
+                        Frame --> TM
+                        Meta --> TM
+                        TM --> CM
+                        CM --> Panel
+                </div>
+            </div>
+
+            <div class="info-box">
+                <div class="info-box-title">톤 매핑 핵심 파라미터</div>
+                <p>
+                    <strong>MaxCLL:</strong> Maximum Content Light Level (콘텐츠 최대 밝기)<br>
+                    <strong>MaxFALL:</strong> Maximum Frame-Average Light Level (프레임 평균 최대 밝기)<br>
+                    <strong>Panel Peak Luminance:</strong> 디스플레이 최대 밝기 (nits)<br>
+                    <strong>Panel Min Luminance:</strong> 디스플레이 최소 밝기 (블랙 레벨)
+                </p>
+            </div>
+
+            <h3>4.3 Android 15 HDR Headroom Control</h3>
+            <p><span class="tag tag-android15">Android 15</span> 에서 추가된 <code>setDesiredHdrHeadroom</code> API를 지원합니다:</p>
+
+            <div class="code-block">
+<code class="language-cpp">// SurfaceControl HDR Headroom 처리
+
+// Framework에서 호출
+void SurfaceComposerClient::Transaction::setDesiredHdrHeadroom(
+        const sp<SurfaceControl>& sc, float desiredRatio) {
+    // desiredRatio: SDR 대비 HDR 밝기 비율 (예: 2.0 = HDR이 SDR의 2배)
+    layer_state_t* s = getLayerState(sc);
+    s->hdrHeadroom = desiredRatio;
+}
+
+// HWComposer에서 처리
+HWC2::Error HwcDisplay::setLayerHdrHeadroom(hwc2_layer_t layerId,
+                                             float headroom) {
+    HwcLayer* layer = getLayer(layerId);
+    layer->setHdrHeadroom(headroom);
+
+    // Dolby VPU에 headroom 전달
+    mDolbyVpu->setHdrHeadroom(headroom);
+
+    return HWC2::Error::None;
+}
+
+// Dolby VPU에서 톤 매핑 조정
+void DolbyVpu::setHdrHeadroom(float headroom) {
+    // SDR/HDR 혼합 콘텐츠에서 밝기 밸런스 조정
+    // headroom이 낮으면 HDR 콘텐츠의 피크 밝기를 낮춤
+    mToneMappingParams.hdrHeadroom = headroom;
+    updateToneMapping();
+}</code>
+            </div>
+        </section>
+
+        <!-- Section 5: Build Configuration -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">5</span>
+                빌드 설정
+            </h2>
+
+            <h3>5.1 Android.bp (Codec2 컴포넌트)</h3>
+            <div class="code-block">
+<code class="language-json">cc_library_shared {
+    name: "libcodec2_soft_dv_dec",
+    vendor: true,
+
+    srcs: [
+        "C2DolbyVisionDec.cpp",
+        "DolbyVisionRpuParser.cpp",
+        "DolbyVisionMetadataHandler.cpp",
+    ],
+
+    shared_libs: [
+        "libbase",
+        "liblog",
+        "libcodec2",
+        "libcodec2_vndk",
+        "libstagefright_foundation",
+        "android.hardware.graphics.common-V4-ndk",
+        // Dolby 라이브러리
+        "libdolbyvision",
+        "libdolbyvision_rpu",
+    ],
+
+    static_libs: [
+        "libcodec2_soft_common",
+    ],
+
+    cflags: [
+        "-DDOLBY_VISION_ENABLED",
+        "-Wall",
+        "-Werror",
+    ],
+}
+
+// C2 Component Store 등록
+cc_library_shared {
+    name: "libcodec2_vendor_dv",
+    vendor: true,
+
+    srcs: [
+        "C2VendorDvComponentStore.cpp",
+    ],
+
+    shared_libs: [
+        "libcodec2_soft_dv_dec",
+        "libcodec2_vndk",
+    ],
+}</code>
+            </div>
+
+            <h3>5.2 Display HAL 빌드</h3>
+            <div class="code-block">
+<code class="language-json">cc_binary {
+    name: "android.hardware.composer.hwc3-service.dolby",
+    relative_install_path: "hw",
+    vendor: true,
+    init_rc: ["hwc3-dolby.rc"],
+    vintf_fragments: ["hwc3-dolby.xml"],
+
+    srcs: [
+        "HwcService.cpp",
+        "HwcDisplay.cpp",
+        "DolbyVpuWrapper.cpp",
+    ],
+
+    shared_libs: [
+        "libbase",
+        "libbinder_ndk",
+        "libhardware",
+        "libui",
+        "libgralloctypes",
+        "android.hardware.graphics.composer3-V2-ndk",
+        // Dolby VPU 라이브러리
+        "libdolby_vpu",
+    ],
+
+    cflags: [
+        "-DDOLBY_VISION_DISPLAY",
+    ],
+}</code>
+            </div>
+
+            <h3>5.3 Feature Flag 설정</h3>
+            <p><span class="file-path">device.mk</span>에 Dolby Vision 기능 플래그 추가:</p>
+
+            <div class="code-block">
+<code class="language-makefile"># Dolby Vision Support
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.vendor.dolby.vision.supported=true \
+    ro.vendor.dolby.vision.profiles=5,8.1,8.4 \
+    persist.vendor.dolby.vision.enabled=true
+
+# HDR Capabilities
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.surface_flinger.has_HDR_display=true \
+    ro.surface_flinger.has_wide_color_display=true \
+    ro.surface_flinger.use_color_management=true
+
+# Codec2 설정
+PRODUCT_PACKAGES += \
+    libcodec2_vendor_dv \
+    libcodec2_soft_dv_dec</code>
+            </div>
+        </section>
+
+        <!-- Section 6: Testing & Verification -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                테스트 & 검증
+            </h2>
+
+            <h3>6.1 기본 검증 체크리스트</h3>
+            <ul class="checklist">
+                <li><strong>HDR Capabilities:</strong> <code>Display.getHdrCapabilities()</code>에서 <code>HDR_TYPE_DOLBY_VISION</code> 반환</li>
+                <li><strong>디코더 등록:</strong> <code>MediaCodecList</code>에서 Dolby Vision 디코더 조회</li>
+                <li><strong>Visual Check:</strong> Dolby Vision 콘텐츠 재생 시 HDR 마크 표시</li>
+                <li><strong>밝기/색감:</strong> SDR 콘텐츠 대비 확연한 밝기 및 색감 차이 확인</li>
+                <li><strong>톤 매핑:</strong> 어두운 장면과 밝은 장면에서 디테일 유지 확인</li>
             </ul>
 
-            <h3 style="margin-top: 24px;">4.1 Android 15 HDR Headroom</h3>
-            <p>Android 15에서는 <code>setDesiredHdrHeadroom</code> API를 지원하기 위해 Display HAL이 SDR/HDR 혼합 시 밝기 비율을 동적으로 조절할 수
-                있어야 합니다.</p>
+            <h3>6.2 ADB 디버깅 명령어</h3>
+            <div class="code-block">
+<code class="language-bash"># 1. HDR Capabilities 확인
+adb shell dumpsys SurfaceFlinger | grep -i "HDR"
+
+# 2. Display 상태 확인
+adb shell dumpsys display | grep -i "hdr\|dolby"
+
+# 3. MediaCodec 지원 포맷 확인
+adb shell dumpsys media.codec | grep -i "dolby-vision"
+
+# 4. 현재 재생 중인 비디오 정보
+adb shell dumpsys media.player | grep -i "dolby\|hdr"
+
+# 5. HWComposer 레이어 정보
+adb shell dumpsys SurfaceFlinger --layers | grep -i "dataspace"
+
+# 6. Dolby Vision 관련 로그
+adb logcat -s DolbyVision:V HWComposer:V SurfaceFlinger:V</code>
+            </div>
+
+            <h3>6.3 Java 코드로 HDR 지원 확인</h3>
+            <div class="code-block">
+<code class="language-java">// HDR 지원 확인 코드
+public boolean isDolbyVisionSupported(Context context) {
+    Display display = context.getDisplay();
+    Display.HdrCapabilities hdrCaps = display.getHdrCapabilities();
+
+    if (hdrCaps != null) {
+        int[] supportedTypes = hdrCaps.getSupportedHdrTypes();
+        for (int type : supportedTypes) {
+            if (type == Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION) {
+                Log.d(TAG, "Dolby Vision supported!");
+                Log.d(TAG, "Max Luminance: " + hdrCaps.getDesiredMaxLuminance());
+                Log.d(TAG, "Max Avg Luminance: " + hdrCaps.getDesiredMaxAverageLuminance());
+                Log.d(TAG, "Min Luminance: " + hdrCaps.getDesiredMinLuminance());
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// MediaCodec으로 Dolby Vision 디코더 확인
+public boolean hasDolbyVisionDecoder() {
+    MediaCodecList codecList = new MediaCodecList(MediaCodecList.ALL_CODECS);
+    for (MediaCodecInfo codecInfo : codecList.getCodecInfos()) {
+        if (!codecInfo.isEncoder()) {
+            String[] types = codecInfo.getSupportedTypes();
+            for (String type : types) {
+                if (type.equals("video/dolby-vision")) {
+                    Log.d(TAG, "Found DV decoder: " + codecInfo.getName());
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}</code>
+            </div>
+
+            <h3>6.4 테스트 콘텐츠</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>프로파일</th>
+                        <th>테스트 소스</th>
+                        <th>확인 항목</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Profile 5</td>
+                        <td>Netflix Dolby Vision 콘텐츠</td>
+                        <td>IPTPQc2 색공간 정상 표시</td>
+                    </tr>
+                    <tr>
+                        <td>Profile 8.1</td>
+                        <td>Dolby 데모 클립 (HDR10 호환)</td>
+                        <td>HDR10 Fallback 동작 확인</td>
+                    </tr>
+                    <tr>
+                        <td>Profile 8.4</td>
+                        <td>HLG 기반 방송 콘텐츠</td>
+                        <td>HLG 톤 커브 정상 적용</td>
+                    </tr>
+                    <tr>
+                        <td>Capture (8.4)</td>
+                        <td>Camera2 API 10-bit 녹화</td>
+                        <td>Dolby Vision 인코딩 확인</td>
+                    </tr>
+                </tbody>
+            </table>
         </section>
 
-        <!-- 5. Verification -->
-        <section class="content-section section">
+        <!-- Section 7: Troubleshooting -->
+        <section class="section">
             <h2 class="section-title">
-                <span class="step-number">5</span>
-                Verification & Testing
+                <span class="section-number">7</span>
+                트러블슈팅
             </h2>
-            <p>통합 검증을 위해 다음 절차를 수행합니다.</p>
-            <ul>
-                <li><strong>Capability Check:</strong> <code>Display.getHdrCapabilities()</code> 호출 시
-                    <code>HDR_TYPE_DOLBY_VISION</code> 반환 확인.
-                </li>
-                <li><strong>Visual Inspection:</strong> Dolby Vision 데모 콘텐츠 재생 시 HDR 마크 표시 및 밝기/색감 변화 확인.</li>
-                <li><strong>Capture Test (Android 13+):</strong> Camera2 API로 10-bit 녹화 시 Dolby Vision Profile 8.4로
-                    인코딩되는지 확인.</li>
-            </ul>
+
+            <h3>7.1 일반적인 이슈</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>증상</th>
+                        <th>원인</th>
+                        <th>해결책</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>HDR 마크 미표시</td>
+                        <td>HWC에서 HDR Capabilities 미보고</td>
+                        <td><code>getHdrCapabilities()</code> 구현 확인</td>
+                    </tr>
+                    <tr>
+                        <td>색상 이상 (너무 밝음)</td>
+                        <td>톤 매핑 미적용</td>
+                        <td>VPU 메타데이터 전달 경로 확인</td>
+                    </tr>
+                    <tr>
+                        <td>색상 이상 (탁함)</td>
+                        <td>BT.709로 잘못 해석</td>
+                        <td>Dataspace 설정 확인 (BT.2020)</td>
+                    </tr>
+                    <tr>
+                        <td>밴딩 아티팩트</td>
+                        <td>8-bit로 변환됨</td>
+                        <td>10-bit 파이프라인 전체 확인</td>
+                    </tr>
+                    <tr>
+                        <td>디코딩 실패</td>
+                        <td>RPU 파싱 오류</td>
+                        <td>dvcC/dvvC 박스 파싱 로직 검증</td>
+                    </tr>
+                    <tr>
+                        <td>프레임 드롭</td>
+                        <td>VPU 처리 지연</td>
+                        <td>톤 매핑 성능 최적화</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>7.2 디버그 로그 활성화</h3>
+            <div class="code-block">
+<code class="language-bash"># Dolby Vision 상세 로그 활성화
+adb shell setprop persist.vendor.dolby.vision.debug 1
+adb shell setprop debug.sf.hdr.debug 1
+
+# SurfaceFlinger 재시작
+adb shell stop surfaceflinger
+adb shell start surfaceflinger
+
+# 로그 수집
+adb logcat -v time | grep -E "DolbyVision|HDR|HWC|SurfaceFlinger" > dv_debug.log</code>
+            </div>
+
+            <div class="success-box">
+                <div class="success-box-title">정상 동작 확인 로그 예시</div>
+                <p>
+                    <code>[SurfaceFlinger] Layer dataspace: 142671872 (STANDARD_BT2020 | TRANSFER_ST2084)</code><br>
+                    <code>[HWComposer] Setting HDR mode: DOLBY_VISION</code><br>
+                    <code>[DolbyVPU] Tone mapping with MaxCLL=1000, panel peak=800</code>
+                </p>
+            </div>
         </section>
 
-        <a href="dolby-codecs.html" class="nav-button">← Back to Dolby Codecs</a>
+        <!-- Section 8: References -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                참고 자료
+            </h2>
+
+            <h3>8.1 공식 문서</h3>
+            <ul>
+                <li><a href="https://source.android.com/docs/core/graphics/hdr" target="_blank">Android HDR Display Support</a></li>
+                <li><a href="https://source.android.com/docs/core/graphics/color-mgmt" target="_blank">Android Color Management</a></li>
+                <li><a href="https://developer.android.com/reference/android/view/Display.HdrCapabilities" target="_blank">Display.HdrCapabilities API</a></li>
+                <li><a href="https://professional.dolby.com/" target="_blank">Dolby Professional Portal</a> (라이선스 필요)</li>
+            </ul>
+
+            <h3>8.2 AOSP 소스 경로</h3>
+            <div class="code-block">
+<code># Codec2 인터페이스
+hardware/google/av/codec2/
+
+# HWComposer HAL
+hardware/interfaces/graphics/composer/
+
+# SurfaceFlinger HDR 처리
+frameworks/native/services/surfaceflinger/
+
+# Media Extractor (dvcC 파싱)
+frameworks/av/media/extractors/
+
+# Display HDR Capabilities
+frameworks/base/core/java/android/view/Display.java</code>
+            </div>
+        </section>
+
+        <a href="dolby-codecs.html" class="nav-button" style="margin-top: var(--spacing-2xl);">← Back to Dolby Codecs</a>
     </div>
 
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#00d4ff',
+                primaryTextColor: '#e8eaed',
+                primaryBorderColor: '#00d4ff',
+                lineColor: '#5eead4',
+                secondaryColor: '#1e293b',
+                tertiaryColor: '#0f172a',
+                background: '#0f172a',
+                mainBkg: '#1e293b',
+                secondBkg: '#0f172a',
+                fontFamily: 'Archivo, sans-serif'
+            }
+        });
+    </script>
+
     <script src="scripts/mermaid-theme.js"></script>
-    <!-- Navigation & Copy Features -->
     <script src="scripts/copy-code.js"></script>
     <script src="scripts/toc-generator.js"></script>
     <script src="scripts/page-navigation.js"></script>
-    <!-- Interactive Diagram Features -->
     <script src="scripts/diagram-data.js"></script>
     <script src="scripts/diagram-interactive.js"></script>
-
     <script src="scripts/theme-toggle.js"></script>
     <script src="scripts/lang-switch.js"></script>
 </body>

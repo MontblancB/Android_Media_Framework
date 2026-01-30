@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 
 <head>
     <meta charset="UTF-8">
@@ -9,157 +9,994 @@
     (function(){var t=localStorage.getItem('android-media-framework-theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme:light)').matches)document.documentElement.setAttribute('data-theme','light');})();
     </script>
     <title>Dolby Digital Plus (DDP) Porting Guide | Android Media Framework</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-        <style>
-        /* Page-specific styles loaded from design-system.css */
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
+
+    <style>
+        /* Page-specific styles */
+        .alert {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-left: 4px solid #ffc107;
+            border-radius: 8px;
+            padding: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            color: #ffc107;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .alert p {
+            margin: 0;
+            color: var(--color-text-secondary);
+        }
+
+        .info-box {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-left: 4px solid var(--color-accent);
+            border-radius: 8px;
+            padding: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+        }
+
+        .info-box-title {
+            font-weight: 600;
+            color: var(--color-accent);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: var(--color-accent);
+            color: var(--color-bg-primary);
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-right: var(--spacing-sm);
+        }
+
+        .code-block {
+            background: var(--color-surface);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: var(--spacing-lg);
+            margin: var(--spacing-md) 0;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .code-block code {
+            color: var(--color-text-primary);
+        }
+
+        .file-path {
+            display: inline-block;
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--color-accent);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            position: relative;
+            padding-left: 28px;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .checklist li::before {
+            content: '☐';
+            position: absolute;
+            left: 0;
+            color: var(--color-accent);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: var(--spacing-lg) 0;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: var(--spacing-md);
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .comparison-table th {
+            background: var(--color-surface);
+            color: var(--color-accent);
+            font-weight: 600;
+        }
+
+        .comparison-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .tag-required {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .tag-optional {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .tag-vendor {
+            background: rgba(168, 85, 247, 0.2);
+            color: #a855f7;
+        }
+
+        .mermaid-container {
+            background: var(--color-surface);
+            border-radius: 12px;
+            padding: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+            overflow-x: auto;
+        }
+
+        h3 {
+            color: var(--color-accent);
+            margin-top: var(--spacing-xl);
+            margin-bottom: var(--spacing-md);
+            font-size: 1.3rem;
+        }
+
+        h4 {
+            color: var(--color-text-primary);
+            margin-top: var(--spacing-lg);
+            margin-bottom: var(--spacing-sm);
+            font-size: 1.1rem;
+        }
+
+        .subsection {
+            margin-left: var(--spacing-md);
+            padding-left: var(--spacing-md);
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+        }
     </style>
 </head>
 
 <body>
+    <nav class="nav">
+        <a href="dolby-codecs.html" class="nav-button">
+            ← Dolby Codecs
+        </a>
+    </nav>
+
     <div class="container">
         <header>
             <h1 class="page-title">Dolby Digital Plus (DDP) Porting Guide</h1>
-            <p class="page-subtitle">Comprehensive guide for integrating Dolby Audio Processing (DAP) and DDP support into
-                Android Audio HAL and Framework.</p>
+            <p class="page-subtitle">Android Audio HAL에 Dolby Audio Processing (DAP) 및 DDP 디코딩을 통합하기 위한 상세 포팅 가이드</p>
         </header>
 
-        <!-- 1. Prerequisites -->
-        <section class="content-section section">
+        <!-- Section 1: Prerequisites -->
+        <section class="section">
             <h2 class="section-title">
-                <span class="step-number">1</span>
-                Prerequisites & Licensing
+                <span class="section-number">1</span>
+                사전 요구사항 & 라이선스
             </h2>
-            <p>
-                Dolby Digital Plus 통합은 단순한 소프트웨어 설치가 아니며, 하드웨어 및 라이선스 요구사항을 충족해야 합니다.
-                <strong>Android 14 이상</strong>에서는 Audio HAL이 <strong>AIDL</strong> 인터페이스로 전환되었으므로 이에 맞춘 구현이 필요합니다.
+            <p class="section-description">
+                Dolby Digital Plus 통합은 단순한 소프트웨어 설치가 아닙니다. 하드웨어 지원, 라이선스 계약, 그리고 Android 버전별 HAL 요구사항을 충족해야 합니다.
             </p>
+
             <div class="alert">
-                <div class="alert-title">⚠️ Licensing Required</div>
-                <p>Dolby 기술을 상용 기기에 탑재하려면 반드시 Dolby Laboratories와의 라이선스 계약이 필요하며,
-                    제공되는 <strong>Dolby Audio for Android (DAX3)</strong> SDK 또는 <strong>MS12</strong> 라이브러리를 사용해야 합니다.
-                </p>
+                <div class="alert-title">Licensing Required</div>
+                <p>Dolby 기술을 상용 기기에 탑재하려면 <strong>Dolby Laboratories</strong>와의 라이선스 계약이 필수입니다.
+                    계약 후 <strong>Dolby Audio for Android (DAX3)</strong> SDK 또는 <strong>MS12</strong> 라이브러리를 제공받습니다.</p>
             </div>
-            <ul>
-                <li><strong>SoC Support:</strong> Dolby 인증을 받은 DSP 또는 Audio Processor (e.g., Qualcomm Hexagon, MediaTek,
-                    Amlogic).</li>
-                <li><strong>Efuse Provisioning:</strong> SoC 레벨에서 Dolby 기능 활성화를 위한 Efuse 키 주입 필요.</li>
-                <li><strong>Android Version:</strong> Android 14+ (AIDL HAL 필수), Android 10+ (AudioTrack Offload 지원).
-                </li>
-            </ul>
+
+            <h3>1.1 하드웨어 요구사항</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>항목</th>
+                        <th>요구사항</th>
+                        <th>비고</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>SoC</strong></td>
+                        <td>Dolby 인증 DSP 또는 Audio Processor</td>
+                        <td>Qualcomm Hexagon, MediaTek, Amlogic 등</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Efuse</strong></td>
+                        <td>Dolby 기능 활성화 키 프로비저닝</td>
+                        <td>SoC 제조사 협의 필요</td>
+                    </tr>
+                    <tr>
+                        <td><strong>오디오 출력</strong></td>
+                        <td>HDMI 2.0+ 또는 S/PDIF</td>
+                        <td>비트스트림 패스스루 시 필수</td>
+                    </tr>
+                    <tr>
+                        <td><strong>메모리</strong></td>
+                        <td>추가 64MB+ (MS12 엔진용)</td>
+                        <td>멀티채널 처리 시 더 필요</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>1.2 Android 버전별 HAL 인터페이스</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Android 버전</th>
+                        <th>HAL 인터페이스</th>
+                        <th>특징</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Android 8-10</td>
+                        <td>HIDL (android.hardware.audio@2.0)</td>
+                        <td>Legacy, 지원 종료 예정</td>
+                    </tr>
+                    <tr>
+                        <td>Android 11-13</td>
+                        <td>HIDL (android.hardware.audio@7.0)</td>
+                        <td>IStreamOut 확장</td>
+                    </tr>
+                    <tr>
+                        <td>Android 14+</td>
+                        <td><strong>AIDL</strong> (android.hardware.audio)</td>
+                        <td>권장, 신규 프로젝트 필수</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>1.3 Dolby 제공 라이브러리</h3>
+            <div class="code-block">
+<code># Core Libraries (Dolby에서 제공)
+/vendor/lib64/libdolbyms12.so           # MS12 디코딩/믹싱 엔진
+/vendor/lib64/libdolbyms12wrapper.so    # HAL 연동 래퍼
+/vendor/lib64/libHwAudio_dcvdec.so      # HW 가속 디코더 (옵션)
+
+# Configuration Files
+/vendor/etc/dolby/dax-default.xml       # DAP 기본 튜닝
+/vendor/etc/dolby/tuning/               # 제품별 튜닝 프리셋
+
+# Effects Library
+/vendor/lib64/soundfx/libdap.so         # DAP Effect 플러그인</code>
+            </div>
         </section>
 
-        <!-- 2. Architecture Overview -->
-        <section class="content-section section">
+        <!-- Section 2: Architecture -->
+        <section class="section">
             <h2 class="section-title">
-                <span class="step-number">2</span>
-                Integration Architecture (AIDL)
+                <span class="section-number">2</span>
+                통합 아키텍처
             </h2>
-            <p>
-                Dolby 통합의 핵심은 <strong>Audio HAL</strong> 내에 Dolby 엔진(DAP/MS12)을 배치하여
-                디코딩과 후처리(Post-processing)를 수행하는 것입니다. Android 14부터는 AIDL 인터페이스를 통해 Framework와 통신합니다.
+            <p class="section-description">
+                Dolby Audio 통합의 핵심은 Audio HAL 내에 Dolby 엔진(DAP/MS12)을 배치하여 디코딩과 후처리를 수행하는 것입니다.
             </p>
-            <div class="mermaid">
-                graph TD
-                App[Media App / ExoPlayer] --> Framework[Android Audio Framework]
-                Framework -- "IStreamOut.write() (AIDL)" --> HAL[Audio HAL (AIDL)]
 
-                subgraph AudioHAL [Vendor Audio HAL Implementation]
-                StreamIn[Stream Input] --> DolbyEngine[Dolby Engine (MS12/DAP)]
-                DolbyEngine -- "Decoded PCM" --> PostProc[Post Processing]
-                PostProc -- "Multi-channel PCM" --> ALSA[ALSA / TinyALSA]
-                end
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TD
+                        subgraph Application
+                            App[Media App<br/>ExoPlayer / MediaPlayer]
+                        end
 
+                        subgraph Framework ["Android Framework"]
+                            AT[AudioTrack]
+                            AF[AudioFlinger]
+                            APM[AudioPolicyManager]
+                        end
+
+                        subgraph HAL ["Audio HAL (AIDL/HIDL)"]
+                            direction TB
+                            HALCore[Audio HAL Core<br/>IModule / IStreamOut]
+
+                            subgraph DolbyEngine ["Dolby Engine"]
+                                Decoder[MS12 Decoder<br/>AC-3 / E-AC-3 / AC-4]
+                                Mixer[MS12 Mixer<br/>Multi-stream Mixing]
+                                DAP[DAP Post-Processing<br/>Virtualizer / Leveler]
+                            end
+
+                            HALCore --> Decoder
+                            Decoder --> Mixer
+                            Mixer --> DAP
+                        end
+
+                        subgraph Output ["Output"]
+                            ALSA[TinyALSA Driver]
+                            HDMI[HDMI / S-PDIF]
+                            Speaker[Speaker / Headphone]
+                        end
+
+                        App --> AT
+                        AT --> AF
+                        AF --> HALCore
+                        APM --> HALCore
+                        DAP --> ALSA
+                        ALSA --> HDMI
+                        ALSA --> Speaker
+                </div>
+            </div>
+
+            <h3>2.1 데이터 플로우</h3>
+            <div class="info-box">
+                <div class="info-box-title">Compressed Offload vs PCM Decode</div>
+                <p><strong>Offload 모드:</strong> 압축 오디오 데이터가 직접 HAL로 전달되어 MS12에서 디코딩<br>
+                <strong>PCM 모드:</strong> Framework에서 디코딩 후 PCM이 HAL로 전달, DAP 후처리만 수행</p>
+            </div>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>모드</th>
+                        <th>데이터 형식</th>
+                        <th>Dolby 처리</th>
+                        <th>사용 시나리오</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Offload</strong></td>
+                        <td>AC-3 / E-AC-3 / AC-4 비트스트림</td>
+                        <td>MS12 Decode + DAP</td>
+                        <td>영상 재생, 저전력 필요 시</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PCM</strong></td>
+                        <td>16/24-bit PCM</td>
+                        <td>DAP만 수행</td>
+                        <td>게임, VoIP, 일반 앱</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Pass-through</strong></td>
+                        <td>원본 비트스트림</td>
+                        <td>처리 안함 (바이패스)</td>
+                        <td>AVR/Soundbar 연결 시</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 3: Audio HAL Implementation -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">3</span>
+                Audio HAL 구현
+            </h2>
+
+            <h3>3.1 AIDL HAL 구조 (Android 14+)</h3>
+            <p>Android 14부터는 AIDL 인터페이스가 필수입니다. 주요 구현 파일 구조:</p>
+
+            <div class="code-block">
+<code>vendor/
+└── audio/
+    └── hal/
+        ├── Android.bp
+        ├── service.cpp                    # HAL 서비스 진입점
+        ├── Module.cpp                     # IModule 구현
+        ├── StreamOut.cpp                  # IStreamOut 구현 (핵심)
+        ├── StreamIn.cpp                   # IStreamIn 구현
+        └── dolby/
+            ├── DolbyMs12Wrapper.cpp       # MS12 래퍼
+            ├── DolbyMs12Wrapper.h
+            ├── DolbyDapWrapper.cpp        # DAP 래퍼
+            └── DolbyDapWrapper.h</code>
+            </div>
+
+            <h3>3.2 IStreamOut 구현 (핵심)</h3>
+            <p><span class="file-path">StreamOut.cpp</span>에서 Dolby 포맷을 감지하고 MS12 엔진으로 라우팅합니다:</p>
+
+            <div class="code-block">
+<code class="language-cpp">// StreamOut.cpp - AIDL 구현 예시
+
+ndk::ScopedAStatus StreamOut::open(
+        const StreamDescriptor& descriptor,
+        const std::shared_ptr<IStreamCallback>& callback) {
+
+    // 1. 오디오 포맷 확인
+    AudioFormatDescription format = descriptor.format;
+
+    // 2. Dolby 포맷 감지
+    if (isDolbyFormat(format)) {
+        mDolbyMode = determineDolbyMode(format);
+        initializeDolbyEngine(mDolbyMode);
+    }
+
+    // 3. Offload 플래그 처리
+    if (descriptor.flags & AudioOutputFlags::COMPRESS_OFFLOAD) {
+        mIsOffload = true;
+        setupOffloadPipeline();
+    }
+
+    return ndk::ScopedAStatus::ok();
+}
+
+bool StreamOut::isDolbyFormat(const AudioFormatDescription& format) {
+    return format.encoding == AudioFormatType::AC3 ||
+           format.encoding == AudioFormatType::E_AC3 ||
+           format.encoding == AudioFormatType::E_AC3_JOC ||  // Atmos
+           format.encoding == AudioFormatType::AC4;
+}
+
+ndk::ScopedAStatus StreamOut::write(
+        const std::vector<uint8_t>& data,
+        int64_t* written) {
+
+    if (mIsOffload && mDolbyMode != DolbyMode::NONE) {
+        // MS12 엔진에 압축 데이터 전달
+        *written = mDolbyWrapper->decodeAndProcess(data.data(), data.size());
+    } else {
+        // 일반 PCM 처리 (DAP 후처리만)
+        *written = mDolbyWrapper->applyDap(data.data(), data.size());
+    }
+
+    return ndk::ScopedAStatus::ok();
+}</code>
+            </div>
+
+            <h3>3.3 MS12 Wrapper 구현</h3>
+            <div class="code-block">
+<code class="language-cpp">// DolbyMs12Wrapper.cpp
+
+class DolbyMs12Wrapper {
+public:
+    bool initialize(const DolbyConfig& config) {
+        // MS12 라이브러리 동적 로딩
+        mMs12Handle = dlopen("libdolbyms12.so", RTLD_NOW);
+        if (!mMs12Handle) {
+            ALOGE("Failed to load MS12 library: %s", dlerror());
+            return false;
+        }
+
+        // 함수 포인터 바인딩
+        mMs12Init = (ms12_init_fn)dlsym(mMs12Handle, "ms12_init");
+        mMs12Decode = (ms12_decode_fn)dlsym(mMs12Handle, "ms12_decode");
+        mMs12Process = (ms12_process_fn)dlsym(mMs12Handle, "ms12_process");
+
+        // MS12 초기화
+        Ms12InitParams params = {
+            .outputMode = config.outputMode,
+            .maxChannels = config.maxChannels,
+            .sampleRate = config.sampleRate,
+            .drcMode = MS12_DRC_LINE,      // Dynamic Range Control
+            .dialogEnhance = true,
+        };
+
+        return mMs12Init(&params) == MS12_OK;
+    }
+
+    size_t decodeAndProcess(const uint8_t* input, size_t inputSize) {
+        // 1. 디코딩
+        Ms12DecodeResult decoded;
+        int ret = mMs12Decode(input, inputSize, &decoded);
+        if (ret != MS12_OK) return 0;
+
+        // 2. DAP 후처리
+        if (mDapEnabled) {
+            applyDapProcessing(decoded.pcmData, decoded.pcmSize);
+        }
+
+        // 3. 출력 버퍼로 전달
+        return writeToOutput(decoded.pcmData, decoded.pcmSize);
+    }
+
+private:
+    void* mMs12Handle = nullptr;
+    bool mDapEnabled = true;
+};</code>
+            </div>
+
+            <h3>3.4 메타데이터 처리</h3>
+            <p>Dolby Atmos 콘텐츠는 JOC(Joint Object Coding) 메타데이터를 포함합니다:</p>
+
+            <div class="code-block">
+<code class="language-cpp">// 메타데이터 추출 및 적용
+void StreamOut::handleDolbyMetadata(const AudioMetadata& metadata) {
+    // Dolby Atmos 메타데이터 확인
+    if (metadata.has(AUDIO_METADATA_KEY_ATMOS_PRESENT)) {
+        bool atmosPresent = metadata.get<bool>(AUDIO_METADATA_KEY_ATMOS_PRESENT);
+
+        if (atmosPresent) {
+            // Virtualizer 활성화 (헤드폰/스피커용)
+            mDolbyWrapper->enableVirtualizer(true);
+            mDolbyWrapper->setRenderMode(DOLBY_RENDER_HEADPHONE_BINAURAL);
+        }
+    }
+
+    // Dialog Enhancement 레벨
+    if (metadata.has(AUDIO_METADATA_KEY_DIALOG_LEVEL)) {
+        int dialogLevel = metadata.get<int>(AUDIO_METADATA_KEY_DIALOG_LEVEL);
+        mDolbyWrapper->setDialogEnhancement(dialogLevel);
+    }
+}</code>
             </div>
         </section>
 
-        <!-- 3. Audio HAL Integration -->
-        <section class="content-section section">
+        <!-- Section 4: Framework Configuration -->
+        <section class="section">
             <h2 class="section-title">
-                <span class="step-number">3</span>
-                Audio HAL Integration Steps
-            </h2>
-
-            <h3>3.1 Library Integration</h3>
-            <p>Dolby에서 제공하는 공유 라이브러리를 <code>/vendor/lib64/</code>에 배치하고 권한을 설정합니다.</p>
-            <pre>
-# Core Decoding & Processing Engine
-/vendor/lib64/libdolbyms12.so
-# Hardware Acceleration Support (if applicable)
-/vendor/lib64/libHwAudio_dcvdec.so
-# Tuning Configuration
-/vendor/etc/dolby/dax-default.xml</pre>
-
-            <h3>3.2 HAL Implementation (AIDL)</h3>
-            <p><code>IStreamOut.aidl</code> 구현체에서 Dolby 포맷을 감지하고 엔진으로 라우팅합니다.</p>
-            <ul>
-                <li><strong>Format Detection:</strong> <code>AudioFormat.AC3</code>, <code>AudioFormat.E_AC3</code>,
-                    <code>AudioFormat.AC4</code> 감지.</li>
-                <li><strong>Offload Playback:</strong> 압축 오디오 패스스루를 위해 <code>AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD</code>
-                    플래그 처리.</li>
-                <li><strong>Metadata Handling:</strong> <code>AudioMetadata</code>를 통해 전달된 스트림 메타데이터를 Dolby 엔진에 적용.</li>
-            </ul>
-        </section>
-
-        <!-- 4. Framework Configuration -->
-        <section class="content-section section">
-            <h2 class="section-title">
-                <span class="step-number">4</span>
-                Framework Configuration
+                <span class="section-number">4</span>
+                Framework 설정
             </h2>
 
             <h3>4.1 audio_policy_configuration.xml</h3>
-            <p>Dolby 포맷을 지원하는 <code>mixPort</code>와 <code>devicePort</code>를 연결하는 <code>route</code>를 정의해야 합니다.</p>
-            <pre><code class="language-xml">&lt;!-- MixPort Definition --&gt;
-&lt;mixPort name="dolby_direct_output" role="source" flags="AUDIO_OUTPUT_FLAG_DIRECT|AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD"&gt;
-    &lt;profile name="" format="AUDIO_FORMAT_AC3"
-             samplingRates="44100,48000" channelMasks="AUDIO_CHANNEL_OUT_5POINT1"/&gt;
-    &lt;profile name="" format="AUDIO_FORMAT_E_AC3"
-             samplingRates="44100,48000" channelMasks="AUDIO_CHANNEL_OUT_7POINT1"/&gt;
-&lt;/mixPort&gt;
+            <p>Dolby 포맷을 지원하는 출력 포트를 정의합니다:</p>
 
-&lt;!-- Route Definition --&gt;
-&lt;routes&gt;
-    &lt;route type="mix" sink="HDMI Out"
-           sources="dolby_direct_output,primary_output"/&gt;
-&lt;/routes&gt;</code></pre>
+            <div class="code-block">
+<code class="language-xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;audioPolicyConfiguration version="1.0"&gt;
+    &lt;modules&gt;
+        &lt;module name="primary" halVersion="3.0"&gt;
+            &lt;mixPorts&gt;
+                &lt;!-- 일반 PCM 출력 --&gt;
+                &lt;mixPort name="primary output" role="source"
+                         flags="AUDIO_OUTPUT_FLAG_PRIMARY"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                             samplingRates="48000" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/mixPort&gt;
 
-            <h3>4.2 MediaCodec Configuration</h3>
-            <p><code>media_codecs.xml</code>에 Dolby 디코더를 등록하여 <code>MediaCodec</code> API를 통해 접근 가능하게 합니다.</p>
-            <pre><code class="language-xml">&lt;MediaCodec name="c2.dolby.eac3.decoder" type="audio/eac3"&gt;
-    &lt;Limit name="channel-count" max="8" /&gt;
-    &lt;Limit name="sample-rate" ranges="32000-48000" /&gt;
-    &lt;Feature name="secure-playback" required="true" /&gt;
-&lt;/MediaCodec&gt;</code></pre>
+                &lt;!-- Dolby Offload 출력 --&gt;
+                &lt;mixPort name="dolby_offload_output" role="source"
+                         flags="AUDIO_OUTPUT_FLAG_DIRECT|AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD"&gt;
+                    &lt;!-- Dolby Digital (AC-3) --&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_AC3"
+                             samplingRates="32000,44100,48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_STEREO,AUDIO_CHANNEL_OUT_5POINT1"/&gt;
+
+                    &lt;!-- Dolby Digital Plus (E-AC-3) --&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_E_AC3"
+                             samplingRates="32000,44100,48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_STEREO,AUDIO_CHANNEL_OUT_5POINT1,AUDIO_CHANNEL_OUT_7POINT1"/&gt;
+
+                    &lt;!-- Dolby Atmos (E-AC-3 JOC) --&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_E_AC3_JOC"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_5POINT1,AUDIO_CHANNEL_OUT_7POINT1"/&gt;
+
+                    &lt;!-- Dolby AC-4 --&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_AC4"
+                             samplingRates="48000"
+                             channelMasks="AUDIO_CHANNEL_OUT_STEREO,AUDIO_CHANNEL_OUT_5POINT1"/&gt;
+                &lt;/mixPort&gt;
+
+                &lt;!-- HDMI 비트스트림 패스스루 --&gt;
+                &lt;mixPort name="hdmi_passthrough" role="source"
+                         flags="AUDIO_OUTPUT_FLAG_DIRECT|AUDIO_OUTPUT_FLAG_IEC958_NONAUDIO"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_AC3"
+                             samplingRates="48000" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_E_AC3"
+                             samplingRates="48000" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                &lt;/mixPort&gt;
+            &lt;/mixPorts&gt;
+
+            &lt;devicePorts&gt;
+                &lt;devicePort tagName="HDMI Out" type="AUDIO_DEVICE_OUT_AUX_DIGITAL" role="sink"&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                             samplingRates="48000" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_AC3"
+                             samplingRates="48000" channelMasks="AUDIO_CHANNEL_OUT_5POINT1"/&gt;
+                    &lt;profile name="" format="AUDIO_FORMAT_E_AC3"
+                             samplingRates="48000" channelMasks="AUDIO_CHANNEL_OUT_7POINT1"/&gt;
+                &lt;/devicePort&gt;
+            &lt;/devicePorts&gt;
+
+            &lt;routes&gt;
+                &lt;route type="mix" sink="HDMI Out"
+                       sources="primary output,dolby_offload_output,hdmi_passthrough"/&gt;
+            &lt;/routes&gt;
+        &lt;/module&gt;
+    &lt;/modules&gt;
+&lt;/audioPolicyConfiguration&gt;</code>
+            </div>
+
+            <h3>4.2 media_codecs.xml</h3>
+            <p>소프트웨어 Dolby 디코더 등록 (Offload 불가 시 Fallback용):</p>
+
+            <div class="code-block">
+<code class="language-xml">&lt;MediaCodecs&gt;
+    &lt;Decoders&gt;
+        &lt;!-- Dolby Digital (AC-3) Decoder --&gt;
+        &lt;MediaCodec name="c2.dolby.ac3.decoder" type="audio/ac3"&gt;
+            &lt;Limit name="channel-count" max="6" /&gt;
+            &lt;Limit name="sample-rate" ranges="32000-48000" /&gt;
+            &lt;Limit name="bitrate" range="32000-640000" /&gt;
+        &lt;/MediaCodec&gt;
+
+        &lt;!-- Dolby Digital Plus (E-AC-3) Decoder --&gt;
+        &lt;MediaCodec name="c2.dolby.eac3.decoder" type="audio/eac3"&gt;
+            &lt;Limit name="channel-count" max="8" /&gt;
+            &lt;Limit name="sample-rate" ranges="32000-48000" /&gt;
+            &lt;Limit name="bitrate" range="32000-6144000" /&gt;
+            &lt;Feature name="secure-playback" required="false" /&gt;
+        &lt;/MediaCodec&gt;
+
+        &lt;!-- Dolby Atmos (E-AC-3 JOC) Decoder --&gt;
+        &lt;MediaCodec name="c2.dolby.eac3_joc.decoder" type="audio/eac3-joc"&gt;
+            &lt;Limit name="channel-count" max="16" /&gt;
+            &lt;Limit name="sample-rate" ranges="48000" /&gt;
+            &lt;Feature name="secure-playback" required="false" /&gt;
+        &lt;/MediaCodec&gt;
+
+        &lt;!-- Dolby AC-4 Decoder --&gt;
+        &lt;MediaCodec name="c2.dolby.ac4.decoder" type="audio/ac4"&gt;
+            &lt;Limit name="channel-count" max="24" /&gt;
+            &lt;Limit name="sample-rate" ranges="44100-48000" /&gt;
+            &lt;Feature name="secure-playback" required="false" /&gt;
+        &lt;/MediaCodec&gt;
+    &lt;/Decoders&gt;
+&lt;/MediaCodecs&gt;</code>
+            </div>
+
+            <h3>4.3 DAP Effects 등록</h3>
+            <p><span class="file-path">audio_effects.xml</span>에 DAP Effect 플러그인 등록:</p>
+
+            <div class="code-block">
+<code class="language-xml">&lt;audio_effects_conf version="2.0"&gt;
+    &lt;libraries&gt;
+        &lt;library name="dap" path="libdap.so"/&gt;
+    &lt;/libraries&gt;
+
+    &lt;effects&gt;
+        &lt;effect name="dolby_audio_processing" library="dap" uuid="6ab06da4-c516-4611-8166-452799218539"&gt;
+            &lt;libsw library="dap" uuid="6ab06da4-c516-4611-8166-452799218539"/&gt;
+        &lt;/effect&gt;
+    &lt;/effects&gt;
+
+    &lt;postprocess&gt;
+        &lt;stream type="music"&gt;
+            &lt;apply effect="dolby_audio_processing"/&gt;
+        &lt;/stream&gt;
+        &lt;stream type="movie"&gt;
+            &lt;apply effect="dolby_audio_processing"/&gt;
+        &lt;/stream&gt;
+    &lt;/postprocess&gt;
+&lt;/audio_effects_conf&gt;</code>
+            </div>
         </section>
 
-        <!-- 5. Verification -->
-        <section class="content-section section">
+        <!-- Section 5: Build Configuration -->
+        <section class="section">
             <h2 class="section-title">
-                <span class="step-number">5</span>
-                Verification & Testing
+                <span class="section-number">5</span>
+                빌드 설정
             </h2>
-            <p>포팅 완료 후 다음 항목을 검증해야 합니다.</p>
-            <ul>
-                <li><strong>Decoder Availability:</strong> <code>MediaCodecList</code>에서 Dolby 디코더가 조회되는지 확인.</li>
-                <li><strong>Pass-through:</strong> HDMI/SPDIF 연결 시 비트스트림 패스스루가 정상 동작하는지 확인.</li>
-                <li><strong>DAP Effects:</strong> Dolby Atmos 설정(Movie, Music 모드 등) 변경 시 청감상 변화가 있는지 확인.</li>
-                <li><strong>CTS Tests:</strong> Android CTS의 Media 관련 테스트 케이스 통과 여부 확인.</li>
-            </ul>
+
+            <h3>5.1 Android.bp (Audio HAL)</h3>
+            <div class="code-block">
+<code class="language-json">cc_binary {
+    name: "android.hardware.audio.service.dolby",
+    relative_install_path: "hw",
+    vendor: true,
+    init_rc: ["android.hardware.audio.service.dolby.rc"],
+    vintf_fragments: ["android.hardware.audio.service.dolby.xml"],
+
+    srcs: [
+        "service.cpp",
+        "Module.cpp",
+        "StreamOut.cpp",
+        "StreamIn.cpp",
+        "dolby/DolbyMs12Wrapper.cpp",
+        "dolby/DolbyDapWrapper.cpp",
+    ],
+
+    shared_libs: [
+        "libbase",
+        "libbinder_ndk",
+        "libcutils",
+        "liblog",
+        "libtinyalsa",
+        "android.hardware.audio-V1-ndk",
+        "android.hardware.audio.common-V1-ndk",
+        // Dolby 라이브러리 (prebuilt)
+        "libdolbyms12",
+        "libdolbyms12wrapper",
+    ],
+
+    cflags: [
+        "-DDOLBY_MS12_ENABLED",
+        "-DDOLBY_DAP_ENABLED",
+    ],
+}</code>
+            </div>
+
+            <h3>5.2 Prebuilt Dolby Libraries</h3>
+            <div class="code-block">
+<code class="language-json">// vendor/dolby/Android.bp
+
+cc_prebuilt_library_shared {
+    name: "libdolbyms12",
+    vendor: true,
+    strip: { none: true },
+    arch: {
+        arm64: { srcs: ["lib64/libdolbyms12.so"] },
+        arm: { srcs: ["lib/libdolbyms12.so"] },
+    },
+}
+
+prebuilt_etc {
+    name: "dolby_dax_config",
+    vendor: true,
+    src: "etc/dax-default.xml",
+    sub_dir: "dolby",
+}</code>
+            </div>
+
+            <h3>5.3 SELinux 정책</h3>
+            <p><span class="file-path">vendor/sepolicy/hal_audio_dolby.te</span>:</p>
+
+            <div class="code-block">
+<code># Dolby Audio HAL SELinux Policy
+
+# HAL 서비스 타입 정의
+type hal_audio_dolby, domain;
+type hal_audio_dolby_exec, exec_type, vendor_file_type, file_type;
+
+# 서비스 시작 허용
+init_daemon_domain(hal_audio_dolby)
+
+# Dolby 라이브러리 접근
+allow hal_audio_dolby vendor_file:dir search;
+allow hal_audio_dolby vendor_file:file { read open getattr execute };
+
+# Dolby 설정 파일 접근
+allow hal_audio_dolby vendor_configs_file:dir search;
+allow hal_audio_dolby vendor_configs_file:file { read open getattr };
+
+# Audio 디바이스 접근
+allow hal_audio_dolby audio_device:chr_file { read write open ioctl };
+
+# Binder 통신
+binder_use(hal_audio_dolby)
+binder_call(hal_audio_dolby, system_server)</code>
+            </div>
         </section>
 
-        <a href="dolby-codecs.html" class="nav-button">← Back to Dolby Codecs</a>
+        <!-- Section 6: Testing & Verification -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">6</span>
+                테스트 & 검증
+            </h2>
+
+            <h3>6.1 기본 검증 체크리스트</h3>
+            <ul class="checklist">
+                <li><strong>디코더 등록 확인:</strong> <code>MediaCodecList</code>에서 Dolby 디코더 조회</li>
+                <li><strong>Offload 동작:</strong> AC-3/E-AC-3 콘텐츠가 HAL에서 직접 디코딩되는지 확인</li>
+                <li><strong>DAP Effects:</strong> Dolby Atmos 모드(Movie, Music, Game) 전환 시 청감 변화 확인</li>
+                <li><strong>패스스루:</strong> HDMI/S-PDIF 연결 시 비트스트림이 그대로 전달되는지 확인</li>
+                <li><strong>채널 매핑:</strong> 5.1/7.1 콘텐츠의 스피커 출력 위치 확인</li>
+            </ul>
+
+            <h3>6.2 ADB 디버깅 명령어</h3>
+            <div class="code-block">
+<code class="language-bash"># 1. 지원 코덱 확인
+adb shell dumpsys media.audio_flinger | grep -i dolby
+
+# 2. Audio Policy 상태
+adb shell dumpsys media.audio_policy | grep -i "format\|dolby"
+
+# 3. HAL 서비스 상태
+adb shell dumpsys android.hardware.audio.service
+
+# 4. 현재 재생 스트림 정보
+adb shell dumpsys media.audio_flinger | grep -A 20 "Output thread"
+
+# 5. Dolby 관련 로그
+adb logcat -s DolbyMs12:V DolbyDap:V AudioFlinger:V
+
+# 6. MediaCodec 사용 현황
+adb shell dumpsys media.codec | grep -i dolby</code>
+            </div>
+
+            <h3>6.3 CTS 테스트</h3>
+            <div class="code-block">
+<code class="language-bash"># 오디오 관련 CTS 실행
+atest CtsMediaDecoderTestCases -- --module-arg CtsMediaDecoderTestCases:include-filter:*Dolby*
+
+# Offload 테스트
+atest CtsMediaAudioTestCases -- --module-arg CtsMediaAudioTestCases:include-filter:*Offload*
+
+# 코덱 기능 테스트
+atest CtsMediaCodecTestCases -- --module-arg CtsMediaCodecTestCases:include-filter:*AC3*
+atest CtsMediaCodecTestCases -- --module-arg CtsMediaCodecTestCases:include-filter:*EAC3*</code>
+            </div>
+
+            <h3>6.4 테스트 콘텐츠</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>포맷</th>
+                        <th>테스트 파일</th>
+                        <th>확인 항목</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>AC-3 5.1</td>
+                        <td>Dolby Digital 5.1 테스트 클립</td>
+                        <td>6채널 출력, 디코딩 정상</td>
+                    </tr>
+                    <tr>
+                        <td>E-AC-3 7.1</td>
+                        <td>Dolby Digital Plus 7.1 클립</td>
+                        <td>8채널 출력, 비트레이트 정상</td>
+                    </tr>
+                    <tr>
+                        <td>E-AC-3 JOC</td>
+                        <td>Dolby Atmos 데모 트레일러</td>
+                        <td>객체 오디오 렌더링, Virtualizer</td>
+                    </tr>
+                    <tr>
+                        <td>AC-4</td>
+                        <td>AC-4 IMS 레퍼런스</td>
+                        <td>Dialog Enhancement, DRC</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 7: Troubleshooting -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">7</span>
+                트러블슈팅
+            </h2>
+
+            <h3>7.1 일반적인 이슈</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>증상</th>
+                        <th>원인</th>
+                        <th>해결책</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>소리 없음</td>
+                        <td>MS12 라이브러리 로딩 실패</td>
+                        <td>SELinux 정책 확인, 라이브러리 경로 확인</td>
+                    </tr>
+                    <tr>
+                        <td>Offload 미동작</td>
+                        <td>audio_policy_configuration.xml 설정 오류</td>
+                        <td>mixPort 플래그 및 포맷 프로필 확인</td>
+                    </tr>
+                    <tr>
+                        <td>잡음/글리치</td>
+                        <td>버퍼 언더런 또는 샘플레이트 불일치</td>
+                        <td>버퍼 크기 조정, 리샘플링 설정 확인</td>
+                    </tr>
+                    <tr>
+                        <td>채널 뒤바뀜</td>
+                        <td>채널 매핑 오류</td>
+                        <td>MS12 출력 채널 순서 설정 확인</td>
+                    </tr>
+                    <tr>
+                        <td>DAP 효과 없음</td>
+                        <td>Effect 플러그인 미로딩</td>
+                        <td>audio_effects.xml 및 postprocess 설정 확인</td>
+                    </tr>
+                    <tr>
+                        <td>패스스루 실패</td>
+                        <td>HDMI EDID 파싱 오류</td>
+                        <td>HDMI 연결 상태 및 Sink 지원 포맷 확인</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>7.2 디버그 로그 활성화</h3>
+            <div class="code-block">
+<code class="language-bash"># Dolby 상세 로그 활성화
+adb shell setprop persist.vendor.dolby.log.level 7
+adb shell setprop persist.vendor.audio.debug 1
+
+# HAL 재시작
+adb shell stop audioserver
+adb shell start audioserver
+
+# 로그 수집
+adb logcat -v time | grep -E "Dolby|MS12|DAP|AudioFlinger" > dolby_debug.log</code>
+            </div>
+
+            <h3>7.3 성능 최적화</h3>
+            <div class="info-box">
+                <div class="info-box-title">권장 버퍼 설정</div>
+                <p>
+                    <strong>Offload 모드:</strong> 32KB ~ 64KB (저지연 불필요 시)<br>
+                    <strong>Low-latency 모드:</strong> 4KB ~ 8KB (게임 등)<br>
+                    <strong>Pass-through:</strong> 2KB ~ 4KB (실시간 스트리밍)
+                </p>
+            </div>
+        </section>
+
+        <!-- Section 8: References -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-number">8</span>
+                참고 자료
+            </h2>
+
+            <h3>8.1 공식 문서</h3>
+            <ul>
+                <li><a href="https://source.android.com/docs/core/audio" target="_blank">Android Audio Architecture</a></li>
+                <li><a href="https://source.android.com/docs/core/audio/hal" target="_blank">Audio HAL 구현 가이드</a></li>
+                <li><a href="https://professional.dolby.com/" target="_blank">Dolby Professional Portal</a> (라이선스 필요)</li>
+            </ul>
+
+            <h3>8.2 AOSP 소스 경로</h3>
+            <div class="code-block">
+<code># Audio HAL AIDL 인터페이스
+hardware/interfaces/audio/aidl/
+
+# Audio Policy 설정
+frameworks/av/services/audiopolicy/config/
+
+# MediaCodec 설정
+frameworks/av/media/libstagefright/data/
+
+# Audio Effects
+frameworks/av/media/libeffects/</code>
+            </div>
+        </section>
+
+        <a href="dolby-codecs.html" class="nav-button" style="margin-top: var(--spacing-2xl);">← Back to Dolby Codecs</a>
     </div>
 
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#00d4ff',
+                primaryTextColor: '#e8eaed',
+                primaryBorderColor: '#00d4ff',
+                lineColor: '#5eead4',
+                secondaryColor: '#1e293b',
+                tertiaryColor: '#0f172a',
+                background: '#0f172a',
+                mainBkg: '#1e293b',
+                secondBkg: '#0f172a',
+                fontFamily: 'Archivo, sans-serif'
+            }
+        });
+    </script>
+
     <script src="scripts/mermaid-theme.js"></script>
-    <!-- Navigation & Copy Features -->
     <script src="scripts/copy-code.js"></script>
     <script src="scripts/toc-generator.js"></script>
     <script src="scripts/page-navigation.js"></script>
-    <!-- Interactive Diagram Features -->
     <script src="scripts/diagram-data.js"></script>
     <script src="scripts/diagram-interactive.js"></script>
-
     <script src="scripts/theme-toggle.js"></script>
     <script src="scripts/lang-switch.js"></script>
 </body>

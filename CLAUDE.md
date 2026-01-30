@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | 항목 | 수치 | 비고 |
 |------|------|------|
-| 한국어 페이지 | 41개 | index + old_main_page + 39개 컨텐츠 |
+| 한국어 페이지 | 38개 | index + old_main_page + 35개 컨텐츠 + 1개 레거시 |
 | 영문 페이지 | 40개 | en/ 디렉토리 |
 | 다이어그램 노드 | 740+ | 한국어 + 영문 (527개 번역) |
 | Scripts 파일 | 16개 | JS 13개 + Python 3개 |
@@ -28,7 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 Android_Media_Framework/
 │
-├── index.html                      # 메인 랜딩 페이지 (39개 토픽 네비게이션)
+├── index.html                      # 메인 랜딩 페이지 (35개 토픽 네비게이션)
 ├── README.md                       # 사용자용 프로젝트 설명서
 ├── CLAUDE.md                       # 개발자용 프로젝트 상세 문서 (이 파일)
 ├── NAVIGATION_FEATURES.md          # 네비게이션 기능 가이드 (코드 복사, TOC 등)
@@ -51,7 +51,6 @@ Android_Media_Framework/
 │   ├── media-playback.html         # 미디어 파이프라인 & 데이터 플로우
 │   ├── media-extractor.html        # 컨테이너 파싱 & 디먹싱
 │   ├── mediasession.html           # MediaSession 프레임워크
-│   ├── mediasession-api.html       # MediaSession API 플로우 (레거시)
 │   ├── media-app-layer.html        # MediaPlayer/ExoPlayer/Media3 API
 │   └── mediaprovider.html          # 스토리지 접근 & 인덱싱
 │
@@ -67,9 +66,7 @@ Android_Media_Framework/
 │
 ├── [05. DRM & 코덱]
 │   ├── widevine.html               # Widevine DRM (L1/L2/L3)
-│   ├── dolby-codecs.html           # Dolby Atmos/AC-4/Vision 사양
-│   ├── dolby-ddp-porting.html      # Dolby Digital Plus 포팅 가이드
-│   └── dolby-vision-porting.html   # Dolby Vision 포팅 가이드
+│   └── dolby-codecs.html           # Dolby Atmos/AC-4/Vision 사양
 │
 ├── [06. 차량용 시스템 심화 (AAOS Advanced)]
 │   ├── multi-display-entertainment.html # 멀티 디스플레이 엔터테인먼트
@@ -79,8 +76,7 @@ Android_Media_Framework/
 │   └── aaos-boot-optimization.html # AAOS 부팅 & 미디어 최적화
 │
 ├── [07. 테스팅 & 호환성]
-│   ├── cts.html                    # CTS/VTS/GTS 테스트
-│   ├── cdd.html                    # CDD 정책 문서
+│   ├── cts.html                    # CTS/VTS/GTS 테스트 (CDD 포함)
 │   └── media-porting-checklist.html # 미디어 스택 포팅 체크리스트
 │
 ├── [08. 레퍼런스 & 가이드]
@@ -128,12 +124,18 @@ Android_Media_Framework/
 │
 ├── en/                             # 영문 번역 페이지 (40개)
 │   ├── index.html                  # 영문 메인 페이지
-│   ├── aosp.html ~ widevine.html   # 39개 영문 컨텐츠 페이지
+│   ├── aosp.html ~ glossary.html   # 35개 메인 + 4개 서브 영문 페이지
 │   └── ...
 │
 ├── docs/
 │   └── plans/                      # 개발 계획 및 설계 문서
 │       └── 2025-01-28-new-topics-design.md
+│
+├── [레거시/서브 페이지] (index.html에서 직접 링크되지 않음)
+│   ├── mediasession-api.html       # MediaSession API 플로우 (레거시, mediasession.html에서 링크)
+│   ├── dolby-ddp-porting.html      # Dolby Digital Plus 포팅 가이드 (dolby-codecs.html에서 링크)
+│   ├── dolby-vision-porting.html   # Dolby Vision 포팅 가이드 (dolby-codecs.html에서 링크)
+│   └── cdd.html                    # CDD 정책 문서 (cts.html과 멀티링크 카드)
 │
 └── [레거시 파일]
     └── old_main_page.html          # 이전 메인 페이지 백업
@@ -234,7 +236,7 @@ Android_Media_Framework/
 5. **Code Examples**: 관련 API 사용법 (해당 시)
 6. **References**: AOSP 소스코드 링크 등
 
-## 🎯 39개 토픽 목록
+## 🎯 35개 토픽 목록 (index.html 카드)
 
 | # | 카테고리 | 페이지 | 설명 |
 |---|----------|--------|------|
@@ -247,36 +249,41 @@ Android_Media_Framework/
 | 07 | 미디어 | media-playback.html | 미디어 파이프라인 |
 | 08 | 미디어 | media-extractor.html | 컨테이너 파싱 |
 | 09 | 미디어 | mediasession.html | MediaSession 프레임워크 |
-| 10 | 미디어 | mediasession-api.html | MediaSession API 플로우 (레거시) |
-| 11 | 미디어 | mediaprovider.html | 스토리지 접근 |
-| 12 | 성능 | performance-optimization.html | 성능 최적화 가이드 |
-| 13 | 성능 | vendor-extension.html | Vendor Extension 개발 가이드 |
-| 14 | 오디오 | audio-framework.html | Audio 프레임워크 |
-| 15 | DRM | widevine.html | Widevine DRM (L1/L2/L3) |
-| 16 | DRM | dolby-codecs.html | Dolby Atmos/AC-4/Vision 사양 |
-| 17 | DRM | dolby-ddp-porting.html | Dolby Digital Plus 포팅 가이드 |
-| 18 | DRM | dolby-vision-porting.html | Dolby Vision 포팅 가이드 |
-| 19 | 보안 | media-security.html | 미디어 보안 가이드 |
-| 20 | 차량 | aaos.html | Android Automotive OS |
-| 21 | 차량 | carmedia.html | Car Media Service |
-| 22 | 차량 | aaos-key-events.html | 키 이벤트 처리 |
-| 23 | 차량 | aaos-last-media.html | Last Media & Autoplay |
-| 24 | 차량 | power-policy-suspend.html | Power Policy |
-| 25 | 차량 | gas.html | Google Automotive Services |
-| 26 | 차량 | multi-display-entertainment.html | 멀티 디스플레이 엔터테인먼트 |
-| 27 | 차량 | multi-zone-audio.html | 멀티존 오디오 심화 |
-| 28 | 차량 | oem-customization.html | OEM 커스터마이징 가이드 |
-| 29 | 차량 | vehicle-hal-media.html | Vehicle HAL 미디어 연동 |
-| 30 | 차량 | aaos-boot-optimization.html | AAOS 부팅 & 미디어 최적화 |
-| 31 | 테스트 | cts.html | CTS/VTS/GTS 테스트 |
-| 32 | 테스트 | cdd.html | CDD 정책 문서 |
-| 33 | 테스트 | media-porting-checklist.html | 미디어 스택 포팅 체크리스트 |
-| 34 | 레퍼런스 | common-media-issues.html | 미디어 문제 해결 가이드 (16+ 이슈) |
-| 35 | 레퍼런스 | debugging-tools.html | 디버깅 도구 (logcat, dumpsys, perfetto) |
-| 36 | 레퍼런스 | production-debugging.html | 프로덕션 디버깅 심화 |
-| 37 | 레퍼런스 | api-quick-reference.html | API 치트시트 (MediaPlayer, ExoPlayer, Codec) |
-| 38 | 레퍼런스 | migration-guides.html | 마이그레이션 가이드 (MP→ExoPlayer→Media3) |
-| 39 | 레퍼런스 | glossary.html | Android Media 용어집 (50+ 용어, A-Z) |
+| 10 | 미디어 | mediaprovider.html | 스토리지 접근 |
+| 11 | 성능 | performance-optimization.html | 성능 최적화 가이드 |
+| 12 | 성능 | vendor-extension.html | Vendor Extension 개발 가이드 |
+| 13 | 오디오 | audio-framework.html | Audio 프레임워크 |
+| 14 | DRM | widevine.html | Widevine DRM (L1/L2/L3) |
+| 15 | DRM | dolby-codecs.html | Dolby Atmos/AC-4/Vision 사양 |
+| 16 | 보안 | media-security.html | 미디어 보안 가이드 |
+| 17 | 차량 | aaos.html | Android Automotive OS |
+| 18 | 차량 | carmedia.html | Car Media Service |
+| 19 | 차량 | aaos-key-events.html | 키 이벤트 처리 |
+| 20 | 차량 | aaos-last-media.html | Last Media & Autoplay |
+| 21 | 차량 | power-policy-suspend.html | Power Policy |
+| 22 | 차량 | gas.html | Google Automotive Services |
+| 23 | 차량 | multi-display-entertainment.html | 멀티 디스플레이 엔터테인먼트 |
+| 24 | 차량 | multi-zone-audio.html | 멀티존 오디오 심화 |
+| 25 | 차량 | oem-customization.html | OEM 커스터마이징 가이드 |
+| 26 | 차량 | vehicle-hal-media.html | Vehicle HAL 미디어 연동 |
+| 27 | 차량 | aaos-boot-optimization.html | AAOS 부팅 & 미디어 최적화 |
+| 28 | 테스트 | cts.html | CTS/VTS/GTS/CDD 테스트 (멀티링크) |
+| 29 | 테스트 | media-porting-checklist.html | 미디어 스택 포팅 체크리스트 |
+| 30 | 레퍼런스 | common-media-issues.html | 미디어 문제 해결 가이드 (16+ 이슈) |
+| 31 | 레퍼런스 | debugging-tools.html | 디버깅 도구 (logcat, dumpsys, perfetto) |
+| 32 | 레퍼런스 | production-debugging.html | 프로덕션 디버깅 심화 |
+| 33 | 레퍼런스 | api-quick-reference.html | API 치트시트 (MediaPlayer, ExoPlayer, Codec) |
+| 34 | 레퍼런스 | migration-guides.html | 마이그레이션 가이드 (MP→ExoPlayer→Media3) |
+| 35 | 레퍼런스 | glossary.html | Android Media 용어집 (50+ 용어, A-Z) |
+
+### 서브/레거시 페이지 (index.html에서 직접 링크되지 않음)
+
+| 페이지 | 설명 | 링크 위치 |
+|--------|------|-----------|
+| mediasession-api.html | MediaSession API 플로우 (레거시) | mediasession.html |
+| dolby-ddp-porting.html | Dolby Digital Plus 포팅 가이드 | dolby-codecs.html |
+| dolby-vision-porting.html | Dolby Vision 포팅 가이드 | dolby-codecs.html |
+| cdd.html | CDD 정책 문서 | cts.html (멀티링크 카드) |
 
 ## 🚀 개발 명령어
 
@@ -434,7 +441,7 @@ git push origin main
 
 ### index.html 특이사항
 
-- **Grid 레이아웃**: 39개 카드 (`minmax(320px, 1fr)`)
+- **Grid 레이아웃**: 35개 카드 (`minmax(320px, 1fr)`)
 - **카테고리 컬러 코딩**: 상단 4px 보더로 구분
   - `cat-arch`: 아키텍처 (파란색)
   - `cat-media`: 미디어 (보라색)
@@ -815,7 +822,7 @@ const SEARCH_INDEX = [
         keywords: ['AOSP', 'HAL', 'Framework', ...],
         url: 'aosp.html'
     },
-    // ... 39개 페이지
+    // ... 35개 페이지
 ];
 ```
 
@@ -844,7 +851,7 @@ const SEARCH_INDEX = [
 - **스크롤 스파이**: 현재 섹션 하이라이트
 
 ### 3. 페이지 네비게이션 (page-navigation.js)
-- **기능**: 이전/다음 페이지 버튼 (39개 카드 순서 기반)
+- **기능**: 이전/다음 페이지 버튼 (35개 카드 순서 기반)
 - **위치**: 페이지 하단
 - **키보드 단축키**: `←` (이전), `→` (다음)
 
