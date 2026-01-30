@@ -10,6 +10,92 @@
     </script>
     <title>Android MediaSession Framework</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+    // Mermaid theme initialization (Light/Dark mode support)
+    (function() {
+        const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+        const config = isDark ? {
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                darkMode: true,
+                background: '#1a2030',
+                primaryColor: '#8b5cf6',
+                primaryTextColor: '#e8eaed',
+                primaryBorderColor: '#8b5cf6',
+                secondaryColor: '#ec4899',
+                secondaryTextColor: '#e8eaed',
+                secondaryBorderColor: '#ec4899',
+                tertiaryColor: '#3b82f6',
+                tertiaryTextColor: '#e8eaed',
+                tertiaryBorderColor: '#3b82f6',
+                lineColor: '#4b5563',
+                textColor: '#e8eaed',
+                mainBkg: '#1a2030',
+                nodeBorder: '#8b5cf6',
+                clusterBkg: '#1a2030',
+                clusterBorder: '#4b5563',
+                defaultLinkColor: '#4b5563',
+                titleColor: '#e8eaed',
+                edgeLabelBackground: '#1a2030',
+                nodeTextColor: '#e8eaed',
+                actorBorder: '#8b5cf6',
+                actorBkg: '#1a2030',
+                actorTextColor: '#e8eaed',
+                actorLineColor: '#4b5563',
+                signalColor: '#e8eaed',
+                signalTextColor: '#e8eaed',
+                labelBoxBkgColor: '#1a2030',
+                labelBoxBorderColor: '#4b5563',
+                labelTextColor: '#e8eaed',
+                loopTextColor: '#e8eaed',
+                activationBorderColor: '#8b5cf6',
+                activationBkgColor: '#1a2030',
+                sequenceNumberColor: '#e8eaed'
+            }
+        } : {
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                darkMode: false,
+                background: '#fafaf9',
+                primaryColor: '#dbeafe',
+                primaryTextColor: '#292524',
+                primaryBorderColor: '#0369a1',
+                secondaryColor: '#fee2e2',
+                secondaryTextColor: '#292524',
+                secondaryBorderColor: '#dc2626',
+                tertiaryColor: '#e0e7ff',
+                tertiaryTextColor: '#292524',
+                tertiaryBorderColor: '#1d4ed8',
+                lineColor: '#a8a29e',
+                textColor: '#292524',
+                mainBkg: '#fafaf9',
+                nodeBorder: '#0369a1',
+                clusterBkg: '#f5f5f4',
+                clusterBorder: '#a8a29e',
+                defaultLinkColor: '#a8a29e',
+                titleColor: '#292524',
+                edgeLabelBackground: '#fafaf9',
+                nodeTextColor: '#292524',
+                actorBorder: '#0369a1',
+                actorBkg: '#fafaf9',
+                actorTextColor: '#292524',
+                actorLineColor: '#a8a29e',
+                signalColor: '#292524',
+                signalTextColor: '#292524',
+                labelBoxBkgColor: '#fafaf9',
+                labelBoxBorderColor: '#a8a29e',
+                labelTextColor: '#292524',
+                loopTextColor: '#292524',
+                activationBorderColor: '#0369a1',
+                activationBkgColor: '#e0f2fe',
+                sequenceNumberColor: '#292524'
+            }
+        };
+        mermaid.initialize(config);
+    })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">

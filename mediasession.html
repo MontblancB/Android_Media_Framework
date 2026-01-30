@@ -10,6 +10,92 @@
     </script>
     <title>Android MediaSession Framework</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+    // Mermaid 테마 초기화 (라이트/다크 모드 지원)
+    (function() {
+        const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+        const config = isDark ? {
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                darkMode: true,
+                background: '#1a2030',
+                primaryColor: '#8b5cf6',
+                primaryTextColor: '#e8eaed',
+                primaryBorderColor: '#8b5cf6',
+                secondaryColor: '#ec4899',
+                secondaryTextColor: '#e8eaed',
+                secondaryBorderColor: '#ec4899',
+                tertiaryColor: '#3b82f6',
+                tertiaryTextColor: '#e8eaed',
+                tertiaryBorderColor: '#3b82f6',
+                lineColor: '#4b5563',
+                textColor: '#e8eaed',
+                mainBkg: '#1a2030',
+                nodeBorder: '#8b5cf6',
+                clusterBkg: '#1a2030',
+                clusterBorder: '#4b5563',
+                defaultLinkColor: '#4b5563',
+                titleColor: '#e8eaed',
+                edgeLabelBackground: '#1a2030',
+                nodeTextColor: '#e8eaed',
+                actorBorder: '#8b5cf6',
+                actorBkg: '#1a2030',
+                actorTextColor: '#e8eaed',
+                actorLineColor: '#4b5563',
+                signalColor: '#e8eaed',
+                signalTextColor: '#e8eaed',
+                labelBoxBkgColor: '#1a2030',
+                labelBoxBorderColor: '#4b5563',
+                labelTextColor: '#e8eaed',
+                loopTextColor: '#e8eaed',
+                activationBorderColor: '#8b5cf6',
+                activationBkgColor: '#1a2030',
+                sequenceNumberColor: '#e8eaed'
+            }
+        } : {
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                darkMode: false,
+                background: '#fafaf9',
+                primaryColor: '#dbeafe',
+                primaryTextColor: '#292524',
+                primaryBorderColor: '#0369a1',
+                secondaryColor: '#fee2e2',
+                secondaryTextColor: '#292524',
+                secondaryBorderColor: '#dc2626',
+                tertiaryColor: '#e0e7ff',
+                tertiaryTextColor: '#292524',
+                tertiaryBorderColor: '#1d4ed8',
+                lineColor: '#a8a29e',
+                textColor: '#292524',
+                mainBkg: '#fafaf9',
+                nodeBorder: '#0369a1',
+                clusterBkg: '#f5f5f4',
+                clusterBorder: '#a8a29e',
+                defaultLinkColor: '#a8a29e',
+                titleColor: '#292524',
+                edgeLabelBackground: '#fafaf9',
+                nodeTextColor: '#292524',
+                actorBorder: '#0369a1',
+                actorBkg: '#fafaf9',
+                actorTextColor: '#292524',
+                actorLineColor: '#a8a29e',
+                signalColor: '#292524',
+                signalTextColor: '#292524',
+                labelBoxBkgColor: '#fafaf9',
+                labelBoxBorderColor: '#a8a29e',
+                labelTextColor: '#292524',
+                loopTextColor: '#292524',
+                activationBorderColor: '#0369a1',
+                activationBkgColor: '#e0f2fe',
+                sequenceNumberColor: '#292524'
+            }
+        };
+        mermaid.initialize(config);
+    })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
@@ -2115,10 +2201,1024 @@ public final class MediaController {
             </div>
         </section>
 
-        <!-- Section 13: Related Documentation -->
+        <!-- Section 13: Media Source Change -->
         <section class="content-section section">
             <h2 class="section-title">
                 <span class="section-number">13</span>
+                미디어 소스 교체 (Source Change)
+            </h2>
+            <p class="section-description">
+                MediaSession에서 미디어 소스가 교체되는 시나리오와 그 내부 동작을 API 레벨에서 상세히 설명합니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Source Change란?</strong> 현재 재생 중인 미디어 소스가 다른 소스로 전환되는 것을 의미합니다.
+                앱 간 전환(Spotify → YouTube Music), 앱 내 트랙 변경, AAOS에서의 미디어 앱 전환 등 다양한 시나리오가 있습니다.
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.4rem;">📊 소스 교체 유형</h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        앱 간 세션 전환
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>Inter-App Session Switch</strong></p>
+                        <ul>
+                            <li>한 앱에서 다른 앱으로 활성 세션 전환</li>
+                            <li>예: Spotify 재생 중 → YouTube Music 재생</li>
+                            <li>기존 세션 비활성화, 새 세션 활성화</li>
+                            <li>MediaSessionService가 중재</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎵</span>
+                        앱 내 트랙 변경
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>In-App Track Change</strong></p>
+                        <ul>
+                            <li>같은 앱 내에서 재생 콘텐츠 변경</li>
+                            <li>예: 플레이리스트 다음 곡 재생</li>
+                            <li>ExoPlayer MediaSource 교체</li>
+                            <li>MediaMetadata 업데이트</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🚗</span>
+                        AAOS 소스 변경
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>CarMediaService Source Change</strong></p>
+                        <ul>
+                            <li>차량 환경에서의 미디어 소스 전환</li>
+                            <li>CarMediaManager.setMediaSource() 호출</li>
+                            <li>MediaSourceChangedListener 콜백</li>
+                            <li>Last Media Source 저장/복원</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">🏗️ 소스 교체 아키텍처</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                MediaSession 소스 교체가 발생하는 전체 아키텍처입니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                        subgraph APPS["Media Applications"]
+                            APP_A["App A<br/>(Spotify)"]
+                            APP_B["App B<br/>(YouTube Music)"]
+                            APP_C["App C<br/>(Local Player)"]
+                        end
+
+                        subgraph SESSIONS["MediaSessions"]
+                            SESSION_A["MediaSession A<br/>(Active)"]
+                            SESSION_B["MediaSession B<br/>(Inactive)"]
+                            SESSION_C["MediaSession C<br/>(Inactive)"]
+                        end
+
+                        subgraph SYSTEM["System Server"]
+                            MSS["MediaSessionService<br/>• Session Priority Queue<br/>• Active Session 관리"]
+                            AMSF["ActiveMediaSessionFinder<br/>• 활성 세션 결정"]
+                        end
+
+                        subgraph CONTROLLERS["MediaControllers"]
+                            NOTIFICATION["Notification<br/>MediaStyle"]
+                            AUTO["Android Auto<br/>MediaBrowser"]
+                            ASSISTANT["Google<br/>Assistant"]
+                            WEAR["Wear OS"]
+                        end
+
+                        subgraph AAOS["AAOS Layer (Optional)"]
+                            CMS["CarMediaService"]
+                            CMM["CarMediaManager"]
+                        end
+
+                        APP_A --> SESSION_A
+                        APP_B --> SESSION_B
+                        APP_C --> SESSION_C
+
+                        SESSION_A & SESSION_B & SESSION_C --> MSS
+                        MSS --> AMSF
+
+                        AMSF -->|Active Session| CONTROLLERS
+
+                        CMS --> MSS
+                        CMM --> CMS
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">📱 앱 간 세션 전환 플로우</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                App A에서 재생 중일 때 App B가 재생을 시작하는 상세 플로우입니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                        autonumber
+                        participant AppA as App A (Spotify)
+                        participant SessionA as MediaSession A
+                        participant MSS as MediaSessionService
+                        participant AF as AudioFocusManager
+                        participant AppB as App B (YouTube Music)
+                        participant SessionB as MediaSession B
+                        participant Controller as MediaController
+
+                        Note over AppA,Controller: App A가 재생 중인 상태
+                        AppA->>SessionA: setPlaybackState(PLAYING)
+                        SessionA->>MSS: onPlaybackStateChanged()
+                        MSS->>Controller: 활성 세션 = Session A
+
+                        Note over AppA,Controller: App B가 재생 요청
+                        AppB->>AF: requestAudioFocus()
+                        AF->>AF: 포커스 정책 확인
+                        AF-->>AppA: onAudioFocusChange(LOSS)
+
+                        Note over AppA: 오디오 포커스 손실 처리
+                        AppA->>AppA: pause() 또는 duck()
+                        AppA->>SessionA: setPlaybackState(PAUSED)
+                        SessionA->>MSS: onPlaybackStateChanged()
+
+                        AF-->>AppB: onAudioFocusChange(GAIN)
+                        AppB->>AppB: 재생 시작
+                        AppB->>SessionB: setActive(true)
+                        AppB->>SessionB: setPlaybackState(PLAYING)
+
+                        SessionB->>MSS: onSessionCreated/onPlaybackStateChanged
+                        MSS->>MSS: Priority Queue 재정렬
+                        MSS->>MSS: 활성 세션 = Session B
+
+                        MSS->>Controller: onActiveSessionChanged()
+                        Controller->>Controller: Session B에 연결
+
+                        Note over Controller: UI 업데이트
+                        Controller->>SessionB: getMetadata()
+                        SessionB-->>Controller: MediaMetadata (새 앱)
+                        Controller->>Controller: 알림/UI 갱신
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">🎵 앱 내 미디어 소스 교체 플로우</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                ExoPlayer에서 현재 재생 중인 트랙을 다른 트랙으로 교체하는 상세 플로우입니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                        autonumber
+                        participant UI as Player UI
+                        participant Player as ExoPlayer
+                        participant MS as MediaSession
+                        participant MSS as MediaSessionService
+                        participant Controller as MediaController
+
+                        Note over UI,Controller: 사용자가 다음 트랙 선택
+                        UI->>Player: seekToNextMediaItem()
+
+                        Note over Player: MediaSource 전환
+                        Player->>Player: 현재 트랙 정지
+                        Player->>Player: 새 MediaSource 로드
+                        Player->>Player: 버퍼링 시작
+
+                        Player->>MS: Listener.onMediaItemTransition()
+                        MS->>MS: MediaMetadata 업데이트
+                        MS->>MSS: onMetadataChanged()
+                        MSS->>Controller: onMetadataChanged()
+
+                        Note over Controller: 메타데이터 갱신
+                        Controller->>Controller: 제목/아티스트/앨범아트 업데이트
+
+                        Player->>Player: 버퍼링 완료
+                        Player->>MS: Listener.onPlaybackStateChanged(READY)
+                        Player->>Player: 재생 시작
+
+                        MS->>MSS: onPlaybackStateChanged()
+                        MSS->>Controller: onPlaybackStateChanged(PLAYING)
+
+                        Note over Controller: 재생 상태 갱신
+                        Controller->>Controller: 재생 버튼 상태 업데이트
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">🚗 AAOS 소스 교체 플로우</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                CarMediaService를 통한 미디어 소스 교체 플로우입니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                        autonumber
+                        participant User as 사용자/시스템
+                        participant CMM as CarMediaManager
+                        participant CMS as CarMediaService
+                        participant MSS as MediaSessionService
+                        participant OldApp as 기존 앱 (Spotify)
+                        participant NewApp as 새 앱 (Radio)
+                        participant UI as Car Media UI
+
+                        Note over User,UI: 소스 변경 요청
+                        User->>CMM: setMediaSource(Radio)
+                        CMM->>CMS: setMediaSource(ComponentName)
+
+                        CMS->>CMS: 현재 소스 저장 (Last Media)
+                        CMS->>MSS: getActiveSessions()
+
+                        Note over OldApp: 기존 앱 정지
+                        CMS->>OldApp: pause() via MediaController
+                        OldApp->>OldApp: 재생 정지
+
+                        Note over NewApp: 새 앱 활성화
+                        CMS->>NewApp: MediaBrowser.connect()
+                        NewApp->>NewApp: Service bind
+                        NewApp-->>CMS: onConnected()
+
+                        CMS->>NewApp: play() via MediaController
+                        NewApp->>NewApp: 재생 시작
+                        NewApp->>MSS: setActive(true)
+
+                        MSS->>MSS: Active Session 변경
+
+                        CMS->>CMS: MediaSourceChangedListener 호출
+                        CMS->>UI: onMediaSourceChanged(Radio)
+
+                        UI->>UI: 미디어 UI 갱신
+                        UI->>NewApp: getMetadata()
+                        NewApp-->>UI: MediaMetadata
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">🔧 핵심 API 상세</h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📡</span>
+                        MediaSessionService API
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>세션 관리 핵심 API</strong></p>
+                        <ul>
+                            <li><code>getActiveSessions()</code>: 활성 세션 목록</li>
+                            <li><code>addOnActiveSessionsChangedListener()</code>: 활성 세션 변경 감지</li>
+                            <li><code>getSession2Tokens()</code>: Media3 세션 토큰</li>
+                        </ul>
+                        <p style="margin-top: 10px; color: var(--text-tertiary); font-size: 0.85rem;">
+                            권한: <code>MEDIA_CONTENT_CONTROL</code> 필요
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎮</span>
+                        MediaController API
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>세션 제어 및 상태 수신</strong></p>
+                        <ul>
+                            <li><code>getTransportControls()</code>: play/pause/stop</li>
+                            <li><code>registerCallback()</code>: 상태 변경 수신</li>
+                            <li><code>getPlaybackState()</code>: 현재 재생 상태</li>
+                            <li><code>getMetadata()</code>: 현재 미디어 정보</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🔔</span>
+                        MediaController.Callback
+                    </h3>
+                    <div class="card-description">
+                        <p><strong>소스 변경 감지 콜백</strong></p>
+                        <ul>
+                            <li><code>onSessionDestroyed()</code>: 세션 종료</li>
+                            <li><code>onPlaybackStateChanged()</code>: 재생 상태 변경</li>
+                            <li><code>onMetadataChanged()</code>: 메타데이터 변경</li>
+                            <li><code>onQueueChanged()</code>: 큐 변경</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">📞 외부 인터럽트 처리 (BT Call, Navigation, etc.)</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                블루투스 전화, 내비게이션 안내 등 우선순위가 높은 외부 인터럽트가 발생하면 현재 미디어 재생이 중단되거나 볼륨이 감소합니다.
+            </p>
+
+            <div class="highlight-box">
+                <strong>오디오 포커스 우선순위:</strong> Android는 오디오 포커스 시스템을 통해 오디오 스트림 간의 우선순위를 관리합니다.
+                <br/>전화(USAGE_VOICE_COMMUNICATION) > 내비게이션(USAGE_ASSISTANCE_NAVIGATION_GUIDANCE) > 미디어(USAGE_MEDIA)
+            </div>
+
+            <h4 style="color: var(--text-primary); margin: 30px 0 15px 0;">🏗️ 외부 인터럽트 아키텍처</h4>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                        subgraph INTERRUPT_SOURCES["인터럽트 소스"]
+                            BT_CALL["📞 BT Call<br/>(Bluetooth HFP)"]
+                            NAVI["🗺️ Navigation<br/>(TBT Guidance)"]
+                            ALARM["⏰ Alarm<br/>(System Alert)"]
+                            ASSIST["🎤 Voice Assistant<br/>(Google Assistant)"]
+                            NOTIF["🔔 Notification<br/>(Ringtone)"]
+                        end
+
+                        subgraph AUDIO_SYSTEM["Android Audio System"]
+                            AF_MGR["AudioFocusManager<br/>• Focus 요청/해제<br/>• 우선순위 판단"]
+                            AUDIO_POLICY["AudioPolicyService<br/>• Ducking Policy<br/>• Stream Routing"]
+                            AUDIO_FLINGER["AudioFlinger<br/>• Volume Control<br/>• Mixing"]
+                        end
+
+                        subgraph MEDIA_APPS["Media Apps"]
+                            PLAYER["ExoPlayer<br/>MediaSession"]
+                            FOCUS_LISTENER["OnAudioFocusChangeListener"]
+                        end
+
+                        subgraph AAOS_LAYER["AAOS Layer (Optional)"]
+                            CAR_AUDIO["CarAudioService<br/>• Audio Zones<br/>• Duck Policy"]
+                            CAR_AUDIO_FOCUS["CarAudioFocus<br/>• Zone별 Focus 관리"]
+                        end
+
+                        BT_CALL -->|requestAudioFocus<br/>USAGE_VOICE_COMMUNICATION| AF_MGR
+                        NAVI -->|requestAudioFocus<br/>USAGE_ASSISTANCE_NAVIGATION| AF_MGR
+                        ALARM -->|requestAudioFocus<br/>USAGE_ALARM| AF_MGR
+                        ASSIST -->|requestAudioFocus<br/>USAGE_ASSISTANT| AF_MGR
+                        NOTIF -->|requestAudioFocus<br/>USAGE_NOTIFICATION| AF_MGR
+
+                        AF_MGR -->|AUDIOFOCUS_LOSS<br/>AUDIOFOCUS_LOSS_TRANSIENT<br/>AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK| FOCUS_LISTENER
+                        AF_MGR --> AUDIO_POLICY
+                        AUDIO_POLICY --> AUDIO_FLINGER
+
+                        FOCUS_LISTENER -->|pause/duck| PLAYER
+
+                        CAR_AUDIO --> AF_MGR
+                        CAR_AUDIO_FOCUS --> CAR_AUDIO
+                </div>
+            </div>
+
+            <h4 style="color: var(--text-primary); margin: 30px 0 15px 0;">📊 오디오 포커스 유형별 동작</h4>
+
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <thead>
+                    <tr style="background: var(--bg-tertiary);">
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--accent-primary);">포커스 변경</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--accent-primary);">트리거 예시</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--accent-primary);">미디어 앱 대응</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--accent-primary);">복구</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid var(--bg-tertiary);">
+                        <td style="padding: 12px;"><code>AUDIOFOCUS_LOSS</code></td>
+                        <td style="padding: 12px;">다른 앱이 장기 재생 시작<br/>(YouTube Music 실행)</td>
+                        <td style="padding: 12px;"><strong>재생 정지</strong><br/>리소스 해제</td>
+                        <td style="padding: 12px;">자동 복구 없음<br/>사용자 재시작 필요</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--bg-tertiary);">
+                        <td style="padding: 12px;"><code>AUDIOFOCUS_LOSS_TRANSIENT</code></td>
+                        <td style="padding: 12px;"><strong>📞 BT Call 수신</strong><br/>음성 안내</td>
+                        <td style="padding: 12px;"><strong>일시정지</strong><br/>상태 저장</td>
+                        <td style="padding: 12px;"><strong>자동 재개</strong><br/>AUDIOFOCUS_GAIN 수신 시</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--bg-tertiary);">
+                        <td style="padding: 12px;"><code>AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK</code></td>
+                        <td style="padding: 12px;"><strong>🗺️ Navigation TBT</strong><br/>알림음</td>
+                        <td style="padding: 12px;"><strong>볼륨 감소 (Duck)</strong><br/>재생 유지</td>
+                        <td style="padding: 12px;"><strong>볼륨 복구</strong><br/>AUDIOFOCUS_GAIN 수신 시</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px;"><code>AUDIOFOCUS_GAIN</code></td>
+                        <td style="padding: 12px;">통화 종료<br/>안내 완료</td>
+                        <td style="padding: 12px;"><strong>재생 재개</strong><br/>볼륨 복구</td>
+                        <td style="padding: 12px;">-</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4 style="color: var(--text-primary); margin: 30px 0 15px 0;">📞 BT Call 인터럽트 상세 플로우</h4>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                블루투스 전화 수신 시 미디어 재생이 일시정지되고, 통화 종료 후 자동으로 재개되는 전체 플로우입니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                        autonumber
+                        participant BT as Bluetooth HFP
+                        participant Telecom as TelecomManager
+                        participant AF as AudioFocusManager
+                        participant Policy as AudioPolicyService
+                        participant Player as MediaPlayer/ExoPlayer
+                        participant MS as MediaSession
+                        participant UI as Notification/UI
+
+                        Note over BT,UI: 📱 미디어 재생 중
+                        Player->>AF: holdAudioFocus(USAGE_MEDIA)
+                        Player->>MS: setPlaybackState(PLAYING)
+
+                        Note over BT,UI: 📞 BT Call 수신
+                        BT->>Telecom: Incoming Call (HFP)
+                        Telecom->>Telecom: Call State: RINGING
+
+                        Telecom->>AF: requestAudioFocus(<br/>USAGE_VOICE_COMMUNICATION,<br/>AUDIOFOCUS_GAIN_TRANSIENT)
+
+                        AF->>AF: 우선순위 비교<br/>VOICE > MEDIA
+
+                        AF->>Player: onAudioFocusChange(<br/>AUDIOFOCUS_LOSS_TRANSIENT)
+
+                        Note over Player: 🔇 미디어 일시정지
+                        Player->>Player: pause()
+                        Player->>Player: 재생 위치 저장
+                        Player->>MS: setPlaybackState(PAUSED)
+                        MS->>UI: onPlaybackStateChanged(PAUSED)
+
+                        AF-->>Telecom: Focus Granted
+                        Telecom->>BT: Audio Route to BT SCO
+
+                        Note over BT,UI: 📞 통화 중...
+                        BT->>BT: Voice Communication Active
+
+                        Note over BT,UI: 📞 통화 종료
+                        BT->>Telecom: Call Ended (HFP)
+                        Telecom->>Telecom: Call State: IDLE
+                        Telecom->>AF: abandonAudioFocus()
+
+                        AF->>Player: onAudioFocusChange(<br/>AUDIOFOCUS_GAIN)
+
+                        Note over Player: ▶️ 미디어 재개
+                        Player->>Player: play()
+                        Player->>MS: setPlaybackState(PLAYING)
+                        MS->>UI: onPlaybackStateChanged(PLAYING)
+                </div>
+            </div>
+
+            <h4 style="color: var(--text-primary); margin: 30px 0 15px 0;">🗺️ Navigation Ducking 플로우</h4>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                내비게이션 Turn-by-Turn(TBT) 안내 시 미디어 볼륨이 감소(Duck)되고, 안내 종료 후 복구되는 플로우입니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                        autonumber
+                        participant Navi as Navigation App
+                        participant AF as AudioFocusManager
+                        participant Flinger as AudioFlinger
+                        participant Player as MediaPlayer
+                        participant MS as MediaSession
+
+                        Note over Navi,MS: 🎵 미디어 재생 중 (Volume: 100%)
+                        Player->>MS: setPlaybackState(PLAYING)
+
+                        Note over Navi,MS: 🗺️ TBT 안내 시작
+                        Navi->>AF: requestAudioFocus(<br/>USAGE_ASSISTANCE_NAVIGATION_GUIDANCE,<br/>AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+
+                        AF->>Player: onAudioFocusChange(<br/>AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK)
+
+                        Note over Player: 🔉 볼륨 감소 (Duck)
+                        alt Auto Ducking (Android 8.0+)
+                            AF->>Flinger: setStreamVolume(MUSIC, 20%)
+                            Note over Flinger: 시스템 자동 Ducking
+                        else Manual Ducking (Legacy)
+                            Player->>Player: setVolume(0.2f)
+                            Note over Player: 앱에서 직접 Ducking
+                        end
+
+                        Navi->>Navi: "300m 앞에서 좌회전"
+                        Navi->>Navi: TTS Playback
+
+                        Note over Navi,MS: 🗺️ TBT 안내 종료
+                        Navi->>AF: abandonAudioFocus()
+
+                        AF->>Player: onAudioFocusChange(<br/>AUDIOFOCUS_GAIN)
+
+                        Note over Player: 🔊 볼륨 복구 (100%)
+                        alt Auto Ducking
+                            AF->>Flinger: setStreamVolume(MUSIC, 100%)
+                        else Manual Ducking
+                            Player->>Player: setVolume(1.0f)
+                        end
+                </div>
+            </div>
+
+            <h4 style="color: var(--text-primary); margin: 30px 0 15px 0;">🚗 AAOS 환경에서의 인터럽트 처리</h4>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                AAOS에서는 CarAudioService가 추가적인 오디오 정책을 적용합니다.
+            </p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TB
+                        subgraph AAOS_INTERRUPT["AAOS 인터럽트 처리"]
+                            subgraph ZONE_1["Primary Audio Zone (Driver)"]
+                                MEDIA_Z1["Media<br/>(Music App)"]
+                                CALL_Z1["Phone Call<br/>(BT HFP)"]
+                                NAVI_Z1["Navigation<br/>(TBT)"]
+                            end
+
+                            subgraph ZONE_2["Secondary Audio Zone (Rear)"]
+                                MEDIA_Z2["Media<br/>(Video App)"]
+                                GAME_Z2["Game Audio"]
+                            end
+
+                            subgraph CAR_AUDIO["CarAudioService"]
+                                FOCUS_MGR["CarAudioFocus<br/>• Zone별 Focus 관리<br/>• Cross-zone 정책"]
+                                DUCK_POLICY["Duck Policy<br/>• DUCK_MEDIA<br/>• PAUSE_MEDIA<br/>• MUTE_MEDIA"]
+                                CONTEXT["Audio Context<br/>• CALL<br/>• NAVIGATION<br/>• MUSIC"]
+                            end
+                        end
+
+                        CALL_Z1 -->|Highest Priority| FOCUS_MGR
+                        NAVI_Z1 -->|High Priority| FOCUS_MGR
+                        MEDIA_Z1 -->|Normal Priority| FOCUS_MGR
+
+                        FOCUS_MGR -->|Zone 1: Duck Media| DUCK_POLICY
+                        FOCUS_MGR -->|Zone 2: No Change| MEDIA_Z2
+
+                        DUCK_POLICY --> CONTEXT
+                </div>
+            </div>
+
+            <div class="content-grid" style="margin-top: 20px;">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎯</span>
+                        Zone별 독립 처리
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>운전석 통화 시 후석 미디어는 영향 없음</li>
+                            <li>Zone별 독립적인 Audio Focus</li>
+                            <li><code>CarAudioManager.getAudioZoneIds()</code></li>
+                            <li>Cross-zone 인터럽트 정책 설정 가능</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">📋</span>
+                        Duck Policy 옵션
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li><code>DUCK_MEDIA</code>: 볼륨 감소 (기본)</li>
+                            <li><code>PAUSE_MEDIA</code>: 일시정지</li>
+                            <li><code>MUTE_MEDIA</code>: 음소거</li>
+                            <li><code>car_audio_configuration.xml</code>에서 설정</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Emergency 처리
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>긴급 통화는 모든 Zone에 영향</li>
+                            <li><code>USAGE_EMERGENCY</code> 최고 우선순위</li>
+                            <li>eCall (긴급 호출) 시스템 연동</li>
+                            <li>모든 미디어 즉시 음소거</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h4 style="color: var(--text-primary); margin: 30px 0 15px 0;">💻 외부 인터럽트 처리 구현</h4>
+
+            <pre style="background: var(--bg-tertiary); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--text-primary); font-family: var(--font-mono);">// 오디오 포커스 리스너 구현 (BT Call, Navigation 등 처리)
+class MediaPlayerService : Service() {
+    private lateinit var player: ExoPlayer
+    private lateinit var audioManager: AudioManager
+    private var playbackDelayed = false
+    private var resumeOnFocusGain = false
+    private var wasPlayingBeforeInterrupt = false
+
+    // 오디오 포커스 요청
+    private val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
+        )
+        .setAcceptsDelayedFocusGain(true)  // 지연된 포커스 획득 허용
+        .setOnAudioFocusChangeListener(focusChangeListener)
+        .build()
+
+    // 📞 핵심: 오디오 포커스 변경 리스너
+    private val focusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            // 🔇 완전 손실 - 다른 앱이 장기 재생 시작
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                Log.d(TAG, "AUDIOFOCUS_LOSS - 재생 정지")
+                wasPlayingBeforeInterrupt = player.isPlaying
+                player.pause()
+                resumeOnFocusGain = false  // 자동 재개 안 함
+            }
+
+            // ⏸️ 일시적 손실 - BT Call, 음성 안내 등
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                Log.d(TAG, "AUDIOFOCUS_LOSS_TRANSIENT - BT Call 등 인터럽트")
+                wasPlayingBeforeInterrupt = player.isPlaying
+                if (wasPlayingBeforeInterrupt) {
+                    player.pause()
+                    resumeOnFocusGain = true  // 인터럽트 종료 후 자동 재개
+                }
+            }
+
+            // 🔉 Duck 가능한 일시적 손실 - Navigation TBT 등
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                Log.d(TAG, "AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK - Navigation 등")
+                // Android 8.0+에서는 시스템이 자동 Ducking
+                // 필요 시 수동 볼륨 조절
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                    player.volume = 0.2f  // 20%로 감소
+                }
+                // 재생은 계속 유지
+            }
+
+            // ▶️ 포커스 획득 - 인터럽트 종료 후 복구
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                Log.d(TAG, "AUDIOFOCUS_GAIN - 포커스 복구")
+
+                // 볼륨 복구
+                player.volume = 1.0f
+
+                // 일시정지 상태였다면 재개
+                if (resumeOnFocusGain && wasPlayingBeforeInterrupt) {
+                    Log.d(TAG, "인터럽트 종료, 재생 재개")
+                    player.play()
+                    resumeOnFocusGain = false
+                }
+
+                // 지연된 재생 처리
+                if (playbackDelayed) {
+                    playbackDelayed = false
+                    player.play()
+                }
+            }
+
+            // 지연된 포커스 획득
+            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT,
+            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK -> {
+                Log.d(TAG, "AUDIOFOCUS_GAIN_TRANSIENT")
+                player.volume = 1.0f
+                if (resumeOnFocusGain) {
+                    player.play()
+                    resumeOnFocusGain = false
+                }
+            }
+        }
+    }
+
+    // 재생 시작 시 포커스 요청
+    fun startPlayback() {
+        val result = audioManager.requestAudioFocus(focusRequest)
+
+        when (result) {
+            AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> {
+                Log.d(TAG, "포커스 획득 성공, 재생 시작")
+                player.play()
+            }
+            AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> {
+                Log.d(TAG, "포커스 지연됨 (통화 중 등), 대기")
+                playbackDelayed = true
+            }
+            AudioManager.AUDIOFOCUS_REQUEST_FAILED -> {
+                Log.d(TAG, "포커스 획득 실패")
+            }
+        }
+    }
+
+    // 재생 정지 시 포커스 해제
+    fun stopPlayback() {
+        player.stop()
+        audioManager.abandonAudioFocusRequest(focusRequest)
+    }
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); margin: 20px 0 15px 0;">AAOS CarAudioFocus 처리</h4>
+
+            <pre style="background: var(--bg-tertiary); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--text-primary); font-family: var(--font-mono);">// AAOS 환경에서의 오디오 포커스 처리
+class CarMediaPlayerService : Service() {
+    private lateinit var car: Car
+    private lateinit var carAudioManager: CarAudioManager
+
+    override fun onCreate() {
+        super.onCreate()
+        car = Car.createCar(this)
+        carAudioManager = car.getCarManager(Car.AUDIO_SERVICE) as CarAudioManager
+
+        // 현재 Audio Zone 확인
+        val zoneId = carAudioManager.getZoneIdForUid(Process.myUid())
+        Log.d(TAG, "Current Audio Zone: $zoneId")
+
+        // Zone별 볼륨 그룹 확인
+        val volumeGroupCount = carAudioManager.getVolumeGroupCount(zoneId)
+        for (groupId in 0 until volumeGroupCount) {
+            val volume = carAudioManager.getGroupVolume(zoneId, groupId)
+            val maxVolume = carAudioManager.getGroupMaxVolume(zoneId, groupId)
+            Log.d(TAG, "Zone $zoneId, Group $groupId: $volume / $maxVolume")
+        }
+    }
+
+    // CarAudioFocus 요청 (Zone 인식)
+    fun requestCarAudioFocus(): Boolean {
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .build()
+
+        // AAOS에서는 AudioManager를 통해 요청하면
+        // CarAudioService가 Zone별로 처리
+        val result = audioManager.requestAudioFocus(
+            AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(audioAttributes)
+                .setOnAudioFocusChangeListener { focusChange ->
+                    handleCarAudioFocusChange(focusChange)
+                }
+                .build()
+        )
+
+        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    }
+
+    private fun handleCarAudioFocusChange(focusChange: Int) {
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                // AAOS에서는 Duck Policy에 따라 다르게 동작
+                // car_audio_configuration.xml의 설정 확인
+                Log.d(TAG, "AAOS: Focus loss transient (BT Call 등)")
+                // CarAudioService의 Duck Policy에 따라:
+                // - DUCK_MEDIA: 볼륨만 감소 (재생 유지)
+                // - PAUSE_MEDIA: 일시정지
+                // - MUTE_MEDIA: 음소거
+                player.pause()  // 안전하게 일시정지
+            }
+
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                // Navigation TBT 등
+                Log.d(TAG, "AAOS: Focus loss can duck (Navigation)")
+                // AAOS는 자동 Ducking 지원
+                // 앱에서 추가 처리 불필요
+            }
+
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                Log.d(TAG, "AAOS: Focus gained, resume playback")
+                player.play()
+            }
+        }
+    }
+}</code></pre>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 외부 인터럽트 디버깅</strong>
+                <pre style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;"><code># 오디오 포커스 변경 추적
+adb logcat -s AudioManager:V AudioFocus:V | grep -i focus
+
+# TelecomManager 통화 상태 확인
+adb shell dumpsys telecom | grep -E "state|Call"
+
+# AAOS CarAudioService 상태
+adb shell dumpsys car_service --services CarAudioService
+
+# 블루투스 HFP 연결 상태
+adb shell dumpsys bluetooth_manager | grep -i hfp</code></pre>
+            </div>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">💻 구현 예시</h3>
+
+            <h4 style="color: var(--text-primary); margin: 20px 0 15px 0;">1. 앱 간 세션 전환 감지 (MediaController)</h4>
+            <pre style="background: var(--bg-tertiary); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--text-primary); font-family: var(--font-mono);">// MediaSessionManager를 통한 활성 세션 변경 감지
+val mediaSessionManager = getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
+
+// 활성 세션 변경 리스너
+val sessionListener = MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
+    if (controllers.isNullOrEmpty()) {
+        Log.d(TAG, "No active sessions")
+        return@OnActiveSessionsChangedListener
+    }
+
+    // 가장 높은 우선순위의 세션 (첫 번째)
+    val activeController = controllers[0]
+    Log.d(TAG, "Active session changed: ${activeController.packageName}")
+
+    // 새 세션에 콜백 등록
+    activeController.registerCallback(object : MediaController.Callback() {
+        override fun onPlaybackStateChanged(state: PlaybackState?) {
+            Log.d(TAG, "Playback state: ${state?.state}")
+        }
+
+        override fun onMetadataChanged(metadata: MediaMetadata?) {
+            val title = metadata?.getString(MediaMetadata.METADATA_KEY_TITLE)
+            val artist = metadata?.getString(MediaMetadata.METADATA_KEY_ARTIST)
+            Log.d(TAG, "Now playing: $title - $artist")
+        }
+
+        override fun onSessionDestroyed() {
+            Log.d(TAG, "Session destroyed, waiting for new session")
+        }
+    })
+}
+
+// 리스너 등록 (MEDIA_CONTENT_CONTROL 권한 필요)
+mediaSessionManager.addOnActiveSessionsChangedListener(
+    sessionListener,
+    ComponentName(this, NotificationListenerService::class.java)
+)</code></pre>
+
+            <h4 style="color: var(--text-primary); margin: 20px 0 15px 0;">2. ExoPlayer 앱 내 소스 교체</h4>
+            <pre style="background: var(--bg-tertiary); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--text-primary); font-family: var(--font-mono);">// ExoPlayer 인스턴스 및 MediaSession 생성
+val player = ExoPlayer.Builder(context).build()
+
+val mediaSession = MediaSession.Builder(context, player)
+    .setSessionCallback(MySessionCallback())
+    .build()
+
+// Player.Listener로 소스 전환 감지
+player.addListener(object : Player.Listener {
+    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+        val reasonStr = when (reason) {
+            Player.MEDIA_ITEM_TRANSITION_REASON_AUTO -> "AUTO (자동 전환)"
+            Player.MEDIA_ITEM_TRANSITION_REASON_SEEK -> "SEEK (사용자 탐색)"
+            Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED -> "PLAYLIST_CHANGED"
+            Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT -> "REPEAT (반복)"
+            else -> "UNKNOWN"
+        }
+        Log.d(TAG, "Media item transition: ${mediaItem?.mediaId}, reason: $reasonStr")
+
+        // MediaSession 메타데이터는 ExoPlayer가 자동 업데이트
+        // 필요 시 커스텀 메타데이터 설정
+        updateCustomMetadata(mediaItem)
+    }
+
+    override fun onPlaybackStateChanged(playbackState: Int) {
+        val stateStr = when (playbackState) {
+            Player.STATE_IDLE -> "IDLE"
+            Player.STATE_BUFFERING -> "BUFFERING"
+            Player.STATE_READY -> "READY"
+            Player.STATE_ENDED -> "ENDED"
+            else -> "UNKNOWN"
+        }
+        Log.d(TAG, "Playback state: $stateStr")
+    }
+})
+
+// 프로그래매틱 소스 교체
+fun switchToNewSource(newUri: Uri) {
+    val newMediaItem = MediaItem.Builder()
+        .setUri(newUri)
+        .setMediaMetadata(
+            MediaMetadata.Builder()
+                .setTitle("New Track Title")
+                .setArtist("Artist Name")
+                .build()
+        )
+        .build()
+
+    // 현재 재생 중인 소스를 새 소스로 교체
+    player.setMediaItem(newMediaItem)
+    player.prepare()
+    player.play()
+}
+
+// 플레이리스트 내 다음 트랙으로 이동
+fun playNextTrack() {
+    if (player.hasNextMediaItem()) {
+        player.seekToNextMediaItem()
+    }
+}</code></pre>
+
+            <h4 style="color: var(--text-primary); margin: 20px 0 15px 0;">3. AAOS CarMediaManager 소스 변경</h4>
+            <pre style="background: var(--bg-tertiary); padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0;"><code style="color: var(--text-primary); font-family: var(--font-mono);">// CarMediaManager 획득
+val car = Car.createCar(context)
+val carMediaManager = car.getCarManager(Car.CAR_MEDIA_SERVICE) as CarMediaManager
+
+// 현재 미디어 소스 조회
+val currentSource = carMediaManager.getMediaSource(CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK)
+Log.d(TAG, "Current source: ${currentSource?.packageName}")
+
+// 소스 변경 리스너 등록
+carMediaManager.registerMediaSourceListener(
+    object : CarMediaManager.MediaSourceChangedListener {
+        override fun onMediaSourceChanged(componentName: ComponentName?) {
+            Log.d(TAG, "===== MEDIA SOURCE CHANGED =====")
+            Log.d(TAG, "New source: ${componentName?.flattenToShortString()}")
+            Log.d(TAG, "Package: ${componentName?.packageName}")
+            Log.d(TAG, "Class: ${componentName?.className}")
+
+            // UI 업데이트 또는 추가 처리
+            componentName?.let { updateMediaUI(it) }
+        }
+    }
+)
+
+// 프로그래매틱 소스 변경
+fun switchMediaSource(packageName: String, className: String) {
+    val newSource = ComponentName(packageName, className)
+
+    // MEDIA_SOURCE_MODE_PLAYBACK: 재생용 소스
+    // MEDIA_SOURCE_MODE_BROWSE: 브라우징용 소스
+    carMediaManager.setMediaSource(newSource, CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK)
+
+    Log.d(TAG, "Requested source change to: ${newSource.flattenToShortString()}")
+}
+
+// 마지막 미디어 소스 히스토리 조회
+fun getRecentSources(): List<ComponentName> {
+    return carMediaManager.getLastMediaSources(CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK)
+}
+
+// 예시: Spotify로 소스 변경
+switchMediaSource(
+    "com.spotify.music",
+    "com.spotify.music.MainActivity"
+)</code></pre>
+
+            <h3 style="color: var(--accent-primary); margin: 40px 0 20px 0; font-size: 1.4rem;">⚠️ 소스 교체 시 주의사항</h3>
+
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">🎧</span>
+                        오디오 포커스 처리
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>소스 교체 전 반드시 오디오 포커스 요청</li>
+                            <li><code>AUDIOFOCUS_LOSS</code> 수신 시 재생 정지</li>
+                            <li><code>AUDIOFOCUS_LOSS_TRANSIENT</code>는 일시정지</li>
+                            <li><code>AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK</code>은 볼륨 감소</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">💾</span>
+                        상태 저장/복원
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>소스 교체 전 현재 재생 위치 저장</li>
+                            <li>AAOS는 CarMediaService가 Last Media 자동 저장</li>
+                            <li>앱 종료 시에도 상태 유지 고려</li>
+                            <li>SharedPreferences 또는 Database 활용</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">
+                        <span class="card-icon">⏱️</span>
+                        전환 시간 최적화
+                    </h3>
+                    <div class="card-description">
+                        <ul>
+                            <li>소스 교체 시 끊김 최소화</li>
+                            <li>Pre-buffering으로 전환 시간 단축</li>
+                            <li>AAOS에서는 5초 이내 전환 권장</li>
+                            <li>Gapless playback 지원 검토</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>💡 디버깅 팁</strong>
+                <pre style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;"><code># 활성 MediaSession 확인
+adb shell dumpsys media_session
+
+# AAOS 미디어 소스 변경 추적
+adb logcat -s CarMediaService:V | grep -E "setMediaSource|onMediaSourceChanged"
+
+# 오디오 포커스 변경 추적
+adb logcat -s AudioManager:V AudioFocus:V</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 14: Related Documentation -->
+        <section class="content-section section">
+            <h2 class="section-title">
+                <span class="section-number">14</span>
                 관련 상세 문서
             </h2>
             <p class="section-description">
