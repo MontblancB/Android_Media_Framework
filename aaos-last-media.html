@@ -382,85 +382,75 @@ private String getSharedPrefsKey(@CarMediaManager.MediaSourceMode int mode) {
 }</code></pre>
             </div>
 
-            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-2. MediaBrowserService에서 onPlaybackResumption() 구현 (Media App)</h3>
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-2. Playback Resumption 구현 (Media App)</h3>
+            <p style="color: var(--color-text-muted); margin-bottom: 16px; font-size: 0.9rem;">
+                ※ <code>onPlaybackResumption()</code>은 Media3의 <code>MediaLibrarySession.Callback</code>에서 제공됩니다.
+                Legacy MediaBrowserServiceCompat에서는 <code>onGetRoot()</code>의 rootHints를 확인하여 구현합니다.
+            </p>
             <div class="code-block">
-                <pre><code class="language-kotlin">// 미디어 앱의 MediaBrowserService 구현
-class MyMediaBrowserService : MediaBrowserServiceCompat() {
+                <pre><code class="language-kotlin">// [Media3] MediaLibraryService에서 Playback Resumption 구현
+class MyMediaLibraryService : MediaLibraryService() {
 
-    private lateinit var mediaSession: MediaSessionCompat
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
+        return mediaLibrarySession
+    }
 
-    override fun onCreate() {
-        super.onCreate()
+    private val callback = object : MediaLibrarySession.Callback {
+        // Media3에서 자동 재생을 요청할 때 호출됨
+        override fun onPlaybackResumption(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): ListenableFuture&lt;MediaSession.MediaItemsWithStartPosition&gt; {
+            Log.d(TAG, "onPlaybackResumption: Autoplay requested by system")
 
-        // MediaSession 초기화
-        mediaSession = MediaSessionCompat(this, "MyMediaSession").apply {
-            setCallback(MediaSessionCallback())
-            setFlags(
-                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
-                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+            // 마지막 재생 상태를 복원하여 MediaItemsWithStartPosition 반환
+            val lastMediaItems = restoreLastPlaylist() // List&lt;MediaItem&gt;
+            val lastPosition = restoreLastPosition()
+
+            return Futures.immediateFuture(
+                MediaSession.MediaItemsWithStartPosition(
+                    lastMediaItems ?: listOf(getDefaultMediaItem()),
+                    0, // startIndex
+                    lastPosition // startPositionMs
+                )
             )
-            setSessionToken(sessionToken)
         }
     }
 
-    // AAOS에서 자동 재생을 요청할 때 호출됨
-    override fun onPlaybackResumption(
-        mediaSession: MediaSessionCompat,
-        controller: MediaControllerCompat
-    ) {
-        Log.d(TAG, "onPlaybackResumption: Autoplay requested by system")
+    // 마지막 재생 목록 복원
+    private fun restoreLastPlaylist(): List&lt;MediaItem&gt;? {
+        val prefs = getSharedPreferences("media_state", Context.MODE_PRIVATE)
+        val json = prefs.getString("last_playlist", null) ?: return null
+        // JSON 파싱하여 MediaItem 리스트 반환
+        return parseMediaItemsFromJson(json)
+    }
 
-        // 마지막 재생 상태를 복원
-        val lastPlaylist = restoreLastPlaylist() // 앱 내부 DB/SharedPreferences
-        val lastPosition = restoreLastPosition()
+    // 마지막 재생 위치 복원
+    private fun restoreLastPosition(): Long {
+        val prefs = getSharedPreferences("media_state", Context.MODE_PRIVATE)
+        return prefs.getLong("last_position", 0L)
+    }
+}
 
-        if (lastPlaylist != null) {
-            // 큐 복원
-            controller.addQueueItem(lastPlaylist)
+// [Legacy] MediaBrowserServiceCompat에서 Playback Resumption 구현
+// onGetRoot()에서 rootHints의 EXTRA_RECENT 확인
+class LegacyMediaBrowserService : MediaBrowserServiceCompat() {
+    override fun onGetRoot(
+        clientPackageName: String,
+        clientUid: Int,
+        rootHints: Bundle?
+    ): BrowserRoot? {
+        // AAOS가 최근 항목을 요청하는지 확인
+        val isRecentRequest = rootHints?.getBoolean(
+            BrowserRoot.EXTRA_RECENT, false
+        ) ?: false
 
-            // 마지막 위치로 시크
-            controller.transportControls.seekTo(lastPosition)
-
-            // 자동 재생 시작
-            controller.transportControls.play()
-
-            Log.d(TAG, "Restored and started playback: ${lastPlaylist.description.title}")
+        return if (isRecentRequest) {
+            // 최근 재생 항목용 루트 반환
+            BrowserRoot("__RECENT__", null)
         } else {
-            Log.w(TAG, "No last playlist found, playing default")
-            playDefaultContent()
+            BrowserRoot("__ROOT__", null)
         }
-    }
-
-    // MediaSession Callback
-    private inner class MediaSessionCallback : MediaSessionCompat.Callback() {
-        override fun onPlay() {
-            // Audio Focus 요청
-            val result = audioFocusHelper.requestAudioFocus()
-            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                player.start()
-                updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
-            }
-        }
-
-        override fun onPause() {
-            player.pause()
-            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED)
-        }
-    }
-
-    // PlaybackState 업데이트 (CarMediaService가 감지함)
-    private fun updatePlaybackState(@PlaybackStateCompat.State state: Int) {
-        val playbackState = PlaybackStateCompat.Builder()
-            .setState(state, player.currentPosition, 1.0f)
-            .setActions(
-                PlaybackStateCompat.ACTION_PLAY or
-                PlaybackStateCompat.ACTION_PAUSE or
-                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-            )
-            .build()
-
-        mediaSession.setPlaybackState(playbackState)
     }
 }</code></pre>
             </div>

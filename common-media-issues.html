@@ -175,11 +175,17 @@ class CustomRenderersFactory(context: Context) : DefaultRenderersFactory(context
     }
 }
 
-// 오디오 레이턴시 보정
+// 오디오 레이턴시 보정 (저지연 모드)
 val audioAttributes = AudioAttributes.Builder()
     .setUsage(AudioAttributes.USAGE_MEDIA)
     .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
-    .setFlags(AudioAttributes.FLAG_LOW_LATENCY) // 저지연 모드
+    .build()
+
+// AudioTrack에서 저지연 모드 설정 (API 26+)
+val audioTrack = AudioTrack.Builder()
+    .setAudioAttributes(audioAttributes)
+    .setAudioFormat(audioFormat)
+    .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
     .build()</code></pre>
                     </div>
                 </div>

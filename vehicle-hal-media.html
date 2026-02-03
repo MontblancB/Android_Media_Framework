@@ -78,21 +78,15 @@ flowchart TB
                 <tbody>
                     <tr>
                         <td><code>HW_KEY_INPUT</code></td>
-                        <td>0x0A000000</td>
+                        <td>0x0A000400</td>
                         <td>하드웨어 키 입력</td>
                         <td>Read</td>
                     </tr>
                     <tr>
-                        <td><code>AUDIO_VOLUME</code></td>
-                        <td>0x11400900</td>
-                        <td>오디오 볼륨</td>
-                        <td>Read/Write</td>
-                    </tr>
-                    <tr>
-                        <td><code>AUDIO_FOCUS</code></td>
-                        <td>0x11400901</td>
-                        <td>오디오 포커스 상태</td>
-                        <td>Read/Write</td>
+                        <td><code>HW_ROTARY_INPUT</code></td>
+                        <td>0x0A000405</td>
+                        <td>로터리 노브 입력</td>
+                        <td>Read</td>
                     </tr>
                     <tr>
                         <td><code>CLUSTER_DISPLAY_STATE</code></td>
@@ -101,12 +95,19 @@ flowchart TB
                         <td>Read</td>
                     </tr>
                     <tr>
-                        <td><code>DRIVING_STATUS</code></td>
-                        <td>0x11400404</td>
-                        <td>주행/주차 상태</td>
+                        <td><code>PERF_VEHICLE_SPEED</code></td>
+                        <td>0x11600207</td>
+                        <td>차량 속도 (주행 상태 판단)</td>
                         <td>Read</td>
                     </tr>
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" style="font-size: 0.85rem; color: var(--color-text-muted); padding-top: 12px;">
+                            ※ 오디오 볼륨/포커스는 VHAL이 아닌 Android CarAudioService/AudioManager에서 관리됩니다.
+                        </td>
+                    </tr>
+                </tfoot>
             </table>
         </section>
 

@@ -402,8 +402,12 @@ adb shell dumpsys media.audio_policy
                     </tr>
                     <tr>
                         <td><strong>VehicleHal</strong></td>
-                        <td><code>dumpsys android.hardware.automotive.vehicle@2.0::IVehicle/default</code></td>
-                        <td>Vehicle properties (speed, gear, etc.)</td>
+                        <td>
+                            <code>dumpsys android.hardware.automotive.vehicle@2.0::IVehicle/default</code><br>
+                            <span style="color: var(--color-text-muted); font-size: 0.85rem;">※ Android 13+:</span><br>
+                            <code>dumpsys android.hardware.automotive.vehicle.IVehicle/default</code>
+                        </td>
+                        <td>Vehicle properties (speed, gear, etc.)<br><span style="color: var(--color-text-muted); font-size: 0.85rem;">HIDL: ~Android 12, AIDL: Android 13+</span></td>
                     </tr>
                     <tr>
                         <td><strong>CarInputService</strong></td>
