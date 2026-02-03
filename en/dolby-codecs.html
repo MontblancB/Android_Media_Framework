@@ -610,8 +610,9 @@ decoder.start()</code></pre>
         .filter { it.type == AudioDeviceInfo.TYPE_HDMI }
         .flatMap { it.encodings.toList() }
 
-    return AudioFormat.ENCODING_E_AC3_JOC in encodings ||
-           AudioFormat.ENCODING_DOLBY_TRUEHD in encodings
+    // Check E-AC-3 JOC (Dolby Atmos over Dolby Digital Plus) support
+    // Note: ENCODING_DOLBY_TRUEHD does not exist in Android API (Blu-ray only)
+    return AudioFormat.ENCODING_E_AC3_JOC in encodings
 }
 
 // Enable Atmos with AudioAttributes

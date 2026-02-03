@@ -360,85 +360,96 @@ private String getSharedPrefsKey(@CarMediaManager.MediaSourceMode int mode) {
 }</code></pre>
             </div>
 
-            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-2. Implementing onPlaybackResumption() in MediaBrowserService (Media App)</h3>
+            <h3 style="margin-top: 40px; margin-bottom: 16px; color: var(--accent-amber); font-size: 1.3rem;">7-2. Implementing Playback Resumption (Media App)</h3>
+            <p style="color: var(--color-text-muted); margin-bottom: 16px; font-size: 0.9rem;">
+                ※ <code>onPlaybackResumption()</code> is provided in Media3's <code>MediaLibrarySession.Callback</code>.
+                For legacy MediaBrowserServiceCompat, check <code>onGetRoot()</code>'s rootHints.
+            </p>
             <div class="code-block">
-                <pre><code class="language-kotlin">// Media app's MediaBrowserService implementation
+                <pre><code class="language-kotlin">// [Media3] Playback Resumption in MediaLibraryService
+class MyMediaLibraryService : MediaLibraryService() {
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
+        return mediaLibrarySession
+    }
+
+    private val callback = object : MediaLibrarySession.Callback {
+        // Called when system requests autoplay
+        override fun onPlaybackResumption(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): ListenableFuture&lt;MediaSession.MediaItemsWithStartPosition&gt; {
+            Log.d(TAG, "onPlaybackResumption: Autoplay requested by system")
+
+            // Restore last playback state and return MediaItemsWithStartPosition
+            val lastMediaItems = restoreLastPlaylist() // List&lt;MediaItem&gt;
+            val lastPosition = restoreLastPosition()
+
+            return Futures.immediateFuture(
+                MediaSession.MediaItemsWithStartPosition(
+                    lastMediaItems ?: listOf(getDefaultMediaItem()),
+                    0, // startIndex
+                    lastPosition // startPositionMs
+                )
+            )
+        }
+    }
+
+    // Restore last playlist
+    private fun restoreLastPlaylist(): List&lt;MediaItem&gt;? {
+        val prefs = getSharedPreferences("media_state", Context.MODE_PRIVATE)
+        val json = prefs.getString("last_playlist", null) ?: return null
+        // Parse JSON and return MediaItem list
+        return parseMediaItemsFromJson(json)
+    }
+
+    // Restore last position
+    private fun restoreLastPosition(): Long {
+        val prefs = getSharedPreferences("media_state", Context.MODE_PRIVATE)
+        return prefs.getLong("last_position", 0L)
+    }
+}
+
+// [Legacy] Playback Resumption in MediaBrowserServiceCompat
+// MediaBrowserServiceCompat does NOT have onPlaybackResumption().
+// Instead, check EXTRA_RECENT in onGetRoot()'s rootHints.
 class MyMediaBrowserService : MediaBrowserServiceCompat() {
 
-    private lateinit var mediaSession: MediaSessionCompat
+    override fun onGetRoot(
+        clientPackageName: String,
+        clientUid: Int,
+        rootHints: Bundle?
+    ): BrowserRoot? {
+        // Check if this is a resumption request
+        val isRecentRequest = rootHints?.getBoolean(
+            BrowserRoot.EXTRA_RECENT, false
+        ) ?: false
 
-    override fun onCreate() {
-        super.onCreate()
-
-        // Initialize MediaSession
-        mediaSession = MediaSessionCompat(this, "MyMediaSession").apply {
-            setCallback(MediaSessionCallback())
-            setFlags(
-                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
-                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
-            )
-            setSessionToken(sessionToken)
-        }
-    }
-
-    // Called when AAOS requests autoplay
-    override fun onPlaybackResumption(
-        mediaSession: MediaSessionCompat,
-        controller: MediaControllerCompat
-    ) {
-        Log.d(TAG, "onPlaybackResumption: Autoplay requested by system")
-
-        // Restore last playback state
-        val lastPlaylist = restoreLastPlaylist() // App's internal DB/SharedPreferences
-        val lastPosition = restoreLastPosition()
-
-        if (lastPlaylist != null) {
-            // Restore queue
-            controller.addQueueItem(lastPlaylist)
-
-            // Seek to last position
-            controller.transportControls.seekTo(lastPosition)
-
-            // Start autoplay
-            controller.transportControls.play()
-
-            Log.d(TAG, "Restored and started playback: ${lastPlaylist.description.title}")
+        return if (isRecentRequest) {
+            // Return recently played root for resumption
+            Log.d(TAG, "Resumption requested, returning recent root")
+            BrowserRoot(RECENT_ROOT_ID, null)
         } else {
-            Log.w(TAG, "No last playlist found, playing default")
-            playDefaultContent()
+            BrowserRoot(ROOT_ID, null)
         }
     }
 
-    // MediaSession Callback
-    private inner class MediaSessionCallback : MediaSessionCompat.Callback() {
-        override fun onPlay() {
-            // Request Audio Focus
-            val result = audioFocusHelper.requestAudioFocus()
-            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                player.start()
-                updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
-            }
-        }
-
-        override fun onPause() {
-            player.pause()
-            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED)
+    override fun onLoadChildren(
+        parentId: String,
+        result: Result&lt;MutableList&lt;MediaBrowserCompat.MediaItem&gt;&gt;
+    ) {
+        if (parentId == RECENT_ROOT_ID) {
+            // Return recently played items
+            result.sendResult(getRecentMediaItems())
+        } else {
+            // Return normal browsing items
+            result.sendResult(getBrowseableItems(parentId))
         }
     }
 
-    // Update PlaybackState (detected by CarMediaService)
-    private fun updatePlaybackState(@PlaybackStateCompat.State state: Int) {
-        val playbackState = PlaybackStateCompat.Builder()
-            .setState(state, player.currentPosition, 1.0f)
-            .setActions(
-                PlaybackStateCompat.ACTION_PLAY or
-                PlaybackStateCompat.ACTION_PAUSE or
-                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-            )
-            .build()
-
-        mediaSession.setPlaybackState(playbackState)
+    companion object {
+        const val ROOT_ID = "root"
+        const val RECENT_ROOT_ID = "recent_root"
     }
 }</code></pre>
             </div>

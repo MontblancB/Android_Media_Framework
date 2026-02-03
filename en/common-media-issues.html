@@ -175,11 +175,11 @@ class CustomRenderersFactory(context: Context) : DefaultRenderersFactory(context
     }
 }
 
-// Audio latency compensation
-val audioAttributes = AudioAttributes.Builder()
-    .setUsage(AudioAttributes.USAGE_MEDIA)
-    .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
-    .setFlags(AudioAttributes.FLAG_LOW_LATENCY) // Low latency mode
+// AudioTrack low-latency mode setup (API 26+)
+val audioTrack = AudioTrack.Builder()
+    .setAudioAttributes(audioAttributes)
+    .setAudioFormat(audioFormat)
+    .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
     .build()</code></pre>
                     </div>
                 </div>
@@ -1047,11 +1047,10 @@ val minBufferSize = AudioTrack.getMinBufferSize(
     AudioFormat.ENCODING_PCM_16BIT
 )
 
-// 2. Low latency AudioAttributes
+// 2. AudioAttributes for game/real-time usage
 val audioAttributes = AudioAttributes.Builder()
     .setUsage(AudioAttributes.USAGE_GAME) // Game/real-time usage
     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-    .setFlags(AudioAttributes.FLAG_LOW_LATENCY) // Low latency flag
     .build()
 
 // 3. Set Performance Mode
