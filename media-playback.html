@@ -797,42 +797,42 @@
 
             <div class="mermaid-container">
                 <div class="mermaid">
-                    flowchart LR
-                    subgraph storage[Storage]
-                        FILE["MP4 File<br/>(Container)"]
-                    end
+flowchart LR
+    subgraph storage[" Storage "]
+        FILE["MP4 File"]
+    end
 
-                    subgraph extractor[MediaExtractor]
-                        PARSER["Container Parser"]
-                        DEMUX["Demuxer"]
-                    end
+    subgraph extractor[" MediaExtractor "]
+        PARSER["Container Parser"]
+        DEMUX["Demuxer"]
+    end
 
-                    subgraph codec[MediaCodec]
-                        INPUT_Q["Input Queue<br/>(Compressed)"]
-                        DECODER["Decoder<br/>(HW/SW)"]
-                        OUTPUT_Q["Output Queue<br/>(Raw)"]
-                    end
+    subgraph codec[" MediaCodec "]
+        INPUT_Q["Input Queue"]
+        DECODER["Decoder"]
+        OUTPUT_Q["Output Queue"]
+    end
 
-                    subgraph renderer[Renderer]
-                        V_RENDER["Video Renderer"]
-                        A_RENDER["Audio Renderer"]
-                    end
+    subgraph renderer[" Renderer "]
+        V_RENDER["Video Renderer"]
+        A_RENDER["Audio Renderer"]
+    end
 
-                    subgraph output[Output]
-                        SURFACE["Surface<br/>(YUV/RGB)"]
-                        AUDIOSINK["AudioSink<br/>(PCM)"]
-                    end
+    subgraph output[" Output "]
+        SURFACE["Surface"]
+        AUDIOSINK["AudioSink"]
+    end
 
-                    FILE -->|read()| PARSER
-                    PARSER --> DEMUX
-                    DEMUX -->|H.264 NAL| INPUT_Q
-                    DEMUX -->|AAC Frame| INPUT_Q
-                    INPUT_Q --> DECODER
-                    DECODER --> OUTPUT_Q
-                    OUTPUT_Q -->|YUV Buffer| V_RENDER
-                    OUTPUT_Q -->|PCM Buffer| A_RENDER
-                    V_RENDER --> SURFACE
-                    A_RENDER --> AUDIOSINK
+    FILE -->|read| PARSER
+    PARSER --> DEMUX
+    DEMUX -->|H.264| INPUT_Q
+    DEMUX -->|AAC| INPUT_Q
+    INPUT_Q --> DECODER
+    DECODER --> OUTPUT_Q
+    OUTPUT_Q -->|YUV| V_RENDER
+    OUTPUT_Q -->|PCM| A_RENDER
+    V_RENDER --> SURFACE
+    A_RENDER --> AUDIOSINK
                 </div>
             </div>
 
