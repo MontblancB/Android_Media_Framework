@@ -798,27 +798,27 @@
             <div class="mermaid-container">
                 <div class="mermaid">
                     graph LR
-                    subgraph STORAGE["Storage"]
+                    subgraph storage[Storage]
                         FILE["MP4 File<br/>(Container)"]
                     end
 
-                    subgraph EXTRACTOR["MediaExtractor"]
+                    subgraph extractor[MediaExtractor]
                         PARSER["Container Parser"]
                         DEMUX["Demuxer"]
                     end
 
-                    subgraph CODEC["MediaCodec"]
+                    subgraph codec[MediaCodec]
                         INPUT_Q["Input Queue<br/>(Compressed)"]
                         DECODER["Decoder<br/>(HW/SW)"]
                         OUTPUT_Q["Output Queue<br/>(Raw)"]
                     end
 
-                    subgraph RENDERER["Renderer"]
+                    subgraph renderer[Renderer]
                         V_RENDER["Video Renderer"]
                         A_RENDER["Audio Renderer"]
                     end
 
-                    subgraph OUTPUT["Output"]
+                    subgraph output[Output]
                         SURFACE["Surface<br/>(YUV/RGB)"]
                         AUDIOSINK["AudioSink<br/>(PCM)"]
                     end
