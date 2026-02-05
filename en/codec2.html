@@ -566,10 +566,11 @@
                     <div class="card-description">
                         <p><strong>Hardware Interface Definition Language</strong></p>
                         <ul>
-                            <li>Used in Android 10~12</li>
+                            <li>Primarily used in Android 10~12</li>
                             <li>Binderized HAL</li>
                             <li>Inter-process communication</li>
                             <li>Stable ABI</li>
+                            <li><span style="color: #94a3b8; font-size: 0.9em;">Still compatible today</span></li>
                         </ul>
                     </div>
                 </div>
@@ -582,11 +583,15 @@
                     <div class="card-description">
                         <p><strong>Android Interface Definition Language</strong></p>
                         <ul>
-                            <li>Recommended for Android 13+</li>
-                            <li>Enhanced stability</li>
-                            <li>Better flexibility</li>
+                            <li><strong>Android 11</strong>: Stable AIDL introduced</li>
+                            <li><strong>Android 13+</strong>: HIDL→AIDL transition recommended</li>
+                            <li>Enhanced stability and flexibility</li>
                             <li>Simplified syntax</li>
+                            <li>Backward compatibility maintained</li>
                         </ul>
+                        <p style="margin-top: 8px; padding: 8px; background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; font-size: 0.85em;">
+                            <strong>Note</strong>: OEMs can choose between HIDL and AIDL. AIDL transition is recommended but not mandatory.
+                        </p>
                     </div>
                 </div>
 
@@ -673,11 +678,119 @@
             <div class="warning-box">
                 <strong>⚠️ Migration Considerations:</strong>
                 <ul style="margin-top: 10px; padding-left: 20px;">
-                    <li>Codec 2.0 is the default in Android 10+</li>
-                    <li>Existing OMX codecs continue to work through compatibility layer</li>
-                    <li>New hardware codecs recommended to implement with Codec 2.0</li>
-                    <li>Vendors expose codecs through C2ComponentStore</li>
+                    <li><strong>Android 9 (Pie)</strong>: Codec 2.0 introduced</li>
+                    <li><strong>Android 10 (Q)</strong>: Codec 2.0 set as default</li>
+                    <li><strong>Android 11 (R)</strong>: Full Codec 2.0 transition recommended</li>
+                    <li><strong>Android 12 (S)+</strong>: OMX IL <span style="color: #f59e0b;">deprecated</span>, still usable in vendor partition</li>
+                    <li>Existing OMX codecs continue to work through <code>OMXStore</code> compatibility layer (legacy support)</li>
+                    <li>New hardware codecs <strong>must</strong> implement with Codec 2.0 (Android 13+)</li>
+                    <li>Vendors expose codecs through <code>C2ComponentStore</code></li>
                 </ul>
+                <p style="margin-top: 12px; padding: 10px; background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; font-size: 0.95rem; line-height: 1.6;">
+                    <strong>Note</strong>: The exact timeline for complete OMX IL removal is unclear, and it may remain in the vendor partition for legacy support.
+                    Refer to AOSP Media Modules documentation (<a href="https://source.android.com/docs/core/media/media-modules" style="color: #60a5fa;">link</a>).
+                </p>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 50px; margin-bottom: 20px;">
+                📊 Android Version History: Media Codec API Evolution
+            </h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));">
+                            <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: left;">Android Version</th>
+                            <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: left;">Codec Stack</th>
+                            <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: left;">HAL Interface</th>
+                            <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: left;">Key Changes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 7.0 (Nougat)</strong><br><small style="color: #94a3b8;">API 24</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">OMX IL 1.1.2</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Direct connection</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • MediaCodec sandboxing introduced<br>
+                                • Enhanced process isolation
+                            </td>
+                        </tr>
+                        <tr style="background: rgba(255,255,255,0.02);">
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 8.0 (Oreo)</strong><br><small style="color: #94a3b8;">API 26</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">OMX IL (Legacy)</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><span style="color: #10b981;">HIDL 1.0</span></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • <strong>Project Treble</strong> introduced<br>
+                                • Binderized HAL (HIDL)
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 9.0 (Pie)</strong><br><small style="color: #94a3b8;">API 28</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><span style="color: #3b82f6;">Codec 2.0 introduced</span></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">HIDL 1.0/1.1</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • Codec 2.0 first introduced (optional)<br>
+                                • Zero-Copy buffer management
+                            </td>
+                        </tr>
+                        <tr style="background: rgba(255,255,255,0.02);">
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 10 (Q)</strong><br><small style="color: #94a3b8;">API 29</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><span style="color: #10b981;">Codec 2.0 default</span></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">HIDL 1.1/1.2</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • <strong>Project Mainline</strong> introduced<br>
+                                • Media APEX module independent updates
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 11 (R)</strong><br><small style="color: #94a3b8;">API 30</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Codec 2.0</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">HIDL 1.2 / <span style="color: #10b981;">AIDL</span></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • <strong>Stable AIDL</strong> introduced<br>
+                                • Full Codec 2.0 transition recommended
+                            </td>
+                        </tr>
+                        <tr style="background: rgba(255,255,255,0.02);">
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 12 (S)</strong><br><small style="color: #94a3b8;">API 31</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Codec 2.0</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">HIDL/AIDL mixed</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • <span style="color: #f59e0b;">OMX IL deprecated</span><br>
+                                • Still supported in vendor partition
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 13 (T)</strong><br><small style="color: #94a3b8;">API 33</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Codec 2.0 full transition</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><span style="color: #10b981;">AIDL recommended</span></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • HIDL→AIDL transition recommended<br>
+                                • New HW codecs must use Codec 2.0
+                            </td>
+                        </tr>
+                        <tr style="background: rgba(255,255,255,0.02);">
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 14 (U)</strong><br><small style="color: #94a3b8;">API 34</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Codec 2.0</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">AIDL</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • AIDL stabilization<br>
+                                • Enhanced Media3 integration
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 20px; padding: 16px; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; border-radius: 8px;">
+                <p style="margin: 0; color: #e5e7eb; line-height: 1.8; font-size: 0.95rem;">
+                    <strong>💡 Key Insights</strong><br>
+                    • <strong>Android 9</strong>: Codec 2.0 first introduced (optional)<br>
+                    • <strong>Android 10</strong>: Codec 2.0 default + Mainline modularization<br>
+                    • <strong>Android 11</strong>: Stable AIDL introduced (coexists with HIDL)<br>
+                    • <strong>Android 12</strong>: OMX IL deprecated (not fully removed)<br>
+                    • <strong>Android 13+</strong>: AIDL transition recommended + Codec 2.0 mandatory
+                </p>
             </div>
         </section>
 

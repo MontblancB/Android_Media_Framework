@@ -503,6 +503,16 @@ stateDiagram-v2
             </table>
 
             <h3>6.2 미러링 구현</h3>
+
+            <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(59, 130, 246, 0.15)); border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 16px; border-radius: 8px;">
+                <h4 style="color: #f59e0b; margin: 0 0 8px 0; font-size: 1rem;">⚠️ OEM-Specific Extension (비표준 API)</h4>
+                <p style="margin: 0; color: #e5e7eb; line-height: 1.6; font-size: 0.95rem;">
+                    아래 <code>setAudioMirrorConfig()</code> 및 <code>clearAudioMirrorConfig()</code> 메서드는 <strong>표준 AAOS API가 아닙니다</strong>.<br>
+                    일부 차량 제조사(예: GM, Stellantis)에서 제공하는 OEM 확장 API로, AOSP에는 포함되지 않습니다.<br>
+                    <strong>사용 전</strong>: OEM SDK 문서 확인 및 디바이스별 호환성 테스트 필수
+                </p>
+            </div>
+
             <pre><code>// Zone 간 오디오 미러링 (Primary → All)
 fun mirrorToAllZones(sourceZoneId: Int) {
     val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -512,7 +522,9 @@ fun mirrorToAllZones(sourceZoneId: Int) {
 
     allZones.forEach { zoneId ->
         if (zoneId != sourceZoneId) {
+            // ⚠️ OEM-Specific API (표준 AAOS 아님)
             // 하드웨어 레벨 미러링 (OEM 구현 필요)
+            // 예시: GM, Stellantis 등 일부 제조사에서 제공
             carAudioManager.setAudioMirrorConfig(sourceZoneId, zoneId, true)
         }
     }
@@ -520,6 +532,7 @@ fun mirrorToAllZones(sourceZoneId: Int) {
 
 // 미러링 해제
 fun disableMirroring() {
+    // ⚠️ OEM-Specific API
     carAudioManager.clearAudioMirrorConfig()
 }</code></pre>
         </section>

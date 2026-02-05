@@ -247,14 +247,76 @@ val hdcpLevel = mediaDrm.getPropertyString("hdcpLevel")
             </table>
 
             <h3>7.2 주요 미디어 CVE 사례</h3>
+
+            <h4 style="color: #94a3b8; margin: 20px 0 12px 0; font-size: 1.1rem;">📜 역사적인 미디어 취약점 (2015-2016)</h4>
             <div class="info-box warning">
-                <strong>역사적인 미디어 취약점</strong>
                 <ul>
                     <li><strong>Stagefright (2015)</strong>: MMS로 악성 MP4 전송 시 원격 코드 실행. MPEG4 파서의 정수 오버플로우.</li>
                     <li><strong>libstagefright (2016)</strong>: HEVC 파서 힙 오버플로우. 악성 동영상 재생 시 트리거.</li>
                     <li><strong>Mediaserver 취약점들</strong>: 다양한 컨테이너/코덱 파서의 메모리 안전성 문제.</li>
                 </ul>
                 <p><em>이러한 취약점들로 인해 Android 7.0부터 미디어 스택이 샌드박스화되고 프로세스 분리가 강화되었습니다.</em></p>
+            </div>
+
+            <h4 style="color: #ef4444; margin: 30px 0 12px 0; font-size: 1.1rem;">🚨 최신 보안 취약점 (2023-2024)</h4>
+            <div class="info-box" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1)); border-left: 4px solid #ef4444;">
+                <strong>고위험 CVE (Critical/High)</strong>
+                <table style="margin-top: 12px; width: 100%;">
+                    <thead>
+                        <tr style="background: rgba(239, 68, 68, 0.2);">
+                            <th>CVE ID</th>
+                            <th>심각도</th>
+                            <th>영향</th>
+                            <th>패치</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>CVE-2024-0039</strong></td>
+                            <td><span style="color: #ef4444; font-weight: bold;">Critical</span></td>
+                            <td>MediaCodec 원격 코드 실행<br><small>악성 미디어 파일 재생 시 임의 코드 실행 가능</small></td>
+                            <td>Android 14 QPR1<br>(2024년 2월)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CVE-2024-43093</strong></td>
+                            <td><span style="color: #f59e0b; font-weight: bold;">High</span></td>
+                            <td>libstagefright 권한 상승<br><small>로컬 공격자가 시스템 권한 획득 가능</small></td>
+                            <td>2024-09 보안 패치</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CVE-2023-21400</strong></td>
+                            <td><span style="color: #f59e0b; font-weight: bold;">High</span></td>
+                            <td>cd_codec.c OOB read<br><small>정보 유출 및 서비스 거부 공격</small></td>
+                            <td>2023-11 보안 패치</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CVE-2023-35674</strong></td>
+                            <td><span style="color: #f59e0b; font-weight: bold;">High</span></td>
+                            <td>MediaProvider 권한 우회<br><small>미디어 파일 무단 접근</small></td>
+                            <td>2023-10 보안 패치</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 16px; padding: 12px; background: rgba(239, 68, 68, 0.15); border-radius: 6px;">
+                    <p style="margin: 0; font-size: 0.95rem; line-height: 1.6;">
+                        <strong>📌 정기 업데이트 확인</strong><br>
+                        • <a href="https://source.android.com/docs/security/bulletin" style="color: #60a5fa; text-decoration: underline;">Android Security Bulletins</a> - 매월 첫째 월요일 보안 패치 공개<br>
+                        • <a href="https://www.cvedetails.com/vulnerability-list/vendor_id-1224/product_id-19997/Google-Android.html" style="color: #60a5fa; text-decoration: underline;">CVE Details - Android</a> - 전체 CVE 목록 검색<br>
+                        • <strong>권장</strong>: 분기별 1회 최신 보안 패치 적용 및 취약점 점검
+                    </p>
+                </div>
+            </div>
+
+            <h4 style="color: #10b981; margin: 30px 0 12px 0; font-size: 1.1rem;">✅ 최신 보안 강화 사항 (Android 13+)</h4>
+            <div class="info-box" style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981;">
+                <ul style="margin: 0; line-height: 1.8;">
+                    <li><strong>Codec2 완전 전환</strong>: OMX 제거로 레거시 코덱 취약점 감소</li>
+                    <li><strong>Media3 도입</strong>: 개선된 보안 모델 및 샌드박싱</li>
+                    <li><strong>Scoped Storage 강화</strong>: MediaProvider 접근 제어 강화</li>
+                    <li><strong>런타임 권한 세분화</strong>: READ_MEDIA_AUDIO/VIDEO/IMAGES 분리</li>
+                    <li><strong>Trust On First Use (TOFU)</strong>: 앱 첫 실행 시 미디어 파일 스캔</li>
+                </ul>
             </div>
 
             <h3>7.3 안전한 미디어 파일 처리</h3>

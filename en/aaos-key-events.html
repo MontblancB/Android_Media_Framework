@@ -702,7 +702,7 @@ class RotaryRecyclerView @JvmOverloads constructor(
                     <h3 class="card-title"><span class="card-icon">🔑</span> HW_KEY_INPUT</h3>
                     <div class="card-description">
                         <ul>
-                            <li><strong>Property ID</strong>: 0x0A000400 (167772160)</li>
+                            <li><strong>Property ID</strong>: 0x11410A00 (287,314,432) <span style="color: #f59e0b; font-size: 0.85em;">⚠️ AOSP verification needed</span></li>
                             <li><strong>Type</strong>: VehiclePropValue (int32 array)</li>
                             <li><strong>Data</strong>: [action, keyCode, displayType]</li>
                             <li><strong>Usage</strong>: Steering wheel buttons and general keys</li>
@@ -714,10 +714,14 @@ class RotaryRecyclerView @JvmOverloads constructor(
                     <h3 class="card-title"><span class="card-icon">🔄</span> HW_ROTARY_INPUT</h3>
                     <div class="card-description">
                         <ul>
-                            <li><strong>Property ID</strong>: 0x0A000405 (167772165)</li>
+                            <li><strong>Property ID</strong>: 0x11410A20 (287,314,464) <span style="color: #10b981; font-size: 0.85em;">✅ AOSP verified</span></li>
                             <li><strong>Type</strong>: VehiclePropValue (int32 array)</li>
                             <li><strong>Data</strong>: [rotaryInputType, detents, targetDisplay]</li>
                             <li><strong>Usage</strong>: Rotary Knob rotation</li>
+                            <li style="margin-top: 8px; padding: 8px; background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; font-size: 0.9em;">
+                                <strong>Source</strong>: <code>hardware/interfaces/automotive/vehicle/2.0/types.hal</code><br>
+                                Calculation: <code>0x0A20 | VehiclePropertyGroup:SYSTEM | VehiclePropertyType:INT32_VEC | VehicleArea:GLOBAL</code>
+                            </li>
                         </ul>
                     </div>
                 </div>

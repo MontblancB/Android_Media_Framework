@@ -566,10 +566,11 @@
                     <div class="card-description">
                         <p><strong>Hardware Interface Definition Language</strong></p>
                         <ul>
-                            <li>Android 10~12에서 사용</li>
+                            <li>Android 10~12에서 주로 사용</li>
                             <li>Binderized HAL</li>
                             <li>프로세스 간 통신</li>
                             <li>안정적인 ABI</li>
+                            <li><span style="color: #94a3b8; font-size: 0.9em;">현재도 호환 가능</span></li>
                         </ul>
                     </div>
                 </div>
@@ -582,11 +583,15 @@
                     <div class="card-description">
                         <p><strong>Android Interface Definition Language</strong></p>
                         <ul>
-                            <li>Android 13+ 권장</li>
-                            <li>향상된 안정성</li>
-                            <li>더 나은 유연성</li>
+                            <li><strong>Android 11</strong>: Stable AIDL 도입</li>
+                            <li><strong>Android 13+</strong>: HIDL→AIDL 전환 권장</li>
+                            <li>향상된 안정성 및 유연성</li>
                             <li>간소화된 구문</li>
+                            <li>하위 호환성 유지</li>
                         </ul>
+                        <p style="margin-top: 8px; padding: 8px; background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; font-size: 0.85em;">
+                            <strong>참고</strong>: OEM은 HIDL과 AIDL 중 선택 가능. AIDL 전환은 권장이지만 필수 아님.
+                        </p>
                     </div>
                 </div>
 
@@ -673,11 +678,119 @@
             <div class="warning-box">
                 <strong>⚠️ 마이그레이션 고려사항:</strong>
                 <ul style="margin-top: 10px; padding-left: 20px;">
-                    <li>Android 10+에서 Codec 2.0이 기본값</li>
-                    <li>기존 OMX 코덱은 호환성 레이어를 통해 계속 동작</li>
-                    <li>새로운 하드웨어 코덱은 Codec 2.0으로 구현 권장</li>
-                    <li>벤더는 C2ComponentStore를 통해 코덱 노출</li>
+                    <li><strong>Android 9 (Pie)</strong>: Codec 2.0 도입</li>
+                    <li><strong>Android 10 (Q)</strong>: Codec 2.0이 기본값으로 설정</li>
+                    <li><strong>Android 11 (R)</strong>: Codec 2.0 완전 전환 권장</li>
+                    <li><strong>Android 12 (S)+</strong>: OMX IL <span style="color: #f59e0b;">deprecated</span>, vendor 파티션에서 여전히 사용 가능</li>
+                    <li>기존 OMX 코덱은 <code>OMXStore</code> 호환성 레이어를 통해 계속 동작 (legacy 지원)</li>
+                    <li>새로운 하드웨어 코덱은 Codec 2.0으로 구현 <strong>필수</strong> (Android 13+)</li>
+                    <li>벤더는 <code>C2ComponentStore</code>를 통해 코덱 노출</li>
                 </ul>
+                <p style="margin-top: 12px; padding: 10px; background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; font-size: 0.95rem; line-height: 1.6;">
+                    <strong>참고</strong>: OMX IL의 완전 제거 시점은 명확하지 않으며, vendor 파티션에서 레거시 지원을 위해 계속 유지될 수 있습니다.
+                    AOSP Media Modules 문서(<a href="https://source.android.com/docs/core/media/media-modules" style="color: #60a5fa;">링크</a>)를 참조하세요.
+                </p>
+            </div>
+
+            <h3 style="color: var(--accent-primary); font-size: 1.5rem; margin-top: 50px; margin-bottom: 20px;">
+                📊 Android 버전별 미디어 코덱 API 변천사
+            </h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));">
+                            <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: left;">Android 버전</th>
+                            <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: left;">코덱 스택</th>
+                            <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: left;">HAL 인터페이스</th>
+                            <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: left;">주요 변경사항</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 7.0 (Nougat)</strong><br><small style="color: #94a3b8;">API 24</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">OMX IL 1.1.2</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">직접 연결</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • MediaCodec 샌드박싱 도입<br>
+                                • 프로세스 분리 강화
+                            </td>
+                        </tr>
+                        <tr style="background: rgba(255,255,255,0.02);">
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 8.0 (Oreo)</strong><br><small style="color: #94a3b8;">API 26</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">OMX IL (Legacy)</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><span style="color: #10b981;">HIDL 1.0</span></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • <strong>Project Treble</strong> 도입<br>
+                                • Binderized HAL (HIDL)
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 9.0 (Pie)</strong><br><small style="color: #94a3b8;">API 28</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><span style="color: #3b82f6;">Codec 2.0 도입</span></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">HIDL 1.0/1.1</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • Codec 2.0 첫 도입 (선택사항)<br>
+                                • Zero-Copy 버퍼 관리
+                            </td>
+                        </tr>
+                        <tr style="background: rgba(255,255,255,0.02);">
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 10 (Q)</strong><br><small style="color: #94a3b8;">API 29</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><span style="color: #10b981;">Codec 2.0 기본값</span></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">HIDL 1.1/1.2</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • <strong>Project Mainline</strong> 도입<br>
+                                • Media APEX 모듈 독립 업데이트
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 11 (R)</strong><br><small style="color: #94a3b8;">API 30</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Codec 2.0</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">HIDL 1.2 / <span style="color: #10b981;">AIDL</span></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • <strong>Stable AIDL</strong> 도입<br>
+                                • Codec 2.0 완전 전환 권장
+                            </td>
+                        </tr>
+                        <tr style="background: rgba(255,255,255,0.02);">
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 12 (S)</strong><br><small style="color: #94a3b8;">API 31</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Codec 2.0</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">HIDL/AIDL 혼용</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • <span style="color: #f59e0b;">OMX IL deprecated</span><br>
+                                • vendor 파티션에서 여전히 지원
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 13 (T)</strong><br><small style="color: #94a3b8;">API 33</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Codec 2.0 완전 전환</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><span style="color: #10b981;">AIDL 권장</span></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • HIDL→AIDL 전환 권장 시작<br>
+                                • 새 HW 코덱 Codec 2.0 필수
+                            </td>
+                        </tr>
+                        <tr style="background: rgba(255,255,255,0.02);">
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><strong>Android 14 (U)</strong><br><small style="color: #94a3b8;">API 34</small></td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Codec 2.0</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">AIDL</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                • AIDL 안정화<br>
+                                • Media3 통합 강화
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 20px; padding: 16px; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; border-radius: 8px;">
+                <p style="margin: 0; color: #e5e7eb; line-height: 1.8; font-size: 0.95rem;">
+                    <strong>💡 Key Insights</strong><br>
+                    • <strong>Android 9</strong>: Codec 2.0 첫 도입 (선택사항)<br>
+                    • <strong>Android 10</strong>: Codec 2.0 기본값 + Mainline 모듈화<br>
+                    • <strong>Android 11</strong>: Stable AIDL 도입 (HIDL과 병행)<br>
+                    • <strong>Android 12</strong>: OMX IL deprecated (완전 제거 아님)<br>
+                    • <strong>Android 13+</strong>: AIDL 전환 권장 + Codec 2.0 필수
+                </p>
             </div>
         </section>
 

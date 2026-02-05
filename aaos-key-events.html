@@ -704,7 +704,7 @@ class RotaryRecyclerView @JvmOverloads constructor(
                     <h3 class="card-title"><span class="card-icon">🔑</span> HW_KEY_INPUT</h3>
                     <div class="card-description">
                         <ul>
-                            <li><strong>Property ID</strong>: 0x0A000400 (167772160)</li>
+                            <li><strong>Property ID</strong>: 0x11410A00 (287,314,432) <span style="color: #f59e0b; font-size: 0.85em;">⚠️ AOSP 검증 필요</span></li>
                             <li><strong>타입</strong>: VehiclePropValue (int32 array)</li>
                             <li><strong>데이터</strong>: [action, keyCode, displayType]</li>
                             <li><strong>용도</strong>: 핸들 버튼 등 일반 키</li>
@@ -716,10 +716,14 @@ class RotaryRecyclerView @JvmOverloads constructor(
                     <h3 class="card-title"><span class="card-icon">🔄</span> HW_ROTARY_INPUT</h3>
                     <div class="card-description">
                         <ul>
-                            <li><strong>Property ID</strong>: 0x0A000405 (167772165)</li>
+                            <li><strong>Property ID</strong>: 0x11410A20 (287,314,464) <span style="color: #10b981; font-size: 0.85em;">✅ AOSP 검증 완료</span></li>
                             <li><strong>타입</strong>: VehiclePropValue (int32 array)</li>
                             <li><strong>데이터</strong>: [rotaryInputType, detents, targetDisplay]</li>
                             <li><strong>용도</strong>: Rotary Knob 회전</li>
+                            <li style="margin-top: 8px; padding: 8px; background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; font-size: 0.9em;">
+                                <strong>출처</strong>: <code>hardware/interfaces/automotive/vehicle/2.0/types.hal</code><br>
+                                계산: <code>0x0A20 | VehiclePropertyGroup:SYSTEM | VehiclePropertyType:INT32_VEC | VehicleArea:GLOBAL</code>
+                            </li>
                         </ul>
                     </div>
                 </div>

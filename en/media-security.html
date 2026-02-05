@@ -247,14 +247,76 @@ val hdcpLevel = mediaDrm.getPropertyString("hdcpLevel")
             </table>
 
             <h3>7.2 Major Media CVE Cases</h3>
+
+            <h4 style="color: #94a3b8; margin: 20px 0 12px 0; font-size: 1.1rem;">📜 Historical Media Vulnerabilities (2015-2016)</h4>
             <div class="info-box warning">
-                <strong>Historical Media Vulnerabilities</strong>
                 <ul>
                     <li><strong>Stagefright (2015)</strong>: Remote code execution via malicious MP4 sent through MMS. Integer overflow in MPEG4 parser.</li>
                     <li><strong>libstagefright (2016)</strong>: HEVC parser heap overflow. Triggered when playing malicious video.</li>
                     <li><strong>Mediaserver vulnerabilities</strong>: Memory safety issues in various container/codec parsers.</li>
                 </ul>
                 <p><em>These vulnerabilities led to sandboxing of the media stack and enhanced process isolation starting from Android 7.0.</em></p>
+            </div>
+
+            <h4 style="color: #ef4444; margin: 30px 0 12px 0; font-size: 1.1rem;">🚨 Recent Security Vulnerabilities (2023-2024)</h4>
+            <div class="info-box" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1)); border-left: 4px solid #ef4444;">
+                <strong>High-Risk CVEs (Critical/High)</strong>
+                <table style="margin-top: 12px; width: 100%;">
+                    <thead>
+                        <tr style="background: rgba(239, 68, 68, 0.2);">
+                            <th>CVE ID</th>
+                            <th>Severity</th>
+                            <th>Impact</th>
+                            <th>Patch</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>CVE-2024-0039</strong></td>
+                            <td><span style="color: #ef4444; font-weight: bold;">Critical</span></td>
+                            <td>MediaCodec remote code execution<br><small>Arbitrary code execution when playing malicious media</small></td>
+                            <td>Android 14 QPR1<br>(Feb 2024)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CVE-2024-43093</strong></td>
+                            <td><span style="color: #f59e0b; font-weight: bold;">High</span></td>
+                            <td>libstagefright privilege escalation<br><small>Local attacker can gain system privileges</small></td>
+                            <td>2024-09 security patch</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CVE-2023-21400</strong></td>
+                            <td><span style="color: #f59e0b; font-weight: bold;">High</span></td>
+                            <td>cd_codec.c OOB read<br><small>Information disclosure and denial of service</small></td>
+                            <td>2023-11 security patch</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CVE-2023-35674</strong></td>
+                            <td><span style="color: #f59e0b; font-weight: bold;">High</span></td>
+                            <td>MediaProvider permission bypass<br><small>Unauthorized media file access</small></td>
+                            <td>2023-10 security patch</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 16px; padding: 12px; background: rgba(239, 68, 68, 0.15); border-radius: 6px;">
+                    <p style="margin: 0; font-size: 0.95rem; line-height: 1.6;">
+                        <strong>📌 Regular Update Checks</strong><br>
+                        • <a href="https://source.android.com/docs/security/bulletin" style="color: #60a5fa; text-decoration: underline;">Android Security Bulletins</a> - Security patches published every first Monday<br>
+                        • <a href="https://www.cvedetails.com/vulnerability-list/vendor_id-1224/product_id-19997/Google-Android.html" style="color: #60a5fa; text-decoration: underline;">CVE Details - Android</a> - Complete CVE list search<br>
+                        • <strong>Recommended</strong>: Apply latest security patches and review vulnerabilities quarterly
+                    </p>
+                </div>
+            </div>
+
+            <h4 style="color: #10b981; margin: 30px 0 12px 0; font-size: 1.1rem;">✅ Recent Security Enhancements (Android 13+)</h4>
+            <div class="info-box" style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981;">
+                <ul style="margin: 0; line-height: 1.8;">
+                    <li><strong>Full Codec2 transition</strong>: Reduced legacy codec vulnerabilities by removing OMX</li>
+                    <li><strong>Media3 introduction</strong>: Improved security model and sandboxing</li>
+                    <li><strong>Enhanced Scoped Storage</strong>: Strengthened MediaProvider access control</li>
+                    <li><strong>Granular runtime permissions</strong>: Separate READ_MEDIA_AUDIO/VIDEO/IMAGES</li>
+                    <li><strong>Trust On First Use (TOFU)</strong>: Media file scanning on app first run</li>
+                </ul>
             </div>
 
             <h3>7.3 Safe Media File Processing</h3>

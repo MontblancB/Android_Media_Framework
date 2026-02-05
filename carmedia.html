@@ -336,8 +336,18 @@
             </p>
 
             <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">📱 Active Media Source 변경</h3>
+
+            <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(239, 68, 68, 0.1)); border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 20px; border-radius: 8px;">
+                <h4 style="color: #f59e0b; margin: 0 0 8px 0; font-size: 1.1rem;">⚠️ Deprecated API (Android 12+)</h4>
+                <p style="margin: 0; color: #e5e7eb; line-height: 1.6;">
+                    <code>CarMediaManager.setMediaSource()</code> API는 Android 12+에서 deprecated되었습니다.<br>
+                    <strong>권장</strong>: Media3 <code>MediaController</code> API 사용 (아래 "Media3 표준 방식" 참조)
+                </p>
+            </div>
+
             <div class="code-block">
-                <pre><code>// CarMediaService API로 활성 미디어 소스 변경
+                <pre><code>// ⚠️ DEPRECATED: CarMediaService API (레거시 코드 참고용)
+// Android 12+ 권장: Media3 MediaController 사용
 class MediaSourceSwitcher(private val context: Context) {
     private lateinit var carMediaManager: CarMediaManager
 
@@ -365,7 +375,7 @@ class MediaSourceSwitcher(private val context: Context) {
             "com.spotify.music.MainActivity"
         )
 
-        // CarMediaService에 소스 변경 요청
+        // ❌ DEPRECATED API
         carMediaManager.setMediaSource(spotifyComponent, CarMediaManager.MEDIA_SOURCE_MODE_PLAYBACK)
 
         Log.d("CarMedia", "Switched to Spotify")
@@ -385,6 +395,72 @@ class MediaSourceSwitcher(private val context: Context) {
         carMediaManager.removeMediaSourceListener(mediaSourceListener)
     }
 }</code></pre>
+            </div>
+
+            <h3 style="color: #10b981; margin: 30px 0 20px 0; font-size: 1.5rem;">✅ Media3 표준 방식 (권장, Android 12+)</h3>
+            <div class="code-block">
+                <pre><code>// Media3 MediaController로 미디어 제어
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import androidx.media3.common.MediaItem
+import com.google.common.util.concurrent.ListenableFuture
+import kotlinx.coroutines.*
+
+class Media3Controller(private val context: Context) {
+    private var controllerFuture: ListenableFuture&lt;MediaController&gt;? = null
+    private var mediaController: MediaController? = null
+
+    fun initialize(sessionToken: SessionToken) {
+        // MediaController 비동기 빌드
+        controllerFuture = MediaController.Builder(context, sessionToken)
+            .setApplicationLooper(Looper.getMainLooper())
+            .buildAsync()
+
+        controllerFuture?.addListener({
+            mediaController = controllerFuture?.get()
+            Log.d("Media3", "MediaController connected")
+        }, MoreExecutors.directExecutor())
+    }
+
+    // 미디어 재생
+    fun playMedia(mediaUri: String) {
+        val mediaItem = MediaItem.Builder()
+            .setUri(mediaUri)
+            .build()
+
+        mediaController?.apply {
+            setMediaItem(mediaItem)
+            prepare()
+            play()
+        }
+    }
+
+    // 재생 제어
+    fun pause() = mediaController?.pause()
+    fun play() = mediaController?.play()
+    fun seekTo(positionMs: Long) = mediaController?.seekTo(positionMs)
+
+    fun release() {
+        MediaController.releaseFuture(controllerFuture!!)
+        mediaController = null
+    }
+}
+
+// 사용 예시
+val sessionToken = SessionToken(context, ComponentName(context, PlaybackService::class.java))
+val controller = Media3Controller(context)
+controller.initialize(sessionToken)
+controller.playMedia("https://example.com/song.mp3")</code></pre>
+            </div>
+
+            <div style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 16px; margin-top: 20px; border-radius: 8px;">
+                <h4 style="color: #10b981; margin: 0 0 8px 0; font-size: 1rem;">💡 Media3 마이그레이션 가이드</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #e5e7eb; line-height: 1.8;">
+                    <li><strong>공식 문서</strong>: <a href="https://developer.android.com/media/media3/exoplayer/migration-guide" style="color: #10b981;">Media3 Migration Guide</a></li>
+                    <li><strong>주요 변경</strong>: <code>setMediaSource()</code> → <code>setMediaItem()</code></li>
+                    <li><strong>비동기 처리</strong>: <code>buildAsync()</code>로 ANR 방지</li>
+                    <li><strong>호환성</strong>: Android 5.0 (API 21)+ 지원</li>
+                </ul>
             </div>
 
             <h3 style="color: var(--accent-primary); margin: 30px 0 20px 0; font-size: 1.5rem;">🎵 간단한 MediaBrowserService 구현</h3>
