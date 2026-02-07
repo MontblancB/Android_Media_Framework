@@ -14,6 +14,52 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles/design-system.css">
+    <style>
+        /* Boot Timeline Chart */
+        .boot-timeline { margin: 1.5rem 0; overflow-x: auto; }
+        .tl-scale {
+            display: flex; justify-content: space-between;
+            margin-left: 160px; padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--color-border, #334155);
+        }
+        .tl-scale span {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem; color: var(--color-text-muted, #94a3b8);
+        }
+        .tl-group {
+            margin: 1rem 0 0.25rem; padding-left: 160px;
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.08em; color: var(--color-text-muted, #94a3b8);
+        }
+        .tl-row { display: flex; align-items: center; padding: 0.3rem 0; }
+        .tl-name {
+            width: 160px; flex-shrink: 0; text-align: right; padding-right: 12px;
+            font-size: 0.85rem; font-weight: 600;
+            color: var(--color-text-primary, #f1f5f9);
+        }
+        .tl-track {
+            flex: 1; position: relative; height: 2rem; min-width: 300px;
+            background-image: linear-gradient(to right, rgba(148,163,184,0.15) 1px, transparent 1px);
+            background-size: 25% 100%;
+        }
+        .tl-bar {
+            position: absolute; top: 0; height: 100%; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 600; color: #fff;
+        }
+        .tl-bar.boot     { background: #6366f1; }
+        .tl-bar.kernel   { background: #3b82f6; }
+        .tl-bar.early    { background: #f59e0b; color: #1e293b; }
+        .tl-bar.android  { background: #8b5cf6; }
+        .tl-bar.critical { background: #00d4ff; color: #0f172a; }
+        .tl-bar.codec    { background: #a78bfa; }
+        .tl-bar.car      { background: #14b8a6; }
+        @media (max-width: 640px) {
+            .tl-name { width: 110px; font-size: 0.75rem; }
+            .tl-scale { margin-left: 110px; }
+            .tl-group { padding-left: 110px; }
+        }
+    </style>
 </head>
 
 <body>
@@ -109,48 +155,92 @@ flowchart LR
             <h2 class="section-title"><span class="section-number">02</span>부팅 타임라인 상세 분석</h2>
 
             <h3>2.1 전체 부팅 단계 타임라인</h3>
-            <p>Cold Boot 시 주요 단계별 소요 시간입니다. Critical Path(First Audio까지의 최단 경로)를 파악하는 것이 최적화의 핵심입니다.</p>
-            <div class="mermaid">
-gantt
-    title Cold Boot 전체 부팅 단계
-    dateFormat X
-    axisFormat %s
+            <p>Cold Boot 시 주요 단계별 소요 시간입니다. Critical Path(First Audio) 항목은 하늘색으로 표시됩니다.</p>
 
-    section Boot
-    Bootloader (U-Boot/ABL)  :0, 500
-    Kernel + ALSA Driver     :500, 1200
-    Early Audio              :crit, 1100, 1300
-
-    section Android
-    init / Zygote            :1200, 2200
-    System Server            :2200, 2800
-
-    section Milestone
-    First Audio              :milestone, 2000, 0
-    App Ready                :milestone, 4000, 0
+            <div class="boot-timeline">
+                <div class="tl-scale">
+                    <span>0s</span><span>1s</span><span>2s</span><span>3s</span><span>4s</span>
+                </div>
+                <div class="tl-group">Boot</div>
+                <div class="tl-row">
+                    <div class="tl-name">Bootloader</div>
+                    <div class="tl-track"><div class="tl-bar boot" style="left:0%;width:12.5%">500ms</div></div>
+                </div>
+                <div class="tl-row">
+                    <div class="tl-name">Kernel + ALSA</div>
+                    <div class="tl-track"><div class="tl-bar kernel" style="left:12.5%;width:17.5%">700ms</div></div>
+                </div>
+                <div class="tl-row">
+                    <div class="tl-name">Early Audio</div>
+                    <div class="tl-track"><div class="tl-bar early" style="left:27.5%;width:5%">200ms</div></div>
+                </div>
+                <div class="tl-group">Android Init</div>
+                <div class="tl-row">
+                    <div class="tl-name">init / Zygote</div>
+                    <div class="tl-track"><div class="tl-bar android" style="left:30%;width:25%">1000ms</div></div>
+                </div>
+                <div class="tl-row">
+                    <div class="tl-name">System Server</div>
+                    <div class="tl-track"><div class="tl-bar android" style="left:55%;width:15%">600ms</div></div>
+                </div>
+                <div class="tl-group">Services</div>
+                <div class="tl-row">
+                    <div class="tl-name">Audio Path</div>
+                    <div class="tl-track"><div class="tl-bar critical" style="left:57.5%;width:12.5%">500ms</div></div>
+                </div>
+                <div class="tl-row">
+                    <div class="tl-name">Codec2 + Media</div>
+                    <div class="tl-track"><div class="tl-bar codec" style="left:62.5%;width:15%">600ms</div></div>
+                </div>
+                <div class="tl-row">
+                    <div class="tl-name">Car Services</div>
+                    <div class="tl-track"><div class="tl-bar car" style="left:70%;width:20%">800ms</div></div>
+                </div>
             </div>
+            <p class="diagram-caption">총 목표: First Audio ~2.0초, App Ready ~4.0초</p>
 
-            <h3>2.2 미디어 서비스 초기화 타임라인</h3>
-            <p>System Server 이후 미디어 관련 서비스의 초기화 시점입니다. <code>crit</code> 표시는 First Audio Critical Path에 해당하는 서비스입니다.</p>
-            <div class="mermaid">
-gantt
-    title 미디어 서비스 초기화 상세
-    dateFormat X
-    axisFormat %s
+            <h3>2.2 미디어 서비스 초기화 상세</h3>
+            <p>System Server(~2.0초) 이후 개별 미디어 서비스의 초기화 시점입니다. Critical Path 항목은 하늘색으로 표시됩니다.</p>
 
-    section Audio (Critical Path)
-    AudioFlinger         :crit, 2300, 2600
-    AudioPolicyService   :crit, 2600, 2800
-    CarAudioService      :crit, 3200, 3500
-
-    section Media Codecs
-    Codec2 HAL Init      :2500, 3100
-    MediaCodecService    :2500, 2900
-    MediaDrmService      :2800, 3000
-
-    section Car Services
-    CarService           :2800, 3200
-    CarMediaService      :3200, 3600
+            <div class="boot-timeline">
+                <div class="tl-scale">
+                    <span>2.0s</span><span>2.5s</span><span>3.0s</span><span>3.5s</span><span>4.0s</span>
+                </div>
+                <div class="tl-group">Audio (Critical Path)</div>
+                <div class="tl-row">
+                    <div class="tl-name">AudioFlinger</div>
+                    <div class="tl-track"><div class="tl-bar critical" style="left:15%;width:15%">300ms</div></div>
+                </div>
+                <div class="tl-row">
+                    <div class="tl-name">AudioPolicyService</div>
+                    <div class="tl-track"><div class="tl-bar critical" style="left:30%;width:10%">200ms</div></div>
+                </div>
+                <div class="tl-group">Media Codecs</div>
+                <div class="tl-row">
+                    <div class="tl-name">MediaCodecService</div>
+                    <div class="tl-track"><div class="tl-bar codec" style="left:25%;width:20%">400ms</div></div>
+                </div>
+                <div class="tl-row">
+                    <div class="tl-name">Codec2 HAL</div>
+                    <div class="tl-track"><div class="tl-bar codec" style="left:25%;width:30%">600ms</div></div>
+                </div>
+                <div class="tl-row">
+                    <div class="tl-name">MediaDrmService</div>
+                    <div class="tl-track"><div class="tl-bar codec" style="left:40%;width:10%">200ms</div></div>
+                </div>
+                <div class="tl-group">Car Services</div>
+                <div class="tl-row">
+                    <div class="tl-name">CarService</div>
+                    <div class="tl-track"><div class="tl-bar car" style="left:40%;width:20%">400ms</div></div>
+                </div>
+                <div class="tl-row">
+                    <div class="tl-name">CarAudioService</div>
+                    <div class="tl-track"><div class="tl-bar critical" style="left:60%;width:15%">300ms</div></div>
+                </div>
+                <div class="tl-row">
+                    <div class="tl-name">CarMediaService</div>
+                    <div class="tl-track"><div class="tl-bar car" style="left:60%;width:20%">400ms</div></div>
+                </div>
             </div>
 
             <h3>2.3 서비스별 초기화 시간</h3>
