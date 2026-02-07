@@ -1,36 +1,81 @@
 /**
  * Page Navigation - 이전/다음 페이지 네비게이션
  * 각 페이지의 순서에 따라 이전/다음 버튼을 자동 생성합니다.
+ * 다국어 지원: 한국어(ko) / 영어(en)
  */
+
+// 현재 페이지 언어 감지 (URL 기반)
+function getNavLang() {
+    return window.location.pathname.startsWith('/en/') ? 'en' : 'ko';
+}
+
+// 다국어 텍스트
+const NAV_I18N = {
+    ko: {
+        prev: '이전 페이지',
+        next: '다음 페이지',
+        home: '메인으로',
+        breadcrumbHome: 'Home'
+    },
+    en: {
+        prev: 'Previous',
+        next: 'Next',
+        home: 'Home',
+        breadcrumbHome: 'Home'
+    }
+};
 
 // 페이지 순서 정의 (index.html의 카드 순서와 동일)
 const PAGE_ORDER = [
+    // Architecture
     { url: 'aosp.html', title: 'Android AOSP Architecture', category: 'Architecture' },
     { url: 'android-version-history.html', title: 'Android Version History', category: 'Architecture' },
-    { url: 'aaos.html', title: 'Android Automotive OS', category: 'Automotive' },
+    { url: 'carma.html', title: 'Car Ready Mobile Apps', category: 'Architecture' },
+    // Media
     { url: 'media-framework-core.html', title: 'Media Framework Core', category: 'Media' },
+    { url: 'media-app-layer.html', title: 'Media App Layer & APIs', category: 'Media' },
     { url: 'codec2.html', title: 'Codec 2.0 & Media HAL', category: 'Media' },
-    { url: 'dolby-codecs.html', title: 'Dolby Codecs & AOSP', category: 'Media' },
     { url: 'media-playback.html', title: 'Media Pipeline & Data Flow', category: 'Media' },
     { url: 'media-extractor.html', title: 'MediaExtractor & Container', category: 'Media' },
     { url: 'mediasession.html', title: 'MediaSession Framework', category: 'Media' },
     { url: 'mediaprovider.html', title: 'MediaProvider & Storage Access', category: 'Media' },
+    { url: 'dolby-codecs.html', title: 'Dolby Codecs & AOSP', category: 'Media' },
+    { url: 'performance-optimization.html', title: 'Performance Optimization', category: 'Media' },
+    { url: 'vendor-extension.html', title: 'Vendor Extension Guide', category: 'Media' },
+    // Audio
     { url: 'audio-framework.html', title: 'Audio Framework', category: 'Audio' },
+    { url: 'audio-codecs.html', title: 'Audio Codecs', category: 'Audio' },
+    // DRM
+    { url: 'widevine.html', title: 'DRM & Widevine Architecture', category: 'DRM' },
+    { url: 'media-security.html', title: 'Media Security', category: 'DRM' },
+    // Automotive
+    { url: 'aaos.html', title: 'Android Automotive OS', category: 'Automotive' },
     { url: 'carmedia.html', title: 'Car Media Service', category: 'Automotive' },
     { url: 'aaos-key-events.html', title: 'AAOS Key Event Handling', category: 'Automotive' },
     { url: 'aaos-last-media.html', title: 'AAOS Last Media & Autoplay', category: 'Automotive' },
     { url: 'power-policy-suspend.html', title: 'Power Policy & Suspend', category: 'Automotive' },
-    { url: 'widevine.html', title: 'DRM & Widevine Architecture', category: 'DRM' },
     { url: 'gas.html', title: 'Google Automotive Services', category: 'Automotive' },
-    { url: 'carma.html', title: 'Car Ready Mobile Apps', category: 'Architecture' },
-    { url: 'media-app-layer.html', title: 'Media App Layer & APIs', category: 'Media' },
+    { url: 'multi-display-entertainment.html', title: 'Multi-Display Entertainment', category: 'Automotive' },
+    { url: 'multi-zone-audio.html', title: 'Multi-Zone Audio', category: 'Automotive' },
+    { url: 'oem-customization.html', title: 'OEM Customization Guide', category: 'Automotive' },
+    { url: 'vehicle-hal-media.html', title: 'Vehicle HAL Media', category: 'Automotive' },
+    { url: 'aaos-boot-optimization.html', title: 'AAOS Boot Optimization', category: 'Automotive' },
+    { url: 'car-services.html', title: 'AAOS Car Services', category: 'Automotive' },
+    // Testing
     { url: 'cts.html', title: 'CTS / VTS / GTS', category: 'Testing' },
     { url: 'cdd.html', title: 'CDD Policy', category: 'Testing' },
+    { url: 'media-porting-checklist.html', title: 'Media Porting Checklist', category: 'Testing' },
+    // Reference & Dev Tools
     { url: 'common-media-issues.html', title: 'Common Media Issues & Solutions', category: 'Reference' },
     { url: 'debugging-tools.html', title: 'Debugging & Profiling Tools', category: 'Dev Tools' },
+    { url: 'production-debugging.html', title: 'Production Debugging', category: 'Dev Tools' },
     { url: 'api-quick-reference.html', title: 'API Quick Reference', category: 'Reference' },
     { url: 'migration-guides.html', title: 'Migration Guides', category: 'Dev Tools' },
-    { url: 'glossary.html', title: 'Android Media Glossary', category: 'Reference' }
+    { url: 'glossary.html', title: 'Android Media Glossary', category: 'Reference' },
+    // Sub pages (linked from parent pages, not directly from index)
+    { url: 'mediasession-api.html', title: 'MediaSession API Flows', category: 'Media' },
+    { url: 'dolby-ddp-porting.html', title: 'Dolby Digital Plus Porting', category: 'DRM' },
+    { url: 'dolby-vision-porting.html', title: 'Dolby Vision Porting', category: 'DRM' }
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -54,6 +99,9 @@ function addPageNavigation() {
         return; // 페이지를 찾지 못함
     }
 
+    const lang = getNavLang();
+    const texts = NAV_I18N[lang];
+
     const prevPage = currentIndex > 0 ? PAGE_ORDER[currentIndex - 1] : null;
     const nextPage = currentIndex < PAGE_ORDER.length - 1 ? PAGE_ORDER[currentIndex + 1] : null;
 
@@ -70,7 +118,7 @@ function addPageNavigation() {
                     </svg>
                 </span>
                 <div class="nav-content">
-                    <span class="nav-label">이전 페이지</span>
+                    <span class="nav-label">${texts.prev}</span>
                     <span class="nav-title">${prevPage.title}</span>
                 </div>
             </a>
@@ -87,7 +135,7 @@ function addPageNavigation() {
                     <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
                 </svg>
             </span>
-            <span class="nav-label">메인으로</span>
+            <span class="nav-label">${texts.home}</span>
         </a>
     `;
 
@@ -96,7 +144,7 @@ function addPageNavigation() {
         navHTML += `
             <a href="${nextPage.url}" class="page-nav-btn page-nav-next">
                 <div class="nav-content">
-                    <span class="nav-label">다음 페이지</span>
+                    <span class="nav-label">${texts.next}</span>
                     <span class="nav-title">${nextPage.title}</span>
                 </div>
                 <span class="nav-arrow">
@@ -135,6 +183,9 @@ function addBreadcrumb() {
         return;
     }
 
+    const lang = getNavLang();
+    const texts = NAV_I18N[lang];
+
     // 기존 nav 찾기
     const nav = document.querySelector('.nav');
     if (!nav) {
@@ -150,7 +201,7 @@ function addBreadcrumb() {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
                     </svg>
-                    <span>Home</span>
+                    <span>${texts.breadcrumbHome}</span>
                 </a>
                 <span class="separator">/</span>
                 <span class="category">${pageInfo.category}</span>

@@ -48,7 +48,13 @@ const SEARCH_INDEX = {
         { id: 'multi-zone-audio', title: 'Multi-Zone Audio', description: '차량 오디오 존 분리 및 라우팅 심화', url: 'multi-zone-audio.html', category: 'Automotive' },
         { id: 'oem-customization', title: 'OEM Customization', description: 'AAOS OEM 커스터마이징 가이드', url: 'oem-customization.html', category: 'Automotive' },
         { id: 'vehicle-hal-media', title: 'Vehicle HAL Media', description: 'Vehicle HAL과 미디어 시스템 연동', url: 'vehicle-hal-media.html', category: 'Automotive' },
-        { id: 'aaos-boot', title: 'AAOS Boot Optimization', description: 'AAOS 부팅 최적화 및 미디어 초기화', url: 'aaos-boot-optimization.html', category: 'Automotive' }
+        { id: 'aaos-boot', title: 'AAOS Boot Optimization', description: 'AAOS 부팅 최적화 및 미디어 초기화', url: 'aaos-boot-optimization.html', category: 'Automotive' },
+        { id: 'car-services', title: 'AAOS Car Services', description: 'CarService 아키텍처 및 주요 서비스 구성', url: 'car-services.html', category: 'Automotive' },
+        { id: 'audio-codecs', title: 'Audio Codecs', description: '오디오 코덱 사양 및 AOSP 지원 현황', url: 'audio-codecs.html', category: 'Audio' },
+        // Sub pages (linked from parent pages)
+        { id: 'mediasession-api', title: 'MediaSession API Flows', description: 'MediaSession API 주요 케이스별 상세 플로우', url: 'mediasession-api.html', category: 'Media' },
+        { id: 'dolby-ddp-porting', title: 'Dolby Digital Plus Porting', description: 'Dolby Digital Plus 포팅 가이드', url: 'dolby-ddp-porting.html', category: 'DRM' },
+        { id: 'dolby-vision-porting', title: 'Dolby Vision Porting', description: 'Dolby Vision 포팅 가이드', url: 'dolby-vision-porting.html', category: 'DRM' }
     ],
 
     // 트러블슈팅 이슈

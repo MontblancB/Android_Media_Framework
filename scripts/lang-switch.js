@@ -61,11 +61,11 @@
         const isKorean = currentLang === LANGS.KO;
 
         const langSwitchHTML = `
-            <div class="lang-switch">
-                <button class="lang-btn ${isKorean ? 'active' : ''}" data-lang="ko" ${isKorean ? 'disabled' : ''}>
+            <div class="lang-switch" role="group" aria-label="Language">
+                <button class="lang-btn ${isKorean ? 'active' : ''}" data-lang="ko" ${isKorean ? 'disabled' : ''} aria-label="한국어로 전환" aria-current="${isKorean ? 'true' : 'false'}">
                     KO
                 </button>
-                <button class="lang-btn ${!isKorean ? 'active' : ''}" data-lang="en" ${!isKorean ? 'disabled' : ''}>
+                <button class="lang-btn ${!isKorean ? 'active' : ''}" data-lang="en" ${!isKorean ? 'disabled' : ''} aria-label="Switch to English" aria-current="${!isKorean ? 'true' : 'false'}">
                     EN
                 </button>
             </div>

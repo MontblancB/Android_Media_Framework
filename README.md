@@ -1,66 +1,106 @@
-# AOSP Media Framework Visualization Project
+# Android Media Framework — Technical Documentation Hub
 
-Android Open Source Project (AOSP) 미디어 프레임워크의 복잡한 아키텍처와 데이터 흐름을 이해하기 쉽게 시각화한 웹 프로젝트입니다.
+Android Open Source Project(AOSP) 미디어 프레임워크의 아키텍처와 데이터 흐름을 시각화하여 문서화한 정적 웹사이트입니다.
 
-## 🚀 배포된 페이지
+## Overview
 
-이 프로젝트는 다음 6개의 상세 시각화 페이지로 구성되어 있습니다:
+| 항목 | 수치 |
+|------|------|
+| 한국어 페이지 | 43개 |
+| 영문 페이지 | 42개 |
+| 인터랙티브 다이어그램 노드 | 527개 (한/영 100% 번역) |
+| 검색 가능 항목 | 페이지 + 용어집 50+ + 트러블슈팅 16+ |
 
-1.  **[AOSP Media Framework (Main)](index.html)**
-    *   Android 미디어 프레임워크의 전체적인 구조와 데이터 흐름 시각화
-    *   Application, Framework, Native, HAL, Kernel 레이어 분석
-    *   Codec2 및 OMX 아키텍처 비교
+## Topics
 
-2.  **[Android AOSP Architecture](aosp.html)**
-    *   AOSP 전체 시스템 아키텍처 (App ~ Kernel)
-    *   Automotive AOSP (AAOS)와의 차이점 및 차량용 HAL 구조
+### Architecture
+- **AOSP Architecture** — Android 전체 시스템 아키텍처 (App ~ Kernel)
+- **Android Version History** — 버전별 미디어 프레임워크 변화
+- **Car Ready Mobile Apps (CarMa)** — 차량 호환 앱 요구사항
 
-3.  **[MediaSession Framework](mediasession.html)**
-    *   미디어 재생 제어의 핵심인 MediaSession 구조 시각화
-    *   Client-Server 아키텍처 및 Notification/Auto/Wear 통합
+### Media Framework
+- **Media Framework Core** — Framework-Native 상호작용
+- **Media App Layer** — MediaPlayer / ExoPlayer / Media3 API
+- **Codec 2.0 & Media HAL** — Codec 2.0 아키텍처
+- **Media Pipeline & Data Flow** — 재생 파이프라인
+- **MediaExtractor** — 컨테이너 파싱 & 디먹싱
+- **MediaSession Framework** — 미디어 세션 관리
+- **MediaProvider** — 스토리지 접근 & 인덱싱
+- **Dolby Codecs** — Dolby Atmos / AC-4 / Vision
+- **Performance Optimization** — 성능 최적화 가이드
+- **Vendor Extension** — HAL Extension & Codec2 플러그인
 
-4.  **[MediaSession API Flows](mediasession-api.html)**
-    *   Audio Focus, Volume Control, Media Button 등 주요 API 케이스별 상세 플로우
-    *   개발자를 위한 시퀀스 다이어그램 및 에러 처리 로직
+### Audio
+- **Audio Framework** — AudioFlinger / AudioPolicyService
+- **Audio Codecs** — 오디오 코덱 사양
 
-5.  **[Widevine DRM Architecture](widevine.html)**
-    *   Google Widevine DRM 보안 레벨 (L1/L2/L3) 및 아키텍처
-    *   라이선스 획득 및 암호화 해독 과정 시각화
+### DRM & Security
+- **Widevine DRM** — L1 / L2 / L3 보안 레벨
+- **Media Security** — Secure Buffer, TEE, DRM 보안
 
-6.  **[Google Automotive Services (GAS)](gas.html)**
-    *   Android Automotive OS 기반의 Google 서비스 생태계 (Maps, Assistant, Play)
-    *   OEM 통합 프로세스 및 아키텍처
+### Automotive (AAOS)
+- **Android Automotive OS** — AAOS 아키텍처 개요
+- **Car Media Service** — 차량 미디어 서비스
+- **Key Event Handling** — CarService / Input 키 이벤트
+- **Last Media & Autoplay** — 마지막 미디어 소스 복원
+- **Power Policy & Suspend** — Deep Sleep & Suspend-to-RAM
+- **Google Automotive Services** — GAS 컴포넌트
+- **Multi-Display Entertainment** — 멀티 디스플레이
+- **Multi-Zone Audio** — 오디오 존 분리 & 라우팅
+- **OEM Customization** — OEM 커스터마이징 가이드
+- **Vehicle HAL Media** — VHAL 미디어 연동
+- **Boot Optimization** — 부팅 & 미디어 초기화 최적화
+- **Car Services** — CarService 아키텍처
 
-## 🛠 기술 스택
+### Testing & Compatibility
+- **CTS / VTS / GTS / CDD** — 호환성 테스트 & 정책 문서
+- **Media Porting Checklist** — SoC 미디어 스택 포팅
 
-*   **Core**: HTML5, CSS3 (Modern Dark Theme), Vanilla JavaScript
-*   **Visualization**: [Mermaid.js](https://mermaid.js.org/) (Diagrams & Charts)
-*   **Fonts**: Google Fonts (Noto Sans KR, JetBrains Mono)
-*   **Icons**: CSS-based & Unicode Icons
+### Reference & Dev Tools
+- **Common Media Issues** — 16+ 미디어 문제 해결 가이드
+- **Debugging Tools** — logcat, dumpsys, perfetto
+- **Production Debugging** — 필드 이슈 원격 진단
+- **API Quick Reference** — MediaPlayer, ExoPlayer, Codec API
+- **Migration Guides** — MediaPlayer → ExoPlayer → Media3
+- **Glossary** — Android Media 용어집 (50+ 용어)
 
-## 📦 로컬 실행 방법
+## Tech Stack
 
-이 프로젝트는 정적 웹사이트이므로 별도의 빌드 과정이 필요 없습니다.
+- **HTML5** — Semantic markup
+- **CSS3** — design-system.css 기반 다크/라이트 테마
+- **JavaScript** — Vanilla JS (프레임워크 없음)
+- **Mermaid.js v10** — 아키텍처 다이어그램 시각화
+- **Fuse.js v7** — 클라이언트 사이드 퍼지 검색
+- **Fonts** — Archivo (본문), IBM Plex Mono (코드), Playfair Display (제목)
+- **Deployment** — Vercel (main 브랜치 자동 배포)
+
+## Features
+
+- **다크/라이트 모드** — 시스템 설정 연동 + 수동 토글
+- **다국어 지원** — 한국어 (기본) / 영어 (URL 기반 전환)
+- **전역 검색** — Ctrl+K 또는 `/` 키로 페이지, 용어, 트러블슈팅 검색
+- **인터랙티브 다이어그램** — 노드 클릭 시 상세 정보 패널 (527개 노드)
+- **코드 복사** — 코드 블록 원클릭 복사
+- **자동 목차** — 페이지 헤딩 기반 TOC + 스크롤 스파이
+- **페이지 네비게이션** — 이전/다음 페이지 버튼 + Breadcrumb
+
+## Local Development
 
 ```bash
-# Python 내장 서버 실행 (포트 8001)
+# Python 내장 서버
 python3 -m http.server 8001
+
+# 브라우저에서 접속
+open http://localhost:8001
 ```
 
-브라우저에서 `http://localhost:8001`로 접속하세요.
-
-## ☁️ 배포 방법 (Vercel)
-
-Vercel을 사용하여 무료로 쉽게 배포할 수 있습니다.
-
-1.  Node.js가 설치되어 있는지 확인합니다.
-2.  프로젝트 루트에서 다음 명령어를 실행합니다:
+## Deployment
 
 ```bash
-npx vercel
+# main 브랜치에 push하면 Vercel 자동 배포
+git push origin main
 ```
 
-3.  프롬프트에 따라 설정을 완료하면 배포 URL이 생성됩니다.
+## License
 
----
-Created by Antigravity (Google Deepmind)
+이 프로젝트는 LGE 내부 학습 및 참조 자료 목적으로 제작되었습니다.

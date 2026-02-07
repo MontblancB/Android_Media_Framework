@@ -39,6 +39,16 @@
 
         // Update meta theme-color for mobile browsers
         updateMetaThemeColor(theme);
+
+        // Update aria-pressed state on toggle button
+        const toggleBtn = document.querySelector('.theme-toggle-btn');
+        if (toggleBtn) {
+            const isDark = theme === THEMES.DARK;
+            toggleBtn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+            toggleBtn.setAttribute('aria-label',
+                isDark ? 'Switch to light mode' : 'Switch to dark mode'
+            );
+        }
     }
 
     /**
@@ -72,6 +82,31 @@
     function initTheme() {
         const currentTheme = getCurrentTheme();
         applyTheme(currentTheme);
+    }
+
+    /**
+     * Inject skip-to-content link for keyboard accessibility
+     */
+    function injectSkipToContent() {
+        // Don't add if already present
+        if (document.querySelector('.skip-to-content')) return;
+
+        // Determine main content target
+        const mainContent = document.querySelector('main')
+            || document.querySelector('.container')
+            || document.querySelector('.content');
+
+        if (mainContent && !mainContent.id) {
+            mainContent.id = 'main-content';
+        }
+
+        const targetId = mainContent ? mainContent.id || 'main-content' : 'main-content';
+
+        const skipLink = document.createElement('a');
+        skipLink.href = '#' + targetId;
+        skipLink.className = 'skip-to-content';
+        skipLink.textContent = 'Skip to content';
+        document.body.insertBefore(skipLink, document.body.firstChild);
     }
 
     /**
@@ -150,11 +185,13 @@
             initTheme();
             createThemeToggle();
             watchSystemTheme();
+            injectSkipToContent();
         });
     } else {
         initTheme();
         createThemeToggle();
         watchSystemTheme();
+        injectSkipToContent();
     }
 
     // Expose toggle function globally for manual triggering
