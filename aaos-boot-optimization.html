@@ -104,11 +104,130 @@ flowchart LR
             <p class="diagram-caption">총 목표 시간: 5초 이내 (First Audio: ~2초, App Ready: ~4초)</p>
         </section>
 
-        <!-- Section 2: Cold Start 오디오 -->
+        <!-- Section 2: 부팅 타임라인 상세 분석 -->
         <section class="content-section section">
-            <h2 class="section-title"><span class="section-number">02</span>Cold Start 오디오 최적화</h2>
+            <h2 class="section-title"><span class="section-number">02</span>부팅 타임라인 상세 분석</h2>
 
-            <h3>2.1 Early Audio 아키텍처</h3>
+            <h3>2.1 미디어 서비스 초기화 타임라인</h3>
+            <p>Cold Boot 시 각 미디어 관련 컴포넌트의 초기화 시점입니다. Critical Path(First Audio까지의 최단 경로)를 파악하는 것이 최적화의 핵심입니다.</p>
+            <div class="mermaid">
+gantt
+    title Cold Boot 미디어 서비스 타임라인
+    dateFormat X
+    axisFormat %s
+
+    section Bootloader
+    U-Boot/ABL           :0, 500
+
+    section Kernel
+    Linux Kernel Init    :500, 1200
+    ALSA Driver Load     :800, 1100
+    Early Audio Start    :1100, 1300
+
+    section Android Init
+    init (1st stage)     :1200, 1500
+    Zygote Preload       :1500, 2200
+    System Server        :2200, 2800
+
+    section Media Services
+    AudioFlinger         :2300, 2600
+    AudioPolicyService   :2600, 2800
+    MediaCodecService    :2500, 2900
+    MediaExtractorService:2600, 2800
+    MediaDrmService      :2800, 3000
+    Codec2 HAL Init      :2500, 3100
+
+    section Car Services
+    CarService           :2800, 3200
+    CarAudioService      :3200, 3500
+    CarMediaService      :3200, 3600
+
+    section Milestones
+    First Audio Output   :milestone, 2000, 0
+    App Ready            :milestone, 4000, 0
+            </div>
+
+            <h3>2.2 서비스별 초기화 시간</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>서비스</th>
+                        <th>시작 시점</th>
+                        <th>소요 시간</th>
+                        <th>Critical Path</th>
+                        <th>비고</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>AudioFlinger</strong></td>
+                        <td>~2.3초</td>
+                        <td>~300ms</td>
+                        <td>Yes</td>
+                        <td>오디오 HAL 로딩이 병목</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AudioPolicyService</strong></td>
+                        <td>~2.6초</td>
+                        <td>~200ms</td>
+                        <td>Yes</td>
+                        <td>audio_policy.conf 파싱</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MediaCodecService</strong></td>
+                        <td>~2.5초</td>
+                        <td>~400ms</td>
+                        <td>No</td>
+                        <td>media_codecs.xml 파싱</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Codec2 HAL</strong></td>
+                        <td>~2.5초</td>
+                        <td>~600ms</td>
+                        <td>No</td>
+                        <td>컴포넌트 store 열거가 병목</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CarAudioService</strong></td>
+                        <td>~3.2초</td>
+                        <td>~300ms</td>
+                        <td>Yes</td>
+                        <td>오디오 존 설정 로딩</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CarMediaService</strong></td>
+                        <td>~3.2초</td>
+                        <td>~400ms</td>
+                        <td>Yes</td>
+                        <td>LMS 복원 포함</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>2.3 Critical Path 분석</h3>
+            <div class="mermaid">
+flowchart LR
+    A["Kernel Boot<br/>1.2s"] --> B["AudioFlinger<br/>300ms"]
+    B --> C["AudioPolicyService<br/>200ms"]
+    C --> D["CarAudioService<br/>300ms"]
+    D --> E(("First Audio<br/>~2.0s"))
+
+    A --> F["System Server<br/>600ms"]
+    F --> G["CarService<br/>400ms"]
+    G --> H["CarMediaService<br/>400ms"]
+    H --> I(("App Ready<br/>~3.6s"))
+
+    style E fill:#10b981,stroke:#059669,color:#fff
+    style I fill:#3b82f6,stroke:#2563eb,color:#fff
+            </div>
+            <p class="diagram-caption">First Audio Critical Path: Kernel → AudioFlinger → AudioPolicyService → CarAudioService (~2.0초)</p>
+        </section>
+
+        <!-- Section 3: Cold Start 오디오 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">03</span>Cold Start 오디오 최적화</h2>
+
+            <h3>3.1 Early Audio 아키텍처</h3>
             <div class="mermaid">
 flowchart TB
     subgraph BOOT["Early Boot"]
@@ -138,7 +257,7 @@ flowchart TB
 
             </div>
 
-            <h3>2.2 Early Audio 구현</h3>
+            <h3>3.2 Early Audio 구현</h3>
             <pre><code>// Kernel Level Early Audio (drivers/audio/early_audio.c)
 
 static int early_audio_init(void) {
@@ -171,7 +290,7 @@ static void handoff_to_audioflinger(void) {
     early_audio_cleanup();
 }</code></pre>
 
-            <h3>2.3 부팅음 재생 (Android Level)</h3>
+            <h3>3.3 부팅음 재생 (Android Level)</h3>
             <pre><code>// BootCompletedReceiver.java
 public class BootCompletedReceiver extends BroadcastReceiver {
     @Override
@@ -208,11 +327,172 @@ public class BootCompletedReceiver extends BroadcastReceiver {
 }</code></pre>
         </section>
 
-        <!-- Section 3: 부팅 시간 단축 -->
+        <!-- Section 4: Codec2 & 미디어 서비스 초기화 최적화 -->
         <section class="content-section section">
-            <h2 class="section-title"><span class="section-number">03</span>부팅 시간 단축 기법</h2>
+            <h2 class="section-title"><span class="section-number">04</span>Codec2 & 미디어 서비스 초기화 최적화</h2>
 
-            <h3>3.1 미디어 서비스 최적화</h3>
+            <p>미디어 서비스 초기화에서 가장 큰 병목은 <strong>Codec2 HAL의 컴포넌트 열거</strong>입니다. 컴포넌트 store가 모든 코덱을 열거하는 데 ~600ms가 소요되며, 이를 최적화하면 전체 부팅 시간을 크게 단축할 수 있습니다.</p>
+
+            <h3>4.1 init.rc 미디어 서비스 설정</h3>
+            <p>미디어 관련 서비스의 부팅 우선순위는 <code>init.rc</code>에서 제어됩니다. Critical Path에 있는 서비스를 <code>class core</code>로 설정하여 우선 시작합니다.</p>
+            <pre><code># device/&lt;vendor&gt;/&lt;product&gt;/init.&lt;product&gt;.rc
+
+# 오디오 관련 서비스 - 최우선 시작 (class core)
+service audioserver /system/bin/audioserver
+    class core
+    user audioserver
+    group audio camera drmrpc inet media mediadrm net_bt net_bt_admin
+    capabilities BLOCK_SUSPEND
+    ioprio rt 4
+    task_profiles ProcessCapacityHigh HighPerformance
+    onrestart restart vendor.audio-hal
+    onrestart restart vendor.audio-hal-aidl
+
+# Codec2 서비스 - 일반 시작 (class main)
+service vendor.media.c2@1.2-default /vendor/bin/hw/android.hardware.media.c2@1.2-service
+    class main
+    user mediacodec
+    group camera drmrpc mediadrm
+    ioprio rt 4
+    task_profiles ProcessCapacityHigh
+
+# MediaCodecService - Lazy 로딩으로 변경 가능
+service mediacodec /system/bin/mediacodec
+    class main
+    user mediacodec
+    group camera drmrpc mediadrm
+    ioprio rt 4
+    task_profiles ProcessCapacityHigh</code></pre>
+
+            <h3>4.2 Codec2 컴포넌트 Store 캐싱</h3>
+            <p>Codec2 HAL 초기화 시 모든 코덱 컴포넌트를 열거하는 것이 병목입니다. 이전 부팅에서 열거한 결과를 캐싱하여 재사용할 수 있습니다.</p>
+            <pre><code>// vendor/&lt;vendor&gt;/codec2/C2VendorComponentStore.cpp
+
+class C2VendorComponentStore : public C2ComponentStore {
+public:
+    c2_status_t listComponents() override {
+        // 1. 캐시 파일에서 컴포넌트 목록 로딩 시도
+        if (loadCachedComponentList()) {
+            ALOGI("Component list loaded from cache (%zu ms)",
+                  elapsedMs());
+            return C2_OK;  // ~50ms (캐시 히트)
+        }
+
+        // 2. 캐시 미스 시 전체 열거 수행
+        ALOGI("Cache miss, enumerating all components...");
+        c2_status_t status = enumerateAllComponents();  // ~600ms
+
+        // 3. 결과를 캐시에 저장
+        if (status == C2_OK) {
+            saveCachedComponentList();
+        }
+        return status;
+    }
+
+private:
+    bool loadCachedComponentList() {
+        std::string cachePath = "/data/vendor/media/codec2_cache.bin";
+
+        // 캐시 유효성 검사 (HAL 버전, 빌드 ID 확인)
+        if (!isCacheValid(cachePath)) {
+            return false;
+        }
+
+        // 캐시된 컴포넌트 목록 로딩
+        return deserializeComponentList(cachePath);
+    }
+
+    bool isCacheValid(const std::string& path) {
+        // 빌드 fingerprint가 변경되었으면 캐시 무효화
+        std::string currentFingerprint = android::base::GetProperty(
+            "ro.build.fingerprint", "");
+        std::string cachedFingerprint = readCacheFingerprint(path);
+        return currentFingerprint == cachedFingerprint;
+    }
+};</code></pre>
+
+            <h3>4.3 media_codecs.xml 최적화</h3>
+            <p>부팅 시 파싱되는 <code>media_codecs.xml</code>의 <strong>rank 값</strong>을 조정하여 자주 사용하는 코덱이 우선 로딩되도록 합니다. rank가 낮을수록 우선순위가 높습니다.</p>
+            <pre><code>&lt;!-- device/&lt;vendor&gt;/&lt;product&gt;/media_codecs.xml --&gt;
+&lt;MediaCodecs&gt;
+    &lt;!-- rank가 낮을수록 우선 선택됨 --&gt;
+
+    &lt;!-- 차량에서 가장 많이 사용하는 오디오 코덱: 최우선 --&gt;
+    &lt;MediaCodec name="c2.vendor.aac.decoder" type="audio/mp4a-latm"
+               rank="1"&gt;
+        &lt;Limit name="channel-count" max="8" /&gt;
+        &lt;Limit name="sample-rate" ranges="7350-48000" /&gt;
+    &lt;/MediaCodec&gt;
+
+    &lt;MediaCodec name="c2.vendor.mp3.decoder" type="audio/mpeg"
+               rank="1"&gt;
+        &lt;Limit name="channel-count" max="2" /&gt;
+        &lt;Limit name="sample-rate" ranges="8000-48000" /&gt;
+    &lt;/MediaCodec&gt;
+
+    &lt;!-- 비디오 코덱: 부팅 시 불필요, 높은 rank 할당 --&gt;
+    &lt;MediaCodec name="c2.vendor.hevc.decoder" type="video/hevc"
+               rank="100"&gt;
+        &lt;Limit name="size" min="2x2" max="4096x2304" /&gt;
+    &lt;/MediaCodec&gt;
+
+    &lt;MediaCodec name="c2.vendor.avc.decoder" type="video/avc"
+               rank="50"&gt;
+        &lt;Limit name="size" min="2x2" max="4096x2304" /&gt;
+    &lt;/MediaCodec&gt;
+&lt;/MediaCodecs&gt;</code></pre>
+
+            <h3>4.4 미디어 서비스 병렬 초기화</h3>
+            <p>기본적으로 미디어 관련 HAL 서비스는 순차적으로 시작됩니다. 의존성이 없는 서비스를 병렬로 시작하면 부팅 시간을 줄일 수 있습니다.</p>
+            <div class="mermaid">
+flowchart TB
+    subgraph SEQ["순차 초기화 (기존, ~1.8s)"]
+        direction LR
+        S1["AudioFlinger<br/>300ms"] --> S2["AudioPolicy<br/>200ms"]
+        S2 --> S3["MediaCodec<br/>400ms"]
+        S3 --> S4["Codec2 HAL<br/>600ms"]
+        S4 --> S5["MediaDRM<br/>200ms"]
+    end
+
+    subgraph PAR["병렬 초기화 (최적화, ~0.9s)"]
+        direction LR
+        P1["AudioFlinger<br/>300ms"] --> P2["AudioPolicy<br/>200ms"]
+        P3["MediaCodec<br/>400ms"] --> P5["MediaDRM<br/>200ms"]
+        P4["Codec2 HAL<br/>600ms"]
+    end
+
+    style SEQ fill:#1e293b,stroke:#ef4444,color:#f1f5f9
+    style PAR fill:#1e293b,stroke:#10b981,color:#f1f5f9
+            </div>
+            <p class="diagram-caption">AudioFlinger→AudioPolicy만 순차 필요. MediaCodec, Codec2, MediaDRM은 병렬 실행 가능</p>
+
+            <pre><code>// system/core/init/service_list.cpp
+// 미디어 서비스 병렬 시작을 위한 init 설정
+
+// init.rc에서 병렬 시작 그룹 정의
+// group_start를 사용하여 의존성 없는 서비스를 동시에 시작
+
+# device/&lt;vendor&gt;/&lt;product&gt;/init.media.rc
+
+on post-fs-data
+    # 오디오 경로는 순차적으로 (의존성 존재)
+    start audioserver
+    # audioserver 준비 후 AudioPolicy 시작
+    wait_for_prop init.svc.audioserver running
+    start audiopolicy
+
+on boot
+    # 나머지 미디어 서비스는 병렬로 시작
+    start mediacodec
+    start vendor.media.c2
+    start mediadrm</code></pre>
+        </section>
+
+        <!-- Section 5: 부팅 시간 단축 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">05</span>부팅 시간 단축 기법</h2>
+
+            <h3>5.1 미디어 서비스 최적화</h3>
             <table>
                 <thead>
                     <tr>
@@ -250,7 +530,7 @@ public class BootCompletedReceiver extends BroadcastReceiver {
                 </tbody>
             </table>
 
-            <h3>3.2 CarService 부팅 순서 최적화</h3>
+            <h3>5.2 CarService 부팅 순서 최적화</h3>
             <pre><code>&lt;!-- packages/services/Car/service/res/values/config.xml --&gt;
 &lt;resources&gt;
     &lt;!-- 부팅 시 우선 초기화할 서비스 --&gt;
@@ -267,7 +547,7 @@ public class BootCompletedReceiver extends BroadcastReceiver {
     &lt;/string-array&gt;
 &lt;/resources&gt;</code></pre>
 
-            <h3>3.3 미디어 앱 최적화</h3>
+            <h3>5.3 미디어 앱 최적화</h3>
             <pre><code>// 미디어 앱 Application 클래스
 class MediaApplication : Application() {
     override fun onCreate() {
@@ -301,11 +581,11 @@ class MediaApplication : Application() {
 }</code></pre>
         </section>
 
-        <!-- Section 4: Resume 최적화 -->
+        <!-- Section 6: Resume 최적화 -->
         <section class="content-section section">
-            <h2 class="section-title"><span class="section-number">04</span>Suspend/Resume 최적화</h2>
+            <h2 class="section-title"><span class="section-number">06</span>Suspend/Resume 최적화</h2>
 
-            <h3>4.1 Suspend-to-RAM 흐름</h3>
+            <h3>6.1 Suspend-to-RAM 흐름</h3>
             <div class="mermaid">
 sequenceDiagram
     participant Driver as Driver
@@ -330,7 +610,7 @@ sequenceDiagram
     AF-->>Driver: Audio Playing
             </div>
 
-            <h3>4.2 미디어 상태 저장/복원</h3>
+            <h3>6.2 미디어 상태 저장/복원</h3>
             <pre><code>// CarAudioService 내 Suspend 처리
 class CarAudioService {
     private var savedState: MediaState? = null
@@ -369,7 +649,7 @@ class CarAudioService {
     }
 }</code></pre>
 
-            <h3>4.3 빠른 Resume을 위한 설정</h3>
+            <h3>6.3 빠른 Resume을 위한 설정</h3>
             <pre><code># 시스템 프로퍼티 설정
 # Suspend 시 오디오 HAL 상태 유지
 persist.audio.keep_hal_active_on_suspend=true
@@ -384,11 +664,11 @@ persist.car.media.state_cache=true
 persist.car.power.resume_delay_ms=100</code></pre>
         </section>
 
-        <!-- Section 5: 메모리 관리 -->
+        <!-- Section 7: 메모리 관리 -->
         <section class="content-section section">
-            <h2 class="section-title"><span class="section-number">05</span>제한된 환경의 메모리 관리</h2>
+            <h2 class="section-title"><span class="section-number">07</span>제한된 환경의 메모리 관리</h2>
 
-            <h3>5.1 차량 환경 메모리 제약</h3>
+            <h3>7.1 차량 환경 메모리 제약</h3>
             <table>
                 <thead>
                     <tr>
@@ -421,7 +701,7 @@ persist.car.power.resume_delay_ms=100</code></pre>
                 </tbody>
             </table>
 
-            <h3>5.2 메모리 최적화 전략</h3>
+            <h3>7.2 메모리 최적화 전략</h3>
             <pre><code>// 미디어 앱 메모리 관리
 class MediaService : Service() {
     private var thumbnailCache: LruCache&lt;String, Bitmap&gt;? = null
@@ -464,7 +744,7 @@ class MediaService : Service() {
     }
 }</code></pre>
 
-            <h3>5.3 Low Memory Killer 설정</h3>
+            <h3>7.3 Low Memory Killer 설정</h3>
             <pre><code>&lt;!-- frameworks/base/core/res/res/values/config.xml --&gt;
 &lt;!-- 차량용 LMK 설정 --&gt;
 &lt;integer-array name="config_lowMemoryKillerOomAdj"&gt;
@@ -483,11 +763,11 @@ class MediaService : Service() {
 &lt;/string-array&gt;</code></pre>
         </section>
 
-        <!-- Section 6: 프로파일링 -->
+        <!-- Section 8: 프로파일링 -->
         <section class="content-section section">
-            <h2 class="section-title"><span class="section-number">06</span>부팅 성능 측정</h2>
+            <h2 class="section-title"><span class="section-number">08</span>부팅 성능 측정</h2>
 
-            <h3>6.1 Bootchart 수집</h3>
+            <h3>8.1 Bootchart 수집</h3>
             <pre><code># Bootchart 활성화
 adb shell 'echo 120 > /proc/sys/kernel/bootchart/enable'
 
@@ -501,7 +781,7 @@ adb pull /data/local/tmp/bootchart.tgz
 # 분석 도구로 시각화
 bootchart bootchart.tgz</code></pre>
 
-            <h3>6.2 부팅 시간 측정 스크립트</h3>
+            <h3>8.2 부팅 시간 측정 스크립트</h3>
             <pre><code>#!/bin/bash
 # boot_time_measure.sh
 
@@ -533,7 +813,7 @@ echo "CarMediaService started at: $MEDIA_TIME"
 AUDIO_TIME=$(adb shell dmesg | grep "first audio" | head -1 | awk '{print $2}')
 echo "First audio at: $AUDIO_TIME"</code></pre>
 
-            <h3>6.3 Perfetto 부팅 트레이스</h3>
+            <h3>8.3 Perfetto 부팅 트레이스</h3>
             <pre><code># 부팅 시 Perfetto 트레이스 수집
 adb shell setprop persist.debug.perfetto.boottrace 1
 adb reboot
@@ -544,16 +824,140 @@ adb pull /data/misc/perfetto-traces/boottrace.perfetto-trace
 # ui.perfetto.dev에서 분석</code></pre>
         </section>
 
-        <!-- Section 7: 체크리스트 -->
+        <!-- Section 9: 트러블슈팅 -->
         <section class="content-section section">
-            <h2 class="section-title"><span class="section-number">07</span>최적화 체크리스트</h2>
+            <h2 class="section-title"><span class="section-number">09</span>부팅 성능 트러블슈팅</h2>
+
+            <h3>9.1 일반적인 부팅 지연 원인</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>증상</th>
+                        <th>원인</th>
+                        <th>진단 방법</th>
+                        <th>해결책</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>오디오 출력 5초 이상</strong></td>
+                        <td>AudioFlinger가 Audio HAL 로딩 대기</td>
+                        <td><code>logcat -b events | grep boot_progress</code></td>
+                        <td>Audio HAL을 class core로 이동, preload 설정</td>
+                    </tr>
+                    <tr>
+                        <td><strong>코덱 초기화 느림</strong></td>
+                        <td>Codec2 component store 전체 열거</td>
+                        <td><code>logcat | grep C2Store</code></td>
+                        <td>컴포넌트 캐싱, 불필요 코덱 제거</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CarMediaService 지연</strong></td>
+                        <td>LMS 복원 시 미디어 앱 바인딩 타임아웃</td>
+                        <td><code>dumpsys car_service</code></td>
+                        <td>미디어 앱 startup 최적화, 타임아웃 조정</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Resume 후 무음</strong></td>
+                        <td>Audio HAL이 resume 시 reinit 필요</td>
+                        <td><code>dumpsys audio</code></td>
+                        <td><code>persist.audio.keep_hal_active_on_suspend=true</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>부팅 시 OOM</strong></td>
+                        <td>다수의 서비스 동시 시작으로 메모리 부족</td>
+                        <td><code>dmesg | grep lowmemorykiller</code></td>
+                        <td>서비스 시작 순서 조정, deferred 서비스 확대</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>9.2 부팅 시간 진단 명령어</h3>
+            <pre><code># 부팅 이벤트 타임라인 확인
+adb shell logcat -b events -d | grep boot_progress
+# 출력 예:
+# boot_progress_start              :  5000ms  (kernel 시작)
+# boot_progress_preload_start      : 10000ms  (preload 시작)
+# boot_progress_preload_end        : 13000ms  (preload 완료)
+# boot_progress_system_run         : 14000ms  (System Server 시작)
+# boot_progress_pms_start          : 15000ms  (PackageManager 시작)
+# boot_progress_ams_ready          : 18000ms  (ActivityManager 준비)
+# boot_progress_enable_screen      : 20000ms  (화면 활성화)
+
+# 각 서비스의 시작 시간 확인
+adb shell logcat -d | grep -E "ServiceManager: addService|Starting service"
+
+# AudioFlinger 초기화 시간 측정
+adb shell logcat -d | grep -E "AudioFlinger|AudioPolicyService" | head -20
+
+# Codec2 HAL 초기화 시간 측정
+adb shell logcat -d | grep -E "C2Store|codec2|CCodec" | head -20
+
+# CarService 부팅 시간 측정
+adb shell logcat -d | grep -E "CarService|CarAudioService|CarMediaService" | head -20
+
+# init 서비스 시작 순서 및 소요 시간
+adb shell dmesg | grep "init: starting service"</code></pre>
+
+            <h3>9.3 Systrace를 활용한 부팅 분석</h3>
+            <pre><code># 부팅 시 Systrace 수집 (Android 12+에서는 Perfetto 권장)
+python3 $ANDROID_HOME/platform-tools/systrace/systrace.py \
+    -b 65536 -t 30 \
+    am ss audio hal sched freq idle \
+    -o boot_trace.html
+
+# Perfetto로 부팅 분석 (권장)
+cat &lt;&lt;EOF &gt; /tmp/boot_trace_config.pbtxt
+buffers {
+    size_kb: 65536
+    fill_policy: RING_BUFFER
+}
+data_sources {
+    config {
+        name: "linux.ftrace"
+        ftrace_config {
+            ftrace_events: "sched/sched_switch"
+            ftrace_events: "power/cpu_frequency"
+            ftrace_events: "power/suspend_resume"
+            atrace_categories: "am"
+            atrace_categories: "audio"
+            atrace_categories: "hal"
+            atrace_apps: "com.android.car"
+        }
+    }
+}
+duration_ms: 30000
+EOF
+
+adb push /tmp/boot_trace_config.pbtxt /data/local/tmp/
+adb shell setprop persist.debug.perfetto.boottrace 1
+adb reboot
+
+# 부팅 후 트레이스 수집
+adb pull /data/misc/perfetto-traces/boottrace.perfetto-trace
+# ui.perfetto.dev에서 분석</code></pre>
+        </section>
+
+        <!-- Section 10: 체크리스트 -->
+        <section class="content-section section">
+            <h2 class="section-title"><span class="section-number">10</span>최적화 체크리스트</h2>
 
             <h3>부팅 시간</h3>
             <ul class="checklist">
                 <li><input type="checkbox"> Cold Boot → 오디오 &lt; 3초</li>
                 <li><input type="checkbox"> Cold Boot → UI &lt; 5초</li>
                 <li><input type="checkbox"> Early Audio 동작 확인</li>
-                <li><input type="checkbox"> 불필요한 서비스 지연 로딩</li>
+                <li><input type="checkbox"> 불필요한 서비스 지연 로딩 (deferred services)</li>
+                <li><input type="checkbox"> Critical Path 서비스 class core 설정 확인</li>
+            </ul>
+
+            <h3>Codec2 & 미디어 서비스</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Codec2 component store 캐싱 적용</li>
+                <li><input type="checkbox"> media_codecs.xml rank 최적화 (오디오 코덱 우선)</li>
+                <li><input type="checkbox"> init.rc 미디어 서비스 병렬 시작 설정</li>
+                <li><input type="checkbox"> AudioFlinger → AudioPolicy 순차 의존성 확인</li>
+                <li><input type="checkbox"> 불필요한 비디오 코덱 비활성화 또는 lazy loading</li>
             </ul>
 
             <h3>Resume 성능</h3>
@@ -562,6 +966,7 @@ adb pull /data/misc/perfetto-traces/boottrace.perfetto-trace
                 <li><input type="checkbox"> Resume → 오디오 &lt; 500ms</li>
                 <li><input type="checkbox"> 미디어 상태 정확히 복원</li>
                 <li><input type="checkbox"> 볼륨/위치 복원 확인</li>
+                <li><input type="checkbox"> Audio HAL suspend 시 상태 유지 설정</li>
             </ul>
 
             <h3>메모리</h3>
@@ -572,17 +977,19 @@ adb pull /data/misc/perfetto-traces/boottrace.perfetto-trace
                 <li><input type="checkbox"> 메모리 누수 테스트</li>
             </ul>
 
-            <h3>측정</h3>
+            <h3>측정 & 진단</h3>
             <ul class="checklist">
                 <li><input type="checkbox"> Bootchart 분석 완료</li>
                 <li><input type="checkbox"> Perfetto 부팅 트레이스 확인</li>
                 <li><input type="checkbox"> 자동화 테스트 구축</li>
+                <li><input type="checkbox"> boot_progress 이벤트 로그 분석</li>
+                <li><input type="checkbox"> 각 서비스 초기화 시간 baseline 기록</li>
             </ul>
         </section>
 
         <!-- 관련 문서 -->
         <section class="content-section section">
-            <h2 class="section-title"><span class="section-number">08</span>관련 문서</h2>
+            <h2 class="section-title"><span class="section-number">11</span>관련 문서</h2>
             <ul>
                 <li><a href="power-policy-suspend.html">Power Policy & Suspend</a> - Suspend/Resume 상세</li>
                 <li><a href="performance-optimization.html">Performance Optimization</a> - 일반 성능 최적화</li>
