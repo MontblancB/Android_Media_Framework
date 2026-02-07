@@ -108,46 +108,52 @@ flowchart LR
         <section class="content-section section">
             <h2 class="section-title"><span class="section-number">02</span>Boot Timeline Analysis</h2>
 
-            <h3>2.1 Media Service Initialization Timeline</h3>
-            <p>This shows the initialization timing of each media-related component during Cold Boot. Identifying the Critical Path (shortest path to First Audio) is key to optimization.</p>
+            <h3>2.1 Overall Boot Phase Timeline</h3>
+            <p>This shows the time spent in each major phase during Cold Boot. Identifying the Critical Path (shortest path to First Audio) is key to optimization.</p>
             <div class="mermaid">
 gantt
-    title Cold Boot Media Service Timeline
+    title Cold Boot Overall Phases
     dateFormat X
     axisFormat %s
 
-    section Bootloader
-    U-Boot/ABL           :0, 500
+    section Boot
+    Bootloader (U-Boot/ABL)  :0, 500
+    Kernel + ALSA Driver     :500, 1200
+    Early Audio              :crit, 1100, 1300
 
-    section Kernel
-    Linux Kernel Init    :500, 1200
-    ALSA Driver Load     :800, 1100
-    Early Audio Start    :1100, 1300
+    section Android
+    init / Zygote            :1200, 2200
+    System Server            :2200, 2800
 
-    section Android Init
-    init (1st stage)     :1200, 1500
-    Zygote Preload       :1500, 2200
-    System Server        :2200, 2800
+    section Milestone
+    First Audio              :milestone, 2000, 0
+    App Ready                :milestone, 4000, 0
+            </div>
 
-    section Media Services
-    AudioFlinger         :2300, 2600
-    AudioPolicyService   :2600, 2800
-    MediaCodecService    :2500, 2900
-    MediaExtractorService:2600, 2800
-    MediaDrmService      :2800, 3000
+            <h3>2.2 Media Service Initialization Timeline</h3>
+            <p>Initialization timing of media-related services after System Server. Items marked <code>crit</code> are on the First Audio Critical Path.</p>
+            <div class="mermaid">
+gantt
+    title Media Service Initialization Detail
+    dateFormat X
+    axisFormat %s
+
+    section Audio (Critical Path)
+    AudioFlinger         :crit, 2300, 2600
+    AudioPolicyService   :crit, 2600, 2800
+    CarAudioService      :crit, 3200, 3500
+
+    section Media Codecs
     Codec2 HAL Init      :2500, 3100
+    MediaCodecService    :2500, 2900
+    MediaDrmService      :2800, 3000
 
     section Car Services
     CarService           :2800, 3200
-    CarAudioService      :3200, 3500
     CarMediaService      :3200, 3600
-
-    section Milestones
-    First Audio Output   :milestone, 2000, 0
-    App Ready            :milestone, 4000, 0
             </div>
 
-            <h3>2.2 Per-Service Initialization Times</h3>
+            <h3>2.3 Per-Service Initialization Times</h3>
             <table>
                 <thead>
                     <tr>
@@ -204,7 +210,7 @@ gantt
                 </tbody>
             </table>
 
-            <h3>2.3 Critical Path Analysis</h3>
+            <h3>2.4 Critical Path Analysis</h3>
             <div class="mermaid">
 flowchart LR
     A["Kernel Boot<br/>1.2s"] --> B["AudioFlinger<br/>300ms"]
@@ -461,8 +467,8 @@ flowchart TB
         P4["Codec2 HAL<br/>600ms"]
     end
 
-    style SEQ fill:#1e293b,stroke:#ef4444,color:#f1f5f9
-    style PAR fill:#1e293b,stroke:#10b981,color:#f1f5f9
+    style SEQ stroke:#ef4444,stroke-width:2px
+    style PAR stroke:#10b981,stroke-width:2px
             </div>
             <p class="diagram-caption">Only AudioFlinger &rarr; AudioPolicy requires sequential ordering. MediaCodec, Codec2, MediaDRM can run in parallel</p>
 
